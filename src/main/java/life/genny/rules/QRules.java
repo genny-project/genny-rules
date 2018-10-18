@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -31,7 +30,7 @@ import java.util.stream.Collectors;
 
 import javax.money.CurrencyUnit;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -48,7 +47,6 @@ import com.hazelcast.util.collection.ArrayUtils;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.rxjava.core.eventbus.EventBus;
 import life.genny.eventbus.EventBusInterface;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
@@ -67,7 +65,6 @@ import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.exception.PaymentException;
-// import life.genny.qwanda.entity.NavigationType;
 import life.genny.qwanda.message.QBaseMSGAttachment;
 import life.genny.qwanda.message.QBaseMSGMessageTemplate;
 import life.genny.qwanda.message.QBulkMessage;
@@ -941,10 +938,10 @@ public class QRules {
 		BaseEntity be = null;
 
 		String username = getAsString("preferred_username").toLowerCase();
-		String firstname = StringUtils.capitaliseAllWords(getAsString("given_name").toLowerCase());
-		String lastname = StringUtils.capitaliseAllWords(getAsString("family_name").toLowerCase());
-		String realm = StringUtils.capitaliseAllWords(getAsString("realm").toLowerCase());
-		String name = StringUtils.capitaliseAllWords(getAsString("name").toLowerCase());
+		String firstname = StringUtils.capitalize(getAsString("given_name").toLowerCase());
+		String lastname = StringUtils.capitalize(getAsString("family_name").toLowerCase());
+		String realm = getAsString("realm").toLowerCase();
+		String name = StringUtils.capitalize(getAsString("name").toLowerCase());
 		String email = getAsString("email").toLowerCase();
 		String keycloakId = getAsString("sub").toLowerCase();
 

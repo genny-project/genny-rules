@@ -37,7 +37,7 @@
 		<version.maven-source-plugin>3.0.1</version.maven-source-plugin>
 		<dropwizard.version>3.5.1</dropwizard.version>
 		<vertx-concurrent.version>1.0.0</vertx-concurrent.version>
-		<kie.version>7.1.0.Final</kie.version>
+		<kie.version>7.12.0.Final</kie.version>
 
 	</properties>
 

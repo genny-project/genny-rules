@@ -86,7 +86,7 @@ public class RulesLoader {
 	 * @param vertx
 	 * @return
 	 */
-	public void triggerStartupRules(final String rulesDir, EventBusInterface eventBus) {
+	public static void triggerStartupRules(final String rulesDir, EventBusInterface eventBus) {
 		log.info("Triggering Startup Rules for all realms");
 			log.info("---- Realm:genny Startup Rules ----------");
 
