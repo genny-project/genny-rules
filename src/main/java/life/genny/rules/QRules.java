@@ -936,7 +936,7 @@ public class QRules {
 	public BaseEntity createUser() {
 
 		BaseEntity be = null;
-
+		
 		String username = getAsString("preferred_username").toLowerCase();
 		String firstname = StringUtils.capitalize(getAsString("given_name").toLowerCase());
 		String lastname = StringUtils.capitalize(getAsString("family_name").toLowerCase());
