@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.logging.log4j.Logger;
 import org.kie.api.KieBase;
@@ -35,8 +36,6 @@ import io.vavr.Tuple3;
 import io.vertx.core.json.DecodeException;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.core.buffer.Buffer;
-
-import life.genny.cluster.CurrentVtxCtx;
 import life.genny.eventbus.EventBusInterface;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.message.QEventMessage;
@@ -49,16 +48,16 @@ public class RulesLoader {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 
-	private static Map<String, KieBase> kieBaseCache = null;
+	public static Map<String, KieBase> kieBaseCache =  new ConcurrentHashMap<String, KieBase>();;
 	static {
 		setKieBaseCache(new HashMap<String, KieBase>());
 	}
 
-	static KieServices ks = KieServices.Factory.get();
+	public static KieServices ks = KieServices.Factory.get();
 
 	public static Set<String> realms = new HashSet<String>();
-	static Set<String> userRoles = null;
-	private static Map<String, User> usersSession = new HashMap<String, User>();
+	public static Set<String> userRoles = null;
+	public static Map<String, User> usersSession = new HashMap<String, User>();
 
 
 
@@ -68,9 +67,8 @@ public class RulesLoader {
 	 */
 	public static void loadRules(final String rulesDir) {
 		log.info("Loading Rules and workflows!!!");
+		System.out.println("Loading RUles2");
 		
-		setKieBaseCache(new HashMap<String, KieBase>()); // clear
-
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir);
 
 		realms = getRealms(rules);
@@ -169,7 +167,7 @@ public class RulesLoader {
 	// 	return null;
 	// }
 
-	static List<Tuple3<String, String, String>> processFileRealms(final String realm, String inputFileStrs) {
+	static public List<Tuple3<String, String, String>> processFileRealms(final String realm, String inputFileStrs) {
 		List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
 
 		String[] inputFileStrArray = inputFileStrs.split(";"); // allow multiple rules dirs
