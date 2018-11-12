@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>life.genny</groupId>
 	<artifactId>genny-rules</artifactId>
-	<version>1.0.64</version>
+	<version>1.0.65</version>
 	<name>genny-rules</name>
 
 	<licenses>
@@ -17,7 +17,7 @@
 
 	<properties>
 
-		<genny-verticle.version>1.0.64</genny-verticle.version>
+		<genny-verticle.version>1.0.65</genny-verticle.version>
 		<vertx.version>3.5.1</vertx.version>
 		<hazelcast.version>3.8.2</hazelcast.version>
 		<javax-cache.version>1.1.0</javax-cache.version>
@@ -111,11 +111,6 @@
 					<artifactId>hazelcast</artifactId>
 				</exclusion>
 			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-			<version>2.6</version>
 		</dependency>
 		<dependency>
 			<groupId>io.vertx</groupId>

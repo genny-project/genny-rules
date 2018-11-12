@@ -192,8 +192,12 @@ public class RulesLoader {
 						final File folder = new File(inputFileStr);
 						final File[] listOfFiles = folder.listFiles();
 						filesList = new ArrayList<String>();
+						if (listOfFiles != null) {
 						for (File f : listOfFiles) {
 							filesList.add(f.getAbsolutePath());
+						}
+						} else {
+							log.info("No files to load from "+inputFileStrs);
 						}
 					}
 

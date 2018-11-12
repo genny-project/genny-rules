@@ -351,6 +351,10 @@ public class QRules {
 	public HashMap<String, Object> getAsHashMap(final String key) {
 		return (HashMap) get(key);
 	}
+	
+	public HashMap<String, String> getAsHashMap1(final String key) {
+		return (HashMap) get(key);
+	}
 
 	public List<BaseEntity> getAsBaseEntitys(final String key) {
 		return (List<BaseEntity>) get(key);
@@ -567,6 +571,15 @@ public class QRules {
 		publishBaseEntityByCode(be, null, null, null);
 	}
 
+	public void publishBaseEntityByCode(List<BaseEntity> bes) {
+
+		BaseEntity[] itemArray = bes.toArray(new BaseEntity[0]);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray);
+		String[] recipientCodes = { this.getUser().getCode() };
+		msg.setRecipientCodeArray(recipientCodes);
+		publishData(msg, recipientCodes);
+	}
+
 	/* Publishes BaseEntity with replace true/false */
 	public void publishBaseEntityByCode(final String be, final Boolean replace) {
 
@@ -604,6 +617,13 @@ public class QRules {
 		String[] recipientCodes = { this.getUser().getCode() };
 		msg.setRecipientCodeArray(recipientCodes);
 		publishData(msg, recipientCodes);
+	}
+
+	public void publishBaseEntityByCode(BaseEntity[] bes, final String parentCode, final String linkCode,
+			String linkValue) {
+
+		List<BaseEntity> list = Arrays.asList(bes);
+		this.publishBaseEntityByCode(list, parentCode, linkCode, linkValue);
 	}
 
 	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
@@ -1799,7 +1819,7 @@ public class QRules {
 			cmdFormView.setIsPopup(isPopup);
 			publishCmd(cmdFormView);
 
-			this.navigateTo("/questions/" + questionGroupCode);
+			this.navigateTo("/questions/" + questionGroupCode, isPopup);
 		}
 	}
 
@@ -4483,6 +4503,14 @@ public class QRules {
 	public void sendSearchResults(SearchEntity searchBE, String parentCode) throws IOException {
 		this.sendSearchResults(searchBE, parentCode, "LNK_CORE", "LINK");
 	}
+
+	/*
+	 * Publish Search BE results setting the parentCode in QDataBaseEntityMessage
+	 */
+	public void sendSearchResults(SearchEntity searchBE, String parentCode, Boolean replace) throws IOException {
+		this.sendSearchResults(searchBE, parentCode, "LNK_CORE", "LINK", replace);
+	}
+	
 	/*
 	 * Publish Search BE results setting the parentCode, linkValue in
 	 * QDataBaseEntityMessage
@@ -4492,10 +4520,18 @@ public class QRules {
 	}
 
 	/*
+	 * Publish Search BE results setting the parentCode, linkValue in
+	 * QDataBaseEntityMessage
+	 */
+	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue) throws IOException {
+		this.sendSearchResults(searchBE, parentCode, linkCode, linkValue, false);
+	}
+
+	/*
 	 * Publish Search BE results setting the parentCode, linkCode, linkValue in
 	 * QDataBaseEntityMessage
 	 */
-	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue)
+	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue, Boolean replace)
 			throws IOException {
 
 		String serviceToken = RulesUtils.generateServiceToken(this.realm());
@@ -4510,6 +4546,7 @@ public class QRules {
 			msg.setToken(getToken());
 			msg.setLinkCode(linkCode);
 			msg.setLinkValue(linkValue);
+			msg.setReplace(replace);
 			publish("cmds", msg);
 		} else {
 			println("Warning: no results from search " + searchBE.getCode());
@@ -4535,8 +4572,10 @@ public class QRules {
 	public List<BaseEntity> getSearchResultsAsList(SearchEntity searchBE, String token) throws IOException {
 
 		QDataBaseEntityMessage msg = getSearchResults(searchBE, token);
-		if (msg.getItems() != null) {
-			return Arrays.asList(msg.getItems());
+		if (msg != null) {	
+			if(msg.getItems() != null) {
+				return Arrays.asList(msg.getItems());
+			}
 		}
 
 		return new ArrayList<>();
@@ -6062,6 +6101,7 @@ public class QRules {
 			PaymentEndpoint.deleteBankAccount(bankAccountId, authKey);
 			isDeleted = true;
 		} catch (PaymentException e) {
+ 
 		}
 		return isDeleted;
 	}
@@ -6317,6 +6357,7 @@ public class QRules {
 		answers.add(new Answer(getUser().getCode(), note.getCode(), "PRI_CREATOR_CODE", getUser().getCode()));
 		answers.add(new Answer(getUser().getCode(), note.getCode(), "PRI_CREATOR_NAME", getUser().getName()));
 		answers.add(new Answer(getUser().getCode(), note.getCode(), "PRI_CREATOR_TYPE", noteType));
+		answers.add(new Answer(getUser().getCode(), note.getCode(), "PRI_TYPE", noteType));
 		answers.add(new Answer(getUser().getCode(), note.getCode(), "PRI_CONTENT", content));
 		this.baseEntity.saveAnswers(answers);
 
