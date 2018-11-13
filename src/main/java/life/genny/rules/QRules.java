@@ -3810,7 +3810,9 @@ public class QRules {
 		String[] recipientCodes = getRecipientCodes(m);
 		println(m);
 		this.baseEntity.addAttributes(m.getBe());
-		publishBE(m.getBe(), recipientCodes);
+		if (!m.getBe().getCode().equals("PER_SERVICE")) {  // No need to publish service account info to the web
+			publishBE(m.getBe(), recipientCodes);
+		}
 		setState("ATTRIBUTE_CHANGE2");
 
 		if ((m.getData() != null) && ("MULTI_EVENT".equals(m.getData().getCode()))) {
