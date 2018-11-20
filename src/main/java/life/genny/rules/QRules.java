@@ -994,11 +994,11 @@ public class QRules {
 			String messageType, List<QBaseMSGAttachment> attachmentList, String[] to) {
 
 		/* unsubscribe link for the template */
-		String unsubscribeUrl = getUnsubscribeLinkForEmailTemplate(GennySettings.projectUrl, templateCode);
+		String unsubscribeUrl = getUnsubscribeLinkForEmailTemplate(GennySettings.projectUrl, templateCode); //TODO, update to fetch from project host
 		JsonObject message = null;
 
 		/* Adding project code to context */
-		String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
+		String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase(); // TODO, eplace with realm
 		this.println("project code for messages ::" + projectCode);
 		contextMap.put("PROJECT", projectCode);
 
@@ -2689,6 +2689,10 @@ public class QRules {
 				recipientCodesSet.addAll(Sets.newHashSet(recipientArray2));
 			}
 
+			if (link.getSourceCode()==null) {
+				log.error("No SOURCE CODE in LINK ");
+			}
+			
 			if ((link.getTargetCode().startsWith("PER_"))) {
 				// Assume that any change has been done by someone actually logged on! So assume
 				// we can spit out push
