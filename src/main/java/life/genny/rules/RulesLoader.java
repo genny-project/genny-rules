@@ -662,4 +662,7 @@ public class RulesLoader {
 	
 	}
 
+	public static Map<File, ResourceType> getKieResources() {
+		return new HashMap<File,ResourceType>(); // TODO
+	}
 }
