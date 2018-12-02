@@ -5077,39 +5077,37 @@ public class QRules {
 	}
 
 	public void sendNotes(String contextCode) {
-		
+
 		/* we create a bulk */
 		QBulkMessage bulk = new QBulkMessage();
-		
+
 		/* we send GRP_NOTES */
 		BaseEntity grpNotes = this.baseEntity.getBaseEntityByCode("GRP_NOTES");
 		QDataBaseEntityMessage grpNotesMessage = new QDataBaseEntityMessage(grpNotes);
+		grpNotesMessage.setShouldDeleteLinkedBaseEntities(1);
 		grpNotesMessage.setReplace(true);
-		
+
 		bulk.add(grpNotesMessage);
-		
+
 		/* we send the notes */
-		SearchEntity searchBE = new SearchEntity("SBE_NOTES", "SBE_NOTES")
-				.setSourceCode("GRP_NOTES")
-				.setStakeholder(contextCode)
-				.setPageStart(0)
-				.setPageSize(10000);
+		SearchEntity searchBE = new SearchEntity("SBE_NOTES", "SBE_NOTES").setSourceCode("GRP_NOTES")
+				.setStakeholder(contextCode).setPageStart(0).setPageSize(10000);
 
 		if (searchBE != null) {
 			/* Send search result */
 			try {
 				// this.sendSearchResults(searchBE, "GRP_NOTES");
 				QDataBaseEntityMessage notesMessage = this.getSearchResults(searchBE);
-				this.println("search count ::"+notesMessage.getItems().length);
+				this.println("search count ::" + notesMessage.getItems().length);
 				notesMessage.setLinkCode("LNK_MESSAGES");
 				notesMessage.setParentCode("GRP_NOTES");
-				notesMessage.setReplace(true);				
+				notesMessage.setReplace(true);
 				bulk.add(notesMessage);
 
 			} catch (IOException e) {
 			}
 		}
-		
+
 		this.publishCmd(bulk);
 	}
 
@@ -5240,6 +5238,5 @@ public class QRules {
 
 		return attributeName;
 	}
-
 
 }
