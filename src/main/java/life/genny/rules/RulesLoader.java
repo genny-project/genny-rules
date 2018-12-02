@@ -531,7 +531,7 @@ public class RulesLoader {
 		globals.add(Tuple.of("LOG_CYAN", CYAN));
 		globals.add(Tuple.of("LOG_WHITE", WHITE));
 		globals.add(Tuple.of("LOG_BOLD", BOLD));
-		globals.add(Tuple.of("REACT_APP_QWANDA_API_URL", GennySettings.qwandaServiceUrl));
+		globals.add(Tuple.of("REACT_APP_QWANDA_API_URL", GennySettings.QWANDA_SERVICE_URL));
 		return globals;
 	}
 	
@@ -616,8 +616,8 @@ public class RulesLoader {
 			String fullName = adecodedTokenMap.get("name").toString();
 			String realm = adecodedTokenMap.get("realm").toString();
 			if ("genny".equalsIgnoreCase(realm)) {
-				realm = GennySettings.mainrealm;
-				adecodedTokenMap.put("realm", GennySettings.mainrealm);
+				realm = GennySettings.MAIN_REALM;
+				adecodedTokenMap.put("realm", GennySettings.MAIN_REALM);
 			}
 			String accessRoles = adecodedTokenMap.get("realm_access").toString();
 

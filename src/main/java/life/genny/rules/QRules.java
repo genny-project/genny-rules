@@ -188,9 +188,9 @@ public class QRules {
 
 			/* initialising utils */
 			/* TODO: to update so it is static */
-			this.baseEntity = new BaseEntityUtils(GennySettings.qwandaServiceUrl, this.token, decodedTokenMap, realm());
-			this.layoutUtils = new LayoutUtils(GennySettings.qwandaServiceUrl, this.token, decodedTokenMap, realm());
-			this.cacheUtils = new CacheUtils(GennySettings.qwandaServiceUrl, this.token, decodedTokenMap, realm());
+			this.baseEntity = new BaseEntityUtils(GennySettings.QWANDA_SERVICE_URL, this.token, decodedTokenMap, realm());
+			this.layoutUtils = new LayoutUtils(GennySettings.QWANDA_SERVICE_URL, this.token, decodedTokenMap, realm());
+			this.cacheUtils = new CacheUtils(GennySettings.QWANDA_SERVICE_URL, this.token, decodedTokenMap, realm());
 			this.cacheUtils.setBaseEntityUtils(this.baseEntity);
 
 			// this.paymentUtils = new PaymentUtils(QRules.qwandaServiceUrl, this.token,
@@ -248,8 +248,8 @@ public class QRules {
 	public String realm() {
 
 		String str = getAsString("realm");
-		if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
-			str = GennySettings.mainrealm; // TODO, I don't like this, but...
+		if (GennySettings.DEV_MODE || (GennySettings.DEFAULT_LOCAL_IP.equals(GennySettings.HOSTIP))) {
+			str = GennySettings.MAIN_REALM; // TODO, I don't like this, but...
 		}
 		return str.toLowerCase();
 	}
@@ -798,7 +798,7 @@ public class QRules {
 	public void publishBaseEntitysByParentAndLinkCode(final String parentCode, final String linkCode, Integer pageStart,
 			Integer pageSize, Boolean cache) {
 
-		String json = RulesUtils.getBaseEntitysJsonByParentAndLinkCode(GennySettings.qwandaServiceUrl,
+		String json = RulesUtils.getBaseEntitysJsonByParentAndLinkCode(GennySettings.QWANDA_SERVICE_URL,
 				getDecodedTokenMap(), getToken(), parentCode, linkCode);
 		publish("cmds", json);
 	}
@@ -807,7 +807,7 @@ public class QRules {
 			Integer pageStart, Integer pageSize, Boolean cache) {
 
 		BaseEntity[] beArray = RulesUtils.getBaseEntitysArrayByParentAndLinkCodeWithAttributes(
-				GennySettings.qwandaServiceUrl, getDecodedTokenMap(), getToken(), parentCode, linkCode, pageStart,
+				GennySettings.QWANDA_SERVICE_URL, getDecodedTokenMap(), getToken(), parentCode, linkCode, pageStart,
 				pageSize);
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArray, parentCode, linkCode);
 		msg.setToken(getToken());
@@ -822,11 +822,11 @@ public class QRules {
 
 	public void geofenceJob(final String begCode, final String driverCode, Double radius) {
 
-		BaseEntity be = RulesUtils.getBaseEntityByCode(GennySettings.qwandaServiceUrl, this.getDecodedTokenMap(),
+		BaseEntity be = RulesUtils.getBaseEntityByCode(GennySettings.QWANDA_SERVICE_URL, this.getDecodedTokenMap(),
 				this.getToken(), begCode);
 		if (be != null) {
 
-			QCmdGeofenceMessage[] cmds = GPSUtils.geofenceJob(be, driverCode, radius, GennySettings.qwandaServiceUrl,
+			QCmdGeofenceMessage[] cmds = GPSUtils.geofenceJob(be, driverCode, radius, GennySettings.QWANDA_SERVICE_URL,
 					this.getToken(), this.getDecodedTokenMap());
 
 			if (cmds != null) {
@@ -849,7 +849,7 @@ public class QRules {
 		if (token != null) {
 
 			List<BaseEntity> paidProducts = RulesUtils.getBaseEntitysByParentAndLinkCodeWithAttributes(
-					GennySettings.qwandaServiceUrl, getDecodedTokenMap(), token, "GRP_PAID", "LNK_CORE", 0, 1000);
+					GennySettings.QWANDA_SERVICE_URL, getDecodedTokenMap(), token, "GRP_PAID", "LNK_CORE", 0, 1000);
 
 			if (paidProducts != null) {
 
@@ -974,11 +974,11 @@ public class QRules {
 			String messageType, List<QBaseMSGAttachment> attachmentList, String[] to) {
 
 		/* unsubscribe link for the template */
-		String unsubscribeUrl = getUnsubscribeLinkForEmailTemplate(GennySettings.projectUrl, templateCode);
+		String unsubscribeUrl = getUnsubscribeLinkForEmailTemplate(GennySettings.PROJECT_URL, templateCode);
 		JsonObject message = null;
 
 		/* Adding project code to context */
-		String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
+		String projectCode = "PRJ_" + GennySettings.MAIN_REALM.toUpperCase();
 		this.println("project code for messages ::" + projectCode);
 		contextMap.put("PROJECT", projectCode);
 
@@ -1030,7 +1030,7 @@ public class QRules {
 		String keycloakId = getAsString("sub").toLowerCase();
 
 		try {
-			be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
+			be = QwandaUtils.createUser(GennySettings.QWANDA_SERVICE_URL, getToken(), username, firstname, lastname,
 					email, realm, name, keycloakId);
 			VertxUtils.writeCachedJson(be.getCode(), JsonUtils.toJson(be));
 			be = getUser();
@@ -1077,7 +1077,7 @@ public class QRules {
 			String token = RulesUtils.generateServiceToken(realm());
 
 			String realm = realm();
-			if (GennySettings.devMode) {
+			if (GennySettings.DEV_MODE) {
 				realm = "genny";
 			}
 
@@ -1292,14 +1292,14 @@ public class QRules {
 	 * @return the qwandaserviceurl
 	 */
 	public static String getQwandaServiceUrl() {
-		return GennySettings.qwandaServiceUrl;
+		return GennySettings.QWANDA_SERVICE_URL;
 	}
 
 	/**
 	 * @return the devmode
 	 */
 	public static Boolean getDevmode() {
-		return GennySettings.devMode;
+		return GennySettings.DEV_MODE;
 	}
 
 	public void send(final String channel, final Object payload) {
@@ -3279,7 +3279,7 @@ public class QRules {
 		String jsonBE = JsonUtils.toJson(be);
 		String result = null;
 		try {
-			result = QwandaUtils.apiPutEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/force", jsonBE,
+			result = QwandaUtils.apiPutEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/force", jsonBE,
 					getToken());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -3973,7 +3973,7 @@ public class QRules {
 		// }
 		println("The search BE is  :: " + searchBE);
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
-		String result = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+		String result = QwandaUtils.apiPostEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/search",
 				jsonSearchBE, getToken());
 		log.info("The result   ::  " + result);
 		publishData(new JsonObject(result));
@@ -4035,7 +4035,7 @@ public class QRules {
 			e.printStackTrace();
 		}
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
-		String loadsList = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+		String loadsList = QwandaUtils.apiPostEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/search",
 				jsonSearchBE, getToken());
 		publishData(new JsonObject(loadsList));
 		sendTableViewWithHeaders("SBE_GET_ALL_LOADS", columnsArray);
@@ -4101,7 +4101,7 @@ public class QRules {
 		// }
 		// println("The search BE is :: " + JsonUtils.toJson(searchBE));
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
-		String result = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+		String result = QwandaUtils.apiPostEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/search",
 				jsonSearchBE, getToken());
 		System.out.println("The result   ::  " + result);
 		publishData(new JsonObject(result));
@@ -4167,7 +4167,7 @@ public class QRules {
 
 		// println("The search BE is :: " + JsonUtils.toJson(searchBE));
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
-		String result = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+		String result = QwandaUtils.apiPostEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/search",
 				jsonSearchBE, getToken());
 		log.info("The result   ::  " + result);
 		publishData(new JsonObject(result));
@@ -4401,7 +4401,7 @@ public class QRules {
 
 		log.info("The search BE is :: " + jsonSearchBE);
 		// String jsonSearchBE = JsonUtils.toJson(searchBE);
-		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+		String resultJson = QwandaUtils.apiPostEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/search",
 				jsonSearchBE, getToken());
 
 		this.println(resultJson);
@@ -4467,7 +4467,7 @@ public class QRules {
 
 			String serviceToken = RulesUtils.generateServiceToken(this.realm());
 			String jsonSearchBE = JsonUtils.toJson(searchBE);
-			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+			String resultJson = QwandaUtils.apiPostEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/search",
 					jsonSearchBE, serviceToken);
 			QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
 			msg.setToken(getToken());
@@ -4500,7 +4500,7 @@ public class QRules {
 
 		String serviceToken = RulesUtils.generateServiceToken(this.realm());
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
-		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+		String resultJson = QwandaUtils.apiPostEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/search",
 				jsonSearchBE, serviceToken);
 
 		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
@@ -4573,7 +4573,7 @@ public class QRules {
 		}
 		log.info("The search BE is :: " + JsonUtils.toJson(searchBE));
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
-		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+		String resultJson = QwandaUtils.apiPostEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/search",
 				jsonSearchBE, token);
 		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
 		log.info("The result   ::  " + msg);
@@ -4587,7 +4587,7 @@ public class QRules {
 	public String getSearchResultsString(SearchEntity searchBE) throws IOException {
 		log.info("The search BE is :: " + JsonUtils.toJson(searchBE));
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
-		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+		String resultJson = QwandaUtils.apiPostEntity(GennySettings.QWANDA_SERVICE_URL + "/qwanda/baseentitys/search",
 				jsonSearchBE, getToken());
 
 		return resultJson;
@@ -4716,7 +4716,7 @@ public class QRules {
 			String keycloakJson = SecureResources.getKeycloakJsonMap().get(jsonFile);
 			if (keycloakJson == null) {
 				log.info("No keycloakMap for " + realm());
-				if (GennySettings.devMode) {
+				if (GennySettings.DEV_MODE) {
 					System.out.println("Fudging realm so genny keycloak used");
 					// Use basic Genny json when project json not available
 					String gennyJson = SecureResources.getKeycloakJsonMap().get("genny.json");
@@ -5035,7 +5035,7 @@ public class QRules {
 		if (existing == null) {
 
 			try {
-				be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
+				be = QwandaUtils.createUser(GennySettings.QWANDA_SERVICE_URL, getToken(), username, firstname, lastname,
 						email, realm, name, keycloakId);
 				VertxUtils.writeCachedJson(be.getCode(), JsonUtils.toJson(be));
 				be = getUser();
@@ -5298,9 +5298,9 @@ public class QRules {
 	 */
 	public void sendSlackNotification(String attributeCode, String message) {
 		/* send critical slack notifications only for production mode */
-		log.info("dev mode ::" + GennySettings.devMode);
+		log.info("dev mode ::" + GennySettings.DEV_MODE);
 		BaseEntity project = getProject();
-		if (project != null && !GennySettings.devMode) {
+		if (project != null && !GennySettings.DEV_MODE) {
 			String webhookURL = project.getLoopValue(attributeCode, null);
 			if (webhookURL != null) {
 
