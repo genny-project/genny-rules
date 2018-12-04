@@ -2451,7 +2451,7 @@ public class QRules {
 
 		}
 		// Add the original token holder
-		if (!getUser().getCode().equals("PER_SERVICE")) {
+		if (!"PER_SERVICE".equals(getUser().getCode())) {
 			recipientCodesSet.add(getUser().getCode());
 		}
 		results = (String[]) FluentIterable.from(recipientCodesSet).toArray(String.class);
@@ -3339,8 +3339,9 @@ public class QRules {
 				jsonSearchBE, serviceToken);
 
 		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-		println("msg items size ::" + msg.getItems().length);
-		if (msg != null) {
+		
+		if ((msg != null)&&(msg.getItems().length>0)) {
+			println("msg items size ::" + msg.getItems().length);
 			msg.setParentCode(parentCode);
 			msg.setToken(getToken());
 			msg.setLinkCode(linkCode);
