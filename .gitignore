@@ -4,6 +4,7 @@ pom.xml.releaseBackup
 pom.xml.versionsBackup
 pom.xml.next
 release.properties
+genny-rules-git.properties
 src/main/resources/genny-verticle-git.properties
 dependency-reduced-pom.xml
 buildNumber.properties
