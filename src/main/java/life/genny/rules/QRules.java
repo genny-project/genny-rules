@@ -1029,18 +1029,21 @@ public class QRules {
 			String token = RulesUtils.generateServiceToken(realm());
 
 			String realm = realm();
-			if (GennySettings.devMode) {
+			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
 				realm = "genny";
 			}
 
 			/* if the keycloak id, we need to create a keycloak account for this user */
 			if (keycloakId == null) {
 				keycloakId = KeycloakUtils.createUser(token, realm, username, firstname, lastname, email);
+				log.info("KeyCloak Id: " + keycloakId);
 			}
 
 			/* we create the user in the system */
+			log.info("Going to call QwandaUtils.createUser...");
 			be = QwandaUtils.createUser(getQwandaServiceUrl(), getToken(), username, firstname, lastname, email, realm,
 					name, keycloakId);
+			log.info("After calling QwandaUtils.createUser...");
 			VertxUtils.writeCachedJson(be.getCode(), JsonUtils.toJson(be));
 			// be = getUser();
 			set("USER", be);
