@@ -367,6 +367,10 @@ public class QRules {
 	public Integer getAsInteger(final String key) {
 		return (Integer) get(key);
 	}
+	
+	public Long getAsLong(final String key) {
+		return (Long) get(key);
+	}
 
 	public Double getAsDouble(final String key) {
 		return (Double) get(key);
@@ -3291,6 +3295,7 @@ public class QRules {
 			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 					jsonSearchBE, serviceToken);
 			QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+			println("Item list::::::"+ msg.getItems().length);
 			msg.setToken(getToken());
 			publish("cmds", msg);
 		} catch (Exception e) {
@@ -3383,6 +3388,20 @@ public class QRules {
 
 		return new ArrayList<>();
 	}
+	
+	/*
+	 * Get search Results returns QDataBaseEntityMessage
+	 */
+	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, boolean useServiceToken) throws IOException {
+	
+		String token = null;
+		if (useServiceToken) {
+			token = RulesUtils.generateServiceToken(this.realm());
+		} else {
+			token = this.getToken();
+		}
+		return this.getSearchResults(searchBE, token);
+	}
 
 	/*
 	 * Get search Results returns List<BaseEntity>
@@ -3417,10 +3436,14 @@ public class QRules {
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 				jsonSearchBE, token);
-		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-		log.info("The result   ::  " + msg);
-
-		return msg;
+		if(resultJson!=null){
+			QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+			log.info("The result   ::  " + msg);
+			return msg;
+		}else {
+			return null;
+		}
+	
 	}
 
 	/*
