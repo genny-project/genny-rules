@@ -1029,21 +1029,18 @@ public class QRules {
 			String token = RulesUtils.generateServiceToken(realm());
 
 			String realm = realm();
-			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
+			if (GennySettings.devMode) {
 				realm = "genny";
 			}
 
 			/* if the keycloak id, we need to create a keycloak account for this user */
 			if (keycloakId == null) {
 				keycloakId = KeycloakUtils.createUser(token, realm, username, firstname, lastname, email);
-				log.info("KeyCloak Id: " + keycloakId);
 			}
 
 			/* we create the user in the system */
-			log.info("Going to call QwandaUtils.createUser...");
 			be = QwandaUtils.createUser(getQwandaServiceUrl(), getToken(), username, firstname, lastname, email, realm,
 					name, keycloakId);
-			log.info("After calling QwandaUtils.createUser...");
 			VertxUtils.writeCachedJson(be.getCode(), JsonUtils.toJson(be));
 			// be = getUser();
 			set("USER", be);
@@ -2454,7 +2451,7 @@ public class QRules {
 
 		}
 		// Add the original token holder
-		if (!"PER_SERVICE".equals(getUser().getCode())) {
+		if (!getUser().getCode().equals("PER_SERVICE")) {
 			recipientCodesSet.add(getUser().getCode());
 		}
 		results = (String[]) FluentIterable.from(recipientCodesSet).toArray(String.class);
@@ -3342,9 +3339,8 @@ public class QRules {
 				jsonSearchBE, serviceToken);
 
 		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-		
-		if ((msg != null)&&(msg.getItems().length>0)) {
-			println("msg items size ::" + msg.getItems().length);
+		println("msg items size ::" + msg.getItems().length);
+		if (msg != null) {
 			msg.setParentCode(parentCode);
 			msg.setToken(getToken());
 			msg.setLinkCode(linkCode);
@@ -3369,6 +3365,20 @@ public class QRules {
 		return results;
 	}
 
+	/*
+	 * Get search Results returns QDataBaseEntityMessage
+	 */
+	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, boolean useServiceToken) throws IOException { 
+		String token = null; 
+		if (useServiceToken) {
+			token = RulesUtils.generateServiceToken(this.realm()); }
+		else { 
+			token = this.getToken(); 
+		}
+    return this.getSearchResults(searchBE, token);
+}
+	
+	
 	/*
 	 * Get search Results returns List<BaseEntity>
 	 */
