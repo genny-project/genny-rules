@@ -3370,18 +3370,6 @@ public class QRules {
 		return results;
 	}
 
-	/*
-	 * Get search Results returns QDataBaseEntityMessage
-	 */
-	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, boolean useServiceToken) throws IOException { 
-		String token = null; 
-		if (useServiceToken) {
-			token = RulesUtils.generateServiceToken(this.realm()); }
-		else { 
-			token = this.getToken(); 
-		}
-    return this.getSearchResults(searchBE, token);
-}
 	
 	
 	/*
