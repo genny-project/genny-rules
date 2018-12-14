@@ -1034,7 +1034,7 @@ public class QRules {
 			String token = RulesUtils.generateServiceToken(realm());
 
 			String realm = realm();
-			if (GennySettings.devMode) {
+			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
 				realm = "genny";
 			}
 
@@ -3336,25 +3336,31 @@ public class QRules {
 	 * QDataBaseEntityMessage
 	 */
 	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
-			Boolean replace) throws IOException {
-
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
-		String jsonSearchBE = JsonUtils.toJson(searchBE);
-		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-				jsonSearchBE, serviceToken);
-
-		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-		if (msg != null) {
-			msg.setParentCode(parentCode);
-			msg.setToken(getToken());
-			msg.setLinkCode(linkCode);
-			msg.setLinkValue(linkValue);
-			msg.setReplace(replace);
-			publish("cmds", msg);
-		} else {
-			println("Warning: no results from search " + searchBE.getCode());
-		}
+        Boolean replace) throws IOException {
+            this.sendSearchResults(searchBE, parentCode, linkCode, linkValue, replace, null);
 	}
+
+    public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
+            Boolean replace, Object shouldDeleteLinkedBaseEntities) throws IOException {
+    
+        String serviceToken = RulesUtils.generateServiceToken(this.realm());
+        String jsonSearchBE = JsonUtils.toJson(searchBE);
+        String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+                jsonSearchBE, serviceToken);
+    
+        QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+        if (msg != null) {
+            msg.setParentCode(parentCode);
+            msg.setToken(getToken());
+            msg.setLinkCode(linkCode);
+            msg.setLinkValue(linkValue);
+            msg.setReplace(replace);
+            msg.setShouldDeleteLinkedBaseEntities(shouldDeleteLinkedBaseEntities);
+            publish("cmds", msg);
+        } else {
+            println("Warning: no results from search " + searchBE.getCode());
+        }
+    }
 
 	/*
 	 * Get search Results returns QDataBaseEntityMessage
