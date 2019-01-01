@@ -2784,7 +2784,7 @@ public class QRules {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		log.info("The result   ::  " + result);
+		log.info("The result of ClearbaseEntityAttr  ::  " + result);
 
 	}
 
@@ -3100,7 +3100,7 @@ public class QRules {
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String result = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 				jsonSearchBE, getToken());
-		log.info("The result   ::  " + result);
+		log.info("The result of SendAllUsers  ::  " + result);
 		publishData(new JsonObject(result));
 		sendTableViewWithHeaders("SBE_GET_ALL_USERS", columnsArray);
 		// sendCmdView("TABLE_VIEW", "SBE_GET_ALL_USERS" );
@@ -3437,8 +3437,32 @@ public class QRules {
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 				jsonSearchBE, token);
-		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-		log.info("The result   ::  " + msg);
+		QDataBaseEntityMessage msg = null;
+		final BaseEntity[] items = new BaseEntity[0];
+		final String parentCode="GRP_ROOT";
+		final String linkCode="LINK";
+		final Long total = 0L;
+
+		if (resultJson == null) {
+			msg = new QDataBaseEntityMessage(items,parentCode,linkCode,total);
+			log.info("The result of getSearchResults was null  ::  " + msg);
+		} else {
+			try {
+				msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+				if (msg == null) {
+					msg = new QDataBaseEntityMessage(items,parentCode,linkCode,total);
+					log.info("The result of getSearchResults was null Exception ::  " + msg);
+				} else {
+					log.info("The result of getSearchResults was not null  ::  " + msg);
+				}
+			} catch (Exception e) {
+				log.info("The result of getSearchResults was null Exception ::  " + msg);
+				msg = new QDataBaseEntityMessage(items,parentCode,linkCode,total);
+			}
+			
+			
+		}
+		
 
 		return msg;
 	}
