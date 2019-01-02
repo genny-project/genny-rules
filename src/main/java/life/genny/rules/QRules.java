@@ -1034,9 +1034,9 @@ public class QRules {
 			String token = RulesUtils.generateServiceToken(realm());
 
 			String realm = realm();
-			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
+			/*if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
 				realm = "genny";
-			}
+			}*/
 
 			/* if the keycloak id, we need to create a keycloak account for this user */
 			if (keycloakId == null) {
@@ -5039,6 +5039,7 @@ public class QRules {
 		} else {
 			// create new attribute
 			attribute = new AttributeBoolean(fullCapabilityCode, name);
+			attribute.setRealm(realm());
 			// save to database and cache
 
 			try {
@@ -5156,8 +5157,9 @@ public class QRules {
 			/* we get the search results */
 			QDataBaseEntityMessage notesMessage = this.getSearchResults(searchBE);
 
+			//TODO: Add null check
 			/* if we have at least one note */
-			if(notesMessage.getItems() != null && notesMessage.getItems().length > 0) {
+			if(notesMessage != null && notesMessage.getItems() != null && notesMessage.getItems().length > 0) {
 
 				/* we set the link code */
 				notesMessage.setLinkCode("LNK_MESSAGES");
