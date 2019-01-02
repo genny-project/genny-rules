@@ -1034,9 +1034,9 @@ public class QRules {
 			String token = RulesUtils.generateServiceToken(realm());
 
 			String realm = realm();
-			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
+			/*if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
 				realm = "genny";
-			}
+			}*/
 
 			/* if the keycloak id, we need to create a keycloak account for this user */
 			if (keycloakId == null) {
@@ -5039,6 +5039,7 @@ public class QRules {
 		} else {
 			// create new attribute
 			attribute = new AttributeBoolean(fullCapabilityCode, name);
+			attribute.setRealm(realm());
 			// save to database and cache
 
 			try {
