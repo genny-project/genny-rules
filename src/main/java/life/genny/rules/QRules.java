@@ -60,6 +60,7 @@ import life.genny.qwanda.attribute.AttributeInteger;
 import life.genny.qwanda.attribute.AttributeMoney;
 import life.genny.qwanda.attribute.AttributeText;
 import life.genny.qwanda.attribute.EntityAttribute;
+import life.genny.qwanda.aws.upload.UploadMetaObject;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
@@ -5335,5 +5336,17 @@ public class QRules {
 
 		return attributeName;
 	}
-
+	public void getFileUploadDetails(String baseentityCode, String attributeCode) {
+		if(baseentityCode != null) {
+			BaseEntity be = this.baseEntity.getBaseEntityByCode(baseentityCode);
+			if(be != null) {
+				String attributeValue = be.getValue(attributeCode, null);
+				if(attributeValue != null) {
+					UploadMetaObject uploadResponseObj = JsonUtils.fromJson(attributeValue,
+							UploadMetaObject.class);
+					this.println(uploadResponseObj);
+				}
+			}
+		}
+	}
 }
