@@ -1768,7 +1768,7 @@ public class QRules {
 					+ this.decodedTokenMap.get("preferred_username") // This is faster than calling getUser()
 					+ showStates());
 		} catch (NullPointerException e) {
-			println("Error in rules: ", "ANSI_RED");
+			println("Error in rules: "+realm() + ":" + drools.getRule().getName(),"ANSI_RED");
 		}
 		ruleStartMs = System.nanoTime();
 	}
@@ -1783,7 +1783,7 @@ public class QRules {
 					+ this.decodedTokenMap.get("preferred_username") // This is faster than calling getUser()
 					+ showStates());
 		} catch (NullPointerException e) {
-			println("Error in rules: ", "ANSI_RED");
+			println("Error in rules: "+realm() + ":" + drools.getRule().getName(),"ANSI_RED");
 		}
 	}
 
