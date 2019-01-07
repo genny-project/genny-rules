@@ -38,7 +38,6 @@
 		<dropwizard.version>3.5.1</dropwizard.version>
 		<vertx-concurrent.version>1.0.0</vertx-concurrent.version>
 		<kie.version>7.1.0.Final</kie.version>
-
 	</properties>
 
 	<distributionManagement>
@@ -189,11 +188,6 @@
 			<artifactId>vavr</artifactId>
 			<version>0.9.1</version>
 		</dependency>
-<dependency>
-    <groupId>org.apache.httpcomponents</groupId>
-    <artifactId>httpclient</artifactId>
-    <version>4.3.3</version>
-</dependency>
 	</dependencies>
 
 	<build>
