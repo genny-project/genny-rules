@@ -2913,7 +2913,7 @@ public class QRules {
 	public void listenAttributeChange(QEventAttributeValueChangeMessage m) {
 
 		String[] recipientCodes = getRecipientCodes(m);
-		println(m);
+		println("BE CHANGED IS "+m.getBe().getCode()/*+":"+m.getAnswer().getAttributeCode()*/);
 		this.baseEntity.addAttributes(m.getBe());
 		publishBE(m.getBe(), recipientCodes);
 		setState("ATTRIBUTE_CHANGE2");
@@ -3743,7 +3743,7 @@ public class QRules {
 			filteredMsg.setToken(getToken());
 			newBulkMsg.add(filteredMsg);
 
-			this.println(JsonUtils.toJson(filteredMsg));
+			this.println("SendTreeView Filtered Msg:"+JsonUtils.toJson(filteredMsg));
 		}
 
 		this.publishCmd(newBulkMsg);
