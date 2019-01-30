@@ -5159,7 +5159,7 @@ public class QRules {
 			//TODO: Add null check
 			/* if we have at least one note */
 			if(notesMessage != null && notesMessage.getItems() != null && notesMessage.getItems().length > 0) {
-
+				
 				/* we set the link code */
 				notesMessage.setLinkCode("LNK_MESSAGES");
 				
@@ -5169,15 +5169,12 @@ public class QRules {
 				/* we replace the existing values */
 				notesMessage.setReplace(true);
 
-				/* we add to the bulk */
-				bulk.add(notesMessage);
-
 				/* for each note, we compute the links to set into GRP_NOTES */
 				Set<EntityEntity> links = new HashSet<>();
 
 				/* we loop through the items */
 				for(BaseEntity note: notesMessage.getItems()) {
-
+					
 					/* we create the attribute for the link */
 					Attribute linkAttribute = new Attribute("LINK_CODE", "LNK_MESSAGES", new DataType("string"));
 
@@ -5199,6 +5196,9 @@ public class QRules {
 
 			/* we add to the bulk */
 			bulk.add(grpNotesMessage);
+			
+			/* we add to the bulk */
+			bulk.add(notesMessage);
 
 		} catch (IOException e) {
 		}
