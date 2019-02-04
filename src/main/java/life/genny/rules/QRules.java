@@ -1712,10 +1712,25 @@ public class QRules {
 	public Boolean sendQuestions(String sourceCode, String targetCode, String questionGroupCode, String stakeholderCode,
 			Boolean pushSelection) {
 
-		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, this.token,
+		/* we grab the service token */
+		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		return this.sendQuestions(sourceCode, targetCode, questionGroupCode, stakeholderCode, pushSelection, token);
+	}
+
+	public Boolean sendQuestions(String sourceCode, String targetCode, String questionGroupCode, String stakeholderCode,
+			Boolean pushSelection, String token) {
+
+			this.println("======================== ASK MESSAGE ======================");
+
+		/* we get the questions */
+		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, token,
 				stakeholderCode, pushSelection);
+
 		if (questions != null) {
 
+			this.println(JsonUtils.toJson(questions));
+
+			/* we publish them */
 			this.publishCmd(questions);
 			return true;
 		}
@@ -1725,7 +1740,11 @@ public class QRules {
 
 	public Ask getQuestion(String sourceCode, String targetCode, String questionCode) {
 
-		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, this.token);
+		/* we grab the service token */
+		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+
+		/* Get the ask Message */
+		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, serviceToken);
 		if (askMessage != null && askMessage.getItems().length > 0) {
 			return askMessage.getItems()[0];
 		}
@@ -1739,12 +1758,15 @@ public class QRules {
 
 	private QwandaMessage getQuestions(String sourceCode, String targetCode, String questionGroupCode,
 			String stakeholderCode) {
-		return QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, this.token, stakeholderCode, true);
+		
+		/* we grab the service token */
+		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+
+		return QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken, stakeholderCode, true);
 	}
 
 	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode) {
 		this.askQuestions(sourceCode, targetCode, questionGroupCode, false);
-
 	}
 
 	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup) {
@@ -2342,8 +2364,7 @@ public class QRules {
 		this.sendAllSublayouts();
 
 		/* Layouts V2 */
-		List<BaseEntity> beLayouts = this.baseEntity.getBaseEntitysByParentAndLinkCode("GRP_LAYOUTS", "LNK_CORE", 0,
-				500, false);
+		List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
 		this.publishCmd(beLayouts, "GRP_LAYOUTS", "LNK_CORE");
 
 		/* List<BaseEntity> beLayouts = this.getAllLayouts(); */
@@ -5159,7 +5180,7 @@ public class QRules {
 			//TODO: Add null check
 			/* if we have at least one note */
 			if(notesMessage != null && notesMessage.getItems() != null && notesMessage.getItems().length > 0) {
-
+				
 				/* we set the link code */
 				notesMessage.setLinkCode("LNK_MESSAGES");
 				
@@ -5169,15 +5190,12 @@ public class QRules {
 				/* we replace the existing values */
 				notesMessage.setReplace(true);
 
-				/* we add to the bulk */
-				bulk.add(notesMessage);
-
 				/* for each note, we compute the links to set into GRP_NOTES */
 				Set<EntityEntity> links = new HashSet<>();
 
 				/* we loop through the items */
 				for(BaseEntity note: notesMessage.getItems()) {
-
+					
 					/* we create the attribute for the link */
 					Attribute linkAttribute = new Attribute("LINK_CODE", "LNK_MESSAGES", new DataType("string"));
 
@@ -5199,6 +5217,9 @@ public class QRules {
 
 			/* we add to the bulk */
 			bulk.add(grpNotesMessage);
+			
+			/* we add to the bulk */
+			bulk.add(notesMessage);
 
 		} catch (IOException e) {
 		}
