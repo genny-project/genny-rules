@@ -127,6 +127,11 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+			<groupId>life.genny</groupId>
+			<artifactId>qwanda-utils</artifactId>
+			<version>${genny-verticle.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>javax.cache</groupId>
