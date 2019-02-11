@@ -68,6 +68,7 @@ import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.exception.PaymentException;
 import life.genny.qwanda.message.QBaseMSGAttachment;
 import life.genny.qwanda.message.QBaseMSGMessageTemplate;
+import life.genny.qwanda.message.QBaseMSGMessageType;
 import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QCmdGeofenceMessage;
 import life.genny.qwanda.message.QCmdLayoutMessage;
@@ -88,6 +89,7 @@ import life.genny.qwanda.message.QEventLinkChangeMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwanda.message.QMSGMessage;
 import life.genny.qwanda.message.QMessage;
+import life.genny.qwanda.message.QMessageGennyMSG;
 import life.genny.qwanda.payments.QMakePayment;
 import life.genny.qwanda.payments.QPaymentAuthorityForBankAccount;
 import life.genny.qwanda.payments.QPaymentMethod;
@@ -870,7 +872,7 @@ public class QRules {
 	 * list of emailIds
 	 */
 	public void sendMessage(String[] recipientArray, HashMap<String, String> contextMap, String templateCode,
-			String messageType) {
+			QBaseMSGMessageType messageType) {
 
 		/* setting attachmentList as null, to reuse sendMessageMethod and reduce code */
 		sendMessage(recipientArray, contextMap, templateCode, messageType, null);
@@ -882,7 +884,7 @@ public class QRules {
 	 * recipientArr, NOT direct list of emailIds
 	 */
 	public void sendMessage(String[] recipientArray, HashMap<String, String> contextMap, String templateCode,
-			String messageType, List<QBaseMSGAttachment> attachmentList) {
+			QBaseMSGMessageType messageType, List<QBaseMSGAttachment> attachmentList) {
 
 		/* setting "to" as null, to reuse sendMessageMethod and reduce code */
 		sendMessage(recipientArray, contextMap, templateCode, messageType, attachmentList, null);
@@ -890,7 +892,7 @@ public class QRules {
 	}
 
 	/* SENDING EMAIL With DIRECT ARRAY OF EMAILIDs and no attachments */
-	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap, String messageType) {
+	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap, QBaseMSGMessageType messageType) {
 
 		/*
 		 * setting attachmentList and recipientArr as null, to reuse sendMessageMethod
@@ -918,7 +920,7 @@ public class QRules {
 	 *          rules.sendMessage(directRecipientEmailIds, "MSG_USER_CONTACTED",
 	 *          contextMap, "EMAIL");
 	 */
-	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap, String messageType,
+	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap, QBaseMSGMessageType messageType,
 			List<QBaseMSGAttachment> attachmentList) {
 
 		/* setting recipientArr as null, to reuse sendMessageMethod and reduce code */
@@ -928,14 +930,17 @@ public class QRules {
 
 	// MAIN METHOD FOR SENDMESSAGES
 	public void sendMessage(String[] recipientArray, HashMap<String, String> contextMap, String templateCode,
-			String messageType, List<QBaseMSGAttachment> attachmentList, String[] to) {
+			 QBaseMSGMessageType messageType, List<QBaseMSGAttachment> attachmentList, String[] to) {
 
 		/* unsubscribe link for the template */
+		this.println("GennySettings.projectUrl = "+GennySettings.projectUrl);
 		String unsubscribeUrl = getUnsubscribeLinkForEmailTemplate(GennySettings.projectUrl, templateCode);
-		JsonObject message = null;
+		QMessageGennyMSG message = null;  // TODO: Stop using json!?!?!?
 
 		/* Adding project code to context */
-		String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
+	//	String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
+		String projectCode = "PRJ_" + this.realm().toUpperCase();
+
 		this.println("project code for messages ::" + projectCode);
 		contextMap.put("PROJECT", projectCode);
 
@@ -970,7 +975,8 @@ public class QRules {
 
 		}
 
-		publish("messages", message);
+	
+		publish("messages", JsonUtils.toJson(message));
 
 	}
 
@@ -2018,9 +2024,9 @@ public class QRules {
 					contextMap.put("CONVERSATION", newMessage.getCode());
 
 					/* Sending toast message to all the beg frontends */
-					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED", "TOAST");
-					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED", "SMS");
-					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED", "EMAIL");
+					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED", QBaseMSGMessageType.TOAST);
+					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED", QBaseMSGMessageType.SMS);
+					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED", QBaseMSGMessageType.EMAIL);
 				} else {
 					log.info("Error! The stakeholder for given chatCode is null");
 				}
@@ -2723,7 +2729,7 @@ public class QRules {
 		println("The String Array is ::" + Arrays.toString(recipients));
 
 		/* Sending sms message to user */
-		sendMessage(recipients, contextMap, "GNY_USER_VERIFICATION", "SMS");
+		sendMessage(recipients, contextMap, "GNY_USER_VERIFICATION", QBaseMSGMessageType.SMS);
 
 	}
 
