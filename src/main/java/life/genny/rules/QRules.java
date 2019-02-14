@@ -995,7 +995,7 @@ public class QRules {
 		try {
 			be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
 					email, realm, name, keycloakId);
-			VertxUtils.writeCachedJson(be.getCode(), JsonUtils.toJson(be));
+			VertxUtils.writeCachedJson(this.realm(),be.getCode(), JsonUtils.toJson(be));
 			be = getUser();
 			set("USER", be);
 			println("New User Created " + be);
@@ -1052,7 +1052,7 @@ public class QRules {
 			/* we create the user in the system */
 			be = QwandaUtils.createUser(getQwandaServiceUrl(), getToken(), username, firstname, lastname, email, realm,
 					name, keycloakId);
-			VertxUtils.writeCachedJson(be.getCode(), JsonUtils.toJson(be));
+			VertxUtils.writeCachedJson(realm,be.getCode(), JsonUtils.toJson(be));
 			// be = getUser();
 			set("USER", be);
 			println("New User Created " + be);
@@ -2984,7 +2984,7 @@ public class QRules {
 			Boolean value = role.getValue();
 			if (value) {
 				String roleBeCode = "ROL_" + role.getAttributeCode().substring("PRI_".length());
-				BaseEntity roleBE = VertxUtils.readFromDDT(roleBeCode, getToken());
+				BaseEntity roleBE = VertxUtils.readFromDDT(realm(),roleBeCode, getToken());
 				if (roleBE == null) {
 					return false;
 				}
@@ -3195,7 +3195,7 @@ public class QRules {
 			map = new HashMap<String, String>();
 		}
 		map.put(be.getCode(), JsonUtils.toJson(be));
-		VertxUtils.writeCachedJson(be.getCode(), JsonUtils.toJson(be));
+		VertxUtils.writeCachedJson(realm(),be.getCode(), JsonUtils.toJson(be));
 		VertxUtils.putMap(this.realm(), keyPrefix, parentCode, map);
 	}
 
@@ -3856,7 +3856,7 @@ public class QRules {
 			try {
 				be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
 						email, realm, name, keycloakId);
-				VertxUtils.writeCachedJson(be.getCode(), JsonUtils.toJson(be));
+				VertxUtils.writeCachedJson(realm(),be.getCode(), JsonUtils.toJson(be));
 				be = getUser();
 				set("USER", be);
 				println("New User Created " + be);
@@ -5363,4 +5363,13 @@ public class QRules {
 		return attributeName;
 	}
 
+	public JsonObject writeCachedJson(final String key, final String value) {
+		final String fRealm = realm();
+		final String fToken = getToken();
+		return VertxUtils.writeCachedJson(fRealm, key, value, fToken);
+	}
+	
+	public JsonObject readCachedJson(final String key) {
+		return VertxUtils.readCachedJson(realm(), key,  getToken());
+	}
 }
