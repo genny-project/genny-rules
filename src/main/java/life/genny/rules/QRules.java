@@ -1789,7 +1789,9 @@ public class QRules {
 	}
 
 	public void header() {
-		try {
+
+		if (drools!=null) {
+			try {
 
 			RulesUtils.header(realm() + ":" + drools.getRule().getName() + " - "
 					+ ((drools.getRule().getAgendaGroup() != null) ? drools.getRule().getAgendaGroup() : "") + " "
@@ -1798,6 +1800,10 @@ public class QRules {
 		} catch (NullPointerException e) {
 			println("Error in rules: "+realm() + ":" + drools.getRule().getName(),"ANSI_RED");
 		}
+		
+		} else {
+			println("drools var NOT initialised in QRules header!!!!");
+		}
 		ruleStartMs = System.nanoTime();
 	}
 
@@ -1805,6 +1811,7 @@ public class QRules {
 		long endTime = System.nanoTime();
 		double difference = (endTime - ruleStartMs) / 1e6; // get ms
 
+		if (drools!=null) {
 		try {
 			RulesUtils.footer(difference + " ms :" + drools.getRule().getName() + " - "
 					+ ((drools.getRule().getAgendaGroup() != null) ? drools.getRule().getAgendaGroup() : "") + " "
@@ -1812,6 +1819,9 @@ public class QRules {
 					+ showStates());
 		} catch (NullPointerException e) {
 			println("Error in rules: "+realm() + ":" + drools.getRule().getName(),"ANSI_RED");
+		}
+		} else {
+			println("drools var NOT initialised in QRules footer!!!!");
 		}
 	}
 
@@ -2940,7 +2950,11 @@ public class QRules {
 	public void listenAttributeChange(QEventAttributeValueChangeMessage m) {
 
 		String[] recipientCodes = getRecipientCodes(m);
-		println("BE CHANGED IS "+m.getBe().getCode()/*+":"+m.getAnswer().getAttributeCode()*/);
+		String tempStr = ""; // TODO use buffer, this is temp code
+		for (String rCode : recipientCodes) {
+			tempStr += rCode+",";
+		}
+		println("BE CHANGED IS "+m.getBe().getCode()+" sending to "+tempStr/*+":"+m.getAnswer().getAttributeCode()*/);
 		this.baseEntity.addAttributes(m.getBe());
 		publishBE(m.getBe(), recipientCodes);
 		setState("ATTRIBUTE_CHANGE2");
