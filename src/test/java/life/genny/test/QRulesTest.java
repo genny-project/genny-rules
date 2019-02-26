@@ -6,7 +6,7 @@ import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import io.vavr.Tuple2;
 import life.genny.qwanda.Answer;
