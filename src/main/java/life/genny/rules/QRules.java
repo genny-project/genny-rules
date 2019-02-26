@@ -46,6 +46,8 @@ import com.google.common.collect.Sets;
 import com.google.gson.reflect.TypeToken;
 import com.hazelcast.util.collection.ArrayUtils;
 
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import life.genny.eventbus.EventBusInterface;
@@ -118,6 +120,7 @@ import life.genny.qwandautils.KeycloakUtils;
 import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
+import life.genny.qwandautils.ScoringUtils;
 import life.genny.security.SecureResources;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
@@ -5386,4 +5389,41 @@ public class QRules {
 	public JsonObject readCachedJson(final String key) {
 		return VertxUtils.readCachedJson(realm(), key,  getToken());
 	}
+	
+	static public List<Tuple2<BaseEntity,Double>> score(BaseEntity sourceBaseEntity, List<BaseEntity> targets, int resultSize)
+	{
+		List<Tuple2<BaseEntity,Double>> results = new ArrayList<Tuple2<BaseEntity,Double>>();
+		
+		Double lowestScore = -10000000.0; // pretty low bar!
+		Tuple2<BaseEntity,Double> lowest = null;
+		
+		for (BaseEntity targetBaseEntity : targets) {
+			Double score = ScoringUtils.calculateScore(sourceBaseEntity, targetBaseEntity);
+			// Now maintain the set of results
+			if (score.compareTo(lowestScore) > 0) {
+				lowestScore = score;
+				if (results.size()>=resultSize) {
+					// remove existing lowest
+					results.remove(lowest);
+				}
+				lowest = Tuple.of(targetBaseEntity,score);
+				results.add(lowest);
+			}
+		}
+		
+		// Sort results
+		  Comparator<Tuple2<BaseEntity,Double>> comparator = new Comparator<Tuple2<BaseEntity,Double>>()
+		    {
+		        public int compare(Tuple2<BaseEntity,Double> tupleA,
+		                Tuple2<BaseEntity,Double> tupleB)
+		        {
+		            return tupleB._2.compareTo(tupleA._2);
+		        }
+		    };
+
+		    Collections.sort(results, comparator);
+		
+		return results;
+	}
+	
 }
