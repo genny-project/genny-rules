@@ -130,7 +130,7 @@ import life.genny.utils.QuestionUtils;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 import life.genny.utils.Layout.LayoutUtils;
-//import life.genny.rules.Layout.LayoutUtils;
+import life.genny.utils.Layout.LayoutPosition;
 import life.genny.utils.Layout.LayoutViewData;
 
 public class QRules {
@@ -1776,15 +1776,23 @@ public class QRules {
 	}
 
 	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup) {
+		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, "FRM_CONTENT");
+	}
 
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, String frameCode) {
+		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, frameCode, LayoutPosition.CENTRE);
+	}
+
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, String frameCode, LayoutPosition position) {
+
+		/* we send the questions to FE */
 		if (this.sendQuestions(sourceCode, targetCode, questionGroupCode)) {
 
-			/* Layout V1 */
-			QCmdViewFormMessage cmdFormView = new QCmdViewFormMessage(questionGroupCode);
-			cmdFormView.setIsPopup(isPopup);
-			publishCmd(cmdFormView);
+			/* we get the message */
+			QDataBaseEntityMessage message = this.layoutUtils.showQuestionsInFrame(frameCode, questionGroupCode, position);
 
-			this.navigateTo("/questions/" + questionGroupCode, isPopup);
+			/* we send the message */
+			this.publishCmd(message);
 		}
 	}
 
@@ -3385,7 +3393,7 @@ public class QRules {
             Boolean replace, Object shouldDeleteLinkedBaseEntities) throws IOException {
     
         String serviceToken = RulesUtils.generateServiceToken(this.realm());
-        String jsonSearchBE = JsonUtils.toJson(searchBE);
+				String jsonSearchBE = JsonUtils.toJson(searchBE);
         String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
                 jsonSearchBE, serviceToken);
     
@@ -3398,8 +3406,11 @@ public class QRules {
             msg.setReplace(replace);
             msg.setShouldDeleteLinkedBaseEntities(shouldDeleteLinkedBaseEntities);
             publish("cmds", msg);
-        } else {
-            println("Warning: no results from search " + searchBE.getCode());
+				} 
+				else {
+					println("Warning: no results from search " + searchBE.getCode());
+					this.println(JsonUtils.toJson(searchBE));
+					this.println(serviceToken);
         }
     }
 
