@@ -67,7 +67,7 @@ public class RulesLoader {
 	 */
 	public static void loadRules(final String rulesDir) {
 		log.info("Loading Rules and workflows!!!");
-		System.out.println("Loading RUles2");
+		log.info("Loading RUles2");
 		
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir);
 
@@ -140,7 +140,7 @@ public class RulesLoader {
 
 	// 				Tuple2<String, String> rule = (Tuple.of(fileName + "." + fileNameExt, ruleText));
 	// 				String filerule = inputFileStr.substring(inputFileStr.indexOf("/rules/"));
-	// 				System.out.println("Loading in Rule:" + rule._1 + " of " + filerule);
+	// 				log.info("Loading in Rule:" + rule._1 + " of " + filerule);
 	// 				rules.add(rule);
 	// 			} else if ((!fileName.startsWith("XX")) && (fileNameExt.equalsIgnoreCase("bpmn"))) { // ignore files
 	// 																									// that start
@@ -148,14 +148,14 @@ public class RulesLoader {
 	// 				final String bpmnText = buf.toString();
 
 	// 				Tuple2<String, String> bpmn = (Tuple.of(fileName + "." + fileNameExt, bpmnText));
-	// 				System.out.println("Loading in BPMN:" + bpmn._1 + " of " + inputFileStr);
+	// 				log.info("Loading in BPMN:" + bpmn._1 + " of " + inputFileStr);
 	// 				rules.add(bpmn);
 	// 			} else if ((!fileName.startsWith("XX")) && (fileNameExt.equalsIgnoreCase("xls"))) { // ignore files that
 	// 																								// start with XX
 	// 				final String xlsText = buf.toString();
 
 	// 				Tuple2<String, String> xls = (Tuple.of(fileName + "." + fileNameExt, xlsText));
-	// 				System.out.println("Loading in XLS:" + xls._1 + " of " + inputFileStr);
+	// 				log.info("Loading in XLS:" + xls._1 + " of " + inputFileStr);
 	// 				rules.add(xls);
 	// 			}
 	// 			return rules;
@@ -469,8 +469,8 @@ public class RulesLoader {
 //		            }
 //		        }).start();
 			
-			System.out.println("Fired "+rulesFired+" rules");
-			 System.out.println("finished rules");
+			log.info("Fired "+rulesFired+" rules");
+			 log.info("finished rules");
 			kieSession.dispose();
 		} catch (final Throwable t) {
 			t.printStackTrace();
@@ -590,10 +590,10 @@ public class RulesLoader {
 
 			Map<String, String> keyvalue = new HashMap<String, String>();
 			// calculate service token for this ...
-			System.out.println("Realm:"+ruleGroup+" -> generated service token="+token);
+			log.info("Realm:"+ruleGroup+" -> generated service token="+token);
 			keyvalue.put("token", token);
 
-		//	if (!"GPS".equals(msgType)) { System.out.println("FIRE RULES ("+ruleGroup+") "+msgType); }
+		//	if (!"GPS".equals(msgType)) { log.info("FIRE RULES ("+ruleGroup+") "+msgType); }
 
 		//	String ruleGroupRealm = realm + (StringUtils.isBlank(ruleGroup)?"":(":"+ruleGroup));
 			try {
@@ -649,7 +649,7 @@ public class RulesLoader {
 			Map<String, String> keyvalue = new HashMap<String, String>();
 			keyvalue.put("token", token);
 
-			if (!"GPS".equals(msgType)) { System.out.println("FIRE RULES ("+realm+") "+msgType); }
+			if (!"GPS".equals(msgType)) { log.info("FIRE RULES ("+realm+") "+msgType); }
 
 		//	String ruleGroupRealm = realm + (StringUtils.isBlank(ruleGroup)?"":(":"+ruleGroup));
 			try {

@@ -1279,7 +1279,7 @@ public class QRules {
 		if (recipientsCode != null) {
 			msg.setRecipientCodeArray(recipientsCode);
 		}
-		System.out.println("Publishing Cmd " + be.getCode() + " with alias " + aliasCode);
+		log.info("Publishing Cmd " + be.getCode() + " with alias " + aliasCode);
 		publish("cmds", msg);
 	}
 
@@ -1648,7 +1648,7 @@ public class QRules {
 			}
 
 		} else {
-			System.out.println("Error! The Tag list is empty");
+			log.info("Error! The Tag list is empty");
 		}
 		return defaultBitMappedTag;
 
@@ -3651,7 +3651,7 @@ public class QRules {
 			if (keycloakJson == null) {
 				log.info("No keycloakMap for " + realm());
 				if (GennySettings.devMode) {
-					System.out.println("Fudging realm so genny keycloak used");
+					log.info("Fudging realm so genny keycloak used");
 					// Use basic Genny json when project json not available
 					String gennyJson = SecureResources.getKeycloakJsonMap().get("genny.json");
 					SecureResources.getKeycloakJsonMap().put(jsonFile, gennyJson);
@@ -4927,7 +4927,7 @@ public class QRules {
 
 		}
 		// check their addresses
-		System.out.println("Processing " + qMsg.getReturnCount() + " people ");
+		log.info("Processing " + qMsg.getReturnCount() + " people ");
 		for (BaseEntity person : qMsg.getItems()) {
 			log.info(person.getCode());
 			if (!isAddressPresent(person.getCode())) {
@@ -5277,11 +5277,11 @@ public class QRules {
 		JsonArray msgCodes = new JsonArray();
 		msgCodes.add(codeListView);
 		msgCodes.add(bucketListView);
-		System.out.println("The JsonArray is :: " + msgCodes);
+		log.info("The JsonArray is :: " + msgCodes);
 		cmdViewJson.put("data", msgCodes);
 		cmdViewJson.put("root", parentCode); /* root needs to be there */
 		cmdViewJson.put("token", getToken());
-		System.out.println(" The cmd msg is :: " + cmdViewJson);
+		log.info(" The cmd msg is :: " + cmdViewJson);
 
 		publish("cmds", cmdViewJson);
 		// publishCmd(cmdViewJson);
