@@ -46,6 +46,8 @@ import com.google.common.collect.Sets;
 import com.google.gson.reflect.TypeToken;
 import com.hazelcast.util.collection.ArrayUtils;
 
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import life.genny.eventbus.EventBusInterface;
@@ -118,6 +120,7 @@ import life.genny.qwandautils.KeycloakUtils;
 import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
+import life.genny.qwandautils.ScoringUtils;
 import life.genny.security.SecureResources;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
@@ -1276,7 +1279,7 @@ public class QRules {
 		if (recipientsCode != null) {
 			msg.setRecipientCodeArray(recipientsCode);
 		}
-		System.out.println("Publishing Cmd " + be.getCode() + " with alias " + aliasCode);
+		log.info("Publishing Cmd " + be.getCode() + " with alias " + aliasCode);
 		publish("cmds", msg);
 	}
 
@@ -1645,7 +1648,7 @@ public class QRules {
 			}
 
 		} else {
-			System.out.println("Error! The Tag list is empty");
+			log.info("Error! The Tag list is empty");
 		}
 		return defaultBitMappedTag;
 
@@ -3659,7 +3662,7 @@ public class QRules {
 			if (keycloakJson == null) {
 				log.info("No keycloakMap for " + realm());
 				if (GennySettings.devMode) {
-					System.out.println("Fudging realm so genny keycloak used");
+					log.info("Fudging realm so genny keycloak used");
 					// Use basic Genny json when project json not available
 					String gennyJson = SecureResources.getKeycloakJsonMap().get("genny.json");
 					SecureResources.getKeycloakJsonMap().put(jsonFile, gennyJson);
@@ -4935,7 +4938,7 @@ public class QRules {
 
 		}
 		// check their addresses
-		System.out.println("Processing " + qMsg.getReturnCount() + " people ");
+		log.info("Processing " + qMsg.getReturnCount() + " people ");
 		for (BaseEntity person : qMsg.getItems()) {
 			log.info(person.getCode());
 			if (!isAddressPresent(person.getCode())) {
@@ -5285,11 +5288,11 @@ public class QRules {
 		JsonArray msgCodes = new JsonArray();
 		msgCodes.add(codeListView);
 		msgCodes.add(bucketListView);
-		System.out.println("The JsonArray is :: " + msgCodes);
+		log.info("The JsonArray is :: " + msgCodes);
 		cmdViewJson.put("data", msgCodes);
 		cmdViewJson.put("root", parentCode); /* root needs to be there */
 		cmdViewJson.put("token", getToken());
-		System.out.println(" The cmd msg is :: " + cmdViewJson);
+		log.info(" The cmd msg is :: " + cmdViewJson);
 
 		publish("cmds", cmdViewJson);
 		// publishCmd(cmdViewJson);
@@ -5397,4 +5400,41 @@ public class QRules {
 	public JsonObject readCachedJson(final String key) {
 		return VertxUtils.readCachedJson(realm(), key,  getToken());
 	}
+	
+	static public List<Tuple2<BaseEntity,Double>> score(BaseEntity sourceBaseEntity, List<BaseEntity> targets, int resultSize)
+	{
+		List<Tuple2<BaseEntity,Double>> results = new ArrayList<Tuple2<BaseEntity,Double>>();
+		
+		Double lowestScore = -10000000.0; // pretty low bar!
+		Tuple2<BaseEntity,Double> lowest = null;
+		
+		for (BaseEntity targetBaseEntity : targets) {
+			Double score = ScoringUtils.calculateScore(sourceBaseEntity, targetBaseEntity);
+			// Now maintain the set of results
+			if (score.compareTo(lowestScore) > 0) {
+				lowestScore = score;
+				if (results.size()>=resultSize) {
+					// remove existing lowest
+					results.remove(lowest);
+				}
+				lowest = Tuple.of(targetBaseEntity,score);
+				results.add(lowest);
+			}
+		}
+		
+		// Sort results
+		  Comparator<Tuple2<BaseEntity,Double>> comparator = new Comparator<Tuple2<BaseEntity,Double>>()
+		    {
+		        public int compare(Tuple2<BaseEntity,Double> tupleA,
+		                Tuple2<BaseEntity,Double> tupleB)
+		        {
+		            return tupleB._2.compareTo(tupleA._2);
+		        }
+		    };
+
+		    Collections.sort(results, comparator);
+		
+		return results;
+	}
+	
 }

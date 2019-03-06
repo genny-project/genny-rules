@@ -37,6 +37,7 @@
 		<dropwizard.version>3.5.1</dropwizard.version>
 		<vertx-concurrent.version>1.0.0</vertx-concurrent.version>
 		<kie.version>7.1.0.Final</kie.version>
+                <junit-version>4.12</junit-version>
 	</properties>
 
 	<distributionManagement>
@@ -53,6 +54,12 @@
 	<dependencies>
 		<!-- <dependency> <groupId>org.jboss.weld.vertx</groupId> <artifactId>weld-vertx-core</artifactId> 
 			<version>${weld-vertx.version}</version> </dependency> -->
+                  <dependency>
+                        <groupId>junit</groupId>
+                        <artifactId>junit</artifactId>
+                        <version>${junit-version}</version>
+                        <scope>test</scope>
+                </dependency>
 		<dependency>
 			<groupId>com.hazelcast</groupId>
 			<artifactId>hazelcast</artifactId>
