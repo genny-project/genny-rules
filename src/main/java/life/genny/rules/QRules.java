@@ -3701,6 +3701,16 @@ public class QRules {
 
 		// we grab the root
 		BaseEntity root = this.baseEntity.getBaseEntityByCode("GRP_ROOT");
+		
+		/* create an ask for GRP_ROOT */
+		Ask rootAsk = QuestionUtils.createQuestionForBaseEntity(root, true);
+		
+		/* Create a list for child Asks */
+		List<Ask> childAsks = new ArrayList<>();
+		
+		/* create an object for the complete ask */
+		QDataAskMessage askMsg = null;
+		
 		QDataBaseEntityMessage rootMessage = new QDataBaseEntityMessage(root);
 		rootMessage.setParentCode("GRP_ROOT_ROOT");
 		baseEntityMessages.add(rootMessage);
@@ -3712,7 +3722,7 @@ public class QRules {
 		QDataBaseEntityMessage rootChildrenMessage = new QDataBaseEntityMessage(rootKids);
 		rootChildrenMessage.setParentCode("GRP_ROOT");
 		baseEntityMessages.add(rootChildrenMessage);
-
+		
 		// we get the kids of the kids
 		for (BaseEntity kid : rootKids) {
 
@@ -3722,15 +3732,12 @@ public class QRules {
 			// we create the message
 			QDataBaseEntityMessage kidKidMessage = new QDataBaseEntityMessage(kidKids);
 			kidKidMessage.setParentCode(kid.getCode());
-			baseEntityMessages.add(kidKidMessage);
-
+			baseEntityMessages.add(kidKidMessage);		
 		}
-
-		this.println(JsonUtils.toJson(rootKids));
 
 		// we create the bulk
 		QBulkMessage newBulkMsg = new QBulkMessage();
-
+		
 		// we now loop through all the messages to check if the current user is allowed
 		// to see them
 		for (QDataBaseEntityMessage message : baseEntityMessages) {
@@ -3744,7 +3751,7 @@ public class QRules {
 
 					// we get the parent
 					BaseEntity parent = this.baseEntity.getBaseEntityByCode(message.getParentCode());
-
+					
 					// we get the kid code
 					String childCode = child.getCode();
 
@@ -3770,11 +3777,12 @@ public class QRules {
 						for (EntityAttribute ea : getUser().getBaseEntityAttributes()) {
 							if (ea.getAttributeCode().startsWith("PRI_IS_")) {
 								try { // handling exception when the value is not saved as valueBoolean
+									log.info("treeView method, current role is ::"+ea.getAttributeCode());
 									if (ea.getValueBoolean()) {
 										for (String role : rolesAllowed) {
 											match = role.equalsIgnoreCase(ea.getAttributeCode());
 											if (match) {
-												allowedChildren.add(child);
+												allowedChildren.add(child);			
 											}
 										}
 									}
@@ -3790,6 +3798,51 @@ public class QRules {
 					allowedChildren.add(child);
 				}
 			}
+			
+			/* iterating through all filtered child baseentities for the role and creating questions  */
+			for (BaseEntity kid : rootKids) {
+				
+				if(allowedChildren.contains(kid)) {
+					
+					List<Ask> childChildAskList = new ArrayList<>();
+					Ask childAsk = QuestionUtils.createQuestionForBaseEntity(kid, true);
+					
+					// we get the kid kids
+					List<BaseEntity> kidKids = this.baseEntity.getLinkedBaseEntities(kid);
+					for (BaseEntity kidKid : kidKids) {
+						
+						/* checking if the user-role has permission to kidKid */
+						if( allowedChildren.contains(kidKid) ) {
+							
+							/* creating question for the childChildAsk only if the user-role has permission, and the childChildAsk is not a question-group */
+							Ask childChildAsk = QuestionUtils.createQuestionForBaseEntity(kidKid, false);
+							childChildAskList.add(childChildAsk);
+						}
+					}
+					
+					/* converting childChildAsk list to array since ask accepts childAsks in array format only */
+					Ask[] childChildAskArr = childChildAskList.stream().toArray(Ask[]::new);
+					
+					/* setting the childChildAsks to its parentAsk */
+					childAsk.setChildAsks(childChildAskArr);
+					
+					/* adding childAsk to list of chilkdAsks of the rootAsk */
+					childAsks.add(childAsk);
+				}	
+			}
+			
+			
+			/* converting list of childAsk to array */
+			Ask[] childAskArr = childAsks.stream().toArray(Ask[]::new);
+			
+			/* setting child asks to parent */
+			rootAsk.setChildAsks(childAskArr);
+			
+			/* creating complete Ask array */
+			Ask[] completeAsk = { rootAsk };
+			
+			/* Creating AskMessage with complete asks */
+			askMsg = new QDataAskMessage(completeAsk);
 
 			// we create the final message
 			QDataBaseEntityMessage filteredMsg = new QDataBaseEntityMessage(
@@ -3797,11 +3850,20 @@ public class QRules {
 					"LNK_CORE");
 			filteredMsg.setToken(getToken());
 			newBulkMsg.add(filteredMsg);
-
-			this.println("SendTreeView Filtered Msg:"+JsonUtils.toJson(filteredMsg));
+			
+			/* logging */
+			log.info("sendTreeData method, newBulkMessage ::"+JsonUtils.toJson(newBulkMsg));
+			log.info("SendTreeView Ask Msg:"+JsonUtils.toJson(askMsg));
 		}
-
+		
 		this.publishCmd(newBulkMsg);
+		
+		/* sends questions for treeview and positions it in the sidebar frame */
+		QDataBaseEntityMessage treeMessage = this.layoutUtils.showQuestionsInFrame("FRM_SIDEBAR", rootAsk.getQuestionCode(), LayoutPosition.WEST);
+		this.publishCmd(treeMessage);
+		
+		/* publishing the question for treeview */
+		this.publishCmd(askMsg);
 	}
 
 	public void startupEvent(String caller) {
