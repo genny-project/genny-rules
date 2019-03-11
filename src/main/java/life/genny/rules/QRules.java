@@ -2381,6 +2381,14 @@ public class QRules {
 
 		/* Layouts v1 */
 		this.sendAllSublayouts();
+		
+//		String gennyLayoutsV1 = VertxUtils.readCachedJson(this.realm(), "GENNY-V1-LAYOUTS",getToken()).getString("value");
+//		QDataSubLayoutMessage gennyV1 = JsonUtils.fromJson(gennyLayoutsV1, QDataSubLayoutMessage.class);
+//		publishCmd(gennyV1);
+//
+//		String realmLayoutsV1 = VertxUtils.readCachedJson(this.realm(), this.realm().toUpperCase()+"-V1-LAYOUTS",getToken()).getString("value");
+//		QDataSubLayoutMessage realmV1 = JsonUtils.fromJson(realmLayoutsV1, QDataSubLayoutMessage.class);
+//		publishCmd(realmV1);
 
 		/* Layouts V2 */
 		List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
