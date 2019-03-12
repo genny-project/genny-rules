@@ -53,6 +53,8 @@ import io.vertx.core.json.JsonObject;
 import life.genny.eventbus.EventBusInterface;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.Context;
+import life.genny.qwanda.ContextList;
 import life.genny.qwanda.GPS;
 import life.genny.qwanda.Layout;
 import life.genny.qwanda.Link;
@@ -3705,6 +3707,18 @@ public class QRules {
 		/* create an ask for GRP_ROOT */
 		Ask rootAsk = QuestionUtils.createQuestionForBaseEntity(root, true);
 		
+		/* getting the expandable theme baseentity */
+		BaseEntity expandableBe = this.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
+		
+		/* creating a context for the expandable-theme */
+		Context expandableThemeContext = new Context("THEME", expandableBe);
+		List<Context> expandableThemeContextList = new ArrayList<>();
+		expandableThemeContextList.add(expandableThemeContext);
+		
+		/* adding the context to the contextList */
+		ContextList contextList = new ContextList(expandableThemeContextList);
+		rootAsk.setContextList(contextList);
+		
 		/* Create a list for child Asks */
 		List<Ask> childAsks = new ArrayList<>();
 		
@@ -3806,6 +3820,7 @@ public class QRules {
 					
 					List<Ask> childChildAskList = new ArrayList<>();
 					Ask childAsk = QuestionUtils.createQuestionForBaseEntity(kid, true);
+					childAsk.setContextList(contextList);
 					
 					// we get the kid kids
 					List<BaseEntity> kidKids = this.baseEntity.getLinkedBaseEntities(kid);
@@ -3855,6 +3870,9 @@ public class QRules {
 			log.info("sendTreeData method, newBulkMessage ::"+JsonUtils.toJson(newBulkMsg));
 			log.info("SendTreeView Ask Msg:"+JsonUtils.toJson(askMsg));
 		}
+		
+		/* publishing theme for expanding */
+		this.publishBaseEntityByCode(expandableBe.getCode());
 		
 		this.publishCmd(newBulkMsg);
 		
