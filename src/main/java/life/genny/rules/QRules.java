@@ -3717,7 +3717,7 @@ public class QRules {
 		
 		/* adding the context to the contextList */
 		ContextList contextList = new ContextList(expandableThemeContextList);
-		rootAsk.setContextList(contextList);
+		//rootAsk.setContextList(contextList);
 		
 		/* Create a list for child Asks */
 		List<Ask> childAsks = new ArrayList<>();
