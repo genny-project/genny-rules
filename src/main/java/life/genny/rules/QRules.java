@@ -3715,16 +3715,9 @@ public class QRules {
 		List<Context> expandableThemeContextList = new ArrayList<>();
 		expandableThemeContextList.add(expandableThemeContext);
 		
-		/* adding the context to the contextList */
+		/* add the context to the contextList */
 		ContextList contextList = new ContextList(expandableThemeContextList);
-		//rootAsk.setContextList(contextList);
-		
-		/* Create a list for child Asks */
-		List<Ask> childAsks = new ArrayList<>();
-		
-		/* create an object for the complete ask */
-		QDataAskMessage askMsg = null;
-		
+
 		QDataBaseEntityMessage rootMessage = new QDataBaseEntityMessage(root);
 		rootMessage.setParentCode("GRP_ROOT_ROOT");
 		baseEntityMessages.add(rootMessage);
@@ -3751,6 +3744,12 @@ public class QRules {
 
 		// we create the bulk
 		QBulkMessage newBulkMsg = new QBulkMessage();
+		
+		/* Create a list for child Asks */
+		List<Ask> childAsks = new ArrayList<>();
+		
+		/* create an object for the complete ask */
+		QDataAskMessage askMsg = null;
 		
 		// we now loop through all the messages to check if the current user is allowed
 		// to see them
@@ -3813,26 +3812,26 @@ public class QRules {
 				}
 			}
 			
-			/* iterating through all filtered child baseentities for the role and creating questions  */
-			for (BaseEntity kid : rootKids) {
+			for(BaseEntity kid : rootKids) {
 				
-				if(allowedChildren.contains(kid)) {
+				// we get the parent
+				BaseEntity parent = this.baseEntity.getParent(kid.getCode(), "LNK_CORE");
+				
+				if(allowedChildren.contains(kid) && parent.getCode().equals(root.getCode())) {
+					
+					this.println("allowed children is ::"+kid.getCode());
 					
 					List<Ask> childChildAskList = new ArrayList<>();
 					Ask childAsk = QuestionUtils.createQuestionForBaseEntity(kid, true);
 					childAsk.setContextList(contextList);
 					
-					// we get the kid kids
-					List<BaseEntity> kidKids = this.baseEntity.getLinkedBaseEntities(kid);
-					for (BaseEntity kidKid : kidKids) {
-						
-						/* checking if the user-role has permission to kidKid */
-						if( allowedChildren.contains(kidKid) ) {
-							
-							/* creating question for the childChildAsk only if the user-role has permission, and the childChildAsk is not a question-group */
-							Ask childChildAsk = QuestionUtils.createQuestionForBaseEntity(kidKid, false);
-							childChildAskList.add(childChildAsk);
-						}
+					// we grab the second branch
+					List<BaseEntity> childrenOfkid = this.baseEntity.getLinkedBaseEntities(kid.getCode(), "LNK_CORE");
+					//this.println("children of "+kid.getCode()+" are "+childrenOfkid);
+					
+					for(BaseEntity kidKid : childrenOfkid) {
+						Ask childChildAsk = QuestionUtils.createQuestionForBaseEntity(kidKid, false);
+						childChildAskList.add(childChildAsk);
 					}
 					
 					/* converting childChildAsk list to array since ask accepts childAsks in array format only */
@@ -3843,16 +3842,15 @@ public class QRules {
 					
 					/* adding childAsk to list of chilkdAsks of the rootAsk */
 					childAsks.add(childAsk);
-				}	
+				}
 			}
-			
-			
+						
 			/* converting list of childAsk to array */
 			Ask[] childAskArr = childAsks.stream().toArray(Ask[]::new);
 			
 			/* setting child asks to parent */
 			rootAsk.setChildAsks(childAskArr);
-			
+
 			/* creating complete Ask array */
 			Ask[] completeAsk = { rootAsk };
 			
