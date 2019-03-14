@@ -46,6 +46,8 @@ import com.google.common.collect.Sets;
 import com.google.gson.reflect.TypeToken;
 import com.hazelcast.util.collection.ArrayUtils;
 
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import life.genny.eventbus.EventBusInterface;
@@ -118,6 +120,7 @@ import life.genny.qwandautils.KeycloakUtils;
 import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
+import life.genny.qwandautils.ScoringUtils;
 import life.genny.security.SecureResources;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
@@ -373,7 +376,6 @@ public class QRules {
 	public Long getAsLong(final String key) {
 		return (Long) get(key);
 	}
-
 
 	public Double getAsDouble(final String key) {
 		return (Double) get(key);
@@ -892,7 +894,8 @@ public class QRules {
 	}
 
 	/* SENDING EMAIL With DIRECT ARRAY OF EMAILIDs and no attachments */
-	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap, QBaseMSGMessageType messageType) {
+	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap,
+			QBaseMSGMessageType messageType) {
 
 		/*
 		 * setting attachmentList and recipientArr as null, to reuse sendMessageMethod
@@ -920,8 +923,8 @@ public class QRules {
 	 *          rules.sendMessage(directRecipientEmailIds, "MSG_USER_CONTACTED",
 	 *          contextMap, "EMAIL");
 	 */
-	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap, QBaseMSGMessageType messageType,
-			List<QBaseMSGAttachment> attachmentList) {
+	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap,
+			QBaseMSGMessageType messageType, List<QBaseMSGAttachment> attachmentList) {
 
 		/* setting recipientArr as null, to reuse sendMessageMethod and reduce code */
 		sendMessage(null, contextMap, templateCode, messageType, attachmentList, to);
@@ -930,15 +933,15 @@ public class QRules {
 
 	// MAIN METHOD FOR SENDMESSAGES
 	public void sendMessage(String[] recipientArray, HashMap<String, String> contextMap, String templateCode,
-			 QBaseMSGMessageType messageType, List<QBaseMSGAttachment> attachmentList, String[] to) {
+			QBaseMSGMessageType messageType, List<QBaseMSGAttachment> attachmentList, String[] to) {
 
 		/* unsubscribe link for the template */
-		this.println("GennySettings.projectUrl = "+GennySettings.projectUrl);
+		this.println("GennySettings.projectUrl = " + GennySettings.projectUrl);
 		String unsubscribeUrl = getUnsubscribeLinkForEmailTemplate(GennySettings.projectUrl, templateCode);
-		QMessageGennyMSG message = null;  // TODO: Stop using json!?!?!?
+		QMessageGennyMSG message = null; // TODO: Stop using json!?!?!?
 
 		/* Adding project code to context */
-	//	String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
+		// String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
 		String projectCode = "PRJ_" + this.realm().toUpperCase();
 
 		this.println("project code for messages ::" + projectCode);
@@ -975,7 +978,6 @@ public class QRules {
 
 		}
 
-	
 		publish("messages", JsonUtils.toJson(message));
 
 	}
@@ -995,7 +997,7 @@ public class QRules {
 		try {
 			be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
 					email, realm, name, keycloakId);
-			VertxUtils.writeCachedJson(this.realm(),be.getCode(), JsonUtils.toJson(be));
+			VertxUtils.writeCachedJson(this.realm(), be.getCode(), JsonUtils.toJson(be));
 			be = getUser();
 			set("USER", be);
 			println("New User Created " + be);
@@ -1052,7 +1054,7 @@ public class QRules {
 			/* we create the user in the system */
 			be = QwandaUtils.createUser(getQwandaServiceUrl(), getToken(), username, firstname, lastname, email, realm,
 					name, keycloakId);
-			VertxUtils.writeCachedJson(realm,be.getCode(), JsonUtils.toJson(be));
+			VertxUtils.writeCachedJson(realm, be.getCode(), JsonUtils.toJson(be));
 			// be = getUser();
 			set("USER", be);
 			println("New User Created " + be);
@@ -1276,7 +1278,7 @@ public class QRules {
 		if (recipientsCode != null) {
 			msg.setRecipientCodeArray(recipientsCode);
 		}
-		System.out.println("Publishing Cmd " + be.getCode() + " with alias " + aliasCode);
+		log.info("Publishing Cmd " + be.getCode() + " with alias " + aliasCode);
 		publish("cmds", msg);
 	}
 
@@ -1645,7 +1647,7 @@ public class QRules {
 			}
 
 		} else {
-			System.out.println("Error! The Tag list is empty");
+			log.info("Error! The Tag list is empty");
 		}
 		return defaultBitMappedTag;
 
@@ -1726,7 +1728,7 @@ public class QRules {
 	public Boolean sendQuestions(String sourceCode, String targetCode, String questionGroupCode, String stakeholderCode,
 			Boolean pushSelection, String token) {
 
-			this.println("======================== ASK MESSAGE ======================");
+		this.println("======================== ASK MESSAGE ======================");
 
 		/* we get the questions */
 		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, token,
@@ -1764,11 +1766,12 @@ public class QRules {
 
 	private QwandaMessage getQuestions(String sourceCode, String targetCode, String questionGroupCode,
 			String stakeholderCode) {
-		
+
 		/* we grab the service token */
 		String serviceToken = RulesUtils.generateServiceToken(this.realm());
 
-		return QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken, stakeholderCode, true);
+		return QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken, stakeholderCode,
+				true);
 	}
 
 	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode) {
@@ -1789,14 +1792,20 @@ public class QRules {
 	}
 
 	public void header() {
-		try {
 
-			RulesUtils.header(realm() + ":" + drools.getRule().getName() + " - "
-					+ ((drools.getRule().getAgendaGroup() != null) ? drools.getRule().getAgendaGroup() : "") + " "
-					+ this.decodedTokenMap.get("preferred_username") // This is faster than calling getUser()
-					+ showStates());
-		} catch (NullPointerException e) {
-			println("Error in rules: "+realm() + ":" + drools.getRule().getName(),"ANSI_RED");
+		if (drools != null) {
+			try {
+
+				RulesUtils.header(realm() + ":" + drools.getRule().getName() + " - "
+						+ ((drools.getRule().getAgendaGroup() != null) ? drools.getRule().getAgendaGroup() : "") + " "
+						+ this.decodedTokenMap.get("preferred_username") // This is faster than calling getUser()
+						+ showStates());
+			} catch (NullPointerException e) {
+				println("Error in rules: " + realm() + ":" + drools.getRule().getName(), "ANSI_RED");
+			}
+
+		} else {
+			println("drools var NOT initialised in QRules header!!!!");
 		}
 		ruleStartMs = System.nanoTime();
 	}
@@ -1805,13 +1814,17 @@ public class QRules {
 		long endTime = System.nanoTime();
 		double difference = (endTime - ruleStartMs) / 1e6; // get ms
 
-		try {
-			RulesUtils.footer(difference + " ms :" + drools.getRule().getName() + " - "
-					+ ((drools.getRule().getAgendaGroup() != null) ? drools.getRule().getAgendaGroup() : "") + " "
-					+ this.decodedTokenMap.get("preferred_username") // This is faster than calling getUser()
-					+ showStates());
-		} catch (NullPointerException e) {
-			println("Error in rules: "+realm() + ":" + drools.getRule().getName(),"ANSI_RED");
+		if (drools != null) {
+			try {
+				RulesUtils.footer(difference + " ms :" + drools.getRule().getName() + " - "
+						+ ((drools.getRule().getAgendaGroup() != null) ? drools.getRule().getAgendaGroup() : "") + " "
+						+ this.decodedTokenMap.get("preferred_username") // This is faster than calling getUser()
+						+ showStates());
+			} catch (NullPointerException e) {
+				println("Error in rules: " + realm() + ":" + drools.getRule().getName(), "ANSI_RED");
+			}
+		} else {
+			println("drools var NOT initialised in QRules footer!!!!");
 		}
 	}
 
@@ -2024,9 +2037,12 @@ public class QRules {
 					contextMap.put("CONVERSATION", newMessage.getCode());
 
 					/* Sending toast message to all the beg frontends */
-					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED", QBaseMSGMessageType.TOAST);
-					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED", QBaseMSGMessageType.SMS);
-					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED", QBaseMSGMessageType.EMAIL);
+					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED",
+							QBaseMSGMessageType.TOAST);
+					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED",
+							QBaseMSGMessageType.SMS);
+					sendMessage(msgReceiversCodeArray, contextMap, "MSG_CH40_NEW_MESSAGE_RECIEVED",
+							QBaseMSGMessageType.EMAIL);
 				} else {
 					log.info("Error! The stakeholder for given chatCode is null");
 				}
@@ -2367,11 +2383,32 @@ public class QRules {
 	public void sendAllLayouts() {
 
 		/* Layouts v1 */
-		this.sendAllSublayouts();
+		if (!GennySettings.disableLayoutLoading) {
+			this.sendAllSublayouts();
+			/* Layouts V2 */
+			List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
+			this.publishCmd(beLayouts, "GRP_LAYOUTS", "LNK_CORE");
 
-		/* Layouts V2 */
-		List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
-		this.publishCmd(beLayouts, "GRP_LAYOUTS", "LNK_CORE");
+		} else {
+
+			// Fetch layouts from cache. They were put there by the qwanda api call /service/synchroniselayouts?realm=<realm>
+			
+			String gennyLayoutsV1 = VertxUtils.readCachedJson(this.realm(), "GENNY-V1-LAYOUTS", getToken())
+					.getString("value");
+			QDataSubLayoutMessage gennyV1 = JsonUtils.fromJson(gennyLayoutsV1, QDataSubLayoutMessage.class);
+			publishCmd(gennyV1);
+
+			String realmLayoutsV1 = VertxUtils
+					.readCachedJson(this.realm(), this.realm().toUpperCase() + "-V1-LAYOUTS", getToken())
+					.getString("value");
+			QDataSubLayoutMessage realmV1 = JsonUtils.fromJson(realmLayoutsV1, QDataSubLayoutMessage.class);
+			publishCmd(realmV1);
+
+			String realmLayoutsV2 = VertxUtils.readCachedJson(this.realm(), "V2-LAYOUTS", getToken())
+					.getString("value");
+			QDataBaseEntityMessage realmV2 = JsonUtils.fromJson(realmLayoutsV2, QDataBaseEntityMessage.class);
+			publishCmd(realmV2);
+		}
 
 		/* List<BaseEntity> beLayouts = this.getAllLayouts(); */
 	}
@@ -2940,7 +2977,12 @@ public class QRules {
 	public void listenAttributeChange(QEventAttributeValueChangeMessage m) {
 
 		String[] recipientCodes = getRecipientCodes(m);
-		println("BE CHANGED IS "+m.getBe().getCode()/*+":"+m.getAnswer().getAttributeCode()*/);
+		String tempStr = ""; // TODO use buffer, this is temp code
+		for (String rCode : recipientCodes) {
+			tempStr += rCode + ",";
+		}
+		println("BE CHANGED IS " + m.getBe().getCode() + " sending to "
+				+ tempStr/* +":"+m.getAnswer().getAttributeCode() */);
 		this.baseEntity.addAttributes(m.getBe());
 		publishBE(m.getBe(), recipientCodes);
 		setState("ATTRIBUTE_CHANGE2");
@@ -2984,7 +3026,7 @@ public class QRules {
 			Boolean value = role.getValue();
 			if (value) {
 				String roleBeCode = "ROL_" + role.getAttributeCode().substring("PRI_".length());
-				BaseEntity roleBE = VertxUtils.readFromDDT(realm(),roleBeCode, getToken());
+				BaseEntity roleBE = VertxUtils.readFromDDT(realm(), roleBeCode, getToken());
 				if (roleBE == null) {
 					return false;
 				}
@@ -3195,7 +3237,7 @@ public class QRules {
 			map = new HashMap<String, String>();
 		}
 		map.put(be.getCode(), JsonUtils.toJson(be));
-		VertxUtils.writeCachedJson(realm(),be.getCode(), JsonUtils.toJson(be));
+		VertxUtils.writeCachedJson(realm(), be.getCode(), JsonUtils.toJson(be));
 		VertxUtils.putMap(this.realm(), keyPrefix, parentCode, map);
 	}
 
@@ -3363,31 +3405,31 @@ public class QRules {
 	 * QDataBaseEntityMessage
 	 */
 	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
-        Boolean replace) throws IOException {
-            this.sendSearchResults(searchBE, parentCode, linkCode, linkValue, replace, null);
+			Boolean replace) throws IOException {
+		this.sendSearchResults(searchBE, parentCode, linkCode, linkValue, replace, null);
 	}
 
-    public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
-            Boolean replace, Object shouldDeleteLinkedBaseEntities) throws IOException {
-    
-        String serviceToken = RulesUtils.generateServiceToken(this.realm());
-        String jsonSearchBE = JsonUtils.toJson(searchBE);
-        String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-                jsonSearchBE, serviceToken);
-    
-        QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-        if (msg != null) {
-            msg.setParentCode(parentCode);
-            msg.setToken(getToken());
-            msg.setLinkCode(linkCode);
-            msg.setLinkValue(linkValue);
-            msg.setReplace(replace);
-            msg.setShouldDeleteLinkedBaseEntities(shouldDeleteLinkedBaseEntities);
-            publish("cmds", msg);
-        } else {
-            println("Warning: no results from search " + searchBE.getCode());
-        }
-    }
+	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
+			Boolean replace, Object shouldDeleteLinkedBaseEntities) throws IOException {
+
+		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String jsonSearchBE = JsonUtils.toJson(searchBE);
+		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+				jsonSearchBE, serviceToken);
+
+		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+		if (msg != null) {
+			msg.setParentCode(parentCode);
+			msg.setToken(getToken());
+			msg.setLinkCode(linkCode);
+			msg.setLinkValue(linkValue);
+			msg.setReplace(replace);
+			msg.setShouldDeleteLinkedBaseEntities(shouldDeleteLinkedBaseEntities);
+			publish("cmds", msg);
+		} else {
+			println("Warning: no results from search " + searchBE.getCode());
+		}
+	}
 
 	/*
 	 * Get search Results returns QDataBaseEntityMessage
@@ -3442,7 +3484,7 @@ public class QRules {
 	 * Get search Results returns QDataBaseEntityMessage
 	 */
 	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, boolean useServiceToken) throws IOException {
-	
+
 		String token = null;
 		if (useServiceToken) {
 			token = RulesUtils.generateServiceToken(this.realm());
@@ -3466,30 +3508,28 @@ public class QRules {
 				jsonSearchBE, token);
 		QDataBaseEntityMessage msg = null;
 		final BaseEntity[] items = new BaseEntity[0];
-		final String parentCode="GRP_ROOT";
-		final String linkCode="LINK";
+		final String parentCode = "GRP_ROOT";
+		final String linkCode = "LINK";
 		final Long total = 0L;
 
 		if (resultJson == null) {
-			msg = new QDataBaseEntityMessage(items,parentCode,linkCode,total);
+			msg = new QDataBaseEntityMessage(items, parentCode, linkCode, total);
 			log.info("The result of getSearchResults was null  ::  " + msg);
 		} else {
 			try {
 				msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
 				if (msg == null) {
-					msg = new QDataBaseEntityMessage(items,parentCode,linkCode,total);
+					msg = new QDataBaseEntityMessage(items, parentCode, linkCode, total);
 					log.info("The result of getSearchResults was null Exception ::  " + msg);
 				} else {
 					log.info("The result of getSearchResults was not null  ::  " + msg);
 				}
 			} catch (Exception e) {
 				log.info("The result of getSearchResults was null Exception ::  " + msg);
-				msg = new QDataBaseEntityMessage(items,parentCode,linkCode,total);
+				msg = new QDataBaseEntityMessage(items, parentCode, linkCode, total);
 			}
-			
-			
+
 		}
-		
 
 		return msg;
 	}
@@ -3634,7 +3674,7 @@ public class QRules {
 			if (keycloakJson == null) {
 				log.info("No keycloakMap for " + realm());
 				if (GennySettings.devMode) {
-					System.out.println("Fudging realm so genny keycloak used");
+					log.info("Fudging realm so genny keycloak used");
 					// Use basic Genny json when project json not available
 					String gennyJson = SecureResources.getKeycloakJsonMap().get("genny.json");
 					SecureResources.getKeycloakJsonMap().put(jsonFile, gennyJson);
@@ -3720,7 +3760,7 @@ public class QRules {
 					// we get the kid code
 					String childCode = child.getCode();
 
-					if(childCode.equals("GRP_CONTACTS")) {
+					if (childCode.equals("GRP_CONTACTS")) {
 						this.println(" GOT CONTACTS ");
 					}
 
@@ -3731,7 +3771,7 @@ public class QRules {
 						// Getting the value of
 						String rolesAllowedStr = roleAttribute.get().getValue();
 
-						if(childCode.equals("GRP_CONTACTS")) {
+						if (childCode.equals("GRP_CONTACTS")) {
 							this.println(rolesAllowedStr);
 						}
 
@@ -3770,7 +3810,7 @@ public class QRules {
 			filteredMsg.setToken(getToken());
 			newBulkMsg.add(filteredMsg);
 
-			this.println("SendTreeView Filtered Msg:"+JsonUtils.toJson(filteredMsg));
+			this.println("SendTreeView Filtered Msg:" + JsonUtils.toJson(filteredMsg));
 		}
 
 		this.publishCmd(newBulkMsg);
@@ -3856,7 +3896,7 @@ public class QRules {
 			try {
 				be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
 						email, realm, name, keycloakId);
-				VertxUtils.writeCachedJson(realm(),be.getCode(), JsonUtils.toJson(be));
+				VertxUtils.writeCachedJson(realm(), be.getCode(), JsonUtils.toJson(be));
 				be = getUser();
 				set("USER", be);
 				println("New User Created " + be);
@@ -4910,7 +4950,7 @@ public class QRules {
 
 		}
 		// check their addresses
-		System.out.println("Processing " + qMsg.getReturnCount() + " people ");
+		log.info("Processing " + qMsg.getReturnCount() + " people ");
 		for (BaseEntity person : qMsg.getItems()) {
 			log.info(person.getCode());
 			if (!isAddressPresent(person.getCode())) {
@@ -5170,11 +5210,8 @@ public class QRules {
 		QBulkMessage bulk = new QBulkMessage();
 
 		/* we send the notes */
-		SearchEntity searchBE = new SearchEntity("SBE_NOTES", "SBE_NOTES")
-				.setSourceCode("GRP_NOTES")
-				.setStakeholder(contextCode)
-				.setPageStart(0)
-				.setPageSize(10000);
+		SearchEntity searchBE = new SearchEntity("SBE_NOTES", "SBE_NOTES").setSourceCode("GRP_NOTES")
+				.setStakeholder(contextCode).setPageStart(0).setPageSize(10000);
 
 		try {
 
@@ -5184,13 +5221,13 @@ public class QRules {
 			/* we get the search results */
 			QDataBaseEntityMessage notesMessage = this.getSearchResults(searchBE);
 
-			//TODO: Add null check
+			// TODO: Add null check
 			/* if we have at least one note */
-			if(notesMessage != null && notesMessage.getItems() != null && notesMessage.getItems().length > 0) {
-				
+			if (notesMessage != null && notesMessage.getItems() != null && notesMessage.getItems().length > 0) {
+
 				/* we set the link code */
 				notesMessage.setLinkCode("LNK_MESSAGES");
-				
+
 				/* we set GRP_NOTES as the parent */
 				notesMessage.setParentCode("GRP_NOTES");
 
@@ -5201,8 +5238,8 @@ public class QRules {
 				Set<EntityEntity> links = new HashSet<>();
 
 				/* we loop through the items */
-				for(BaseEntity note: notesMessage.getItems()) {
-					
+				for (BaseEntity note : notesMessage.getItems()) {
+
 					/* we create the attribute for the link */
 					Attribute linkAttribute = new Attribute("LINK_CODE", "LNK_MESSAGES", new DataType("string"));
 
@@ -5216,7 +5253,7 @@ public class QRules {
 				/* we set the new links in GRP_NOTES */
 				grpNotes.setLinks(links);
 			}
-			
+
 			/* we create the message for GRP_NOTES */
 			QDataBaseEntityMessage grpNotesMessage = new QDataBaseEntityMessage(grpNotes);
 			grpNotesMessage.setShouldDeleteLinkedBaseEntities(1);
@@ -5224,14 +5261,14 @@ public class QRules {
 
 			/* we add to the bulk */
 			bulk.add(grpNotesMessage);
-			
+
 			/* we add to the bulk */
 			bulk.add(notesMessage);
 
 		} catch (IOException e) {
 		}
 
-		if(bulk.getMessages().length > 0) {
+		if (bulk.getMessages().length > 0) {
 			this.publishCmd(bulk);
 		}
 	}
@@ -5261,11 +5298,11 @@ public class QRules {
 		JsonArray msgCodes = new JsonArray();
 		msgCodes.add(codeListView);
 		msgCodes.add(bucketListView);
-		System.out.println("The JsonArray is :: " + msgCodes);
+		log.info("The JsonArray is :: " + msgCodes);
 		cmdViewJson.put("data", msgCodes);
 		cmdViewJson.put("root", parentCode); /* root needs to be there */
 		cmdViewJson.put("token", getToken());
-		System.out.println(" The cmd msg is :: " + cmdViewJson);
+		log.info(" The cmd msg is :: " + cmdViewJson);
 
 		publish("cmds", cmdViewJson);
 		// publishCmd(cmdViewJson);
@@ -5369,8 +5406,42 @@ public class QRules {
 		final String fToken = getToken();
 		return VertxUtils.writeCachedJson(fRealm, key, value, fToken);
 	}
-	
+
 	public JsonObject readCachedJson(final String key) {
-		return VertxUtils.readCachedJson(realm(), key,  getToken());
+		return VertxUtils.readCachedJson(realm(), key, getToken());
 	}
+
+	static public List<Tuple2<BaseEntity, Double>> score(BaseEntity sourceBaseEntity, List<BaseEntity> targets,
+			int resultSize) {
+		List<Tuple2<BaseEntity, Double>> results = new ArrayList<Tuple2<BaseEntity, Double>>();
+
+		Double lowestScore = -10000000.0; // pretty low bar!
+		Tuple2<BaseEntity, Double> lowest = null;
+
+		for (BaseEntity targetBaseEntity : targets) {
+			Double score = ScoringUtils.calculateScore(sourceBaseEntity, targetBaseEntity);
+			// Now maintain the set of results
+			if (score.compareTo(lowestScore) > 0) {
+				lowestScore = score;
+				if (results.size() >= resultSize) {
+					// remove existing lowest
+					results.remove(lowest);
+				}
+				lowest = Tuple.of(targetBaseEntity, score);
+				results.add(lowest);
+			}
+		}
+
+		// Sort results
+		Comparator<Tuple2<BaseEntity, Double>> comparator = new Comparator<Tuple2<BaseEntity, Double>>() {
+			public int compare(Tuple2<BaseEntity, Double> tupleA, Tuple2<BaseEntity, Double> tupleB) {
+				return tupleB._2.compareTo(tupleA._2);
+			}
+		};
+
+		Collections.sort(results, comparator);
+
+		return results;
+	}
+
 }
