@@ -253,9 +253,9 @@ public class QRules {
 	public String realm() {
 
 		String str = getAsString("realm");
-		if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
+		/*if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
 			str = GennySettings.mainrealm; // TODO, I don't like this, but...
-		}
+		}*/
 		return str.toLowerCase();
 	}
 
@@ -1042,9 +1042,6 @@ public class QRules {
 			String token = RulesUtils.generateServiceToken(realm());
 
 			String realm = realm();
-			/*if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
-				realm = "genny";
-			}*/
 
 			/* if the keycloak id, we need to create a keycloak account for this user */
 			if (keycloakId == null) {
@@ -3689,12 +3686,12 @@ public class QRules {
 
 			if (realm != null) {
 
-				String token = RulesUtils.generateServiceToken(GennySettings.dynamicRealm(realm()));
+				String token = RulesUtils.generateServiceToken(realm);
 				this.println(token);
 				if (token != null) {
 
 					this.setNewTokenAndDecodedTokenMap(token);
-					this.set("realm", GennySettings.dynamicRealm(realm()));
+					this.set("realm", realm);
 					return true;
 				}
 			}
