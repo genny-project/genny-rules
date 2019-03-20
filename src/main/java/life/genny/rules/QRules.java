@@ -1565,9 +1565,7 @@ public class QRules {
 
 				for (EntityAttribute role : roles) {
 
-					if (role != null && role.getValue() != null
-							&& !role.getAttributeCode().equals("PRI_IS_PROFILE_COMPLETED")
-							&& !role.getAttributeCode().equals("PRI_IS_ADMIN")) {
+					if (role != null && role.getValue() != null) {
 
 						Boolean isRole = (role.getValueBoolean() != null && role.getValueBoolean() == true)
 								|| (role.getValueString() != null && role.getValueString().equals("TRUE"));
@@ -1779,8 +1777,12 @@ public class QRules {
 	}
 
 	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup) {
+		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, true);
+	}
 
-		if (this.sendQuestions(sourceCode, targetCode, questionGroupCode)) {
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, Boolean pushSelection) {
+
+		if (this.sendQuestions(sourceCode, targetCode, questionGroupCode, pushSelection)) {
 
 			/* Layout V1 */
 			QCmdViewFormMessage cmdFormView = new QCmdViewFormMessage(questionGroupCode);
@@ -4160,11 +4162,13 @@ public class QRules {
 	 * @param message       to be sent to the webhook
 	 */
 	public void sendSlackNotification(String attributeCode, String message) {
+	
 		/* send critical slack notifications only for production mode */
 		log.info("dev mode ::" + GennySettings.devMode);
 		BaseEntity project = getProject();
 		if (project != null && !GennySettings.devMode) {
 			String webhookURL = project.getLoopValue(attributeCode, null);
+			log.info("slack url: " + webhookURL);
 			if (webhookURL != null) {
 
 				JsonObject payload = new JsonObject();
