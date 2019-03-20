@@ -5502,6 +5502,30 @@ public Ask generateQuestionsForTree(String parentCode, ContextList contextList, 
 
 		return results;
 	}
+	
+	public BaseEntity getLayout(String layoutUri) {
+
+		BaseEntity layoutBe = null;
+
+		/* searching for the layout baseentity which has the url for the layout */
+		SearchEntity search = new SearchEntity("SBE_LAYOUT_FOR_ATTRIBUTE", "Fetching layouts for URL")
+				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "LAY_%")
+				.addFilter("PRI_LAYOUT_URI", SearchEntity.StringFilter.EQUAL, layoutUri).setPageStart(0)
+				.setPageSize(10000);
+
+		try {
+			List<BaseEntity> layoutBeList = this.getSearchResultsAsList(search, true);
+			this.println("layoutBeList size ::" + layoutBeList.size());
+
+			if (!layoutBeList.isEmpty()) {
+				return layoutBeList.get(0);
+			}
+		} catch (IOException e) {
+			log.error(e.getMessage());
+		}
+
+		return layoutBe;
+	}
 
 }
 
