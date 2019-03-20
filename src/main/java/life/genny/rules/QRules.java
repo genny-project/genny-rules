@@ -29,7 +29,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.money.CurrencyUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
@@ -53,13 +52,11 @@ import io.vertx.core.json.JsonObject;
 import life.genny.eventbus.EventBusInterface;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
-import life.genny.qwanda.GPS;
 import life.genny.qwanda.Layout;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.AttributeBoolean;
 import life.genny.qwanda.attribute.AttributeInteger;
-import life.genny.qwanda.attribute.AttributeMoney;
 import life.genny.qwanda.attribute.AttributeText;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
@@ -113,7 +110,6 @@ import life.genny.qwanda.payments.QReleasePayment;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyItemResponse;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyUserResponse;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyUserSearchResponse;
-import life.genny.qwandautils.GPSUtils;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
@@ -121,11 +117,9 @@ import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.qwandautils.ScoringUtils;
-import life.genny.security.SecureResources;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
 import life.genny.utils.DateUtils;
-import life.genny.utils.MoneyHelper;
 import life.genny.utils.PaymentEndpoint;
 import life.genny.utils.PaymentUtils;
 import life.genny.utils.QDataJsonMessage;
@@ -3669,39 +3663,25 @@ public class QRules {
 		println(RulesUtils.ANSI_BLUE + "PRE_INIT_STARTUP Loading in keycloak data and setting up service token for "
 				+ realm() + RulesUtils.ANSI_RESET);
 
-		for (String jsonFile : SecureResources.getKeycloakJsonMap().keySet()) {
+		JsonObject keycloakJson = VertxUtils.readCachedJson(GennySettings.mainrealm, GennySettings.KEYCLOAK_JSON);
 
-			String keycloakJson = SecureResources.getKeycloakJsonMap().get(jsonFile);
-			if (keycloakJson == null) {
-				log.info("No keycloakMap for " + realm());
-				if (GennySettings.devMode) {
-					log.info("Fudging realm so genny keycloak used");
-					// Use basic Genny json when project json not available
-					String gennyJson = SecureResources.getKeycloakJsonMap().get("genny.json");
-					SecureResources.getKeycloakJsonMap().put(jsonFile, gennyJson);
-					keycloakJson = gennyJson;
-				} else {
-					return false;
-				}
+			if (keycloakJson == null || "error".equals(keycloakJson.getBoolean("status"))) {
+				log.error("KEYCLOAK JSON NOT FOUND FOR " + realm());
+				return false;
+				
 			}
-
-			JsonObject realmJson = new JsonObject(keycloakJson);
-			String realm = realmJson.getString("realm");
+			String realm = keycloakJson.getString("realm");
 
 			if (realm != null) {
 
 				String token = RulesUtils.generateServiceToken(realm);
 				this.println(token);
 				if (token != null) {
-
 					this.setNewTokenAndDecodedTokenMap(token);
 					this.set("realm", realm);
 					return true;
 				}
 			}
-
-		}
-
 		return false;
 	}
 
