@@ -3914,12 +3914,7 @@ public class QRules {
 		}
 	}
 
-	/*
-	 * Sets "PRI_IS_ADMIN" attribute to TRUE if the token from the keycloak has the
-	 * role "admin" and set to FALSE if the attribute existed in DB but the role has
-	 * been removed from keycloak.
-	 */
-	public void setAdminRoleIfAdmin() {
+	public void getRolesFromKeycloak() {
 
 		String attributeCode = "PRI_IS_ADMIN";
 		BaseEntity user = getUser();
@@ -3927,6 +3922,8 @@ public class QRules {
 		if (user != null) {
 
 			try {
+
+				/* Check for the admin role which is a special case (needs to set to false if not present) */
 				Boolean isAdmin = user.getValue(attributeCode, null);
 				Answer isAdminAnswer;
 				if (hasRole("admin")) {
@@ -3936,13 +3933,58 @@ public class QRules {
 						isAdminAnswer.setWeight(1.0);
 						this.baseEntity.saveAnswer(isAdminAnswer);
 						VertxUtils.subscribeAdmin(realm(), user.getCode());
-						setState("USER_ROLE_ADMIN_SET");
 					}
 				} else if (!hasRole("admin")) {
 					if (isAdmin != null && isAdmin) {
 						isAdminAnswer = new Answer(user.getCode(), user.getCode(), attributeCode, "FALSE");
 						isAdminAnswer.setWeight(1.0);
 						this.baseEntity.saveAnswer(isAdminAnswer);
+					}
+				}
+			} catch (Exception e) {
+				log.info("Error!! while updating " + attributeCode + " attribute value");
+			}
+
+			try {
+
+				/* Check if we have a decoded token map */
+				if (this.getDecodedTokenMap() == null) {
+					return;
+				}
+				
+				/* Get the roles map for the current user */
+				LinkedHashMap rolesMap = (LinkedHashMap) getDecodedTokenMap().get("realm_access");
+				if (rolesMap != null) {
+		
+					try {
+						
+						/* Get all the roles */
+						Object rolesObj = rolesMap.get("roles");
+						if (rolesObj != null) {
+
+							/* List of answers to save for the roles */
+							List<Answer> answers = new ArrayList<>();
+							
+							/* Convert to iteratable */
+							ArrayList roles = (ArrayList) rolesObj;
+						
+							/* Loop through all the roles */
+							roles.stream().forEach(role -> {
+
+									/* Generate a role code */
+									String roleCode = "PRI_IS_" + role.toString().toUpperCase();
+
+									/* Create the answer */
+									Answer roleAnswer = new Answer(this.getUser().getCode(), this.getUser().getCode(), roleCode, "TRUE");
+
+									/* Add answer to list */
+									answers.add(roleAnswer);
+							});
+
+							/* Save all the answers */
+							this.baseEntity.saveAnswers(answers);
+						}
+					} catch (Exception e) {
 					}
 				}
 
