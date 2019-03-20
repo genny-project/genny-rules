@@ -2381,14 +2381,15 @@ public class QRules {
 
 		/* Layouts v1 */
 		if (!GennySettings.disableLayoutLoading) {
+			println("******** SENT OLD LAYOUTS *********");
 			this.sendAllSublayouts();
 			/* Layouts V2 */
 			List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
 			this.publishCmd(beLayouts, "GRP_LAYOUTS", "LNK_CORE");
+			println("******** SENT OLD LAYOUTS FINISHED *********");
 
 		} else {
-
-			// Fetch layouts from cache. They were put there by the qwanda api call /service/synchroniselayouts?realm=<realm>
+			// Fetch layouts from cache. They were put there bly the qwanda api call /service/synchroniselayouts?realm=<realm>
 			
 			String gennyLayoutsV1 = VertxUtils.readCachedJson(this.realm(), "GENNY-V1-LAYOUTS", getToken())
 					.getString("value");
@@ -2405,6 +2406,9 @@ public class QRules {
 					.getString("value");
 			QDataBaseEntityMessage realmV2 = JsonUtils.fromJson(realmLayoutsV2, QDataBaseEntityMessage.class);
 			publishCmd(realmV2);
+			
+//			List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
+//			this.publishCmd(beLayouts, "GRP_LAYOUTS", "LNK_CORE");
 		}
 
 		/* List<BaseEntity> beLayouts = this.getAllLayouts(); */
