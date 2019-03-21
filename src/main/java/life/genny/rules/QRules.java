@@ -2303,9 +2303,12 @@ public class QRules {
 	}
 
 	public String showStates() {
+
 		String states = "  ";
-		for (String key : stateMap.keySet()) {
-			states += key + ":";
+		if (!GennySettings.hideRuleStates) {
+			for (String key : stateMap.keySet()) {
+				states += key + ":";
+			}
 		}
 		return states;
 	}
@@ -2392,8 +2395,9 @@ public class QRules {
 			println("******** SENT OLD LAYOUTS FINISHED *********");
 
 		} else {
-			// Fetch layouts from cache. They were put there bly the qwanda api call /service/synchroniselayouts?realm=<realm>
-			
+			// Fetch layouts from cache. They were put there bly the qwanda api call
+			// /service/synchroniselayouts?realm=<realm>
+
 			String gennyLayoutsV1 = VertxUtils.readCachedJson(this.realm(), "GENNY-V1-LAYOUTS", getToken())
 					.getString("value");
 			QDataSubLayoutMessage gennyV1 = JsonUtils.fromJson(gennyLayoutsV1, QDataSubLayoutMessage.class);
@@ -2409,7 +2413,7 @@ public class QRules {
 					.getString("value");
 			QDataBaseEntityMessage realmV2 = JsonUtils.fromJson(realmLayoutsV2, QDataBaseEntityMessage.class);
 			publishCmd(realmV2);
-			
+
 //			List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
 //			this.publishCmd(beLayouts, "GRP_LAYOUTS", "LNK_CORE");
 		}
