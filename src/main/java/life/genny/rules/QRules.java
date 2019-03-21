@@ -117,6 +117,7 @@ import life.genny.qwandautils.GPSUtils;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
+import life.genny.qwandautils.MergeUtil;
 import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
@@ -5390,17 +5391,7 @@ public class QRules {
 	/* to return the name of the attribute */
 	public String getAttributeName(BaseEntity parentBe, String attributeCode) {
 
-		String attributeName = null;
-
-		if (parentBe != null) {
-			Optional<EntityAttribute> updatedAttributeOp = parentBe.getBaseEntityAttributes().stream()
-					.filter(Objects::nonNull).filter(ea -> ea.getAttributeCode().equals(attributeCode)).findFirst();
-			if (updatedAttributeOp.isPresent()) {
-				EntityAttribute updatedAttribute = updatedAttributeOp.get();
-				attributeName = updatedAttribute.getAttributeName();
-			}
-		}
-
+		String attributeName = MergeUtil.getAttributeName(parentBe, attributeCode);
 		return attributeName;
 	}
 
