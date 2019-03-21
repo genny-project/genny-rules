@@ -1781,22 +1781,21 @@ public class QRules {
 		this.askQuestions(sourceCode, targetCode, questionGroupCode, false);
 	}
 
-	/*public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup) {
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup) {
 
 		if (this.sendQuestions(sourceCode, targetCode, questionGroupCode)) {
 
-			 Layout V1 
 			QCmdViewFormMessage cmdFormView = new QCmdViewFormMessage(questionGroupCode);
 			cmdFormView.setIsPopup(isPopup);
 			publishCmd(cmdFormView);
 
 			this.navigateTo("/questions/" + questionGroupCode, isPopup);
 		}
-	}*/
-
-	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup) {
-		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, "FRM_CONTENT");
 	}
+
+	/*public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup) {
+		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, "FRM_CONTENT");
+	}*/
 
 	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, String frameCode) {
 		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, frameCode, LayoutPosition.CENTRE);
@@ -3446,6 +3445,10 @@ public class QRules {
 				jsonSearchBE, serviceToken);
 
 		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+		
+		BaseEntity parentBe = this.baseEntity.getBaseEntityByCode(parentCode);
+		Set<EntityEntity> childLinks = new HashSet<>();
+		
 		if (msg != null) {
 			msg.setParentCode(parentCode);
 			msg.setToken(getToken());
@@ -3453,6 +3456,34 @@ public class QRules {
 			msg.setLinkValue(linkValue);
 			msg.setReplace(replace);
 			msg.setShouldDeleteLinkedBaseEntities(shouldDeleteLinkedBaseEntities);
+			
+			/* creating a dumb attribute for linking the search results to the parent */
+			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
+			
+			BaseEntity[] itemArr = msg.getItems();
+			double index = 0.0;
+			for(BaseEntity be : itemArr) {
+				EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
+				
+				/* creating link for child */
+				Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
+				
+				/* adding link */
+				ee.setLink(link);
+				
+				/* adding child link to set of links */
+				childLinks.add(ee);
+				
+				index++;
+			}
+			this.println("search results with links ::"+JsonUtils.toJson(msg));
+			
+			/* setting the links to the parentBe */
+			parentBe.setLinks(childLinks);
+			
+			/* setting the created parentBe to the bulk message */
+			msg.add(parentBe);
+				
 			publish("cmds", msg);
 		} else {
 			println("Warning: no results from search " + searchBE.getCode());
