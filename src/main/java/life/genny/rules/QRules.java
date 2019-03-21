@@ -3663,25 +3663,25 @@ public class QRules {
 		println(RulesUtils.ANSI_BLUE + "PRE_INIT_STARTUP Loading in keycloak data and setting up service token for "
 				+ realm() + RulesUtils.ANSI_RESET);
 
-		JsonObject keycloakJson = VertxUtils.readCachedJson(GennySettings.mainrealm, GennySettings.KEYCLOAK_JSON);
+		JsonObject json = VertxUtils.readCachedJson(GennySettings.mainrealm, GennySettings.KEYCLOAK_JSON);
+		if (json==null || "error".equals(json.getString("status"))) {
+			log.error("KEYCLOAK JSON NOT FOUND");
+			return false;
+		} 
+		JsonObject keycloakJson = new JsonObject(json.getString("value"));
+			
+		String realm = keycloakJson.getString("realm");
 
-			if (keycloakJson == null || "error".equals(keycloakJson.getBoolean("status"))) {
-				log.error("KEYCLOAK JSON NOT FOUND FOR " + realm());
-				return false;
-				
+		if (realm != null) {
+
+			String token = RulesUtils.generateServiceToken(realm);
+			this.println(token);
+			if (token != null) {
+				this.setNewTokenAndDecodedTokenMap(token);
+				this.set("realm", realm);
+				return true;
 			}
-			String realm = keycloakJson.getString("realm");
-
-			if (realm != null) {
-
-				String token = RulesUtils.generateServiceToken(realm);
-				this.println(token);
-				if (token != null) {
-					this.setNewTokenAndDecodedTokenMap(token);
-					this.set("realm", realm);
-					return true;
-				}
-			}
+		}
 		return false;
 	}
 
