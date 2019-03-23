@@ -3935,6 +3935,7 @@ public class QRules {
 					if (isAdmin == null || !isAdmin) {
 						isAdminAnswer = new Answer(user.getCode(), user.getCode(), attributeCode, "TRUE");
 						isAdminAnswer.setWeight(1.0);
+						isAdminAnswer.setChangeEvent(false);
 						this.baseEntity.saveAnswer(isAdminAnswer);
 						VertxUtils.subscribeAdmin(realm(), user.getCode());
 					}
@@ -3942,6 +3943,7 @@ public class QRules {
 					if (isAdmin != null && isAdmin) {
 						isAdminAnswer = new Answer(user.getCode(), user.getCode(), attributeCode, "FALSE");
 						isAdminAnswer.setWeight(1.0);
+						isAdminAnswer.setChangeEvent(false);
 						this.baseEntity.saveAnswer(isAdminAnswer);
 					}
 				}
@@ -3980,7 +3982,7 @@ public class QRules {
 
 									/* Create the answer */
 									Answer roleAnswer = new Answer(this.getUser().getCode(), this.getUser().getCode(), roleCode, "TRUE");
-
+									roleAnswer.setChangeEvent(false);
 									/* Add answer to list */
 									answers.add(roleAnswer);
 							});
