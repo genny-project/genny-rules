@@ -1780,7 +1780,8 @@ public class QRules {
 		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, true);
 	}
 
-	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, Boolean pushSelection) {
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup,
+			Boolean pushSelection) {
 
 		if (this.sendQuestions(sourceCode, targetCode, questionGroupCode, pushSelection)) {
 
@@ -2413,8 +2414,20 @@ public class QRules {
 
 			String realmLayoutsV2 = VertxUtils.readCachedJson(this.realm(), "V2-LAYOUTS", getToken())
 					.getString("value");
-			QDataBaseEntityMessage realmV2 = JsonUtils.fromJson(realmLayoutsV2, QDataBaseEntityMessage.class);
-			publishCmd(realmV2);
+
+			if (realmLayoutsV2 == null) {
+				List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
+				BaseEntity[] itemsArray = new BaseEntity[beLayouts.size()];
+				itemsArray = beLayouts.toArray(itemsArray);
+				QDataBaseEntityMessage realmV2 = new QDataBaseEntityMessage(itemsArray);
+				
+				VertxUtils.writeCachedJson(this.realm(), "V2-LAYOUTS", JsonUtils.toJson(realmV2));
+				publishCmd(realmV2);
+			} else {
+
+				QDataBaseEntityMessage realmV2 = JsonUtils.fromJson(realmLayoutsV2, QDataBaseEntityMessage.class);
+				publishCmd(realmV2);
+			}
 
 //			List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
 //			this.publishCmd(beLayouts, "GRP_LAYOUTS", "LNK_CORE");
@@ -3927,7 +3940,10 @@ public class QRules {
 
 			try {
 
-				/* Check for the admin role which is a special case (needs to set to false if not present) */
+				/*
+				 * Check for the admin role which is a special case (needs to set to false if
+				 * not present)
+				 */
 				Boolean isAdmin = user.getValue(attributeCode, null);
 				Answer isAdminAnswer;
 				if (hasRole("admin")) {
@@ -3957,34 +3973,35 @@ public class QRules {
 				if (this.getDecodedTokenMap() == null) {
 					return;
 				}
-				
+
 				/* Get the roles map for the current user */
 				LinkedHashMap rolesMap = (LinkedHashMap) getDecodedTokenMap().get("realm_access");
 				if (rolesMap != null) {
-		
+
 					try {
-						
+
 						/* Get all the roles */
 						Object rolesObj = rolesMap.get("roles");
 						if (rolesObj != null) {
 
 							/* List of answers to save for the roles */
 							List<Answer> answers = new ArrayList<>();
-							
+
 							/* Convert to iteratable */
 							ArrayList roles = (ArrayList) rolesObj;
-						
+
 							/* Loop through all the roles */
 							roles.stream().forEach(role -> {
 
-									/* Generate a role code */
-									String roleCode = "PRI_IS_" + role.toString().toUpperCase();
+								/* Generate a role code */
+								String roleCode = "PRI_IS_" + role.toString().toUpperCase();
 
-									/* Create the answer */
-									Answer roleAnswer = new Answer(this.getUser().getCode(), this.getUser().getCode(), roleCode, "TRUE");
-									roleAnswer.setChangeEvent(false);
-									/* Add answer to list */
-									answers.add(roleAnswer);
+								/* Create the answer */
+								Answer roleAnswer = new Answer(this.getUser().getCode(), this.getUser().getCode(),
+										roleCode, "TRUE");
+								roleAnswer.setChangeEvent(false);
+								/* Add answer to list */
+								answers.add(roleAnswer);
 							});
 
 							/* Save all the answers */
@@ -4210,7 +4227,7 @@ public class QRules {
 	 * @param message       to be sent to the webhook
 	 */
 	public void sendSlackNotification(String attributeCode, String message) {
-	
+
 		/* send critical slack notifications only for production mode */
 		log.info("dev mode ::" + GennySettings.devMode);
 		BaseEntity project = getProject();
