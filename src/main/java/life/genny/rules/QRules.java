@@ -3826,32 +3826,25 @@ public Ask generateQuestionsForTree(String parentCode, ContextList contextList, 
 		
 		List<BaseEntity> newKidsList = new ArrayList<>();
 		
-		switch (parent.getCode()) {
-			case "GRP_ROOT":
-			case "GRP_CONTACTS":
-				for(BaseEntity kid : kids) {
-	
-					Optional<EntityAttribute> roleAttribute = parent.findEntityAttribute(kid.getCode());
-					if (roleAttribute.isPresent()) {
-	
-						String rolesAllowedStr = roleAttribute.get().getValue();
-	
-						/*
-						 * compare the allowed-roles for the GRP_XXX with the current user-roles and
-						 * create a question for GRP_XXX only if its allowed
-						 */
-						for (String roleOfCurrentUser : rolesOfCurrentUser) {
-							if (rolesAllowedStr.contains(roleOfCurrentUser)) {
-								newKidsList.add(kid);	
-							}
-						}
+		for(BaseEntity kid : kids) {
+
+			Optional<EntityAttribute> roleAttribute = parent.findEntityAttribute(kid.getCode());
+			if (roleAttribute.isPresent()) {
+
+				String rolesAllowedStr = roleAttribute.get().getValue();
+
+				/*
+				 * compare the allowed-roles for the GRP_XXX with the current user-roles and
+				 * create a question for GRP_XXX only if its allowed
+				 */
+				for (String roleOfCurrentUser : rolesOfCurrentUser) {
+					if (rolesAllowedStr.contains(roleOfCurrentUser)) {
+						newKidsList.add(kid);	
 					}
 				}
-				break;
-			default:
-				newKidsList = kids;
-				break;
-		}	
+			}
+		}		
+			
 		return newKidsList;
 	}
 
