@@ -1795,44 +1795,58 @@ public class QRules {
 		}
 	}
 	
-	//TODO Need to optimize this method with a recursive function
-	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, String frameCode, LayoutPosition position, HashMap<String, List<Context>> themesForQuestions) {
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, String frameCode, LayoutPosition position, Map<String, List<Context>> themesForQuestions) {
 		/* we grab the service token */
 		String serviceToken = RulesUtils.generateServiceToken(this.realm());
 		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken,
 				 sourceCode, true);
-		 Ask[] asks = questions.asks.getItems();
+		
+		Ask[] asks = questions.asks.getItems();
+		
+		/* set the contexts/themes to the asks and childAsks */
+		setContextsToQuestions(themesForQuestions, asks);
 		 
-		 for(Ask ask : asks) {
-			 
-			 Ask[] childAsks = ask.getChildAsks();
-			 String questionCode = ask.getQuestion().getCode();
-			 this.println("ask is :"+questionCode);
-			 
-			 if(themesForQuestions != null) {
-				 if( themesForQuestions.containsKey(questionCode) ) {
-					 this.println("themecode is ::"+themesForQuestions.get(questionCode));
-					 ask.setContextList(createTheme(themesForQuestions.get(questionCode)));
-				 }
-			 }
-			 
-			 for(Ask childAsk : childAsks) {
-				 String childQuestionCode = childAsk.getQuestion().getCode();
-				 if(themesForQuestions != null) {
-					 if( themesForQuestions.containsKey(childQuestionCode) ) {
-						 this.println("themecode is ::"+themesForQuestions.get(childQuestionCode));
-						 childAsk.setContextList(createTheme(themesForQuestions.get(childQuestionCode)));
-					 }
-				 }
-			 }
-		 }
-		 
+		/* publish the questions */
 		publishCmd(questions);
 		 
+		/* create the message with question-group in the required frame and position */
 		QDataBaseEntityMessage message = this.layoutUtils.showQuestionsInFrame(frameCode, questionGroupCode, position);
 
 		/* we send the message in the required frame and position */
 		this.publishCmd(message);
+	}
+
+	/**
+	 * 
+	 * @param themesForQuestions
+	 * @param asks
+	 */
+	private void setContextsToQuestions(Map<String, List<Context>> themesForQuestions, Ask[] asks) {
+		
+		if(asks != null && themesForQuestions != null) {
+			
+			for(Ask ask : asks) {
+				
+				/* get question code for ask */
+				String questionCode = ask.getQuestion().getCode();
+				
+				/* check if the list of themes/contexts is available for this ask */
+				if( themesForQuestions.containsKey(questionCode) ) {
+					
+					/* if themes exist for the question, we set it in the ask */
+					ask.setContextList(createTheme(themesForQuestions.get(questionCode)));
+				 }
+				
+				/* get the child asks for the current ask */
+				Ask[] childAsks = ask.getChildAsks();
+				
+				if(childAsks != null) {
+					if(childAsks.length > 0) {
+						setContextsToQuestions(themesForQuestions, childAsks);
+					}
+				} 
+			}		 
+		}
 	}
 
 	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, String frameCode) {
