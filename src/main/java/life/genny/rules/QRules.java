@@ -41,6 +41,8 @@ import org.apache.logging.log4j.Logger;
 import org.drools.core.spi.KnowledgeHelper;
 import org.javamoney.moneta.Money;
 
+import com.amazonaws.services.iotdata.model.GetThingShadowRequest;
+import com.google.api.client.json.Json;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Sets;
 import com.google.gson.reflect.TypeToken;
@@ -1792,10 +1794,46 @@ public class QRules {
 			this.navigateTo("/questions/" + questionGroupCode, isPopup);
 		}
 	}
+	
+	//TODO Need to optimize this method with a recursive function
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, String frameCode, LayoutPosition position, HashMap<String, List<Context>> themesForQuestions) {
+		/* we grab the service token */
+		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken,
+				 sourceCode, true);
+		 Ask[] asks = questions.asks.getItems();
+		 
+		 for(Ask ask : asks) {
+			 
+			 Ask[] childAsks = ask.getChildAsks();
+			 String questionCode = ask.getQuestion().getCode();
+			 this.println("ask is :"+questionCode);
+			 
+			 if(themesForQuestions != null) {
+				 if( themesForQuestions.containsKey(questionCode) ) {
+					 this.println("themecode is ::"+themesForQuestions.get(questionCode));
+					 ask.setContextList(createTheme(themesForQuestions.get(questionCode)));
+				 }
+			 }
+			 
+			 for(Ask childAsk : childAsks) {
+				 String childQuestionCode = childAsk.getQuestion().getCode();
+				 if(themesForQuestions != null) {
+					 if( themesForQuestions.containsKey(childQuestionCode) ) {
+						 this.println("themecode is ::"+themesForQuestions.get(childQuestionCode));
+						 childAsk.setContextList(createTheme(themesForQuestions.get(childQuestionCode)));
+					 }
+				 }
+			 }
+		 }
+		 
+		publishCmd(questions);
+		 
+		QDataBaseEntityMessage message = this.layoutUtils.showQuestionsInFrame(frameCode, questionGroupCode, position);
 
-	/*public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup) {
-		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, "FRM_CONTENT");
-	}*/
+		/* we send the message in the required frame and position */
+		this.publishCmd(message);
+	}
 
 	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, String frameCode) {
 		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, frameCode, LayoutPosition.CENTRE);
@@ -3896,7 +3934,7 @@ public Ask generateQuestionsForTree(String parentCode, ContextList contextList, 
 		this.publishCmd(askMsg);
 		
 		/* sends questions for treeview and positions it in the sidebar frame */
-		QDataBaseEntityMessage treeMessage = this.layoutUtils.showQuestionsInFrame("FRM_SIDEBAR", rootAsk.getQuestionCode(), LayoutPosition.WEST);
+		QDataBaseEntityMessage treeMessage = this.layoutUtils.showQuestionsInFrame("FRM_SIDEBAR", rootAsk.getQuestionCode(), LayoutPosition.NORTH);
 		this.publishCmd(treeMessage);	
 	}
 
@@ -5549,6 +5587,20 @@ public Ask generateQuestionsForTree(String parentCode, ContextList contextList, 
 		}
 
 		return layoutBe;
+	}
+	
+	public ContextList createTheme(List<Context> contexts) {
+		List<Context> themeContexts = new ArrayList<>();
+		
+		for(Context context : contexts) {
+			themeContexts.add(context);
+			
+			/* publishing the baseentity themes */
+			this.publishBaseEntityByCode(context.getEntity().getCode());
+		}
+
+		
+		return new ContextList(themeContexts);
 	}
 
 }
