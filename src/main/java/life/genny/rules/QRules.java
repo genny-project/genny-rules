@@ -582,7 +582,7 @@ public class QRules {
 	}
 	
 	public void publishBaseEntityByCode(BaseEntity[] beArr, String[] recipientCodes, String parentCode, String linkCode, String linkValue, final Boolean replace, final Boolean delete, Object level, Long returnCount) {
-
+		
 		/* invoking constructor and setting the BEs, parent code, link code and link value */
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArr, parentCode, linkCode, linkValue);
 		
@@ -687,6 +687,7 @@ public class QRules {
 			this.publishBaseEntityByCode(beArr, null, parentCode, linkCode, linkValue, false, false, 0, returnCount);
 		}
 	}
+
 	
 	/* Publish BaseEntityList with LinkValue Set */
 	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
@@ -5599,9 +5600,7 @@ public Ask generateQuestionsForTree(String parentCode, ContextList contextList, 
 			
 			/* publishing the baseentity themes */
 			this.publishBaseEntityByCode(context.getEntity().getCode());
-		}
-
-		
+		}	
 		return new ContextList(themeContexts);
 	}
 	
