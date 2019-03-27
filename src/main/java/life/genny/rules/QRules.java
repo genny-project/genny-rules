@@ -581,7 +581,7 @@ public class QRules {
 		return status;
 	}
 	
-	public void publishBaseEntityByCode(BaseEntity[] beArr, String[] recipientCodes, String parentCode, String linkCode, String linkValue, final Boolean replace, final Boolean delete, Object level) {
+	public void publishBaseEntityByCode(BaseEntity[] beArr, String[] recipientCodes, String parentCode, String linkCode, String linkValue, final Boolean replace, final Boolean delete, Object level, Long returnCount) {
 
 		/* invoking constructor and setting the BEs, parent code, link code and link value */
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArr, parentCode, linkCode, linkValue);
@@ -615,6 +615,11 @@ public class QRules {
 		if(parentCode != null) {	
 			setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue);
 		}
+		
+		/* set returnCount */
+		if(returnCount > 0) {
+			msg.setReturnCount(returnCount);
+		}
 			
 		publishData(msg, recipientCodes);
 	}
@@ -625,7 +630,7 @@ public class QRules {
 			/* get the baseentity */
 			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);		
 			BaseEntity[] beArr = { baseentity };			
-			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0);
+			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
 		}	
 	}
 	
@@ -635,7 +640,7 @@ public class QRules {
 			/* get the baseentity */
 			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
 			BaseEntity[] beArr = { baseentity };
-			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, 0);			
+			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, 0, 0L);			
 		}
 	}
 	
@@ -644,7 +649,7 @@ public class QRules {
 		if(be != null) {
 			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
 			BaseEntity[] beArr = { baseentity };
-			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, level);
+			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, level, 0L);
 		}
 	}
 	
@@ -654,7 +659,7 @@ public class QRules {
 		if(be != null) {
 			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
 			BaseEntity[] beArr = { item }; 
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, false, 0);
+			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, false, 0, 0L);
 		}
 	}
 	
@@ -664,22 +669,22 @@ public class QRules {
 		if(beCode != null) {
 			BaseEntity be = this.baseEntity.getBaseEntityByCode(beCode);
 			BaseEntity[] beArr = { be };
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, delete, 0);
+			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, delete, 0, 0L);
 		}
 	}
 
 	public void publishBaseEntityByCode(List<BaseEntity> bes) {
 		if(bes != null) {
 			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);		
-			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0);
+			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
 		}
 	}
 
 	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
-			String linkValue) {
+			String linkValue, Long returnCount) {
 		if(bes != null) {
 			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, null, parentCode, linkCode, linkValue, false, false, 0);
+			this.publishBaseEntityByCode(beArr, null, parentCode, linkCode, linkValue, false, false, 0, returnCount);
 		}
 	}
 	
@@ -688,7 +693,7 @@ public class QRules {
 			final String[] recipientCodes, final String linkValue) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, false, 0);
+			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, false, 0, 0L);
 		}
 	}
 	
@@ -697,7 +702,7 @@ public class QRules {
 			final String[] recipientCodes, final String linkValue, final Boolean delete) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, delete, 0);
+			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, delete, 0, 0L);
 		}
 	}
 
@@ -706,7 +711,7 @@ public class QRules {
 			final String[] recipientCodes, final String linkValue, final Boolean delete, Boolean replace) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, replace, delete, 0);
+			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, replace, delete, 0, 0L);
 		}
 	}
 
@@ -715,7 +720,7 @@ public class QRules {
 			final String[] recipientCodes, final String linkValue, final Boolean delete, Boolean replace, int level) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, replace, delete, level);
+			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, replace, delete, level, 0L);
 		}
 	}
 
@@ -723,7 +728,7 @@ public class QRules {
             Boolean replace) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, null, parentCode, linkCode, linkValue, replace, false, 0);
+			this.publishBaseEntityByCode(beArr, null, parentCode, linkCode, linkValue, replace, false, 0, 0L);
 		}
     }
 	
