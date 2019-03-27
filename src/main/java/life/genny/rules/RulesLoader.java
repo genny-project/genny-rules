@@ -14,7 +14,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+
 import org.apache.logging.log4j.Logger;
+import org.drools.core.impl.EnvironmentFactory;
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
@@ -23,10 +27,19 @@ import org.kie.api.builder.KieFileSystem;
 import org.kie.api.builder.Message;
 import org.kie.api.builder.ReleaseId;
 import org.kie.api.io.ResourceType;
+import org.kie.api.runtime.Environment;
+import org.kie.api.runtime.EnvironmentName;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
 import org.kie.api.runtime.conf.TimedRuleExecutionOption;
+import org.kie.internal.persistence.jpa.JPAKnowledgeService;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
+import org.kie.api.runtime.Environment;
+import org.kie.api.runtime.EnvironmentName;
+import org.kie.api.runtime.KieContainer;
+
+
 
 import com.google.common.io.Files;
 
@@ -59,13 +72,20 @@ public class RulesLoader {
 	public static Set<String> userRoles = null;
 	public static Map<String, User> usersSession = new HashMap<String, User>();
 
-
+	static Environment env ;  // drools persistence
 
 
 	/**
 	 * @param rulesDir
 	 */
 	public static void loadRules(final String rulesDir) {
+		
+		log.info("Setting up Persistence");
+		EntityManagerFactory emf = Persistence.createEntityManagerFactory( "genny-persistence-jbpm-jpa" );
+		env = EnvironmentFactory.newEnvironment(); //KnowledgeBaseFactory.newEnvironment();
+		env.set( EnvironmentName.ENTITY_MANAGER_FACTORY, emf );
+
+		
 		log.info("Loading Rules and workflows!!!");
 		log.info("Loading RUles2");
 		
@@ -78,6 +98,8 @@ public class RulesLoader {
 		for (String realm : realms) {
 			setupKieRules(realm, rules);
 		}
+		
+
 	}
 
 	/**
@@ -414,7 +436,9 @@ public class RulesLoader {
 			final Map<String, String> keyValueMap) {
 
 		try {
+			
 			 KieSession  kieSession = null;
+			//StatefulKnowledgeSession  kieSession2 = null;
 			if (getKieBaseCache().get(rulesGroup) == null) {
 				log.error("The rulesGroup kieBaseCache is null, not loaded " + rulesGroup);
 				return;
@@ -422,18 +446,32 @@ public class RulesLoader {
 			
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 			ksconf.setOption( TimedRuleExecutionOption.YES );
-//			ksconf.setOption( new TimedRuleExecutionOption.FILTERED(new TimedRuleExecutionFilter() {
-//				@Override
-//				public boolean accept(org.kie.api.definition.rule.Rule[] rules) {
-//					 return rules[0].getName().startsWith("Timer");
-//				}
-//			}) );
+
+
+
+			// create a new knowledge session that uses JPA to store the runtime state
+
+			if (false) {
+			kieSession = JPAKnowledgeService.newStatefulKnowledgeSession( getKieBaseCache().get(rulesGroup), ksconf, env );
+			} else {
+				kieSession = getKieBaseCache().get(rulesGroup).newKieSession(ksconf, env);
+			}
+
+			int sessionId = kieSession.getId();
+			log.info("Session id = "+sessionId);
 			
-		//	KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-		//	ksconf.setOption(TimerJobFactoryOption.get("trackable"));
 
-			kieSession = getKieBaseCache().get(rulesGroup).newKieSession(ksconf, null);
+			// invoke methods on your method here
 
+//			kieSession.startProcess( "MyProcess" );
+//
+//			kieSession.dispose();
+			
+
+//			kieSession = getKieBaseCache().get(rulesGroup).newKieSession(ksconf, null);
+
+
+			
 			/*
 			 * kSession.addEventListener(new DebugAgendaEventListener());
 			 * kSession.addEventListener(new DebugRuleRuntimeEventListener());

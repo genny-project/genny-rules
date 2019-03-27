@@ -2401,16 +2401,16 @@ public class QRules {
 			// Fetch layouts from cache. They were put there bly the qwanda api call
 			// /service/synchroniselayouts?realm=<realm>
 
-			String gennyLayoutsV1 = VertxUtils.readCachedJson(this.realm(), "GENNY-V1-LAYOUTS", getToken())
-					.getString("value");
-			QDataSubLayoutMessage gennyV1 = JsonUtils.fromJson(gennyLayoutsV1, QDataSubLayoutMessage.class);
-			publishCmd(gennyV1);
-
-			String realmLayoutsV1 = VertxUtils
-					.readCachedJson(this.realm(), this.realm().toUpperCase() + "-V1-LAYOUTS", getToken())
-					.getString("value");
-			QDataSubLayoutMessage realmV1 = JsonUtils.fromJson(realmLayoutsV1, QDataSubLayoutMessage.class);
-			publishCmd(realmV1);
+//			String gennyLayoutsV1 = VertxUtils.readCachedJson(this.realm(), "GENNY-V1-LAYOUTS", getToken())
+//					.getString("value");
+//			QDataSubLayoutMessage gennyV1 = JsonUtils.fromJson(gennyLayoutsV1, QDataSubLayoutMessage.class);
+//			publishCmd(gennyV1);
+//
+//			String realmLayoutsV1 = VertxUtils
+//					.readCachedJson(this.realm(), this.realm().toUpperCase() + "-V1-LAYOUTS", getToken())
+//					.getString("value");
+//			QDataSubLayoutMessage realmV1 = JsonUtils.fromJson(realmLayoutsV1, QDataSubLayoutMessage.class);
+//			publishCmd(realmV1);
 
 			String realmLayoutsV2 = VertxUtils.readCachedJson(this.realm(), "V2-LAYOUTS", getToken())
 					.getString("value");
