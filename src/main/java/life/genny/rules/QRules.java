@@ -686,6 +686,14 @@ public class QRules {
 			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
 		}
 	}
+	
+	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
+			String linkValue) {
+		if(bes != null) {
+			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, 0L);
+		}
+	}
 
 	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
 			String linkValue, Long returnCount) {
