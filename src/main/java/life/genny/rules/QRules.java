@@ -581,7 +581,7 @@ public class QRules {
 		return status;
 	}
 	
-	public void publishBaseEntityByCode(BaseEntity[] beArr, String[] recipientCodes, String parentCode, String linkCode, String linkValue, final Boolean replace, final Boolean delete, Object level, Long returnCount) {
+	public void publishBaseEntityByCode(BaseEntity[] beArr, String parentCode, String linkCode, String linkValue, String[] recipientCodes, final Boolean replace, final Boolean delete, Object level, Long returnCount) {
 		
 		/* invoking constructor and setting the BEs, parent code, link code and link value */
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArr, parentCode, linkCode, linkValue);
@@ -654,11 +654,20 @@ public class QRules {
 	}
 	
 	/* Publish BaseEntity with LinkValue Set */
+	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode, final String linkValue) {
+		if(be != null) {
+			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
+			BaseEntity[] beArr = { item }; 
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, 0L);
+		}
+	}
+	
+	/* Publish BaseEntity with LinkValue Set */
 	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes) {
 		if(be != null) {
 			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
 			BaseEntity[] beArr = { item }; 
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, false, 0, 0L);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, false, 0, 0L);
 		}
 	}
 	
@@ -667,7 +676,7 @@ public class QRules {
 		if(beCode != null) {
 			BaseEntity be = this.baseEntity.getBaseEntityByCode(beCode);
 			BaseEntity[] beArr = { be };
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, delete, 0, 0L);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, delete, 0, 0L);
 		}
 	}
 
@@ -682,16 +691,15 @@ public class QRules {
 			String linkValue, Long returnCount) {
 		if(bes != null) {
 			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, null, parentCode, linkCode, linkValue, false, false, 0, returnCount);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, returnCount);
 		}
 	}
-
 	
 	/* Publish BaseEntityList with LinkValue Set */
 	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, false, 0, 0L);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, false, 0, 0L);
 		}
 	}
 	
@@ -699,7 +707,7 @@ public class QRules {
 	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes, final Boolean delete) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, delete, 0, 0L);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, delete, 0, 0L);
 		}
 	}
 
@@ -707,7 +715,7 @@ public class QRules {
 	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes, final Boolean delete, Boolean replace) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, replace, delete, 0, 0L);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, 0, 0L);
 		}
 	}
 
@@ -716,7 +724,7 @@ public class QRules {
 			final String[] recipientCodes, final Boolean delete, Boolean replace, int level) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, replace, delete, level, 0L);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, level, 0L);
 		}
 	}
 
@@ -724,102 +732,10 @@ public class QRules {
             Boolean replace) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, null, parentCode, linkCode, linkValue, replace, false, 0, 0L);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, replace, false, 0, 0L);
 		}
     }
 	
-	/*public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode) {
-
-		BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
-		BaseEntity[] itemArray = new BaseEntity[1];
-		itemArray[0] = item;
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
-
-		String[] recipientCodes = { this.getUser().getCode() };
-		msg.setRecipientCodeArray(recipientCodes);
-		publishData(msg, recipientCodes);
-	}*/
-
-	/*public void publishBaseEntityByCode(BaseEntity[] bes, final String parentCode, final String linkCode,
-			String linkValue) {
-		if(bes != null) {
-			this.publishBaseEntityByCode(bes, null, parentCode, linkCode, linkValue, false, false, 0);
-		}		
-	}*/	
-
-	/*public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
-			final String[] recipientCodes) {
-
-		BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
-		BaseEntity[] itemArray = new BaseEntity[1];
-		itemArray[0] = item;
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
-		msg.setRecipientCodeArray(recipientCodes);
-		publishData(msg, recipientCodes);
-
-	}*/
-	
-	/* Publish BaseEntityList with LinkValue Set */
-	/*public void publishBaseEntityByCode(BaseEntity be, final String parentCode, final String linkCode,
-			final String[] recipientCodes, final String linkValue, final Boolean replace) {
-		if(be != null) {
-			BaseEntity[] beArr = { be };
-			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, replace, false, 0);
-		}
-	}*/
-
-	/*public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
-			final String[] recipientCodes, final Boolean delete) {
-
-		BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
-		BaseEntity[] itemArray = new BaseEntity[1];
-		itemArray[0] = item;
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
-		msg.setRecipientCodeArray(recipientCodes);
-		msg.setDelete(delete);
-		publishData(msg, recipientCodes);
-
-	}*/
-
-	/*public void publishBaseEntityByCode(final BaseEntity item, final String parentCode, final String linkCode) {
-
-		BaseEntity[] itemArray = new BaseEntity[1];
-		itemArray[0] = item;
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
-		String[] recipients = new String[1];
-		recipients[0] = this.getUser().getCode();
-		msg.setRecipientCodeArray(recipients);
-		publishData(msg, recipients);
-	}*/
-
-	/*public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode) {
-		this.publishBaseEntityByCode(items, parentCode, linkCode, false);
-	}*/
-
-	/* Publishes baseEntity with replace TRUE */
-	/*public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			Boolean replace) {
-
-		BaseEntity[] itemArray = items.toArray(new BaseEntity[0]);
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
-		String[] recipients = new String[1];
-		recipients[0] = this.getUser().getCode();
-		msg.setRecipientCodeArray(recipients);
-		msg.setReplace(replace);
-		publishData(msg, recipients);
-	}*/
-
-	/*public void publishBaseEntityByCode(final BaseEntity item, final String parentCode, final String linkCode,
-			final String[] recipientCodes) {
-
-		BaseEntity[] itemArray = new BaseEntity[1];
-		itemArray[0] = item;
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
-		msg.setRecipientCodeArray(recipientCodes);
-		publishData(msg, recipientCodes);
-
-	}*/
-
 	public <T extends QMessage> void publishCmd(T msg) {
 		msg.setToken(getToken());
 		publish("cmds", JsonUtils.toJson(msg));
