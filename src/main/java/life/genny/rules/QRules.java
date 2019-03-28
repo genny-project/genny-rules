@@ -654,8 +654,7 @@ public class QRules {
 	}
 	
 	/* Publish BaseEntity with LinkValue Set */
-	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
-			final String[] recipientCodes, final String linkValue) {
+	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes) {
 		if(be != null) {
 			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
 			BaseEntity[] beArr = { item }; 
@@ -664,8 +663,7 @@ public class QRules {
 	}
 	
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(String beCode, final String parentCode, final String linkCode,
-			final String[] recipientCodes, final String linkValue, final Boolean delete) {
+	public void publishBaseEntityByCode(String beCode, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes, final Boolean delete) {
 		if(beCode != null) {
 			BaseEntity be = this.baseEntity.getBaseEntityByCode(beCode);
 			BaseEntity[] beArr = { be };
@@ -690,8 +688,7 @@ public class QRules {
 
 	
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			final String[] recipientCodes, final String linkValue) {
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
 			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, false, 0, 0L);
@@ -699,8 +696,7 @@ public class QRules {
 	}
 	
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			final String[] recipientCodes, final String linkValue, final Boolean delete) {
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes, final Boolean delete) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
 			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, false, delete, 0, 0L);
@@ -708,8 +704,7 @@ public class QRules {
 	}
 
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			final String[] recipientCodes, final String linkValue, final Boolean delete, Boolean replace) {
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes, final Boolean delete, Boolean replace) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
 			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, replace, delete, 0, 0L);
@@ -717,8 +712,8 @@ public class QRules {
 	}
 
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			final String[] recipientCodes, final String linkValue, final Boolean delete, Boolean replace, int level) {
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue,
+			final String[] recipientCodes, final Boolean delete, Boolean replace, int level) {
 		if(items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
 			this.publishBaseEntityByCode(beArr, recipientCodes, parentCode, linkCode, linkValue, replace, delete, level, 0L);
