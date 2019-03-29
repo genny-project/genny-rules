@@ -5592,7 +5592,7 @@ public Ask generateQuestionsForTree(String parentCode, ContextList contextList, 
 		return new ContextList(themeContexts);
 	}
 	
-	private void setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode, String linkValue) {
+	public void setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode, String linkValue) {
 		BaseEntity parentBe = this.baseEntity.getBaseEntityByCode(parentCode);
 		
 		Set<EntityEntity> childLinks = new HashSet<>();
