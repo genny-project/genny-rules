@@ -1,6 +1,7 @@
 package life.genny.rules;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -28,7 +29,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
@@ -69,7 +69,6 @@ import life.genny.qwanda.message.QBaseMSGAttachment;
 import life.genny.qwanda.message.QBaseMSGMessageTemplate;
 import life.genny.qwanda.message.QBaseMSGMessageType;
 import life.genny.qwanda.message.QBulkMessage;
-import life.genny.qwanda.message.QCmdGeofenceMessage;
 import life.genny.qwanda.message.QCmdLayoutMessage;
 import life.genny.qwanda.message.QCmdMessage;
 import life.genny.qwanda.message.QCmdReloadMessage;
@@ -78,12 +77,10 @@ import life.genny.qwanda.message.QDataAnswerMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataAttributeMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
-import life.genny.qwanda.message.QDataGPSMessage;
 import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QDataSubLayoutMessage;
 import life.genny.qwanda.message.QDataToastMessage;
 import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
-import life.genny.qwanda.message.QEventBtnClickMessage;
 import life.genny.qwanda.message.QEventLinkChangeMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwanda.message.QMSGMessage;
@@ -130,7 +127,7 @@ import life.genny.utils.Layout.LayoutUtils;
 //import life.genny.rules.Layout.LayoutUtils;
 import life.genny.utils.Layout.LayoutViewData;
 
-public class QRules {
+public class QRules implements Serializable {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
@@ -2210,7 +2207,7 @@ public class QRules {
 
 	public void startWorkflow(final String id, Map<String, Object> parms) {
 
-		println("Starting process " + id);
+		println("Starting Workflow from QRules " + id);
 		if (drools != null) {
 
 			parms.put("rules", this);
@@ -3810,7 +3807,7 @@ public class QRules {
 			filteredMsg.setToken(getToken());
 			newBulkMsg.add(filteredMsg);
 
-			this.println("SendTreeView Filtered Msg:" + JsonUtils.toJson(filteredMsg));
+			this.println("SendTreeView Filtered Msg:" /*+ JsonUtils.toJson(filteredMsg)*/);
 		}
 
 		this.publishCmd(newBulkMsg);
