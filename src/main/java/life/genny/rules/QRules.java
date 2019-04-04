@@ -1,6 +1,7 @@
 package life.genny.rules;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -29,8 +30,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.money.CurrencyUnit;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -58,12 +57,12 @@ import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.GPS;
+
 import life.genny.qwanda.Layout;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.AttributeBoolean;
 import life.genny.qwanda.attribute.AttributeInteger;
-import life.genny.qwanda.attribute.AttributeMoney;
 import life.genny.qwanda.attribute.AttributeText;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
@@ -76,7 +75,6 @@ import life.genny.qwanda.message.QBaseMSGAttachment;
 import life.genny.qwanda.message.QBaseMSGMessageTemplate;
 import life.genny.qwanda.message.QBaseMSGMessageType;
 import life.genny.qwanda.message.QBulkMessage;
-import life.genny.qwanda.message.QCmdGeofenceMessage;
 import life.genny.qwanda.message.QCmdLayoutMessage;
 import life.genny.qwanda.message.QCmdMessage;
 import life.genny.qwanda.message.QCmdReloadMessage;
@@ -85,12 +83,10 @@ import life.genny.qwanda.message.QDataAnswerMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataAttributeMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
-import life.genny.qwanda.message.QDataGPSMessage;
 import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QDataSubLayoutMessage;
 import life.genny.qwanda.message.QDataToastMessage;
 import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
-import life.genny.qwanda.message.QEventBtnClickMessage;
 import life.genny.qwanda.message.QEventLinkChangeMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwanda.message.QMSGMessage;
@@ -117,7 +113,6 @@ import life.genny.qwanda.payments.QReleasePayment;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyItemResponse;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyUserResponse;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyUserSearchResponse;
-import life.genny.qwandautils.GPSUtils;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
@@ -129,7 +124,6 @@ import life.genny.security.SecureResources;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
 import life.genny.utils.DateUtils;
-import life.genny.utils.MoneyHelper;
 import life.genny.utils.PaymentEndpoint;
 import life.genny.utils.PaymentUtils;
 import life.genny.utils.QDataJsonMessage;
@@ -141,7 +135,7 @@ import life.genny.utils.Layout.LayoutUtils;
 //import life.genny.rules.Layout.LayoutUtils;
 import life.genny.utils.Layout.LayoutViewData;
 
-public class QRules {
+public class QRules implements Serializable {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
@@ -2229,7 +2223,7 @@ public class QRules {
 
 	public void startWorkflow(final String id, Map<String, Object> parms) {
 
-		println("Starting process " + id);
+		println("Starting Workflow from QRules " + id);
 		if (drools != null) {
 
 			parms.put("rules", this);
@@ -3742,8 +3736,56 @@ public class QRules {
 		return false;
 	}
 
+	public void sendTreeData() {
+		// we grab the root
+		BaseEntity root = this.baseEntity.getBaseEntityByCode("GRP_ROOT");
+		
+		/* create an ask for GRP_ROOT */
+		Ask rootAsk = QuestionUtils.createQuestionForBaseEntity(root, true);
+				
+		/* create an object for the complete ask */
+		QDataAskMessage askMsg = null;
+		
+		/* get the roles of the current user */
+		Set<EntityAttribute> currentUserAttr = getUser().getBaseEntityAttributes();
+		List<String> rolesOfCurrentUser = new ArrayList<>();
+		for (EntityAttribute ea : currentUserAttr) {
+			if ( ea.getAttributeCode().startsWith("PRI_IS_") && ea.getValueBoolean() ) {
+				rolesOfCurrentUser.add(ea.getAttributeCode());
+			}			
+		}
+		log.info("treeView method, roles of current user are ::"+rolesOfCurrentUser.toString());
+					
+		/* getting the expandable theme baseentity */
+		BaseEntity expandableBe = this.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
+		
+		/* publishing theme for expanding */
+		this.publishBaseEntityByCode(expandableBe.getCode());
+		
+		/* creating a context for the expandable-theme */
+		Context expandableThemeContext = new Context("THEME", expandableBe);
+		List<Context> expandableThemeContextList = new ArrayList<>();
+		expandableThemeContextList.add(expandableThemeContext);
+		
+		/* add the context to the contextList */
+		ContextList contextList = new ContextList(expandableThemeContextList);
+		
+		/* we generate the tree view questions */
+		Ask treeAsk = generateQuestionsForTree(root.getCode(), contextList, rolesOfCurrentUser);
+		Ask[] completeAsk = { treeAsk };
 
-public Ask generateQuestionsForTree(String parentCode, ContextList contextList, List<String> rolesOfCurrentUser) {
+		/* Creating AskMessage with complete asks */
+		askMsg = new QDataAskMessage(completeAsk);	
+		
+		/* publishing the question for treeview */
+		this.publishCmd(askMsg);
+		
+		/* sends questions for treeview and positions it in the sidebar frame */
+		QDataBaseEntityMessage treeMessage = this.layoutUtils.showQuestionsInFrame("FRM_SIDEBAR", rootAsk.getQuestionCode(), LayoutPosition.NORTH);
+		this.publishCmd(treeMessage);	
+	}
+	
+	public Ask generateQuestionsForTree(String parentCode, ContextList contextList, List<String> rolesOfCurrentUser) {
 		
 		// we grab the root
 		BaseEntity parent = this.baseEntity.getBaseEntityByCode(parentCode);
@@ -3825,58 +3867,6 @@ public Ask generateQuestionsForTree(String parentCode, ContextList contextList, 
 		}		
 			
 		return newKidsList;
-	}
-
-	public void sendTreeData() {
-
-		println("treedata realm is " + realm());
-
-		// we grab the root
-		BaseEntity root = this.baseEntity.getBaseEntityByCode("GRP_ROOT");
-		
-		/* create an ask for GRP_ROOT */
-		Ask rootAsk = QuestionUtils.createQuestionForBaseEntity(root, true);
-				
-		/* create an object for the complete ask */
-		QDataAskMessage askMsg = null;
-		
-		/* get the roles of the current user */
-		Set<EntityAttribute> currentUserAttr = getUser().getBaseEntityAttributes();
-		List<String> rolesOfCurrentUser = new ArrayList<>();
-		for (EntityAttribute ea : currentUserAttr) {
-			if ( ea.getAttributeCode().startsWith("PRI_IS_") && ea.getValueBoolean() ) {
-				rolesOfCurrentUser.add(ea.getAttributeCode());
-			}			
-		}
-		log.info("treeView method, roles of current user are ::"+rolesOfCurrentUser.toString());
-					
-		/* getting the expandable theme baseentity */
-		BaseEntity expandableBe = this.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
-		
-		/* publishing theme for expanding */
-		this.publishBaseEntityByCode(expandableBe.getCode());
-		
-		/* creating a context for the expandable-theme */
-		Context expandableThemeContext = new Context("THEME", expandableBe);
-		List<Context> expandableThemeContextList = new ArrayList<>();
-		expandableThemeContextList.add(expandableThemeContext);
-		
-		/* add the context to the contextList */
-		ContextList contextList = new ContextList(expandableThemeContextList);
-		
-		/* we generate the tree view questions */
-		Ask treeAsk = generateQuestionsForTree(root.getCode(), contextList, rolesOfCurrentUser);
-		Ask[] completeAsk = { treeAsk };
-
-		/* Creating AskMessage with complete asks */
-		askMsg = new QDataAskMessage(completeAsk);	
-		
-		/* publishing the question for treeview */
-		this.publishCmd(askMsg);
-		
-		/* sends questions for treeview and positions it in the sidebar frame */
-		QDataBaseEntityMessage treeMessage = this.layoutUtils.showQuestionsInFrame("FRM_SIDEBAR", rootAsk.getQuestionCode(), LayoutPosition.NORTH);
-		this.publishCmd(treeMessage);	
 	}
 
 	public void startupEvent(String caller) {
