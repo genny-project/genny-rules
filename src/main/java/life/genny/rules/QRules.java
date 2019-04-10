@@ -4204,8 +4204,9 @@ public class QRules implements Serializable {
 
 		/* send critical slack notifications only for production mode */
 		log.info("dev mode ::" + GennySettings.devMode);
+		log.info("enableSlackSending ::" + GennySettings.enableSlackSending);
 		BaseEntity project = getProject();
-		if (project != null && !GennySettings.devMode) {
+		if (project != null && GennySettings.enableSlackSending) {
 			String webhookURL = project.getLoopValue(attributeCode, null);
 			log.info("slack url: " + webhookURL);
 			if (webhookURL != null) {
