@@ -33,8 +33,7 @@ import life.genny.qwandautils.QwandaUtils;
 public class V7Test {
 	
 	private static String ENV_GENNY_BRIDGE_URL= "http://bridge.genny.life";
-	
-	//@Test
+	@Test
 	public void sendInitialFrame() {
 		
 		/* create table frame */
@@ -95,10 +94,11 @@ public class V7Test {
 		        Question newQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(), questionAttribute, true);
 		        
 		        ContextList themeContext = createHorizontalThemeForTableContent();
-		        newQuestion.setContextList(themeContext);
+		        //newQuestion.setContextList(themeContext);
 		        
 		        /* We generate the ask */
 		        Ask beAsk = new Ask(newQuestion, "PER_USER1", be.getCode());
+		        beAsk.setContextList(themeContext);
 		        Ask[] childArr = childAskList.stream().toArray(Ask[]::new);
 		        beAsk.setChildAsks(childArr);
 		        		        
@@ -143,17 +143,15 @@ public class V7Test {
 		/* create context */
         /* getting the expandable theme baseentity */
 		BaseEntity horizontalTheme = new BaseEntity("THM_DISPLAY_HORIZONTAL", "horizontal");
-		QDataBaseEntityMessage horizontalThemeMsg = new QDataBaseEntityMessage(horizontalTheme);
-		sendTestMsg(horizontalThemeMsg);		
 		
 		 /* publishing theme for expanding */
 		/* creating a context for the expandable-theme */
-		Context verticalThemeContext = new Context("THEME", horizontalTheme);
-		List<Context> verticalThemeContextList = new ArrayList<>();
-		verticalThemeContextList.add(verticalThemeContext);
+		Context horizontalThemeContext = new Context("THEME", horizontalTheme);
+		List<Context> horizontalThemeContextList = new ArrayList<>();
+		horizontalThemeContextList.add(horizontalThemeContext);
 		
 		/* add the context to the contextList */
-		ContextList contextList = new ContextList(verticalThemeContextList);
+		ContextList contextList = new ContextList(horizontalThemeContextList);
 		
 		return contextList;
 	}
@@ -206,7 +204,7 @@ public class V7Test {
 			
 			SearchEntity hostCompanies = new SearchEntity("SBE_DAB_DAB", "List of All Host Companies")
 			        .addColumn("PRI_NAME", "Name")
-			        .addColumn("PRI_IMAGE_URL", "Company Logo")
+			        .addColumn("PRI_EMAIL", "Company email")
 			        .addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "CPY_%")
 			        .addFilter("PRI_IS_HOST_COMPANY", true)
 			        .setPageStart(0)
