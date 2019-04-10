@@ -9,18 +9,23 @@ import java.util.Set;
 import org.junit.Test;
 
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.Context;
+import life.genny.qwanda.ContextList;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
 import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.EntityQuestion;
 import life.genny.qwanda.entity.SearchEntity;
+import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.message.QMessage;
-import life.genny.qwandautils.GennySettings;
+import life.genny.qwanda.validation.Validation;
+import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
 import life.genny.qwandautils.QwandaUtils;
@@ -33,7 +38,7 @@ public class V7Test {
 	public void sendInitialFrame() {
 		
 		/* create table frame */
-		BaseEntity frameBe = new BaseEntity("FRM_TABLE", "table-frame");
+		BaseEntity frameTableBe = new BaseEntity("FRM_TABLE", "table-frame");
 			
 		/* create table-content frame */
 		BaseEntity contentFrameBe = new BaseEntity("FRM_TABLE_CONTENT", "table-content");					
@@ -41,103 +46,118 @@ public class V7Test {
 		/* creating a link */
 		Attribute attribute = new Attribute("LNK_FRAME", "link", new DataType(String.class));
 		/* creating entity entity between table-frame and table-content */
-		EntityEntity entityEntity = new EntityEntity(frameBe, contentFrameBe, attribute, 1.0, "CENTRE");
+		EntityEntity entityEntity = new EntityEntity(frameTableBe, contentFrameBe, attribute, 1.0, "CENTRE");
 		Set<EntityEntity> entEntSet = new HashSet<>();
 		entEntSet.add(entityEntity);
-		frameBe.setLinks(entEntSet);
-		
-		System.out.println("frameBe message ::"+JsonUtils.toJson(frameBe));
-		
-		QDataBaseEntityMessage contentFrameMsg = new QDataBaseEntityMessage(contentFrameBe);
-		sendTestMsg(contentFrameMsg);
-		
-		QDataBaseEntityMessage frameMsg = new QDataBaseEntityMessage(frameBe);
+		frameTableBe.setLinks(entEntSet);
+				
+		QDataBaseEntityMessage frameMsg = new QDataBaseEntityMessage(frameTableBe);
 		sendTestMsg(frameMsg);
 		
-        /* Get the on-the-fly question attribute */
-		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
-        
-        /* creating suffix according to value of isQuestionGroup. If it is a question-group, suffix "_GRP" is required" */  
-        String questionCode = "QUE_" + frameBe.getCode() + "_GRP";
-        
-        /* We generate the question */
-        Question newQuestion = new Question(questionCode, frameBe.getName(), questionAttribute, true);
-        
-        /* We generate the ask */
-        Ask newAsk = new Ask(newQuestion, frameBe.getCode(), frameBe.getCode(), false, 1.0, false, false, true);
-        
-        Ask[] completeAsk = { newAsk };
-        
-        /* Creating AskMessage with complete asks */
-		QDataAskMessage askMsg = new QDataAskMessage(completeAsk);
-		
-		/* send through message */
-		sendTestMsg(askMsg);
-		
 		/* send table content */
-		sendTableContent();
+		sendTableContent(frameTableBe, contentFrameBe);
 		
 		/* link content-frame to table-frame */
 		linkTableToContentFrame();
 		
 	}
 	
-	public void sendTableContent() {
-		
+	public void sendTableContent(BaseEntity frameTableBe, BaseEntity contentFrameBe) {
 		/* Get the on-the-fly question attribute */
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));	
 		
-		/* create table-content frame */
-		BaseEntity contentFrameBe = new BaseEntity("FRM_TABLE_CONTENT", "table-content");		
-		
-		 /* We generate the question */
-        Question contentFrameQuestion = new Question("QUE_" + contentFrameBe.getCode() + "_GRP", contentFrameBe.getName(), questionAttribute, true);
-        
-        /* We generate the ask */
-        Ask contentFrameAsk = new Ask(contentFrameQuestion, "FRM_TABLE", contentFrameQuestion.getCode(), false, 1.0, false, false, true);
-		 		
-		BaseEntity be1 = new BaseEntity("TABLE_ROW1", "row1");
-		BaseEntity be2 = new BaseEntity("TABLE_ROW2", "row2");
-		List<BaseEntity> beList = new ArrayList<>();
-		beList.add(be1);
-		beList.add(be2);
 		List<Ask> askList = new ArrayList<>();
 		Set<EntityQuestion> entQuestionList = new HashSet<>();
+		QBulkMessage bulkMsg = new QBulkMessage();
+		
+		BaseEntity[] searchResult = getCompaniesSearchResult();
+		
+		if(searchResult != null) {
+			for(BaseEntity be : searchResult) {
 				
-		for(BaseEntity be : beList) {
-			 /* We generate the question */
-	        Question newQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(), questionAttribute, true);
-	        
-	        /* We generate the ask */
-	        //Ask newAsk = new Ask(newQuestion, contentFrameBe.getCode(), newQuestion.getCode(), false, 1.0, false, false, true);
-	        Ask newAsk = new Ask(newQuestion, contentFrameBe.getCode(), newQuestion.getCode());
-	        askList.add(newAsk);    
-	        
-	        Link newLink = new Link(contentFrameBe.getCode(), newQuestion.getCode(), "LNK_ASK", "NORTH");
+				List<Ask> childAskList = new ArrayList<>();
+				
+				for(EntityAttribute ea : be.getBaseEntityAttributes()) {
+					Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
+					List<Validation> validations = new ArrayList<>();
+					validations.add(validation);
+					ValidationList validationList = new ValidationList();
+					validationList.setValidationList(validations);
+					
+					Attribute at = new Attribute(ea.getAttributeCode(), ea.getAttributeName(), new DataType("Text", validationList, "Text"));
+					
+					Question childQuestion = new Question("QUE_"+ea.getAttributeCode(), ea.getAttributeName(), at, true);
+					Ask childAsk = new Ask(childQuestion, "PER_USER1", be.getCode());
+					childAskList.add(childAsk);
+				}
+				
+				/* We generate the question */
+		        Question newQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(), questionAttribute, true);
+		        
+		        ContextList themeContext = createHorizontalThemeForTableContent();
+		        newQuestion.setContextList(themeContext);
+		        
+		        /* We generate the ask */
+		        Ask beAsk = new Ask(newQuestion, "PER_USER1", be.getCode());
+		        Ask[] childArr = childAskList.stream().toArray(Ask[]::new);
+		        beAsk.setChildAsks(childArr);
+		        		        
+		        askList.add(beAsk);    
+		        
+		        Link newLink = new Link(contentFrameBe.getCode(), newQuestion.getCode(), "LNK_ASK", "NORTH");
 
-			/* we create the entity entity */
-			EntityQuestion entityEntity = new EntityQuestion(newLink);
-	        
-			/* creating entity entity between table-frame and table-content */
-			entQuestionList.add(entityEntity);
+				/* we create the entity entity */
+				EntityQuestion entityEntity = new EntityQuestion(newLink);
+		        
+				/* creating entity entity between table-frame and table-content */
+				entQuestionList.add(entityEntity);
+				
+				
+				Ask[] beAskArr = { beAsk };
+				/* Creating AskMessage with complete asks */	
+				QDataAskMessage totalAskMsg = new QDataAskMessage(beAskArr);
+				sendTestMsg(totalAskMsg);
+			}
 		}
 		
-		Ask[] childAskArr = askList.stream().toArray(Ask[]::new);
-		contentFrameAsk.setChildAsks(childAskArr);
-		
-		askList.add(contentFrameAsk);
-		Ask[] tableContentAsk = askList.stream().toArray(Ask[]::new);
-        
-        /* Creating AskMessage with complete asks */
-		QDataAskMessage tableContentMsg = new QDataAskMessage(tableContentAsk);
-		sendTestMsg(tableContentMsg);
-		
-		/* sending content-frame with links */
+		/* publish frameBe */
 		contentFrameBe.setQuestions(entQuestionList);
+		
+		BaseEntity verticalTheme = new BaseEntity("THM_DISPLAY_VERTICAL", "vertical");
+		
+		/* creating a link */
+		Attribute attribute = new Attribute("LNK_THEME", "link", new DataType(String.class));
+		/* creating entity entity between table-frame and table-content */
+		EntityEntity entityEntity = new EntityEntity(contentFrameBe, verticalTheme, attribute, 1.0, "NORTH");
+		Set<EntityEntity> entEntSet = new HashSet<>();
+		entEntSet.add(entityEntity);
+		contentFrameBe.setLinks(entEntSet);
+		
 		QDataBaseEntityMessage frameMsg = new QDataBaseEntityMessage(contentFrameBe);
-		sendTestMsg(frameMsg);			
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(searchResult);
+		sendTestMsg(msg);
+		sendTestMsg(frameMsg);
 	}
 	
+	private ContextList createHorizontalThemeForTableContent() {
+		/* create context */
+        /* getting the expandable theme baseentity */
+		BaseEntity horizontalTheme = new BaseEntity("THM_DISPLAY_HORIZONTAL", "horizontal");
+		QDataBaseEntityMessage horizontalThemeMsg = new QDataBaseEntityMessage(horizontalTheme);
+		sendTestMsg(horizontalThemeMsg);		
+		
+		 /* publishing theme for expanding */
+		/* creating a context for the expandable-theme */
+		Context verticalThemeContext = new Context("THEME", horizontalTheme);
+		List<Context> verticalThemeContextList = new ArrayList<>();
+		verticalThemeContextList.add(verticalThemeContext);
+		
+		/* add the context to the contextList */
+		ContextList contextList = new ContextList(verticalThemeContextList);
+		
+		return contextList;
+	}
+
 	private void linkTableToContentFrame() {
 		BaseEntity frameBe = new BaseEntity("FRM_TABLE", "table-frame");
 		
@@ -152,7 +172,7 @@ public class V7Test {
 		contentBe.setLinks(entEntList);
 		
 		QDataBaseEntityMessage contentFrameMsg = new QDataBaseEntityMessage(contentBe);
-		sendTestMsg(contentFrameMsg);	
+		sendTestMsg(contentFrameMsg);	 
 	}
 	
 	/* publishes the test-messages to front-end through bridge */
@@ -167,17 +187,16 @@ public class V7Test {
 			/* get the bridge url to publish the message to webcmd channel */
 			String bridgetUrl = ENV_GENNY_BRIDGE_URL + "/api/service?channel=webdata";
 			
-			String response = QwandaUtils.apiPostEntity(bridgetUrl, JsonUtils.toJson(msg), token);
+			QwandaUtils.apiPostEntity(bridgetUrl, JsonUtils.toJson(msg), token);
 			
-			System.out.println("test bridge response ::"+response);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 		
 	}
 	
-	private void search() {		
-		
+	private BaseEntity[] getCompaniesSearchResult() {				
+		BaseEntity[] beArr = null;
 		String resultJson;
 		try {
 			
@@ -191,20 +210,24 @@ public class V7Test {
 			        .addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "CPY_%")
 			        .addFilter("PRI_IS_HOST_COMPANY", true)
 			        .setPageStart(0)
-			        .setPageSize(10000);
+			        .setPageSize(11);
 			
 			String jsonSearchBE = JsonUtils.toJson(hostCompanies);
 			resultJson = QwandaUtils.apiPostEntity("http://keycloak.genny.life:8280/qwanda/baseentitys/search",
 				jsonSearchBE, serviceToken);
-					
-			
+				
 					
 			System.out.println("search result ::"+resultJson);
+			if(resultJson != null) {
+				QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+				if(msg != null) {
+					return msg.getItems();
+				}
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-
+		return beArr;
 	}
 	
 }
