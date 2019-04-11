@@ -33,7 +33,7 @@ import life.genny.qwandautils.QwandaUtils;
 public class V7Test {
 	
 	private static String ENV_GENNY_BRIDGE_URL= "http://bridge.genny.life";
-	//@Test
+	@Test
 	public void sendInitialFrame() {
 		
 		/* create table frame */
@@ -74,10 +74,10 @@ public class V7Test {
 		sendTableHeader(frameTableBe, frameTableHeaderBe);
 		
 		/* send table content */
-		//sendTableContent(frameTableBe, frameTableContentBe);
+		sendTableContent(frameTableBe, frameTableContentBe);
 		
 		/* link content-frame to table-frame */
-		//linkTableToContentFrame();
+		linkTableToContentFrame();
 		
 	}
 	
@@ -101,19 +101,17 @@ public class V7Test {
 		/* Get list of attributes we want to show in table header */
 		if(searchResult != null) {
 			
-			for(BaseEntity be : searchResult) {
+			BaseEntity be = searchResult[0];
+			for(EntityAttribute ea : be.getBaseEntityAttributes()) {
 				
-				for(EntityAttribute ea : be.getBaseEntityAttributes()) {
-					
-					/* Construct a table column question */
-					Question columnQuestion = new Question("QUE_" + ea.getAttributeCode() + "_GRP", ea.getAttributeName(), questionAttribute, true);
-					
-					/* Construct a table column Ask */
-					Ask columnAsk = new Ask(columnQuestion, "PER_USER1", "PER_USER1", false, 1.0, false,
-					false, true);
-					
-					childAsks.add(columnAsk);
-				}
+				/* Construct a table column question */
+				Question columnQuestion = new Question("QUE_" + ea.getAttributeCode(), ea.getAttributeName(), questionAttribute, true);
+				
+				/* Construct a table column Ask */
+				Ask columnAsk = new Ask(columnQuestion, "PER_USER1", "PER_USER1", false, 1.0, false,
+				false, true);
+				
+				childAsks.add(columnAsk);
 			}
 		}
 
@@ -176,6 +174,7 @@ public class V7Test {
 				
 				List<Ask> childAskList = new ArrayList<>();
 				
+				/* iterating through each attribute of baseentity and creating questions for the attribute */
 				for(EntityAttribute ea : be.getBaseEntityAttributes()) {
 					Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
 					List<Validation> validations = new ArrayList<>();
@@ -190,14 +189,16 @@ public class V7Test {
 					childAskList.add(childAsk);
 				}
 				
-				/* We generate the question */
+				/* We generate the question the baseentity*/
 		        Question newQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(), questionAttribute, true);
 		        
+		        /* getting horizontal theme */
 		        ContextList themeContext = createHorizontalThemeForTableContent();
-		        //newQuestion.setContextList(themeContext);
 		        
 		        /* We generate the ask */
 		        Ask beAsk = new Ask(newQuestion, "PER_USER1", be.getCode());
+		        
+		        /* adding horizontal theme to each table-row question-grp */
 		        beAsk.setContextList(themeContext);
 		        Ask[] childArr = childAskList.stream().toArray(Ask[]::new);
 		        beAsk.setChildAsks(childArr);
