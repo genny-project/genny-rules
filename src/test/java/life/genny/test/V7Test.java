@@ -33,35 +33,52 @@ import life.genny.qwandautils.QwandaUtils;
 public class V7Test {
 	
 	private static String ENV_GENNY_BRIDGE_URL= "http://bridge.genny.life";
-	@Test
+	//@Test
 	public void sendInitialFrame() {
 		
 		/* create table frame */
 		BaseEntity frameTableBe = new BaseEntity("FRM_TABLE", "table-frame");
+		
+		/* create table-header frame */
+		BaseEntity frameTableHeaderBe = new BaseEntity("FRM_TABLE_HEADER", "table-header");
 			
 		/* create table-content frame */
-		BaseEntity contentFrameBe = new BaseEntity("FRM_TABLE_CONTENT", "table-content");					
+		BaseEntity frameTableContentBe = new BaseEntity("FRM_TABLE_CONTENT", "table-content");					
+		
+		/* create table-footer frame */
+		BaseEntity frameTableFooterBe = new BaseEntity("FRM_TABLE_FOOTER", "table-footer");					
 		
 		/* creating a link */
 		Attribute attribute = new Attribute("LNK_FRAME", "link", new DataType(String.class));
-		/* creating entity entity between table-frame and table-content */
-		EntityEntity entityEntity = new EntityEntity(frameTableBe, contentFrameBe, attribute, 1.0, "CENTRE");
+
+		/* link table-frame and table-header */
+		EntityEntity headerEntityEntity = new EntityEntity(frameTableBe, frameTableHeaderBe, attribute, 1.0, "NORTH");
+
+		/* link table-frame and table-content */
+		EntityEntity ContentEntityEntity = new EntityEntity(frameTableBe, frameTableContentBe, attribute, 2.0, "CENTRE");
+		
+		/* link table-frame and table-footer */
+		EntityEntity FooterEntityEntity = new EntityEntity(frameTableBe, frameTableFooterBe, attribute, 3.0, "SOUTH");
+		
+
 		Set<EntityEntity> entEntSet = new HashSet<>();
-		entEntSet.add(entityEntity);
+		entEntSet.add(headerEntityEntity);
+		entEntSet.add(ContentEntityEntity);
+		entEntSet.add(FooterEntityEntity);
 		frameTableBe.setLinks(entEntSet);
 				
 		QDataBaseEntityMessage frameMsg = new QDataBaseEntityMessage(frameTableBe);
 		sendTestMsg(frameMsg);
 		
 		/* send table content */
-		sendTableContent(frameTableBe, contentFrameBe);
+		sendTableContent(frameTableBe, frameTableContentBe);
 		
 		/* link content-frame to table-frame */
 		linkTableToContentFrame();
 		
 	}
 	
-	public void sendTableContent(BaseEntity frameTableBe, BaseEntity contentFrameBe) {
+	public void sendTableContent(BaseEntity frameTableBe, BaseEntity frameTableContentBe) {
 		/* Get the on-the-fly question attribute */
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));	
 		
@@ -72,6 +89,7 @@ public class V7Test {
 		BaseEntity[] searchResult = getCompaniesSearchResult();
 		
 		if(searchResult != null) {
+			
 			for(BaseEntity be : searchResult) {
 				
 				List<Ask> childAskList = new ArrayList<>();
@@ -104,7 +122,7 @@ public class V7Test {
 		        		        
 		        askList.add(beAsk);    
 		        
-		        Link newLink = new Link(contentFrameBe.getCode(), newQuestion.getCode(), "LNK_ASK", "NORTH");
+		        Link newLink = new Link(frameTableContentBe.getCode(), newQuestion.getCode(), "LNK_ASK", "NORTH");
 
 				/* we create the entity entity */
 				EntityQuestion entityEntity = new EntityQuestion(newLink);
@@ -121,19 +139,19 @@ public class V7Test {
 		}
 		
 		/* publish frameBe */
-		contentFrameBe.setQuestions(entQuestionList);
+		frameTableContentBe.setQuestions(entQuestionList);
 		
 		BaseEntity verticalTheme = new BaseEntity("THM_DISPLAY_VERTICAL", "vertical");
 		
 		/* creating a link */
 		Attribute attribute = new Attribute("LNK_THEME", "link", new DataType(String.class));
 		/* creating entity entity between table-frame and table-content */
-		EntityEntity entityEntity = new EntityEntity(contentFrameBe, verticalTheme, attribute, 1.0, "NORTH");
+		EntityEntity entityEntity = new EntityEntity(frameTableContentBe, verticalTheme, attribute, 1.0, "NORTH");
 		Set<EntityEntity> entEntSet = new HashSet<>();
 		entEntSet.add(entityEntity);
-		contentFrameBe.setLinks(entEntSet);
+		frameTableContentBe.setLinks(entEntSet);
 		
-		QDataBaseEntityMessage frameMsg = new QDataBaseEntityMessage(contentFrameBe);
+		QDataBaseEntityMessage frameMsg = new QDataBaseEntityMessage(frameTableContentBe);
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(searchResult);
 		sendTestMsg(msg);
 		sendTestMsg(frameMsg);
