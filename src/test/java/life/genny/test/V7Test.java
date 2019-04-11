@@ -90,7 +90,7 @@ public class V7Test {
 		Question tableHeaderQues = new Question("QUE_" + frameTableHeaderBe.getCode() + "_GRP", frameTableHeaderBe.getName(), questionAttribute, true);
 		
 		/* Construct a table header Ask */
-		Ask tableHeaderAsk = new Ask(tableHeaderQues, frameTableHeaderBe.getCode(), frameTableHeaderBe.getCode(), false, 1.0, false, false, true);
+		Ask tableHeaderAsk = new Ask(tableHeaderQues, "PER_USER1", "PER_USER1", false, 1.0, false, false, true);
 		
 		/* initialize Ask List to store all the child asks */
 		List<Ask> childAsks = new ArrayList<>();
