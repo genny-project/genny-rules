@@ -33,7 +33,7 @@ import life.genny.qwandautils.QwandaUtils;
 public class V7Test {
 	
 	private static String ENV_GENNY_BRIDGE_URL= "http://bridge.genny.life";
-	@Test
+	//@Test
 	public void sendInitialFrame() {
 		
 		/* create table frame */
