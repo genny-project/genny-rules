@@ -1,11 +1,13 @@
 package life.genny.test;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import life.genny.qwanda.Ask;
@@ -24,6 +26,7 @@ import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.message.QMessage;
+import life.genny.qwanda.message.QSearchEntityMessage;
 import life.genny.qwanda.validation.Validation;
 import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.JsonUtils;
@@ -33,7 +36,11 @@ import life.genny.qwandautils.QwandaUtils;
 public class V7Test {
 	
 	private static String ENV_GENNY_BRIDGE_URL= "http://bridge.genny.life";
-	@Test
+	
+	  private static final Logger log = org.apache.logging.log4j.LogManager
+		      .getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+
+//	@Test
 	public void sendInitialFrame() {
 		
 		/* create table frame */
@@ -65,6 +72,12 @@ public class V7Test {
 		/* Get the on-the-fly question attribute */
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));	
 		
+		Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
+		List<Validation> validations = new ArrayList<>();
+		validations.add(validation);
+		ValidationList validationList = new ValidationList();
+		validationList.setValidationList(validations);
+
 		List<Ask> askList = new ArrayList<>();
 		Set<EntityQuestion> entQuestionList = new HashSet<>();
 		QBulkMessage bulkMsg = new QBulkMessage();
@@ -77,11 +90,6 @@ public class V7Test {
 				List<Ask> childAskList = new ArrayList<>();
 				
 				for(EntityAttribute ea : be.getBaseEntityAttributes()) {
-					Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
-					List<Validation> validations = new ArrayList<>();
-					validations.add(validation);
-					ValidationList validationList = new ValidationList();
-					validationList.setValidationList(validations);
 					
 					Attribute at = new Attribute(ea.getAttributeCode(), ea.getAttributeName(), new DataType("Text", validationList, "Text"));
 					
@@ -180,7 +188,7 @@ public class V7Test {
 			String token = KeycloakUtils.getAccessToken("http://keycloak.genny.life", "genny", "genny", "056b73c1-7078-411d-80ec-87d41c55c3b4", "user1", "password1");
 			msg.setToken(token);
 
-			System.out.println("cmd message ::"+msg);
+			log.info("cmd message ::"+msg);
 			
 			/* get the bridge url to publish the message to webcmd channel */
 			String bridgetUrl = ENV_GENNY_BRIDGE_URL + "/api/service?channel=webdata";
@@ -200,22 +208,36 @@ public class V7Test {
 			
 			String serviceToken = KeycloakUtils.getAccessToken("http://keycloak.genny.life:8180", "genny", "genny", "056b73c1-7078-411d-80ec-87d41c55c3b4", "service", "Wubba!Lubba!Dub!Dub!");
 			
-			System.out.println("service token ::"+serviceToken);
+			log.info("service token ::"+serviceToken);
 			
-			SearchEntity hostCompanies = new SearchEntity("SBE_DAB_DAB", "List of All Host Companies")
-			        .addColumn("PRI_NAME", "Name")
-			        .addColumn("PRI_EMAIL", "Company email")
-			        .addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "CPY_%")
-			        .addFilter("PRI_IS_HOST_COMPANY", true)
-			        .setPageStart(0)
-			        .setPageSize(11);
+//			SearchEntity hostCompanies = new SearchEntity("SBE_DAB_DAB", "List of All Host Companies")
+//			        .addColumn("PRI_NAME", "Name")
+//			        .addColumn("PRI_EMAIL", "Company email")
+//			        .addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "CPY_%")
+//			        .addFilter("PRI_IS_HOST_COMPANY", true)
+//			        .setPageStart(0)
+//			        .setPageSize(11);
+
+			
+			QSearchEntityMessage hostCompanies = new QSearchEntityMessage.Builder("SBE_DAB_DAB", "List of All Host Companies")
+					   .pageStart(0)
+					   .pageSize(10)
+					   .sort("PRI_CREATED","Created",SearchEntity.Sort.DESC)
+				        .column("PRI_NAME", "Name")
+				        .column("PRI_EMAIL", "Company email")
+						   .searchOr(new SearchEntity("SBE_TEST1","Test1")
+								   .addFilter("PRI_CODE",SearchEntity.StringFilter.LIKE,"CPY_%"))
+						   .searchOr(new SearchEntity("SBE_TEST2","Test2")
+								   .addFilter("PRI_IS_HOST_COMPANY",true))
+					   .build();
+
 			
 			String jsonSearchBE = JsonUtils.toJson(hostCompanies);
-			resultJson = QwandaUtils.apiPostEntity("http://keycloak.genny.life:8280/qwanda/baseentitys/search",
+			resultJson = QwandaUtils.apiPostEntity("http://keycloak.genny.life:8280/qwanda/baseentitys/search2",
 				jsonSearchBE, serviceToken);
 				
 					
-			System.out.println("search result ::"+resultJson);
+			log.info("search result ::"+resultJson);
 			if(resultJson != null) {
 				QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
 				if(msg != null) {

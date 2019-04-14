@@ -5474,6 +5474,10 @@ public class QRules implements Serializable {
 		drools.setFocus("AnswerProcessing");
 	}
 
+	public void setFocus(final String ruleGroup) {
+		drools.setFocus(ruleGroup);
+	}
+	
 	public void processAnswers(final Answer answer) {
 		drools.insert(answer);
 		drools.setFocus("AnswerProcessing");
