@@ -36,16 +36,20 @@ import life.genny.qwandautils.QwandaUtils;
 public class V7Test {
 	
 	private static String ENV_GENNY_BRIDGE_URL= "http://bridge.genny.life";
-<<<<<<< HEAD
+
 	
 	  private static final Logger log = org.apache.logging.log4j.LogManager
 		      .getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
-//	@Test
-=======
-	//@Test
->>>>>>> 1a394aabd076cca641bfc997151056960d58c8c2
+	@Test
 	public void sendInitialFrame() {
+		
+		// Perform test only if this env exists
+		String keycloaktestUrl = System.getenv("ENV_TEST_KEYCLOAK_URL");
+		if (keycloaktestUrl == null) {
+			log.info("Will not run local V7 test until ENV_TEST_KEYCLOAK_URL set to say .. http://keycloak.genny.life:8180");
+			return ;
+		}
 		
 		/* create table frame */
 		BaseEntity frameTableBe = new BaseEntity("FRM_TABLE", "table-frame");
