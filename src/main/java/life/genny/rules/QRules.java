@@ -120,6 +120,7 @@ import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.qwandautils.ScoringUtils;
+import life.genny.security.SecureResources;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
 import life.genny.utils.DateUtils;
@@ -251,9 +252,9 @@ public class QRules implements Serializable {
 	public String realm() {
 
 		String str = getAsString("realm");
-		/*if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
+		if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
 			str = GennySettings.mainrealm; // TODO, I don't like this, but...
-		}*/
+		}
 		return str.toLowerCase();
 	}
 
@@ -975,6 +976,9 @@ public class QRules implements Serializable {
 			String token = RulesUtils.generateServiceToken(realm());
 
 			String realm = realm();
+			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
+				realm = "genny";
+			}
 
 			/* if the keycloak id, we need to create a keycloak account for this user */
 			if (keycloakId == null) {
@@ -3696,25 +3700,39 @@ public class QRules implements Serializable {
 		println(RulesUtils.ANSI_BLUE + "PRE_INIT_STARTUP Loading in keycloak data and setting up service token for "
 				+ realm() + RulesUtils.ANSI_RESET);
 
-		JsonObject json = VertxUtils.readCachedJson(GennySettings.mainrealm, GennySettings.KEYCLOAK_JSON);
-		if (json==null || "error".equals(json.getString("status"))) {
-			log.error("KEYCLOAK JSON NOT FOUND");
-			return false;
-		} 
-		JsonObject keycloakJson = new JsonObject(json.getString("value"));
-			
-		String realm = keycloakJson.getString("realm");
+		for (String jsonFile : SecureResources.getKeycloakJsonMap().keySet()) {
 
-		if (realm != null) {
-
-			String token = RulesUtils.generateServiceToken(realm);
-			this.println(token);
-			if (token != null) {
-				this.setNewTokenAndDecodedTokenMap(token);
-				this.set("realm", realm);
-				return true;
+			String keycloakJson = SecureResources.getKeycloakJsonMap().get(jsonFile);
+			if (keycloakJson == null) {
+				log.info("No keycloakMap for " + realm());
+				if (GennySettings.devMode) {
+					log.info("Fudging realm so genny keycloak used");
+					// Use basic Genny json when project json not available
+					String gennyJson = SecureResources.getKeycloakJsonMap().get("genny.json");
+					SecureResources.getKeycloakJsonMap().put(jsonFile, gennyJson);
+					keycloakJson = gennyJson;
+				} else {
+					return false;
+				}
 			}
+
+			JsonObject realmJson = new JsonObject(keycloakJson);
+			String realm = realmJson.getString("realm");
+
+			if (realm != null) {
+
+				String token = RulesUtils.generateServiceToken(GennySettings.dynamicRealm(realm()));
+				this.println(token);
+				if (token != null) {
+
+					this.setNewTokenAndDecodedTokenMap(token);
+					this.set("realm", GennySettings.dynamicRealm(realm()));
+					return true;
+				}
+			}
+
 		}
+
 		return false;
 	}
 
@@ -5192,7 +5210,6 @@ public class QRules implements Serializable {
 		} else {
 			// create new attribute
 			attribute = new AttributeBoolean(fullCapabilityCode, name);
-			attribute.setRealm(realm());
 			// save to database and cache
 
 			try {
@@ -5457,10 +5474,6 @@ public class QRules implements Serializable {
 		drools.setFocus("AnswerProcessing");
 	}
 
-	public void setFocus(final String ruleGroup) {
-		drools.setFocus(ruleGroup);
-	}
-	
 	public void processAnswers(final Answer answer) {
 		drools.insert(answer);
 		drools.setFocus("AnswerProcessing");
@@ -5599,4 +5612,3 @@ public class QRules implements Serializable {
 	}
 
 }
-
