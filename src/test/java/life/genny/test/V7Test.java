@@ -61,6 +61,9 @@ public class V7Test {
 
 		/* create table-footer frame */
 		BaseEntity frameTableFooterBe = new BaseEntity("FRM_TABLE_FOOTER", "table-footer");
+		
+		/* create a frame-content baseentity */
+		BaseEntity contentBe = new BaseEntity("FRM_CONTENT", "content-frame");
 
 		/* creating a link */
 		Attribute attribute = new Attribute("LNK_FRAME", "link", new DataType(String.class));
@@ -91,7 +94,7 @@ public class V7Test {
 		sendTableContent(frameTableBe, frameTableContentBe);
 
 		/* link content-frame to table-frame */
-		linkTableToContentFrame();
+		linkTableToContentFrame(frameTableBe, contentBe);
 
 	}
 
@@ -120,15 +123,13 @@ public class V7Test {
 
 			BaseEntity be = searchResult[0];
 
-			/* Validation for Quesion Event */
-			ValidationList eventValidationList = new ValidationList();
+			/* Creating Blank Validation for Question Event */
+			ValidationList blankValidation = new ValidationList();
 			Attribute eventAttr = new Attribute("PRI_SORT", "PRI_SORT",
-					new DataType("Event", eventValidationList, "Event"));
+					new DataType("Event", blankValidation, "Event"));
 
-			/* Validation for Quesion Label */
-			ValidationList labelValidationList = new ValidationList();
 			Attribute labelAttr = new Attribute("PRI_LABEL", "PRI_LABEL",
-					new DataType("QuestionName", labelValidationList, "QuestionName"));
+					new DataType("QuestionName", blankValidation, "QuestionName"));
 
 			List<Attribute> attributes = new ArrayList<>();
 			attributes.add(eventAttr);
@@ -144,11 +145,7 @@ public class V7Test {
 			for (EntityAttribute ea : be.getBaseEntityAttributes()) {
 
 				/* Validation for Text */
-				Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
-				List<Validation> validations = new ArrayList<>();
-				validations.add(validation);
-				ValidationList validationList = new ValidationList();
-				validationList.setValidationList(validations);
+				ValidationList validationList = getTextValidation();
 
 				Attribute attr = new Attribute(ea.getAttributeCode(), ea.getAttributeName(),
 						new DataType("Text", validationList, "Text"));
@@ -165,7 +162,7 @@ public class V7Test {
 				String[] parts = attributeCode.split("_");
 				String questionName = parts[1];
 
-				System.out.println("questionName    ::   " + questionName);
+				log.info("questionName    ::   " + questionName);
 				Question columnQuestion = new Question("QUE_" + ea.getAttributeCode(), questionName, labelAttr, true);
 
 				/* question for column SORT */
@@ -263,11 +260,9 @@ public class V7Test {
 				 * attribute
 				 */
 				for (EntityAttribute ea : be.getBaseEntityAttributes()) {
-					Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
-					List<Validation> validations = new ArrayList<>();
-					validations.add(validation);
-					ValidationList validationList = new ValidationList();
-					validationList.setValidationList(validations);
+					
+					/* get text validation */
+					ValidationList validationList = getTextValidation();
 
 					Attribute at = new Attribute(ea.getAttributeCode(), ea.getAttributeName(),
 							new DataType("Text", validationList, "Text"));
@@ -362,21 +357,27 @@ public class V7Test {
 
 		return contextList;
 	}
+	
+	private ValidationList getTextValidation() {
+		Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
+		List<Validation> validations = new ArrayList<>();
+		validations.add(validation);
+		ValidationList validationList = new ValidationList();
+		validationList.setValidationList(validations);
+		return validationList;
+	}
 
-	private void linkTableToContentFrame() {
-		BaseEntity frameBe = new BaseEntity("FRM_TABLE", "table-frame");
-
-		BaseEntity contentBe = new BaseEntity("FRM_CONTENT", "content-frame");
+	private void linkTableToContentFrame(BaseEntity tableFrameBe, BaseEntity frameContentBe) {
 
 		Attribute attribute = new Attribute("LNK_FRAME", "frame", new DataType(String.class));
 
-		EntityEntity entityEntity = new EntityEntity(contentBe, frameBe, attribute, 1.0, "CENTRE");
+		EntityEntity entityEntity = new EntityEntity(frameContentBe, tableFrameBe, attribute, 1.0, "CENTRE");
 		Set<EntityEntity> entEntList = new HashSet<>();
 		entEntList.add(entityEntity);
 
-		contentBe.setLinks(entEntList);
+		frameContentBe.setLinks(entEntList);
 
-		QDataBaseEntityMessage contentFrameMsg = new QDataBaseEntityMessage(contentBe);
+		QDataBaseEntityMessage contentFrameMsg = new QDataBaseEntityMessage(frameContentBe);
 		sendTestMsg(contentFrameMsg);
 	}
 
