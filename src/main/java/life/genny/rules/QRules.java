@@ -5612,4 +5612,3 @@ public class QRules implements Serializable {
 	}
 
 }
-
