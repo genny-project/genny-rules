@@ -22,6 +22,7 @@ import life.genny.qwanda.entity.EntityQuestion;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
+import life.genny.qwanda.message.QDataAttributeMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.message.QMessage;
 import life.genny.qwanda.validation.Validation;
@@ -29,6 +30,50 @@ import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
 import life.genny.qwandautils.QwandaUtils;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 public class V7Test {
 	
@@ -76,69 +121,266 @@ public class V7Test {
 		/* send table content */
 		sendTableContent(frameTableBe, frameTableContentBe);
 		
+		/* send table footer */
+		sendTableFooter(frameTableBe, frameTableFooterBe);
+		
 		/* link content-frame to table-frame */
 		linkTableToContentFrame();
 		
 	}
 	
+	public void sendTableFooter(BaseEntity frameTableBe, BaseEntity frameTableFooterBe) {
+		
+		/* Get the on-the-fly question attribute */
+		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+
+		/* Construct a table footer question: QUE_FRM_TABLE_FOOTER_GRP */
+		Question tableFooterQues = new Question("QUE_TABLE_FOOTER_GRP", "Table Footer", questionAttribute, true);
+		
+		/* Construct a table footer Ask */
+		Ask tableFooterAsk = new Ask(tableFooterQues, "PER_USER1", "PER_USER1", false, 1.0, false, false, true);
+		
+		/* Ask List to store all the table-footer and table-column child asks */
+		List<Ask> tableFooterChildAsks = new ArrayList<>();
+
+
+
+		/* Validation for Dropdown */
+		Validation dropdownValidation = new Validation("VLD_SELECT_NO_OF_INTERNS", "dropdown", "GRP_ITEMS_PER_PAGE", false, false);
+		dropdownValidation.setRegex(".*");
+
+		List<Validation> dropdownValidations = new ArrayList<>();
+		dropdownValidations.add(dropdownValidation);
+		ValidationList dropdownValidationList = new ValidationList();
+		dropdownValidationList.setValidationList(dropdownValidations);
+
+
+		/* Validation for Quesion Event */
+		ValidationList eventValidationList = new ValidationList();
+		Attribute previousAttr = new Attribute("PRI_PREVIOUS", "PRI_PREVIOUS", new DataType("Event", eventValidationList, "Event"));
+		Attribute nextAttr = new Attribute("PRI_NEXT", "PRI_NEXT", new DataType("Event", eventValidationList, "Event"));
+		Attribute dropdownAttr = new Attribute("LNK_ITEMS_PER_PAGE", "No Of Items", new DataType("dropdown", dropdownValidationList, "dropdown"));
+		
+		List<Attribute> attributeList = new ArrayList<>();
+		attributeList.add(previousAttr);
+		attributeList.add(nextAttr);
+		attributeList.add(dropdownAttr);
+
+		Attribute[] attributeArray = attributeList.toArray(new Attribute[0]);
+
+		/* Send new attributes msg */
+		QDataAttributeMessage attrMsg = new QDataAttributeMessage(attributeArray);
+		sendTestMsg(attrMsg);
+
+
+		/* we create BEs for dropdown */
+		BaseEntity grpItems = new BaseEntity("GRP_ITEMS_PER_PAGE", "Items Per Page");
+		BaseEntity five = new BaseEntity("SEL_FIVE", "5");
+		BaseEntity ten = new BaseEntity("SEL_TEN", "10");
+		BaseEntity fifteen = new BaseEntity("SEL_FIFTEEN", "15");
+
+		List<BaseEntity> itemList = new ArrayList<>();
+		itemList.add(five);
+		itemList.add(ten);
+		itemList.add(fifteen);
+
+		/* creating a link */
+		Attribute linkAttribute = new Attribute("LNK_CORE", "link", new DataType(String.class));
+
+		Set<EntityEntity> entEntSet = new HashSet<>();
+		
+		for(BaseEntity item : itemList ){
+			EntityEntity ee = new EntityEntity(grpItems, item, linkAttribute, 1.0, "ITEMS");
+			entEntSet.add(ee);
+		}
+
+		/* set all the links to GRP_ITEMS_PER_PAGE */
+		grpItems.setLinks(entEntSet);
+
+		/* we publish GRP_ITEMS_PER_PAGE */
+		QDataBaseEntityMessage grpItemsMsg = new QDataBaseEntityMessage(grpItems);
+		sendTestMsg(grpItemsMsg);
+		
+		QDataBaseEntityMessage itemsMsg = new QDataBaseEntityMessage(itemList, grpItems.getCode(), "LNK_CORE");
+		sendTestMsg(itemsMsg);
+
+		/* question for previous, next, buttons and no. of items */
+		Question previousQuestion = new Question("QUE_TABLE_PREVIOUS", "Previous", previousAttr, false);
+		Question nextQuestion = new Question("QUE_TABLE_NEXT", "Next", nextAttr, false);
+		Question tableItemsQuestion = new Question("QUE_TABLE_ITEMS", "No. Of Items", dropdownAttr, false);
+
+		List<Question> questions = new ArrayList<>();
+		questions.add(previousQuestion);
+		questions.add(tableItemsQuestion);
+		questions.add(nextQuestion);
+
+		for (Question question : questions) {
+			Ask footerAsk = new Ask(question, "PER_USER1", "PER_USER1");
+			tableFooterChildAsks.add(footerAsk);
+		}
+
+		/* Convert ask list to Array */
+		Ask[] tableFooterChildAsksArray = tableFooterChildAsks.toArray(new Ask[0]);
+
+		/* set the child asks to Table Footer */
+		tableFooterAsk.setChildAsks(tableFooterChildAsksArray);
+		
+		/* set the horizontal theme to tableFooterAsk */
+		ContextList horizontalTheme = createHorizontalThemeForTableContent();
+		tableFooterAsk.setContextList(horizontalTheme);
+		
+		Ask[] askArr = { tableFooterAsk };
+
+		/* Creating AskMessage */
+		QDataAskMessage tableFooterAskMsg = new QDataAskMessage(askArr);
+
+		/* Send Table Footer Questions */
+		sendTestMsg(tableFooterAskMsg);
+			
+		/* Link Table Footer Frame and Table Footer Question */
+		Link link = new Link(frameTableFooterBe.getCode(), tableFooterQues.getCode(), "LNK_ASK", "NORTH");
+
+		/* we create the entity entity */
+		EntityQuestion entityQuestion = new EntityQuestion(link);
+		
+		/* creating entity entity between table-frame and table-footer */
+		Set<EntityQuestion> entQuestionList = new HashSet<>();
+		entQuestionList.add(entityQuestion);
+
+		/* setting questions to the frame table-footer */
+		frameTableFooterBe.setQuestions(entQuestionList);
+
+		QDataBaseEntityMessage frameTableFooterMsg = new QDataBaseEntityMessage(frameTableFooterBe);
+		
+		/* Send Table Footer Frame with questions attached. */
+		sendTestMsg(frameTableFooterMsg);
+
+	}
 	public void sendTableHeader(BaseEntity frameTableBe, BaseEntity frameTableHeaderBe) {
 		
 		/* Get the on-the-fly question attribute */
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 
 		/* Construct a table header question: QUE_FRM_TABLE_HEADER_GRP */
-		Question tableHeaderQues = new Question("QUE_" + frameTableHeaderBe.getCode() + "_GRP", frameTableHeaderBe.getName(), questionAttribute, true);
+		Question tableHeaderQues = new Question("QUE_TABLE_HEADER_GRP", "Table Header", questionAttribute, true);
 		
 		/* Construct a table header Ask */
 		Ask tableHeaderAsk = new Ask(tableHeaderQues, "PER_USER1", "PER_USER1", false, 1.0, false, false, true);
 		
-		/* initialize Ask List to store all the child asks */
-		List<Ask> childAsks = new ArrayList<>();
-
+		/* Ask List to store all the table-header and table-column child asks */
+		List<Ask> tableHeaderChildAsks = new ArrayList<>();
+		
 		/* Get Search Results */
 		BaseEntity[] searchResult = getCompaniesSearchResult();
+		
+		/* Create a list of Asks */
+		//List<Ask> asks = new ArrayList<>();
 		
 		/* Get list of attributes we want to show in table header */
 		if(searchResult != null) {
 			
 			BaseEntity be = searchResult[0];
+			
+			/* Validation for Quesion Event */
+			ValidationList eventValidationList = new ValidationList();
+			Attribute eventAttr = new Attribute("PRI_SORT", "PRI_SORT", new DataType("Event", eventValidationList, "Event"));
+			
+			/* Validation for Quesion Label */
+			ValidationList labelValidationList = new ValidationList();
+			Attribute labelAttr = new Attribute("PRI_LABEL", "PRI_LABEL",new DataType("QuestionName", labelValidationList, "QuestionName"));
+			
+			List<Attribute> attributes = new ArrayList<>();
+			attributes.add(eventAttr);
+			attributes.add(labelAttr);
+			
+			Attribute[] attributesArray = attributes.toArray(new Attribute[0]);
+			QDataAttributeMessage attrMsg = new QDataAttributeMessage(attributesArray);
+
+			/* Send new attributes */
+			sendTestMsg(attrMsg);
+
+			/* TABLE HEADER ASKS AND CHILD ASKS */
 			for(EntityAttribute ea : be.getBaseEntityAttributes()) {
+
+				/* Validation for Text */
+				Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
+				List<Validation> validations = new ArrayList<>();
+				validations.add(validation);
+				ValidationList validationList = new ValidationList();
+				validationList.setValidationList(validations);
 				
-				/* Construct a table column question */
-				Question columnQuestion = new Question("QUE_" + ea.getAttributeCode(), ea.getAttributeName(), questionAttribute, true);
+				Attribute attr = new Attribute(ea.getAttributeCode(), ea.getAttributeName(), new DataType("Text", validationList, "Text"));				
+
+				/* question for column header group */
+				Question columnHeaderQuestion = new Question("QUE_" + ea.getAttributeCode() + "_GRP", ea.getAttributeName(), questionAttribute, true);
 				
-				/* Construct a table column Ask */
-				Ask columnAsk = new Ask(columnQuestion, "PER_USER1", "PER_USER1", false, 1.0, false,
-				false, true);
+				/* ask for column header group */
+				Ask columnHeaderAsk = new Ask(columnHeaderQuestion, "PER_USER1", "PER_USER1");
 				
-				childAsks.add(columnAsk);
+				/* question for column label */
+				String attributeCode = ea.getAttributeCode();
+				String[] parts = attributeCode.split("_");
+				String questionName = parts[1];
+
+				System.out.println("questionName    ::   " + questionName);
+				Question columnQuestion = new Question("QUE_" + ea.getAttributeCode(), questionName, labelAttr, true);
+
+				/* question for column SORT */
+				Question columnSortQuestion = new Question("QUE_SORT_" + eventAttr.getCode(), "Sort", eventAttr, true);
+				columnSortQuestion.setMandatory(false);
+
+
+				/* question for column SEARCH */
+				Question columnSearchQuestion = new Question("QUE_SEARCH_" + ea.getAttributeCode(), ea.getAttributeName(), attr, true);
+
+				List<Question> questions = new ArrayList<>();
+				questions.add(columnQuestion);
+				questions.add(columnSortQuestion);
+				questions.add(columnSearchQuestion);
+
+				List<Ask> tableColumnChildAsks = new ArrayList<>();
+
+				for (Question question : questions) {
+					//Ask columnAsk = new Ask(question, "PER_USER1", "PER_USER1", false, 1.0, false, false, true);
+					Ask columnAsk = new Ask(question, "PER_USER1", "PER_USER1");
+
+					tableColumnChildAsks.add(columnAsk);
+				}
+
+				/* Convert ask list to Array */
+				Ask[] tableColumnChildAsksArray = tableColumnChildAsks.toArray(new Ask[0]);
+
+				/* set the child asks */
+				columnHeaderAsk.setChildAsks(tableColumnChildAsksArray);
+				
+				/* get the vertical theme */
+				ContextList verticalTheme = createVerticalThemeForTableContent();
+				columnHeaderAsk.setContextList(verticalTheme);
+
+				tableHeaderChildAsks.add(columnHeaderAsk);
+
 			}
+
+			/* set tableColumnAsk as child of tableHeaderAsk */
+			Ask[] asksArray = tableHeaderChildAsks.toArray(new Ask[0]);
+			tableHeaderAsk.setChildAsks(asksArray);
+
+			/* set the horizontal theme to tableHeaderAsk */
+			ContextList horizontalTheme = createHorizontalThemeForTableContent();
+			tableHeaderAsk.setContextList(horizontalTheme);
+			
+			Ask[] askArr = { tableHeaderAsk };
+
+			/* Creating AskMessage */
+			QDataAskMessage tableHeaderAskMsg = new QDataAskMessage(askArr);
+
+			/* Send Table Header Questions */
+			sendTestMsg(tableHeaderAskMsg);
+			
 		}
 
-		/* Convert childAsks List to Array  */
-		Ask[] childAsksArray = childAsks.toArray(new Ask[0]);
-
-		/* Set the childAsks to tableHeaderAsk */
-		tableHeaderAsk.setChildAsks(childAsksArray);
-		
-		/* get the theme */
-		ContextList themeContext = createHorizontalThemeForTableContent();
-        tableHeaderAsk.setContextList(themeContext);
-
-		/* Create a list of Asks */
-		List<Ask> asks = new ArrayList<>();
-		asks.add(tableHeaderAsk);
-		
-		Ask[] asksArray = asks.toArray(new Ask[0]);
-
-		/* Creating AskMessage */
-		QDataAskMessage tableHeaderAskMsg = new QDataAskMessage(asksArray);
-		
-		/* Send Table Header Questions */
-		sendTestMsg(tableHeaderAskMsg);
 
 		/* Link Table Header and Table Header Question */
-		
 		Link link = new Link(frameTableHeaderBe.getCode(), tableHeaderQues.getCode(), "LNK_ASK", "NORTH");
 
 		/* we create the entity entity */
@@ -257,6 +499,23 @@ public class V7Test {
 		return contextList;
 	}
 
+	private ContextList createVerticalThemeForTableContent() {
+		/* create context */
+        /* getting the expandable theme baseentity */
+		BaseEntity verticalTheme = new BaseEntity("THM_DISPLAY_VERTICAL", "vertical");
+		
+		 /* publishing theme for expanding */
+		/* creating a context for the expandable-theme */
+		Context verticalThemeContext = new Context("THEME", verticalTheme);
+		List<Context> verticalThemeContextList = new ArrayList<>();
+		verticalThemeContextList.add(verticalThemeContext);
+		
+		/* add the context to the contextList */
+		ContextList contextList = new ContextList(verticalThemeContextList);
+		
+		return contextList;
+	}
+
 	private void linkTableToContentFrame() {
 		BaseEntity frameBe = new BaseEntity("FRM_TABLE", "table-frame");
 		
@@ -306,6 +565,8 @@ public class V7Test {
 			SearchEntity hostCompanies = new SearchEntity("SBE_DAB_DAB", "List of All Host Companies")
 			        .addColumn("PRI_NAME", "Name")
 			        .addColumn("PRI_EMAIL", "Company email")
+			        .addColumn("PRI_LANDLINE", "Phone Number")
+			        .addColumn("PRI_ADDRESS_FULL", "Address")
 			        .addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "CPY_%")
 			        .addFilter("PRI_IS_HOST_COMPANY", true)
 			        .setPageStart(0)
