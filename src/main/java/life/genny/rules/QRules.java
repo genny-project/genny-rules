@@ -114,7 +114,7 @@ import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.qwandautils.ScoringUtils;
-import life.genny.security.SecureResources;
+
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
 import life.genny.utils.DateUtils;
@@ -129,6 +129,11 @@ import life.genny.utils.Layout.LayoutUtils;
 import life.genny.utils.Layout.LayoutViewData;
 
 public class QRules implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
@@ -146,6 +151,8 @@ public class QRules implements Serializable {
 	private long ruleStartMs = 0;
 
 	KnowledgeHelper drools;
+	
+	String serviceToken;
 
 	public void setDrools(KnowledgeHelper drools) {
 		this.drools = drools;
@@ -3678,46 +3685,7 @@ public class QRules implements Serializable {
 		this.initUtils();
 	}
 
-	public boolean loadRealmData() {
 
-		println(RulesUtils.ANSI_BLUE + "PRE_INIT_STARTUP Loading in keycloak data and setting up service token for "
-				+ realm() + RulesUtils.ANSI_RESET);
-
-		for (String jsonFile : SecureResources.getKeycloakJsonMap().keySet()) {
-
-			String keycloakJson = SecureResources.getKeycloakJsonMap().get(jsonFile);
-			if (keycloakJson == null) {
-				log.info("No keycloakMap for " + realm());
-				if (GennySettings.devMode) {
-					log.info("Fudging realm so genny keycloak used");
-					// Use basic Genny json when project json not available
-					String gennyJson = SecureResources.getKeycloakJsonMap().get("genny.json");
-					SecureResources.getKeycloakJsonMap().put(jsonFile, gennyJson);
-					keycloakJson = gennyJson;
-				} else {
-					return false;
-				}
-			}
-
-			JsonObject realmJson = new JsonObject(keycloakJson);
-			String realm = realmJson.getString("realm");
-
-			if (realm != null) {
-
-				String token = RulesUtils.generateServiceToken(GennySettings.dynamicRealm(realm()));
-				this.println(token);
-				if (token != null) {
-
-					this.setNewTokenAndDecodedTokenMap(token);
-					this.set("realm", GennySettings.dynamicRealm(realm()));
-					return true;
-				}
-			}
-
-		}
-
-		return false;
-	}
 
 	public void sendTreeData() {
 
@@ -3839,7 +3807,6 @@ public class QRules implements Serializable {
 
 		println("Startup Event called from " + caller);
 		if (!isState("GENERATE_STARTUP")) {
-			this.loadRealmData();
 			this.reloadCache();
 		}
 
@@ -5509,4 +5476,20 @@ public class QRules implements Serializable {
 		return results;
 	}
 
+	/**
+	 * @return the serviceToken
+	 */
+	public String getServiceToken() {
+		return serviceToken;
+	}
+
+	/**
+	 * @param serviceToken the serviceToken to set
+	 */
+	public void setServiceToken(String serviceToken) {
+		this.serviceToken = serviceToken;
+	}
+
+	
+	
 }

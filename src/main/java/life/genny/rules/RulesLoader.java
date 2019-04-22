@@ -47,6 +47,7 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.core.buffer.Buffer;
 import life.genny.eventbus.EventBusInterface;
@@ -55,6 +56,7 @@ import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.KeycloakUtils;
 import life.genny.utils.RulesUtils;
+import life.genny.utils.VertxUtils;
 
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -466,7 +468,7 @@ public class RulesLoader {
 	}
 
 	// fact = gson.fromJson(msg.toString(), QEventMessage.class)
-	public static void executeStateful(final String rulesGroup, final EventBusInterface bus,
+	public static void executeStateful(final String realm, final EventBusInterface bus,
 			final List<Tuple2<String, Object>> globals, final List<Object> facts,
 			final Map<String, String> keyValueMap) {
 
@@ -488,8 +490,8 @@ public class RulesLoader {
 //			 ksession.dispose();
 			KieSession  kieSession = null;
 			//StatefulKnowledgeSession  kieSession = null;
-			if (getKieBaseCache().get(rulesGroup) == null) {
-				log.error("The rulesGroup kieBaseCache is null, not loaded " + rulesGroup);
+			if (getKieBaseCache().get(realm) == null) {
+				log.error("The realm  kieBaseCache is null, not loaded " + realm);
 				return;
 			}
 			
@@ -501,9 +503,9 @@ public class RulesLoader {
 			// create a new knowledge session that uses JPA to store the runtime state
 
 			if (false) {
-				kieSession = JPAKnowledgeService.newStatefulKnowledgeSession( getKieBaseCache().get(rulesGroup), ksconf, env );
+				kieSession = JPAKnowledgeService.newStatefulKnowledgeSession( getKieBaseCache().get(realm), ksconf, env ); // This is stateful
 			} else {
-				kieSession = getKieBaseCache().get(rulesGroup).newKieSession(ksconf, env);
+				kieSession = getKieBaseCache().get(realm).newKieSession(ksconf, env);
 			}
 
 			int sessionId = kieSession.getId();
@@ -651,17 +653,22 @@ public class RulesLoader {
 			log.info("Could not save readiness file");
 		}
 	}
-	public static void initMsg(final String msgType,String ruleGroup,final Object msg, final EventBusInterface eventBus) {
+	public static void initMsg(final String msgType,String realm,final Object msg, final EventBusInterface eventBus) {
 		
 				Map<String,Object> adecodedTokenMap = new HashMap<String,Object>();
 			Set<String> auserRoles = new HashSet<String>();
 			auserRoles.add("admin");
 			auserRoles.add("user");
 
-			String token = RulesUtils.generateServiceToken(ruleGroup); // ruleGroup matches realm
+			String token = RulesUtils.generateServiceToken(realm); // ruleGroup matches realm
 
 			QRules qRules = new QRules(eventBus, token, adecodedTokenMap);
-			qRules.set("realm", ruleGroup);
+			qRules.set("realm", realm);
+			// Service Token
+			JsonObject jsonObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN"+realm);
+
+			
+			qRules.setServiceToken(jsonObj.getString("value"));
 
 			List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();
 
@@ -670,23 +677,19 @@ public class RulesLoader {
 			facts.add(msg);
 			facts.add(adecodedTokenMap);
 			facts.add(auserRoles);
-	        User currentUser = new User("service", "Service", ruleGroup, "admin");
+	        User currentUser = new User("service", "Service", realm, "admin");
 			facts.add(currentUser);
 
 
 
 			Map<String, String> keyvalue = new HashMap<String, String>();
 			// calculate service token for this ...
-			log.info("Realm:"+ruleGroup+" -> generated service token="+token);
+			log.info("Realm:"+realm+" -> generated service token="+token);
 			keyvalue.put("token", token);
 
-		//	if (!"GPS".equals(msgType)) { log.info("FIRE RULES ("+ruleGroup+") "+msgType); }
-
-		//	String ruleGroupRealm = realm + (StringUtils.isBlank(ruleGroup)?"":(":"+ruleGroup));
 			try {
-				executeStateful(ruleGroup, eventBus, globals, facts, keyvalue);
+				executeStateful(realm, eventBus, globals, facts, keyvalue);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -714,7 +717,10 @@ public class RulesLoader {
 
 			QRules qRules = new QRules(eventBus, token, adecodedTokenMap);
 			qRules.set("realm", realm);
-
+			
+			// Service Token
+			JsonObject jsonObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN"+realm);
+			qRules.setServiceToken(jsonObj.getString("value"));
 
 			List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
 			RulesLoader.getStandardGlobals();
@@ -738,11 +744,9 @@ public class RulesLoader {
 
 			if (!"GPS".equals(msgType)) { log.info("FIRE RULES ("+realm+") "+msgType); }
 
-		//	String ruleGroupRealm = realm + (StringUtils.isBlank(ruleGroup)?"":(":"+ruleGroup));
 			try {
 				RulesLoader.executeStateful(realm, eventBus, globals, facts, keyvalue);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
