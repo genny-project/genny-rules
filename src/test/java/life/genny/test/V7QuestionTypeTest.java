@@ -59,19 +59,28 @@ public static final String SKIP_NEWQA_TEST = "TRUE";
 				
 		/* put the method which you want to test */
 		Ask testQuestion1 = getQuestionWithLabel(firstNameAttribute);
+		Ask questionWithLabelAndInputThemes = getQuestionWithLabelAndThemesForLabelAndInput(firstNameAttribute);
+		
 		Ask testQuestion2 = getQuestionWithNoLabel(firstNameAttribute);
-		Ask testQuestion3 = getQuestionWithLabelAndMandatory(firstNameAttribute);
-		Ask testQuestion4 = getQuestionWithLabelHintMandatory(firstNameAttribute);
-		Ask testQuestion5 = getQuestionWithLabelAndDescription(firstNameAttribute);
-		Ask testQuestion6 = getQuestionWithLabelAndIcon(firstNameAttribute);
+		Ask testQuestion3 = getQuestionWithInputThemeAndNoLabel(firstNameAttribute);
+		
+		Ask testQuestion4 = getQuestionWithLabelAndMandatory(firstNameAttribute);
+		Ask testQuestion5 = getQuestionWithLabelHintMandatory(firstNameAttribute);
+		
+		Ask testQuestion6 = getQuestionWithLabelAndDescription(firstNameAttribute);
+		
+		
+		Ask testQuestion7 = getQuestionWithLabelAndIcon(firstNameAttribute);
 		
 		List<Ask> questionList = new ArrayList<>();
 		questionList.add(testQuestion1);
+		questionList.add(questionWithLabelAndInputThemes);
 		questionList.add(testQuestion2);
 		questionList.add(testQuestion3);
 		questionList.add(testQuestion4);
 		questionList.add(testQuestion5);
 		questionList.add(testQuestion6);
+		questionList.add(testQuestion7);
 		
 		/* adding the child ask to the parent question group */
 		Ask[] testAskArr = questionList.stream().toArray(Ask[]::new);	
@@ -121,6 +130,38 @@ public static final String SKIP_NEWQA_TEST = "TRUE";
 		
 		Context visualContext = new Context("THEME", visualBaseEntity, VisualControlType.DEFAULT);
 		
+		/* creating list of contexts */
+		List<Context> contexts = new ArrayList<>();
+		contexts.add(visualContext);
+		
+		/* add the context to the contextList */
+		ContextList contextList = new ContextList(contexts);
+		firstNameAsk.setContextList(contextList);
+		
+		return firstNameAsk;
+	}
+	
+	/* Simple question which displays 1 question with label and has themes for input and label */
+	public Ask getQuestionWithLabelAndThemesForLabelAndInput(Attribute att) {
+		
+		Question firstNameQuestion = new Question("QUE_LABEL_INPUT_AND_THEMES", "Last Name", att, true);
+		Ask firstNameAsk = new Ask(firstNameQuestion, "PER_USER1", "BEG_TEST_BE");
+		
+		/* create visual baseentity for question with label */
+		BaseEntity visualBaseEntity = new BaseEntity("THM_VISUAL_CONTROL_LABEL_INPUT", "Theme Visual Control Two");
+		
+		Attribute labelAttr = new Attribute("PRI_HAS_LABEL", "Has Label?", new DataType("Text", getTextValidation(), "Text"));
+		EntityAttribute labelEntityAttribute = new EntityAttribute(visualBaseEntity, labelAttr, 1.0, "TRUE");
+		Set<EntityAttribute> attributeSet = new HashSet<>();
+		attributeSet.add(labelEntityAttribute);	
+		visualBaseEntity.setBaseEntityAttributes(attributeSet);
+		
+		QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(visualBaseEntity);
+		/* send visual baseentity */
+		sendTestMsg(beMsg);
+		
+		Context visualContext = new Context("THEME", visualBaseEntity, VisualControlType.DEFAULT);
+		
 		/* create theme for input */
 		BaseEntity inputBackgroundColorThemeBe = new BaseEntity("THM_BACKGROUND_GRAY", "gray bg");
 		Context inputBackgroundColorContext = new Context("THEME", inputBackgroundColorThemeBe, VisualControlType.INPUT);
@@ -128,11 +169,18 @@ public static final String SKIP_NEWQA_TEST = "TRUE";
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_WHITE", "white");
 		Context inputColorContext = new Context("THEME", inputColorThemeBe, VisualControlType.INPUT);
 		
+		BaseEntity labelBgColorThemeBe = new BaseEntity("THM_BACKGROUND_INTERNMATCH", "gray bg");
+		BaseEntity labelColorThemeBe = new BaseEntity("THM_COLOR_RED", "red");
+		Context labelContext = new Context("THEME", labelColorThemeBe, VisualControlType.LABEL);
+		Context labelBackgroundColorContext = new Context("THEME", labelBgColorThemeBe, VisualControlType.LABEL);
+		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();
 		contexts.add(visualContext);
 		contexts.add(inputBackgroundColorContext);
 		contexts.add(inputColorContext);
+		contexts.add(labelContext);
+		contexts.add(labelBackgroundColorContext);
 		
 		/* add the context to the contextList */
 		ContextList contextList = new ContextList(contexts);
@@ -147,6 +195,25 @@ public static final String SKIP_NEWQA_TEST = "TRUE";
 		Question question = new Question("QUE_QUE2", "Last Name", att);
 		Ask ask = new Ask(question, "PER_USER1", "BEG_TEST_BE");
 		
+		return ask;
+	}
+	
+	/* Simple question which displays 1 question (displaying value for the attribute) */
+	public Ask getQuestionWithInputThemeAndNoLabel(Attribute att) { 
+		
+		Question question = new Question("QUE_LABEL_INPUTTHEME", "Last Name", att);
+		Ask ask = new Ask(question, "PER_USER1", "BEG_TEST_BE");
+		
+		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_RED", "red");
+		Context inputColorContext = new Context("THEME", inputColorThemeBe, VisualControlType.INPUT);
+		
+		/* creating list of contexts */
+		List<Context> contexts = new ArrayList<>();
+		contexts.add(inputColorContext);
+		/* add the context to the contextList */
+		ContextList contextList = new ContextList(contexts);
+		
+		ask.setContextList(contextList);		
 		return ask;
 	}
 	
