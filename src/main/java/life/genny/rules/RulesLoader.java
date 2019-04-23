@@ -660,14 +660,12 @@ public class RulesLoader {
 			auserRoles.add("admin");
 			auserRoles.add("user");
 
-			String token = RulesUtils.generateServiceToken(realm); // ruleGroup matches realm
+			// Service Token
+			JsonObject jsonObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN"+realm);
+			String token = jsonObj.getString("value"); //RulesUtils.generateServiceToken(realm); // ruleGroup matches realm
 
 			QRules qRules = new QRules(eventBus, token, adecodedTokenMap);
 			qRules.set("realm", realm);
-			// Service Token
-			JsonObject jsonObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN"+realm);
-
-			
 			qRules.setServiceToken(jsonObj.getString("value"));
 
 			List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();

@@ -1550,6 +1550,14 @@ public class QRules implements Serializable {
 		VertxUtils.publish(getUser(), channel, payload);
 	}
 
+	public boolean loadRealmData()
+	{
+		// No need to load in files anymore as realms are fetched from cache
+		String localServiceToken = this.getServiceToken();
+		this.setNewTokenAndDecodedTokenMap(localServiceToken);
+		return true;
+	}
+	
 	public String loadUserRole() {
 
 		BaseEntity user = this.getUser();
@@ -1659,7 +1667,7 @@ public class QRules implements Serializable {
 		if (selBE != null) {
 			Long bitMaskValue = selBE.getValue("PRI_BITMASK_VALUE", null);
 			// String realm = realm();
-			String serviceToken = RulesUtils.generateServiceToken(realm());
+			String serviceToken = this.getServiceToken();
 			QDataBaseEntityMessage msg = null;
 			List<BaseEntity> beList = new ArrayList<BaseEntity>();
 			if (bitMaskValue != null) {
@@ -1718,7 +1726,7 @@ public class QRules implements Serializable {
 			Boolean pushSelection) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = this.getServiceToken();
 		return this.sendQuestions(sourceCode, targetCode, questionGroupCode, stakeholderCode, pushSelection, token);
 	}
 
@@ -1746,7 +1754,7 @@ public class QRules implements Serializable {
 	public Ask getQuestion(String sourceCode, String targetCode, String questionCode) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 
 		/* Get the ask Message */
 		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, serviceToken);
@@ -1765,7 +1773,7 @@ public class QRules implements Serializable {
 			String stakeholderCode) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 
 		return QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken, stakeholderCode,
 				true);
@@ -3379,7 +3387,7 @@ public class QRules implements Serializable {
 
 		try {
 
-			String serviceToken = RulesUtils.generateServiceToken(this.realm());
+			String serviceToken = getServiceToken();
 			String jsonSearchBE = JsonUtils.toJson(searchBE);
 			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 					jsonSearchBE, serviceToken);
@@ -3434,7 +3442,7 @@ public class QRules implements Serializable {
 	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
 			Boolean replace, Object shouldDeleteLinkedBaseEntities) throws IOException {
 
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 				jsonSearchBE, serviceToken);
@@ -3457,7 +3465,7 @@ public class QRules implements Serializable {
 	 * Get search Results returns QDataBaseEntityMessage
 	 */
 	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE) throws IOException {
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 		QDataBaseEntityMessage results = getSearchResults(searchBE, serviceToken);
 		if (results == null) {
 			results = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
@@ -3495,7 +3503,7 @@ public class QRules implements Serializable {
 
 		String token = null;
 		if (useServiceToken) {
-			token = RulesUtils.generateServiceToken(this.realm());
+			token = getServiceToken();
 		} else {
 			token = this.getToken();
 		}
@@ -3509,7 +3517,7 @@ public class QRules implements Serializable {
 
 		String token = null;
 		if (useServiceToken) {
-			token = RulesUtils.generateServiceToken(this.realm());
+			token = getServiceToken();
 		} else {
 			token = this.getToken();
 		}
