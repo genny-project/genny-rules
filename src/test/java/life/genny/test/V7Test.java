@@ -17,6 +17,7 @@ import life.genny.qwanda.Context;
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
+import life.genny.qwanda.Context.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
@@ -24,7 +25,6 @@ import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.EntityQuestion;
 import life.genny.qwanda.entity.SearchEntity;
-import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataAttributeMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
@@ -41,7 +41,7 @@ public class V7Test {
 
 	private static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
-	public static final String SKIP_NEWQA_TEST = "FALSE";
+	public static final String SKIP_NEWQA_TEST = "TRUE";
 
 	@Test
 	public void testOnlyIfSkipIsDisabled() {
@@ -263,7 +263,7 @@ public class V7Test {
 			
 			List<Attribute> attributes = new ArrayList<>();
 			attributes.add(eventAttr);
-			attributes.add(labelAttr);
+			//attributes.add(labelAttr);
 			
 			Attribute[] attributesArray = attributes.toArray(new Attribute[0]);
 			QDataAttributeMessage attrMsg = new QDataAttributeMessage(attributesArray);
@@ -283,42 +283,48 @@ public class V7Test {
 				
 				Attribute attr = new Attribute(ea.getAttributeCode(), ea.getAttributeName(), new DataType("Text", validationList, "Text"));				
 
-				/* question for column header group */
-				Question columnHeaderQuestion = new Question("QUE_" + ea.getAttributeCode() + "_GRP", ea.getAttributeName(), questionAttribute, true);
-				
-				/* ask for column header group */
-				Ask columnHeaderAsk = new Ask(columnHeaderQuestion, "PER_USER1", "PER_USER1");
-				
 				/* question for column label */
 				String attributeCode = ea.getAttributeCode();
 				String[] parts = attributeCode.split("_");
 				String questionName = parts[1];
-
-				log.info("questionName    ::   " + questionName);
+				System.out.println("questionName    ::   " + questionName);
+				
+				/* question for column header group */
+				Question columnHeaderQuestion = new Question("QUE_" + ea.getAttributeCode() + "_GRP", questionName, questionAttribute, true);
+				
+				/* ask for column header group */
+				Ask columnHeaderAsk = new Ask(columnHeaderQuestion, "PER_USER1", "PER_USER1");
+				
 				Question columnQuestion = new Question("QUE_" + ea.getAttributeCode(), questionName, labelAttr, true);
+				/* creating ask for table header topic */
+				Ask columnTopicAsk = new Ask(columnQuestion, "PER_USER1", "PER_USER1");
+				/* get label Context and set it on table-header topic */
+				Context labelTheme = createLabelVisualControlContext();
+				List<Context> contexts = new ArrayList<>();
+				contexts.add(labelTheme);
+				ContextList contextList = new ContextList(contexts);
+				columnTopicAsk.setContextList(contextList);
 
 				/* question for column SORT */
 				Question columnSortQuestion = new Question("QUE_SORT_" + eventAttr.getCode(), "Sort", eventAttr, true);
 				columnSortQuestion.setMandatory(false);
-
-
+				
 				/* question for column SEARCH */
 				Question columnSearchQuestion = new Question("QUE_SEARCH_" + ea.getAttributeCode(), ea.getAttributeName(), attr, true);
 
 				List<Question> questions = new ArrayList<>();
-				questions.add(columnQuestion);
 				questions.add(columnSortQuestion);
 				questions.add(columnSearchQuestion);
 
 				List<Ask> tableColumnChildAsks = new ArrayList<>();
-
+				tableColumnChildAsks.add(columnTopicAsk);
+				
 				for (Question question : questions) {
-					//Ask columnAsk = new Ask(question, "PER_USER1", "PER_USER1", false, 1.0, false, false, true);
 					Ask columnAsk = new Ask(question, "PER_USER1", "PER_USER1");
 
 					tableColumnChildAsks.add(columnAsk);
 				}
-
+				
 				/* Convert ask list to Array */
 				Ask[] tableColumnChildAsksArray = tableColumnChildAsks.toArray(new Ask[0]);
 
@@ -328,6 +334,8 @@ public class V7Test {
 				/* get the vertical theme */
 				ContextList verticalTheme = createVerticalThemeForTableContent();
 				columnHeaderAsk.setContextList(verticalTheme);
+				/* set the theme for label visual control to column-header group */
+				columnHeaderAsk.getContextList().getContexts().add(labelTheme);
 
 				tableHeaderChildAsks.add(columnHeaderAsk);
 
@@ -383,7 +391,6 @@ public class V7Test {
 
 		if (searchResult != null) {
 			
-			int evenIndex = 0;
 			ContextList evenColumnTheme = createBackgroundThemeForEvenTableContent();
 			ContextList oddColoumnTheme = createBackgroundThemeForOddTableContent();
 			
@@ -505,6 +512,24 @@ public class V7Test {
 		ContextList contextList = new ContextList(verticalThemeContextList);
 
 		return contextList;
+	}
+	
+	private Context createLabelVisualControlContext() {
+		/* create visual baseentity for question with label */
+		BaseEntity visualBaseEntity = new BaseEntity("THM_VISUAL_CONTROL_LABEL", "Theme Visual Control For Label");
+		
+		Attribute labelAttr = new Attribute("PRI_HAS_LABEL", "Has Label?", new DataType(Boolean.class));
+		EntityAttribute labelEntityAttribute = new EntityAttribute(visualBaseEntity, labelAttr, 1.0, "TRUE");
+		Set<EntityAttribute> attributeSet = new HashSet<>();
+		attributeSet.add(labelEntityAttribute);	
+		visualBaseEntity.setBaseEntityAttributes(attributeSet);
+		
+		QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(visualBaseEntity);
+		/* send visual baseentity */
+		sendTestMsg(beMsg);
+		
+		Context visualContext = new Context("THEME", visualBaseEntity, VisualControlType.LABEL);
+		return visualContext;
 	}
 	
 	private Context createBorderThemeForTableContent() {
