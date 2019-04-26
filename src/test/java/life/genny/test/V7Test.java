@@ -24,6 +24,7 @@ import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.EntityQuestion;
 import life.genny.qwanda.entity.SearchEntity;
+import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataAttributeMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
@@ -34,57 +35,13 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
 import life.genny.qwandautils.QwandaUtils;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 public class V7Test {
 
 	private static String ENV_GENNY_BRIDGE_URL = "http://bridge.genny.life";
 
 	private static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
-	public static final String SKIP_NEWQA_TEST = "TRUE";
+	public static final String SKIP_NEWQA_TEST = "FALSE";
 
 	@Test
 	public void testOnlyIfSkipIsDisabled() {
@@ -154,12 +111,10 @@ public class V7Test {
 		Question tableFooterQues = new Question("QUE_TABLE_FOOTER_GRP", "Table Footer", questionAttribute, true);
 		
 		/* Construct a table footer Ask */
-		Ask tableFooterAsk = new Ask(tableFooterQues, "PER_USER1", "PER_USER1", false, 1.0, false, false, true);
+		Ask tableFooterAsk = new Ask(tableFooterQues, "PER_USER1", "SBE_HOSTCOMPANIES_7fa24b4b-a19a-4938-b363-a40fe9aa5b28", false, 1.0, false, false, true);
 		
 		/* Ask List to store all the table-footer and table-column child asks */
 		List<Ask> tableFooterChildAsks = new ArrayList<>();
-
-
 
 		/* Validation for Dropdown */
 		Validation dropdownValidation = new Validation("VLD_SELECT_NO_OF_INTERNS", "dropdown", "GRP_ITEMS_PER_PAGE", false, false);
@@ -231,7 +186,7 @@ public class V7Test {
 		questions.add(nextQuestion);
 
 		for (Question question : questions) {
-			Ask footerAsk = new Ask(question, "PER_USER1", "PER_USER1");
+			Ask footerAsk = new Ask(question, "PER_USER1", "SBE_HOSTCOMPANIES_7fa24b4b-a19a-4938-b363-a40fe9aa5b28");
 			tableFooterChildAsks.add(footerAsk);
 		}
 
@@ -272,6 +227,7 @@ public class V7Test {
 		sendTestMsg(frameTableFooterMsg);
 
 	}
+	
 	public void sendTableHeader(BaseEntity frameTableBe, BaseEntity frameTableHeaderBe) {
 
 		/* Get the on-the-fly question attribute */
@@ -426,7 +382,11 @@ public class V7Test {
 		BaseEntity[] searchResult = getCompaniesSearchResult();
 
 		if (searchResult != null) {
-
+			
+			int evenIndex = 0;
+			ContextList evenColumnTheme = createBackgroundThemeForEvenTableContent();
+			ContextList oddColoumnTheme = createBackgroundThemeForOddTableContent();
+			
 			for (BaseEntity be : searchResult) {
 
 				List<Ask> childAskList = new ArrayList<>();
@@ -435,6 +395,7 @@ public class V7Test {
 				 * iterating through each attribute of baseentity and creating questions for the
 				 * attribute
 				 */
+				
 				for (EntityAttribute ea : be.getBaseEntityAttributes()) {
 					
 					/* get text validation */
@@ -455,10 +416,20 @@ public class V7Test {
 
 				/* getting horizontal theme */
 				ContextList themeContext = createHorizontalThemeForTableContent();
+				
+				/* getting border theme */
+				Context borderContext = createBorderThemeForTableContent();
+				themeContext.getContextList().add(borderContext);
 
+				/* setting the evenColumn theme */
+				if(be.getIndex()%2==0) {
+					themeContext.getContextList().addAll(evenColumnTheme.getContexts());
+				}else {
+					themeContext.getContextList().addAll(oddColoumnTheme.getContexts());
+				}
+					
 				/* We generate the ask */
 				Ask beAsk = new Ask(newQuestion, "PER_USER1", be.getCode());
-
 				/* adding horizontal theme to each table-row question-grp */
 				beAsk.setContextList(themeContext);
 				Ask[] childArr = childAskList.stream().toArray(Ask[]::new);
@@ -467,14 +438,16 @@ public class V7Test {
 				askList.add(beAsk);
 
 				Link newLink = new Link(frameTableContentBe.getCode(), newQuestion.getCode(), "LNK_ASK", "NORTH");
+				newLink.setWeight(be.getIndex().doubleValue());
 
 				/* we create the entity entity */
 				EntityQuestion entityEntity = new EntityQuestion(newLink);
 
 				/* creating entity entity between table-frame and table-content */
 				entQuestionList.add(entityEntity);
-
+				System.out.println("index of "+be.getCode()+" is"+be.getIndex());
 				Ask[] beAskArr = { beAsk };
+				
 				/* Creating AskMessage with complete asks */
 				QDataAskMessage totalAskMsg = new QDataAskMessage(beAskArr);
 				sendTestMsg(totalAskMsg);
@@ -534,6 +507,83 @@ public class V7Test {
 		return contextList;
 	}
 	
+	private Context createBorderThemeForTableContent() {
+		/* create context */
+        /* getting the expandable theme baseentity */
+		BaseEntity borderTheme = new BaseEntity("THM_TABLE_BORDER", "table border");
+		
+		String borderAttribute = "{  \"borderStyle\": \"solid\", \"borderColour\" : \"#dee2e6\", \"borderWidth\" : 0.5 }";
+		
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
+		EntityAttribute entAttr = new EntityAttribute(borderTheme, att, 1.0, borderAttribute);
+		EntityAttribute inheritEntAtt = new EntityAttribute(borderTheme, inheritableAtt, 1.0, "FALSE");
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+		entAttrSet.add(inheritEntAtt);
+		
+		borderTheme.setBaseEntityAttributes(entAttrSet);
+		
+		QDataBaseEntityMessage borderThemeMsg = new QDataBaseEntityMessage(borderTheme);
+		sendTestMsg(borderThemeMsg);
+		
+		 /* publishing theme for expanding */
+		/* creating a context for the expandable-theme */
+		Context borderThemeContext = new Context("THEME", borderTheme);
+
+		return borderThemeContext;
+	}
+	
+	private ContextList createBackgroundThemeForEvenTableContent() {
+		/* create context */
+		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_EVEN", "table background");
+		
+		String bgAttribute = "{  \"backgroundColor\": \"#F2F2F2\", \"color\": \"#212529\" , \"padding\" : \"5px\", \"boxSizing\": \"borderBox\"}";
+		
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+		EntityAttribute entAttr = new EntityAttribute(backgroundTheme, att, 1.0, bgAttribute);
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+		
+		backgroundTheme.setBaseEntityAttributes(entAttrSet);
+		QDataBaseEntityMessage bgMessage = new QDataBaseEntityMessage(backgroundTheme);
+		sendTestMsg(bgMessage);
+	
+		Context bgThemeContext = new Context("THEME", backgroundTheme);
+		List<Context> oddColumnThemeContextList = new ArrayList<>();
+		oddColumnThemeContextList.add(bgThemeContext);
+	
+		/* add the context to the contextList */
+		ContextList contextList = new ContextList(oddColumnThemeContextList);
+
+		return contextList;
+	}
+	
+	private ContextList createBackgroundThemeForOddTableContent() {
+		/* create context */
+		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_ODD", "table background");
+		
+		String bgAttribute = "{  \"backgroundColor\": \"#FFFFFF\", \"color\": \"#212529\" , \"padding\" : \"5px\", \"boxSizing\": \"borderBox\"}";
+		
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+		EntityAttribute entAttr = new EntityAttribute(backgroundTheme, att, 1.0, bgAttribute);
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+		
+		backgroundTheme.setBaseEntityAttributes(entAttrSet);
+		QDataBaseEntityMessage bgMessage = new QDataBaseEntityMessage(backgroundTheme);
+		sendTestMsg(bgMessage);
+
+		Context bgThemeContext = new Context("THEME", backgroundTheme);
+		List<Context> oddColumnThemeContextList = new ArrayList<>();
+		oddColumnThemeContextList.add(bgThemeContext);
+
+		/* add the context to the contextList */
+		ContextList contextList = new ContextList(oddColumnThemeContextList);
+
+		return contextList;
+	}
+	
 	private ValidationList getTextValidation() {
 		Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
 		List<Validation> validations = new ArrayList<>();
@@ -586,7 +636,7 @@ public class V7Test {
 			String serviceToken = KeycloakUtils.getAccessToken("http://keycloak.genny.life:8180", "genny", "genny",
 					"056b73c1-7078-411d-80ec-87d41c55c3b4", "service", "Wubba!Lubba!Dub!Dub!");
 
-			SearchEntity hostCompanies = new SearchEntity("SBE_DAB_DAB", "List of All Host Companies")
+			SearchEntity hostCompanies = new SearchEntity("SBE_HOSTCOMPANIES_7fa24b4b-a19a-4938-b363-a40fe9aa5b28", "List of All Host Companies")
 			        .addColumn("PRI_NAME", "Name")
 			        .addColumn("PRI_EMAIL", "Company email")
 			        .addColumn("PRI_LANDLINE", "Phone Number")
