@@ -5738,6 +5738,25 @@ public class QRules implements Serializable {
 		}
 		return source;
 	}
+	
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, String linkCode) {
+		ContextList contextList = ask.getContextList();
+		if(contextList != null) {
+			Context context = null;
+			List<Context> contexts = contextList.getContexts();
+			if(contexts != null) {
+				if(theme != null) {
+					context = new Context(linkCode, theme);
+				} else {
+					context = new Context("THEME", theme);
+				}
+				contexts.add(context);
+			}	
+			contextList.setContextList(contexts);
+			ask.setContextList(contextList);
+		}
+		return ask;
+	}
 
 	public BaseEntity createVirtualLink(String sourceCode, List<Ask> asks, String linkCode, String linkValue) {
 
