@@ -115,6 +115,8 @@ import life.genny.qwanda.payments.QReleasePayment;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyItemResponse;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyUserResponse;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyUserSearchResponse;
+import life.genny.qwanda.validation.Validation;
+import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
@@ -5718,16 +5720,15 @@ public class QRules implements Serializable {
 		return askList;
 	}
 
-	public BaseEntity createLink(String sourceCode, List<Ask> asks, String linkCode, String linkValue) {
+	public BaseEntity createVirtualLink(BaseEntity source, List<Ask> asks, String linkCode, String linkValue) {
 
-		BaseEntity source = this.baseEntity.getBaseEntityByCode(sourceCode);
 		if (source != null) {
 
 			Set<EntityQuestion> entityQuestionList = new HashSet<>();
 
 			for (Ask ask : asks) {
 
-				Link link = new Link(sourceCode, ask.getQuestion().getCode(), linkCode, linkValue);
+				Link link = new Link(source.getCode(), ask.getQuestion().getCode(), linkCode, linkValue);
 				EntityQuestion ee = new EntityQuestion(link);
 				entityQuestionList.add(ee);
 
@@ -5736,6 +5737,134 @@ public class QRules implements Serializable {
 			source.setQuestions(entityQuestionList);
 		}
 		return source;
+	}
+
+	public BaseEntity createVirtualLink(String sourceCode, List<Ask> asks, String linkCode, String linkValue) {
+
+		BaseEntity source = this.baseEntity.getBaseEntityByCode(sourceCode);
+		return this.createVirtualLink(source, asks, linkCode, linkValue);
+	}
+
+	public BaseEntity createVirtualLink(BaseEntity source, BaseEntity target, String linkCode, String linkValue,
+			Double weight) {
+
+		System.out.println("CREATING LINK between " + source.getCode() + " and " + target.getCode()
+				+ " with LINK VALUE = " + linkValue);
+		Attribute attribute = new Attribute(linkCode, linkCode, new DataType(String.class));
+
+		EntityEntity entityEntity = new EntityEntity(source, target, attribute, weight, linkValue);
+		Set<EntityEntity> entEntList = source.getLinks();
+		entEntList.add(entityEntity);
+
+		source.setLinks(entEntList);
+		return source;
+	}
+
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, String linkCode) {
+		if (linkCode == null) {
+			linkCode = "THEME";
+		}
+		ContextList contextList = ask.getContextList();
+		if (contextList != null) {
+			Context context = null;
+			List<Context> contexts = contextList.getContexts();
+			if (contexts != null) {
+				if (theme != null) {
+					context = new Context(linkCode, theme);
+				}
+				contexts.add(context);
+			}
+			contextList.setContextList(contexts);
+			ask.setContextList(contextList);
+		}
+		return ask;
+	}
+
+	public Map<String, String> getTableColumns(SearchEntity searchBe) {
+
+		Map<String, String> columns = new HashMap<String, String>();
+
+		String searchString = JsonUtils.toJson(searchBe);
+		JsonObject searchJson = new JsonObject(searchString);
+
+		JsonArray arr = searchJson.getJsonArray("baseEntityAttributes");
+
+		for (int i = 0; i < arr.size(); i++) {
+			JsonObject obj = arr.getJsonObject(i);
+			String attributeCode = obj.getString("attributeCode");
+			String attributeName = obj.getString("attributeName");
+			if (attributeCode.startsWith("COL_")) {
+				columns.put(attributeCode.split("COL_")[1], attributeName);
+			}
+		}
+		System.out.println("the Columns is :: " + columns);
+		return columns;
+	}
+
+	public List<Ask> generateTableHeaderAsks(SearchEntity searchBe) {
+
+		List<Ask> asks = new ArrayList<>();
+
+		/* Validation for Search Attribute */
+		Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
+		List<Validation> validations = new ArrayList<>();
+		validations.add(validation);
+		ValidationList searchValidationList = new ValidationList();
+		searchValidationList.setValidationList(validations);
+
+		Attribute eventAttribute = RulesUtils.attributeMap.get("PRI_SORT");
+		Attribute labelAttribute = RulesUtils.attributeMap.get("PRI_LABEL");
+		Attribute questionAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
+
+		/* get table columns */
+		Map<String, String> columns = this.getTableColumns(searchBe);
+
+		for (Map.Entry<String, String> column : columns.entrySet()) {
+
+			String attributeCode = column.getKey();
+			String attributeName = column.getValue();
+
+			Attribute searchAttribute = new Attribute(attributeCode, attributeName,
+					new DataType("Text", searchValidationList, "Text"));
+
+			/* Initialize Column Header Ask group */
+			Question columnHeaderQuestion = new Question("QUE_" + attributeCode + "_GRP", attributeName,
+					questionAttribute, true);
+			Ask columnHeaderAsk = new Ask(columnHeaderQuestion, this.getUser().getCode(), searchBe.getCode());
+
+			/* Initialize Column Label, Sort and Search asks */
+
+			Question columnQues = new Question("QUE_" + attributeCode, attributeName, labelAttribute, false);
+			Question columnSortQues = new Question("QUE_SORT_" + attributeCode, "Sort", eventAttribute, false);
+			Question columnSearchQues = new Question("QUE_SEARCH_" + attributeCode, attributeName, searchAttribute,
+					false);
+
+			List<Question> questions = new ArrayList<>();
+			questions.add(columnQues);
+			questions.add(columnSortQues);
+			questions.add(columnSearchQues);
+
+			List<Ask> tableColumnChildAsks = new ArrayList<>();
+
+			for (Question question : questions) {
+
+				Ask columnAsk = new Ask(question, this.getUser().getCode(), searchBe.getCode());
+				tableColumnChildAsks.add(columnAsk);
+			}
+
+			/* Convert List to Array */
+			Ask[] tableColumnChildAsksArray = tableColumnChildAsks.toArray(new Ask[0]);
+
+			/* set the child asks */
+			columnHeaderAsk.setChildAsks(tableColumnChildAsksArray);
+
+			/* set Vertical Theme to columnHeaderAsk */
+			BaseEntity verticalTheme = this.baseEntity.getBaseEntityByCode("THM_DISPLAY_VERTICAL");
+			columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, verticalTheme, "THEME");
+			asks.add(columnHeaderAsk);
+		}
+		return asks;
+
 	}
 
 }
