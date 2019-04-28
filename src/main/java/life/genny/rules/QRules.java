@@ -5724,7 +5724,7 @@ public class QRules implements Serializable {
 
 		if (source != null) {
 
-			Set<EntityQuestion> entityQuestionList = new HashSet<>();
+			Set<EntityQuestion> entityQuestionList = source.getQuestions();
 
 			for (Ask ask : asks) {
 
@@ -5738,24 +5738,26 @@ public class QRules implements Serializable {
 		}
 		return source;
 	}
-	
-	public Ask createVirtualContext(Ask ask, BaseEntity theme, String linkCode) {
-		ContextList contextList = ask.getContextList();
-		if(contextList != null) {
-			Context context = null;
-			List<Context> contexts = contextList.getContexts();
-			if(contexts != null) {
-				if(theme != null) {
-					context = new Context(linkCode, theme);
-				} else {
-					context = new Context("THEME", theme);
-				}
-				contexts.add(context);
-			}	
-			contextList.setContextList(contexts);
-			ask.setContextList(contextList);
+
+	public BaseEntity createVirtualLink(BaseEntity source, Ask ask, String linkCode, String linkValue) {
+
+		if (source != null) {
+
+			Set<EntityQuestion> entityQuestionList = source.getQuestions();
+
+			Link link = new Link(source.getCode(), ask.getQuestion().getCode(), linkCode, linkValue);
+			EntityQuestion ee = new EntityQuestion(link);
+			entityQuestionList.add(ee);
+
+			source.setQuestions(entityQuestionList);
 		}
-		return ask;
+		return source;
+	}
+
+	public BaseEntity createVirtualLink(String sourceCode, Ask ask, String linkCode, String linkValue) {
+
+		BaseEntity source = this.baseEntity.getBaseEntityByCode(sourceCode);
+		return this.createVirtualLink(source, ask, linkCode, linkValue);
 	}
 
 	public BaseEntity createVirtualLink(String sourceCode, List<Ask> asks, String linkCode, String linkValue) {
@@ -5767,8 +5769,6 @@ public class QRules implements Serializable {
 	public BaseEntity createVirtualLink(BaseEntity source, BaseEntity target, String linkCode, String linkValue,
 			Double weight) {
 
-		System.out.println("CREATING LINK between " + source.getCode() + " and " + target.getCode()
-				+ " with LINK VALUE = " + linkValue);
 		Attribute attribute = new Attribute(linkCode, linkCode, new DataType(String.class));
 
 		EntityEntity entityEntity = new EntityEntity(source, target, attribute, weight, linkValue);
