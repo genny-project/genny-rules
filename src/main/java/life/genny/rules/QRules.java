@@ -252,9 +252,9 @@ public class QRules implements Serializable {
 	public String realm() {
 
 		String str = getAsString("realm");
-		if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
-			str = GennySettings.mainrealm; // TODO, I don't like this, but...
-		}
+//		if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
+//			str = GennySettings.mainrealm; // TODO, I don't like this, but...
+//		}
 		return str.toLowerCase();
 	}
 
@@ -940,7 +940,6 @@ public class QRules implements Serializable {
 		QMessageGennyMSG message = null; // TODO: Stop using json!?!?!?
 
 		/* Adding project code to context */
-		// String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
 		String projectCode = "PRJ_" + this.realm().toUpperCase();
 
 		this.println("project code for messages ::" + projectCode);

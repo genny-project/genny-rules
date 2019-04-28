@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +43,7 @@ import org.kie.api.runtime.KieContainer;
 
 
 import com.google.common.io.Files;
+import com.google.gson.reflect.TypeToken;
 
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -54,6 +56,7 @@ import life.genny.eventbus.EventBusInterface;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.GennySettings;
+import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
@@ -113,9 +116,19 @@ public class RulesLoader {
 		realms = getRealms(rules);
 		realms.stream().forEach(System.out::println);
 		realms.remove("genny");
-		setupKieRules("genny", rules); // run genny rules first
-		for (String realm : realms) {
-			setupKieRules(realm, rules);
+//		Integer rulesCount = setupKieRules("genny", rules); // rNo need to run genny rules
+//		log.info("Rules Count for genny = "+rulesCount);
+		
+		List<String> activeRealms = new ArrayList<String>();
+		JsonObject ar = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "REALMS");
+		String ars = ar.getString("value");
+		Type listType = new TypeToken<List<String>>(){}.getType();
+		ars = ars.replaceAll("\\\"", "\"");
+		activeRealms = JsonUtils.fromJson(ars, listType);
+		for (String realm : activeRealms) {
+			log.info("LOADING "+realm+" RULES");
+			Integer rulesCount = setupKieRules(realm, rules);
+			log.info("Rules Count for "+realm+" = "+rulesCount);
 		}
 	}
 
@@ -211,12 +224,13 @@ public class RulesLoader {
 	static public List<Tuple3<String, String, String>> processFileRealms(final String realm, String inputFileStrs) {
 		List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
 
-		String[] inputFileStrArray = inputFileStrs.split(";"); // allow multiple rules dirs
+		String[] inputFileStrArray = inputFileStrs.split(";,"); // allow multiple rules dirs
 
 		for (String inputFileStr : inputFileStrArray) {
 			//log.info("InputFileStr=" + inputFileStr);
 			File file = new File(inputFileStr);
 			String fileName = inputFileStr.replaceFirst(".*/(\\w+).*", "$1");
+			
 			String fileNameExt = inputFileStr.replaceFirst(".*/\\w+\\.(.*)", "$1");
 			if (!file.isFile()) { // DIRECTORY
 				if (!fileName.startsWith("XX")) {
@@ -278,7 +292,7 @@ public class RulesLoader {
 
 						Tuple3<String, String, String> rule = (Tuple.of(realm, fileName + "." + fileNameExt, ruleText));
 						String filerule = inputFileStr.substring(inputFileStr.indexOf("/rules/"));
-						log.info("("+realm+") Loading in Rule:" + rule._1 + " of " + inputFileStr);
+						log.info("("+realm+") Loading in DRL Rule:" + rule._1 + " of " + inputFileStr);
 						rules.add(rule);
 					} else if ((!fileName.startsWith("XX")) && (fileNameExt.equalsIgnoreCase("bpmn"))) { // ignore files
 																											// that
@@ -706,18 +720,18 @@ public class RulesLoader {
 
 			String preferredUName = adecodedTokenMap.get("preferred_username").toString();
 			String fullName = adecodedTokenMap.get("name").toString();
-			String realm = adecodedTokenMap.get("realm").toString();
-			if ("genny".equalsIgnoreCase(realm)) {
-				realm = GennySettings.mainrealm;
-				adecodedTokenMap.put("realm", GennySettings.mainrealm);
-			}
+			String realm = adecodedTokenMap.get("azp").toString();
+//			if ("genny".equalsIgnoreCase(realm)) {
+//				realm = GennySettings.mainrealm;
+//				adecodedTokenMap.put("realm", GennySettings.mainrealm);
+//			}
 			String accessRoles = adecodedTokenMap.get("realm_access").toString();
 
 			QRules qRules = new QRules(eventBus, token, adecodedTokenMap);
 			qRules.set("realm", realm);
 			
 			// Service Token
-			JsonObject jsonObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN"+realm);
+			JsonObject jsonObj = VertxUtils.readCachedJson(realm, "CACHE:SERVICE_TOKEN"+realm);
 			qRules.setServiceToken(jsonObj.getString("value"));
 
 			List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
