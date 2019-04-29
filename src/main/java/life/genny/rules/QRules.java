@@ -5702,6 +5702,9 @@ public class QRules implements Serializable {
 					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
 							questionAttribute, true);
 					Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
+					
+					/* setting weight to parent ask */
+					parentAsk.setWeight(be.getIndex().doubleValue());
 
 					/* set all the childAsks to parentAsk */
 					parentAsk.setChildAsks(childAsArr);
@@ -5729,9 +5732,9 @@ public class QRules implements Serializable {
 			for (Ask ask : asks) {
 
 				Link link = new Link(source.getCode(), ask.getQuestion().getCode(), linkCode, linkValue);
+				link.setWeight(ask.getWeight());
 				EntityQuestion ee = new EntityQuestion(link);
 				entityQuestionList.add(ee);
-
 			}
 
 			source.setQuestions(entityQuestionList);
@@ -5746,6 +5749,7 @@ public class QRules implements Serializable {
 			Set<EntityQuestion> entityQuestionList = source.getQuestions();
 
 			Link link = new Link(source.getCode(), ask.getQuestion().getCode(), linkCode, linkValue);
+			link.setWeight(ask.getWeight());
 			EntityQuestion ee = new EntityQuestion(link);
 			entityQuestionList.add(ee);
 
