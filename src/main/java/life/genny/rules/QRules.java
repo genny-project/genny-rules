@@ -120,6 +120,7 @@ import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.qwandautils.ScoringUtils;
+
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
 import life.genny.utils.DateUtils;
@@ -135,6 +136,11 @@ import life.genny.utils.Layout.LayoutUtils;
 import life.genny.utils.Layout.LayoutViewData;
 
 public class QRules implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
@@ -152,6 +158,8 @@ public class QRules implements Serializable {
 	private long ruleStartMs = 0;
 
 	KnowledgeHelper drools;
+	
+	String serviceToken;
 
 	public void setDrools(KnowledgeHelper drools) {
 		this.drools = drools;
@@ -251,9 +259,7 @@ public class QRules implements Serializable {
 	public String realm() {
 
 		String str = getAsString("realm");
-		/*if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
-			str = GennySettings.mainrealm; // TODO, I don't like this, but...
-		}*/
+
 		return str.toLowerCase();
 	}
 
@@ -874,7 +880,6 @@ public class QRules implements Serializable {
 		QMessageGennyMSG message = null; // TODO: Stop using json!?!?!?
 
 		/* Adding project code to context */
-		// String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
 		String projectCode = "PRJ_" + this.realm().toUpperCase();
 
 		this.println("project code for messages ::" + projectCode);
@@ -1481,6 +1486,14 @@ public class QRules implements Serializable {
 		VertxUtils.publish(getUser(), channel, payload);
 	}
 
+	public boolean loadRealmData()
+	{
+		// No need to load in files anymore as realms are fetched from cache
+		String localServiceToken = this.getServiceToken();
+		this.setNewTokenAndDecodedTokenMap(localServiceToken);
+		return true;
+	}
+	
 	public String loadUserRole() {
 
 		BaseEntity user = this.getUser();
@@ -1590,7 +1603,7 @@ public class QRules implements Serializable {
 		if (selBE != null) {
 			Long bitMaskValue = selBE.getValue("PRI_BITMASK_VALUE", null);
 			// String realm = realm();
-			String serviceToken = RulesUtils.generateServiceToken(realm());
+			String serviceToken = this.getServiceToken();
 			QDataBaseEntityMessage msg = null;
 			List<BaseEntity> beList = new ArrayList<BaseEntity>();
 			if (bitMaskValue != null) {
@@ -1649,7 +1662,7 @@ public class QRules implements Serializable {
 			Boolean pushSelection) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = this.getServiceToken();
 		return this.sendQuestions(sourceCode, targetCode, questionGroupCode, stakeholderCode, pushSelection, token);
 	}
 
@@ -1677,7 +1690,7 @@ public class QRules implements Serializable {
 	public Ask getQuestion(String sourceCode, String targetCode, String questionCode) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 
 		/* Get the ask Message */
 		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, serviceToken);
@@ -1696,7 +1709,7 @@ public class QRules implements Serializable {
 			String stakeholderCode) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 
 		return QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken, stakeholderCode,
 				true);
@@ -3380,7 +3393,7 @@ public class QRules implements Serializable {
 
 		try {
 
-			String serviceToken = RulesUtils.generateServiceToken(this.realm());
+			String serviceToken = getServiceToken();
 			String jsonSearchBE = JsonUtils.toJson(searchBE);
 			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 					jsonSearchBE, serviceToken);
@@ -3435,7 +3448,7 @@ public class QRules implements Serializable {
 	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
 			Boolean replace, Object shouldDeleteLinkedBaseEntities) throws IOException {
 
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 				jsonSearchBE, serviceToken);
@@ -3463,7 +3476,7 @@ public class QRules implements Serializable {
 	 * Get search Results returns QDataBaseEntityMessage
 	 */
 	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE) throws IOException {
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 		QDataBaseEntityMessage results = getSearchResults(searchBE, serviceToken);
 		if (results == null) {
 			results = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
@@ -3501,7 +3514,7 @@ public class QRules implements Serializable {
 
 		String token = null;
 		if (useServiceToken) {
-			token = RulesUtils.generateServiceToken(this.realm());
+			token = getServiceToken();
 		} else {
 			token = this.getToken();
 		}
@@ -3515,7 +3528,7 @@ public class QRules implements Serializable {
 
 		String token = null;
 		if (useServiceToken) {
-			token = RulesUtils.generateServiceToken(this.realm());
+			token = getServiceToken();
 		} else {
 			token = this.getToken();
 		}
@@ -3691,32 +3704,7 @@ public class QRules implements Serializable {
 		this.initUtils();
 	}
 
-	public boolean loadRealmData() {
 
-		println(RulesUtils.ANSI_BLUE + "PRE_INIT_STARTUP Loading in keycloak data and setting up service token for "
-				+ realm() + RulesUtils.ANSI_RESET);
-
-		JsonObject json = VertxUtils.readCachedJson(GennySettings.mainrealm, GennySettings.KEYCLOAK_JSON);
-		if (json==null || "error".equals(json.getString("status"))) {
-			log.error("KEYCLOAK JSON NOT FOUND");
-			return false;
-		} 
-		JsonObject keycloakJson = new JsonObject(json.getString("value"));
-			
-		String realm = keycloakJson.getString("realm");
-
-		if (realm != null) {
-
-			String token = RulesUtils.generateServiceToken(realm);
-			this.println(token);
-			if (token != null) {
-				this.setNewTokenAndDecodedTokenMap(token);
-				this.set("realm", realm);
-				return true;
-			}
-		}
-		return false;
-	}
 
 	public void sendTreeData() {
 		// we grab the root
@@ -3859,7 +3847,6 @@ public class QRules implements Serializable {
 
 		println("Startup Event called from " + caller);
 		if (!isState("GENERATE_STARTUP")) {
-			this.loadRealmData();
 			this.reloadCache();
 		}
 
@@ -5598,5 +5585,21 @@ public class QRules implements Serializable {
 		beMsg.add(parentBe);		
 	}
 
+	/**
+	 * @return the serviceToken
+	 */
+	public String getServiceToken() {
+		return serviceToken;
+	}
+
+	/**
+	 * @param serviceToken the serviceToken to set
+	 */
+	public void setServiceToken(String serviceToken) {
+		this.serviceToken = serviceToken;
+	}
+
+	
+	
 }
 
