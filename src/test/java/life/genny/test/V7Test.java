@@ -41,7 +41,7 @@ public class V7Test {
 
 	private static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
-	public static final String SKIP_NEWQA_TEST = "TRUE";
+	public static final String SKIP_NEWQA_TEST = "FALSE";
 
 	@Test
 	public void testOnlyIfSkipIsDisabled() {
@@ -197,8 +197,13 @@ public class V7Test {
 		tableFooterAsk.setChildAsks(tableFooterChildAsksArray);
 		
 		/* set the horizontal theme to tableFooterAsk */
-		ContextList horizontalTheme = createHorizontalThemeForTableContent();
-		tableFooterAsk.setContextList(horizontalTheme);
+		Context horizontalTheme = getHorizontalThemeForTableContent();
+		
+		/* setting context to footerAsk */
+		List<Context> contexts = new ArrayList<>();
+		contexts.add(horizontalTheme);
+		ContextList footerContext = new ContextList(contexts);
+		tableFooterAsk.setContextList(footerContext);
 		
 		Ask[] askArr = { tableFooterAsk };
 
@@ -245,9 +250,6 @@ public class V7Test {
 		/* Get Search Results */
 		BaseEntity[] searchResult = getCompaniesSearchResult();
 		
-		/* Create a list of Asks */
-		//List<Ask> asks = new ArrayList<>();
-		
 		/* Get list of attributes we want to show in table header */
 		if (searchResult != null) {
 
@@ -270,6 +272,10 @@ public class V7Test {
 
 			/* Send new attributes */
 			sendTestMsg(attrMsg);
+		
+			/* get the required themes */
+			Context verticalTheme = getVerticalThemeForTableContent();
+			Context labelTheme = getLabelVisualControlContext();
 
 			/* TABLE HEADER ASKS AND CHILD ASKS */
 			for(EntityAttribute ea : be.getBaseEntityAttributes()) {
@@ -298,8 +304,7 @@ public class V7Test {
 				Question columnQuestion = new Question("QUE_" + ea.getAttributeCode(), questionName, labelAttr, true);
 				/* creating ask for table header topic */
 				Ask columnTopicAsk = new Ask(columnQuestion, "PER_USER1", "PER_USER1");
-				/* get label Context and set it on table-header topic */
-				Context labelTheme = createLabelVisualControlContext();
+				
 				List<Context> contexts = new ArrayList<>();
 				contexts.add(labelTheme);
 				ContextList contextList = new ContextList(contexts);
@@ -331,9 +336,12 @@ public class V7Test {
 				/* set the child asks */
 				columnHeaderAsk.setChildAsks(tableColumnChildAsksArray);
 				
-				/* get the vertical theme */
-				ContextList verticalTheme = createVerticalThemeForTableContent();
-				columnHeaderAsk.setContextList(verticalTheme);
+				/* setting all theme contexts to header Ask */
+				List<Context> columnHeaderContexts = new ArrayList<>();
+				columnHeaderContexts.add(verticalTheme);
+				columnHeaderContexts.add(labelTheme);
+				ContextList columnHeaderContextList = new ContextList(columnHeaderContexts);
+				columnHeaderAsk.setContextList(columnHeaderContextList);
 				/* set the theme for label visual control to column-header group */
 				columnHeaderAsk.getContextList().getContexts().add(labelTheme);
 
@@ -346,8 +354,13 @@ public class V7Test {
 			tableHeaderAsk.setChildAsks(asksArray);
 
 			/* set the horizontal theme to tableHeaderAsk */
-			ContextList horizontalTheme = createHorizontalThemeForTableContent();
-			tableHeaderAsk.setContextList(horizontalTheme);
+			Context horizontalTheme = getHorizontalThemeForTableContent();
+		
+			/* setting theme contexts for tableHeader */
+			List<Context> headerAskContexts = new ArrayList<>();
+			headerAskContexts.add(horizontalTheme);
+			ContextList headerAskContextList = new ContextList(headerAskContexts);
+			tableHeaderAsk.setContextList(headerAskContextList);
 			
 			Ask[] askArr = { tableHeaderAsk };
 
@@ -391,8 +404,27 @@ public class V7Test {
 
 		if (searchResult != null) {
 			
-			ContextList evenColumnTheme = createBackgroundThemeForEvenTableContent();
-			ContextList oddColoumnTheme = createBackgroundThemeForOddTableContent();
+			/* get the theme contexts */
+			Context evenColumnTheme = getBackgroundThemeForEvenTableContent();
+			Context oddColoumnTheme = getBackgroundThemeForOddTableContent();
+			/* getting horizontal theme */
+			Context horizontalThemeContext = getHorizontalThemeForTableContent();
+			/* getting border theme */
+			Context borderContext = getBorderThemeForTableContent();
+			
+			/*create theme context list for even column */
+			List<Context> contextsForEvenColumn = new ArrayList<>();
+			contextsForEvenColumn.add(horizontalThemeContext);
+			contextsForEvenColumn.add(borderContext);
+			contextsForEvenColumn.add(evenColumnTheme);
+			ContextList contextListForEvenColumn = new ContextList(contextsForEvenColumn);
+			
+			/*create theme context list for odd column */
+			List<Context> contextsForOddColumn = new ArrayList<>();
+			contextsForOddColumn.add(horizontalThemeContext);
+			contextsForOddColumn.add(borderContext);
+			contextsForOddColumn.add(oddColoumnTheme);
+			ContextList contextListForOddColumn = new ContextList(contextsForOddColumn);
 			
 			for (BaseEntity be : searchResult) {
 
@@ -420,25 +452,17 @@ public class V7Test {
 				/* We generate the question the baseentity */
 				Question newQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(), questionAttribute,
 						true);
-
-				/* getting horizontal theme */
-				ContextList themeContext = createHorizontalThemeForTableContent();
 				
-				/* getting border theme */
-				Context borderContext = createBorderThemeForTableContent();
-				themeContext.getContextList().add(borderContext);
+				/* We generate the ask */
+				Ask beAsk = new Ask(newQuestion, "PER_USER1", be.getCode());
 
 				/* setting the evenColumn theme */
 				if(be.getIndex()%2==0) {
-					themeContext.getContextList().addAll(evenColumnTheme.getContexts());
+					beAsk.setContextList(contextListForEvenColumn);
 				}else {
-					themeContext.getContextList().addAll(oddColoumnTheme.getContexts());
+					beAsk.setContextList(contextListForOddColumn);
 				}
 					
-				/* We generate the ask */
-				Ask beAsk = new Ask(newQuestion, "PER_USER1", be.getCode());
-				/* adding horizontal theme to each table-row question-grp */
-				beAsk.setContextList(themeContext);
 				Ask[] childArr = childAskList.stream().toArray(Ask[]::new);
 				beAsk.setChildAsks(childArr);
 
@@ -480,7 +504,7 @@ public class V7Test {
 		sendTestMsg(frameMsg);
 	}
 
-	private ContextList createHorizontalThemeForTableContent() {
+	private Context getHorizontalThemeForTableContent() {
 		/* create context */
 		/* getting the expandable theme baseentity */
 		BaseEntity horizontalTheme = new BaseEntity("THM_DISPLAY_HORIZONTAL", "horizontal");
@@ -488,33 +512,23 @@ public class V7Test {
 		/* publishing theme for expanding */
 		/* creating a context for the expandable-theme */
 		Context horizontalThemeContext = new Context("THEME", horizontalTheme);
-		List<Context> horizontalThemeContextList = new ArrayList<>();
-		horizontalThemeContextList.add(horizontalThemeContext);
 
-		/* add the context to the contextList */
-		ContextList contextList = new ContextList(horizontalThemeContextList);
-
-		return contextList;
+		return horizontalThemeContext;
 	}
 
-	private ContextList createVerticalThemeForTableContent() {
+	private Context getVerticalThemeForTableContent() {
 		/* create context */
-        /* getting the expandable theme baseentity */
+        /* getting the vertical theme baseentity */
 		BaseEntity verticalTheme = new BaseEntity("THM_DISPLAY_VERTICAL", "vertical");
 		
-		 /* publishing theme for expanding */
-		/* creating a context for the expandable-theme */
+		 /* publishing theme for vertical display */
+		/* creating a context for the vertical-display */
 		Context verticalThemeContext = new Context("THEME", verticalTheme);
-		List<Context> verticalThemeContextList = new ArrayList<>();
-		verticalThemeContextList.add(verticalThemeContext);
 
-		/* add the context to the contextList */
-		ContextList contextList = new ContextList(verticalThemeContextList);
-
-		return contextList;
+		return verticalThemeContext;
 	}
 	
-	private Context createLabelVisualControlContext() {
+	private Context getLabelVisualControlContext() {
 		/* create visual baseentity for question with label */
 		BaseEntity visualBaseEntity = new BaseEntity("THM_VISUAL_CONTROL_LABEL", "Theme Visual Control For Label");
 		
@@ -532,7 +546,7 @@ public class V7Test {
 		return visualContext;
 	}
 	
-	private Context createBorderThemeForTableContent() {
+	private Context getBorderThemeForTableContent() {
 		/* create context */
         /* getting the expandable theme baseentity */
 		BaseEntity borderTheme = new BaseEntity("THM_TABLE_BORDER", "table border");
@@ -559,7 +573,7 @@ public class V7Test {
 		return borderThemeContext;
 	}
 	
-	private ContextList createBackgroundThemeForEvenTableContent() {
+	private Context getBackgroundThemeForEvenTableContent() {
 		/* create context */
 		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_EVEN", "table background");
 		
@@ -575,16 +589,11 @@ public class V7Test {
 		sendTestMsg(bgMessage);
 	
 		Context bgThemeContext = new Context("THEME", backgroundTheme);
-		List<Context> oddColumnThemeContextList = new ArrayList<>();
-		oddColumnThemeContextList.add(bgThemeContext);
-	
-		/* add the context to the contextList */
-		ContextList contextList = new ContextList(oddColumnThemeContextList);
 
-		return contextList;
+		return bgThemeContext;
 	}
 	
-	private ContextList createBackgroundThemeForOddTableContent() {
+	private Context getBackgroundThemeForOddTableContent() {
 		/* create context */
 		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_ODD", "table background");
 		
@@ -600,13 +609,8 @@ public class V7Test {
 		sendTestMsg(bgMessage);
 
 		Context bgThemeContext = new Context("THEME", backgroundTheme);
-		List<Context> oddColumnThemeContextList = new ArrayList<>();
-		oddColumnThemeContextList.add(bgThemeContext);
 
-		/* add the context to the contextList */
-		ContextList contextList = new ContextList(oddColumnThemeContextList);
-
-		return contextList;
+		return bgThemeContext;
 	}
 	
 	private ValidationList getTextValidation() {
