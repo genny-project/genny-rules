@@ -405,8 +405,8 @@ public class V7Test {
 		if (searchResult != null) {
 			
 			/* get the theme contexts */
-			Context evenColumnTheme = getBackgroundThemeForEvenTableContent();
-			Context oddColoumnTheme = getBackgroundThemeForOddTableContent();
+			Context evenColumnTheme = getThemeForEvenTableContent();
+			Context oddColoumnTheme = getThemeForOddTableContent();
 			/* getting horizontal theme */
 			Context horizontalThemeContext = getHorizontalThemeForTableContent();
 			/* getting border theme */
@@ -573,7 +573,7 @@ public class V7Test {
 		return borderThemeContext;
 	}
 	
-	private Context getBackgroundThemeForEvenTableContent() {
+	private Context getThemeForEvenTableContent() {
 		/* create context */
 		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_EVEN", "table background");
 		
@@ -593,7 +593,7 @@ public class V7Test {
 		return bgThemeContext;
 	}
 	
-	private Context getBackgroundThemeForOddTableContent() {
+	private Context getThemeForOddTableContent() {
 		/* create context */
 		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_ODD", "table background");
 		
