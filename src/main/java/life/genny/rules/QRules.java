@@ -1775,7 +1775,7 @@ public class QRules implements Serializable {
 	 * @param themesForQuestions
 	 * @param asks
 	 */
-	private void setContextsToQuestions(Map<String, List<Context>> themesForQuestions, Ask[] asks) {
+	public void setContextsToQuestions(Map<String, List<Context>> themesForQuestions, Ask[] asks) {
 
 		if (asks != null && themesForQuestions != null) {
 
@@ -5784,22 +5784,46 @@ public class QRules implements Serializable {
 	}
 
 	public Ask createVirtualContext(Ask ask, BaseEntity theme, String linkCode) {
+		List<BaseEntity> themeList = new ArrayList<>();
+		themeList.add(theme);
+		return createVirtualContext(ask, themeList, linkCode);
+	}
+	
+	/**
+	 * Embeds the list of contexts (themes, icon) into an ask 
+	 * @param ask
+	 * @param themes
+	 * @param linkCode
+	 * @return
+	 */
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, String linkCode) {
 		if (linkCode == null) {
 			linkCode = "THEME";
+		}	
+		
+		List<Context> completeContext = new ArrayList<>();
+		
+		for(BaseEntity theme : themes) {
+			Context context = new Context(linkCode, theme);
+			completeContext.add(context);
 		}
+		
 		ContextList contextList = ask.getContextList();
-		if (contextList != null) {
-			Context context = null;
+		if(contextList != null) {
 			List<Context> contexts = contextList.getContexts();
-			if (contexts != null) {
-				if (theme != null) {
-					context = new Context(linkCode, theme);
-				}
-				contexts.add(context);
+			if(contexts.isEmpty()) {
+				contexts = new ArrayList<>();
+				contexts.addAll(completeContext);
+			} else {
+				contexts.addAll(completeContext);
 			}
-			contextList.setContextList(contexts);
-			ask.setContextList(contextList);
+			contextList = new ContextList(contexts);
+		} else {
+			List<Context> contexts = new ArrayList<>();		
+			contexts.addAll(completeContext);
+			contextList = new ContextList(contexts);
 		}
+		ask.setContextList(contextList);
 		return ask;
 	}
 
