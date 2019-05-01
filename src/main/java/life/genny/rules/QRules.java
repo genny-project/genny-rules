@@ -60,6 +60,7 @@ import life.genny.qwanda.GPS;
 
 import life.genny.qwanda.Layout;
 import life.genny.qwanda.Link;
+import life.genny.qwanda.Question;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.AttributeBoolean;
 import life.genny.qwanda.attribute.AttributeInteger;
@@ -68,6 +69,7 @@ import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
+import life.genny.qwanda.entity.EntityQuestion;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.exception.PaymentException;
@@ -113,6 +115,8 @@ import life.genny.qwanda.payments.QReleasePayment;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyItemResponse;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyUserResponse;
 import life.genny.qwanda.payments.assembly.QPaymentsAssemblyUserSearchResponse;
+import life.genny.qwanda.validation.Validation;
+import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
@@ -160,6 +164,20 @@ public class QRules implements Serializable {
 	KnowledgeHelper drools;
 	
 	String serviceToken;
+
+	/**
+	 * @return the serviceToken
+	 */
+	public String getServiceToken() {
+		return serviceToken;
+	}
+
+	/**
+	 * @param serviceToken the serviceToken to set
+	 */
+	public void setServiceToken(String serviceToken) {
+		this.serviceToken = serviceToken;
+	}
 
 	public void setDrools(KnowledgeHelper drools) {
 		this.drools = drools;
@@ -579,100 +597,112 @@ public class QRules implements Serializable {
 
 		return status;
 	}
-	
-	public void publishBaseEntityByCode(BaseEntity[] beArr, String parentCode, String linkCode, String linkValue, String[] recipientCodes, final Boolean replace, final Boolean delete, Object level, Long returnCount) {
-		
-		/* invoking constructor and setting the BEs, parent code, link code and link value */
+
+	public void publishBaseEntityByCode(BaseEntity[] beArr, String parentCode, String linkCode, String linkValue,
+			String[] recipientCodes, final Boolean replace, final Boolean delete, Object level, Long returnCount) {
+
+		/*
+		 * invoking constructor and setting the BEs, parent code, link code and link
+		 * value
+		 */
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArr, parentCode, linkCode, linkValue);
-		
+
 		/* setting recipientcode to the message */
-		if(recipientCodes != null) {
+		if (recipientCodes != null) {
 			msg.setRecipientCodeArray(recipientCodes);
 		} else {
 			String[] recipientArr = { this.getUser().getCode() };
 			msg.setRecipientCodeArray(recipientArr);
 		}
-		
-		/* delete the existing baseentity and links related to it and replaces it with the current baseentity which we send in this method */
+
+		/*
+		 * delete the existing baseentity and links related to it and replaces it with
+		 * the current baseentity which we send in this method
+		 */
 		msg.setReplace(replace);
-		
+
 		/* completely deletes the baseentity */
 		msg.setDelete(delete);
-		
-		/* if the level is greater than 0, then we set deletion levels for the baseentity */
-		if(level instanceof java.lang.Integer) {
-			if( ((java.lang.Integer) level) > 0) {
+
+		/*
+		 * if the level is greater than 0, then we set deletion levels for the
+		 * baseentity
+		 */
+		if (level instanceof java.lang.Integer) {
+			if (((java.lang.Integer) level) > 0) {
 				msg.setShouldDeleteLinkedBaseEntities(level);
 			}
-		} else if( level instanceof java.lang.Boolean) {
-			if(((java.lang.Boolean) level)) {
+		} else if (level instanceof java.lang.Boolean) {
+			if (((java.lang.Boolean) level)) {
 				msg.setShouldDeleteLinkedBaseEntities(level);
 			}
 		}
-		
+
 		/* set the child baseentities as links to parent */
-		if(parentCode != null) {	
+		if (parentCode != null) {
 			setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue);
 		}
-		
+
 		/* set returnCount */
-		if(returnCount > 0) {
+		if (returnCount > 0) {
 			msg.setReturnCount(returnCount);
 		}
-			
+
 		publishData(msg, recipientCodes);
 	}
 
-	
-	public void publishBaseEntityByCode(final String be) {	
-		if(be != null) {
-			/* get the baseentity */
-			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);		
-			BaseEntity[] beArr = { baseentity };			
-			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
-		}	
-	}
-	
-	/* Publishes BaseEntity with replace true/false */
-	public void publishBaseEntityByCode(final String be, final Boolean replace) {
-		if(be != null) {
+	public void publishBaseEntityByCode(final String be) {
+		if (be != null) {
 			/* get the baseentity */
 			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
 			BaseEntity[] beArr = { baseentity };
-			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, 0, 0L);			
+			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
 		}
 	}
-	
+
+	/* Publishes BaseEntity with replace true/false */
+	public void publishBaseEntityByCode(final String be, final Boolean replace) {
+		if (be != null) {
+			/* get the baseentity */
+			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
+			BaseEntity[] beArr = { baseentity };
+			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, 0, 0L);
+		}
+	}
+
 	/* Publishes BaseEntity with replace true/false */
 	public void publishBaseEntityByCode(final String be, final Boolean replace, int level) {
-		if(be != null) {
+		if (be != null) {
 			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
 			BaseEntity[] beArr = { baseentity };
 			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, level, 0L);
 		}
 	}
-	
+
 	/* Publish BaseEntity with LinkValue Set */
-	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode, final String linkValue) {
-		if(be != null) {
+	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
+			final String linkValue) {
+		if (be != null) {
 			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
-			BaseEntity[] beArr = { item }; 
+			BaseEntity[] beArr = { item };
 			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, 0L);
 		}
 	}
-	
+
 	/* Publish BaseEntity with LinkValue Set */
-	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes) {
-		if(be != null) {
+	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
+			final String linkValue, final String[] recipientCodes) {
+		if (be != null) {
 			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
-			BaseEntity[] beArr = { item }; 
+			BaseEntity[] beArr = { item };
 			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, false, 0, 0L);
 		}
 	}
-	
+
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(String beCode, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes, final Boolean delete) {
-		if(beCode != null) {
+	public void publishBaseEntityByCode(String beCode, final String parentCode, final String linkCode,
+			final String linkValue, final String[] recipientCodes, final Boolean delete) {
+		if (beCode != null) {
 			BaseEntity be = this.baseEntity.getBaseEntityByCode(beCode);
 			BaseEntity[] beArr = { be };
 			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, delete, 0, 0L);
@@ -680,15 +710,15 @@ public class QRules implements Serializable {
 	}
 
 	public void publishBaseEntityByCode(List<BaseEntity> bes) {
-		if(bes != null) {
-			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);		
+		if (bes != null) {
+			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
 			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
 		}
 	}
-	
+
 	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
 			String linkValue) {
-		if(bes != null) {
+		if (bes != null) {
 			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
 			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, 0L);
 		}
@@ -696,53 +726,58 @@ public class QRules implements Serializable {
 
 	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
 			String linkValue, Long returnCount) {
-		if(bes != null) {
+		if (bes != null) {
 			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
 			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, returnCount);
 		}
 	}
-	
+
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes) {
-		if(items != null) {
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+			final String linkValue, final String[] recipientCodes) {
+		if (items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
 			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, false, 0, 0L);
 		}
 	}
-	
+
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes, final Boolean delete) {
-		if(items != null) {
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+			final String linkValue, final String[] recipientCodes, final Boolean delete) {
+		if (items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
 			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, delete, 0, 0L);
 		}
 	}
 
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue, final String[] recipientCodes, final Boolean delete, Boolean replace) {
-		if(items != null) {
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+			final String linkValue, final String[] recipientCodes, final Boolean delete, Boolean replace) {
+		if (items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, 0, 0L);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, 0,
+					0L);
 		}
 	}
 
 	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue,
-			final String[] recipientCodes, final Boolean delete, Boolean replace, int level) {
-		if(items != null) {
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+			final String linkValue, final String[] recipientCodes, final Boolean delete, Boolean replace, int level) {
+		if (items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, level, 0L);
+			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, level,
+					0L);
 		}
 	}
 
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode, final String linkValue,
-            Boolean replace) {
-		if(items != null) {
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+			final String linkValue, Boolean replace) {
+		if (items != null) {
 			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
 			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, replace, false, 0, 0L);
 		}
-    }
-	
+	}
+
 	public <T extends QMessage> void publishCmd(T msg) {
 		msg.setToken(getToken());
 		publish("cmds", JsonUtils.toJson(msg));
@@ -980,6 +1015,9 @@ public class QRules implements Serializable {
 			String token = RulesUtils.generateServiceToken(realm());
 
 			String realm = realm();
+			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
+				realm = "genny";
+			}
 
 			/* if the keycloak id, we need to create a keycloak account for this user */
 			if (keycloakId == null) {
@@ -1735,21 +1773,22 @@ public class QRules implements Serializable {
 			this.navigateTo("/questions/" + questionGroupCode, isPopup);
 		}
 	}
-	
-	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, String frameCode, LayoutPosition position, Map<String, List<Context>> themesForQuestions) {
+
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, String frameCode,
+			LayoutPosition position, Map<String, List<Context>> themesForQuestions) {
 		/* we grab the service token */
 		String serviceToken = RulesUtils.generateServiceToken(this.realm());
 		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken,
-				 sourceCode, true);
-		
+				sourceCode, true);
+
 		Ask[] asks = questions.asks.getItems();
-		
+
 		/* set the contexts/themes to the asks and childAsks */
 		setContextsToQuestions(themesForQuestions, asks);
-		 
+
 		/* publish the questions */
 		publishCmd(questions);
-		 
+
 		/* create the message with question-group in the required frame and position */
 		QDataBaseEntityMessage message = this.layoutUtils.showQuestionsInFrame(frameCode, questionGroupCode, position);
 
@@ -1762,45 +1801,48 @@ public class QRules implements Serializable {
 	 * @param themesForQuestions
 	 * @param asks
 	 */
-	private void setContextsToQuestions(Map<String, List<Context>> themesForQuestions, Ask[] asks) {
-		
-		if(asks != null && themesForQuestions != null) {
-			
-			for(Ask ask : asks) {
-				
+	public void setContextsToQuestions(Map<String, List<Context>> themesForQuestions, Ask[] asks) {
+
+		if (asks != null && themesForQuestions != null) {
+
+			for (Ask ask : asks) {
+
 				/* get question code for ask */
 				String questionCode = ask.getQuestion().getCode();
-				
+
 				/* check if the list of themes/contexts is available for this ask */
-				if( themesForQuestions.containsKey(questionCode) ) {
-					
+				if (themesForQuestions.containsKey(questionCode)) {
+
 					/* if themes exist for the question, we set it in the ask */
 					ask.setContextList(createTheme(themesForQuestions.get(questionCode)));
-				 }
-				
+				}
+
 				/* get the child asks for the current ask */
 				Ask[] childAsks = ask.getChildAsks();
-				
-				if(childAsks != null) {
-					if(childAsks.length > 0) {
+
+				if (childAsks != null) {
+					if (childAsks.length > 0) {
 						setContextsToQuestions(themesForQuestions, childAsks);
 					}
-				} 
-			}		 
+				}
+			}
 		}
 	}
 
-	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, String frameCode) {
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup,
+			String frameCode) {
 		this.askQuestions(sourceCode, targetCode, questionGroupCode, isPopup, frameCode, LayoutPosition.CENTRE);
 	}
 
-	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup, String frameCode, LayoutPosition position) {
+	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, Boolean isPopup,
+			String frameCode, LayoutPosition position) {
 
 		/* we send the questions to FE */
 		if (this.sendQuestions(sourceCode, targetCode, questionGroupCode)) {
 
 			/* we get the message */
-			QDataBaseEntityMessage message = this.layoutUtils.showQuestionsInFrame(frameCode, questionGroupCode, position);
+			QDataBaseEntityMessage message = this.layoutUtils.showQuestionsInFrame(frameCode, questionGroupCode,
+					position);
 
 			/* we send the message */
 			this.publishCmd(message);
@@ -2433,7 +2475,7 @@ public class QRules implements Serializable {
 				BaseEntity[] itemsArray = new BaseEntity[beLayouts.size()];
 				itemsArray = beLayouts.toArray(itemsArray);
 				QDataBaseEntityMessage realmV2 = new QDataBaseEntityMessage(itemsArray);
-				
+
 				VertxUtils.writeCachedJson(this.realm(), "V2-LAYOUTS", JsonUtils.toJson(realmV2));
 				publishCmd(realmV2);
 			} else {
@@ -2442,8 +2484,9 @@ public class QRules implements Serializable {
 				publishCmd(realmV2);
 			}
 
-//			List<BaseEntity> beLayouts = this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
-//			this.publishCmd(beLayouts, "GRP_LAYOUTS", "LNK_CORE");
+			// List<BaseEntity> beLayouts =
+			// this.baseEntity.getLinkedBaseEntities("GRP_LAYOUTS");
+			// this.publishCmd(beLayouts, "GRP_LAYOUTS", "LNK_CORE");
 		}
 
 		/* List<BaseEntity> beLayouts = this.getAllLayouts(); */
@@ -3454,7 +3497,7 @@ public class QRules implements Serializable {
 				jsonSearchBE, serviceToken);
 
 		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-		
+
 		if (msg != null) {
 			msg.setParentCode(parentCode);
 			msg.setToken(getToken());
@@ -3462,10 +3505,10 @@ public class QRules implements Serializable {
 			msg.setLinkValue(linkValue);
 			msg.setReplace(replace);
 			msg.setShouldDeleteLinkedBaseEntities(shouldDeleteLinkedBaseEntities);
-			
+
 			/* links the child baseentities to the parent baseentity on the fly */
 			setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue);
-				
+
 			publish("cmds", msg);
 		} else {
 			println("Warning: no results from search " + searchBE.getCode());
@@ -3706,118 +3749,128 @@ public class QRules implements Serializable {
 
 
 
+
 	public void sendTreeData() {
 		// we grab the root
 		BaseEntity root = this.baseEntity.getBaseEntityByCode("GRP_ROOT");
-		
+
 		/* create an ask for GRP_ROOT */
 		Ask rootAsk = QuestionUtils.createQuestionForBaseEntity(root, true);
-				
+
 		/* create an object for the complete ask */
 		QDataAskMessage askMsg = null;
-		
+
 		/* get the roles of the current user */
 		Set<EntityAttribute> currentUserAttr = getUser().getBaseEntityAttributes();
 		List<String> rolesOfCurrentUser = new ArrayList<>();
 		for (EntityAttribute ea : currentUserAttr) {
-			if ( ea.getAttributeCode().startsWith("PRI_IS_") && ea.getValueBoolean() ) {
+			if (ea.getAttributeCode().startsWith("PRI_IS_") && ea.getValueBoolean()) {
 				rolesOfCurrentUser.add(ea.getAttributeCode());
-			}			
+			}
 		}
-		log.info("treeView method, roles of current user are ::"+rolesOfCurrentUser.toString());
-					
+		log.info("treeView method, roles of current user are ::" + rolesOfCurrentUser.toString());
+
 		/* getting the expandable theme baseentity */
 		BaseEntity expandableBe = this.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
-		
+
 		/* publishing theme for expanding */
 		this.publishBaseEntityByCode(expandableBe.getCode());
-		
+
 		/* creating a context for the expandable-theme */
 		Context expandableThemeContext = new Context("THEME", expandableBe);
 		List<Context> expandableThemeContextList = new ArrayList<>();
 		expandableThemeContextList.add(expandableThemeContext);
-		
+
 		/* add the context to the contextList */
 		ContextList contextList = new ContextList(expandableThemeContextList);
-		
+
 		/* we generate the tree view questions */
 		Ask treeAsk = generateQuestionsForTree(root.getCode(), contextList, rolesOfCurrentUser);
 		Ask[] completeAsk = { treeAsk };
 
 		/* Creating AskMessage with complete asks */
-		askMsg = new QDataAskMessage(completeAsk);	
-		
+		askMsg = new QDataAskMessage(completeAsk);
+
 		/* publishing the question for treeview */
 		this.publishCmd(askMsg);
-		
+
 		/* sends questions for treeview and positions it in the sidebar frame */
-		QDataBaseEntityMessage treeMessage = this.layoutUtils.showQuestionsInFrame("FRM_SIDEBAR", rootAsk.getQuestionCode(), LayoutPosition.NORTH);
-		this.publishCmd(treeMessage);	
+		QDataBaseEntityMessage treeMessage = this.layoutUtils.showQuestionsInFrame("FRM_SIDEBAR",
+				rootAsk.getQuestionCode(), LayoutPosition.NORTH);
+		this.publishCmd(treeMessage);
 	}
-	
+
 	public Ask generateQuestionsForTree(String parentCode, ContextList contextList, List<String> rolesOfCurrentUser) {
-		
+
 		// we grab the root
 		BaseEntity parent = this.baseEntity.getBaseEntityByCode(parentCode);
-		
+
 		/* create a parentAsk */
 		Ask parentAsk = null;
-				
+
 		// we grab the first branch
 		List<BaseEntity> kids = this.baseEntity.getLinkedBaseEntities(parentCode, "LNK_CORE");
-		
+
 		/* create an ask for GRP_ROOT */
-		if( kids.isEmpty() ) {
+		if (kids.isEmpty()) {
 			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, false);
 		} else {
 			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, true);
-			
-			/* set theme - expandable through contextList if GRP_XXX is question-group except GRP_ROOT */
-			if(!"GRP_ROOT".equals(parent.getCode())) {
+
+			/*
+			 * set theme - expandable through contextList if GRP_XXX is question-group
+			 * except GRP_ROOT
+			 */
+			if (!"GRP_ROOT".equals(parent.getCode())) {
 				parentAsk.setContextList(contextList);
 			}
-			
+
 			/* getting filtered kids list according to the parentCode */
 			List<BaseEntity> newKidsList = getFilteredKidsOfParent(parent, kids, rolesOfCurrentUser);
-			
+
 			/* getting all the links of parent */
 			Set<EntityEntity> kidLinks = parent.getLinks();
-			
+
 			/* for each kid */
-			List<Ask> kidsAsk = newKidsList.stream()
-					.map( kid -> {
-						Double weight = 0.0;
-						/* iterating through each kidEntityEntity and setting the weight of the link to the question */
-						if(kidLinks != null) {
-							for(EntityEntity kidEntity : kidLinks) {
-								if(kidEntity.getLink().getTargetCode().equals(kid.getCode())) {
-									weight = kidEntity.getWeight();
-								}
-							}
+			List<Ask> kidsAsk = newKidsList.stream().map(kid -> {
+				Double weight = 0.0;
+				/*
+				 * iterating through each kidEntityEntity and setting the weight of the link to
+				 * the question
+				 */
+				if (kidLinks != null) {
+					for (EntityEntity kidEntity : kidLinks) {
+						if (kidEntity.getLink().getTargetCode().equals(kid.getCode())) {
+							weight = kidEntity.getWeight();
 						}
-						
-						/* we call the same generateQuestionsForTree function recursively to generate tree questions for the kids and their children and so forth */
-						Ask ask = generateQuestionsForTree(kid.getCode(), contextList, rolesOfCurrentUser);
-						
-						/* setting the weight to the ask for positioning the item in the tree */
-						ask.setWeight(weight);
-						return ask;
-					})
-					.collect(Collectors.toList());
-			
+					}
+				}
+
+				/*
+				 * we call the same generateQuestionsForTree function recursively to generate
+				 * tree questions for the kids and their children and so forth
+				 */
+				Ask ask = generateQuestionsForTree(kid.getCode(), contextList, rolesOfCurrentUser);
+
+				/* setting the weight to the ask for positioning the item in the tree */
+				ask.setWeight(weight);
+				return ask;
+			}).collect(Collectors.toList());
+
 			/* setting the generated childAsks to the parent ask */
 			Ask[] kidAskArr = kidsAsk.stream().toArray(Ask[]::new);
 			parentAsk.setChildAsks(kidAskArr);
 		}
-		
+
 		return parentAsk;
 	}
 
-	private List<BaseEntity> getFilteredKidsOfParent(BaseEntity parent, List<BaseEntity> kids, List<String> rolesOfCurrentUser) {
-		
+	private List<BaseEntity> getFilteredKidsOfParent(BaseEntity parent, List<BaseEntity> kids,
+			List<String> rolesOfCurrentUser) {
+
 		List<BaseEntity> newKidsList = new ArrayList<>();
-		
-		for(BaseEntity kid : kids) {
+
+		for (BaseEntity kid : kids) {
 
 			Optional<EntityAttribute> roleAttribute = parent.findEntityAttribute(kid.getCode());
 			if (roleAttribute.isPresent()) {
@@ -3830,12 +3883,12 @@ public class QRules implements Serializable {
 				 */
 				for (String roleOfCurrentUser : rolesOfCurrentUser) {
 					if (rolesAllowedStr.contains(roleOfCurrentUser)) {
-						newKidsList.add(kid);	
+						newKidsList.add(kid);
 					}
 				}
 			}
-		}		
-			
+		}
+
 		return newKidsList;
 	}
 
@@ -5179,7 +5232,6 @@ public class QRules implements Serializable {
 		} else {
 			// create new attribute
 			attribute = new AttributeBoolean(fullCapabilityCode, name);
-			attribute.setRealm(realm());
 			// save to database and cache
 
 			try {
@@ -5444,10 +5496,6 @@ public class QRules implements Serializable {
 		drools.setFocus("AnswerProcessing");
 	}
 
-	public void setFocus(final String ruleGroup) {
-		drools.setFocus(ruleGroup);
-	}
-	
 	public void processAnswers(final Answer answer) {
 		drools.insert(answer);
 		drools.setFocus("AnswerProcessing");
@@ -5520,7 +5568,7 @@ public class QRules implements Serializable {
 
 		return results;
 	}
-	
+
 	public BaseEntity getLayout(String layoutUri) {
 
 		BaseEntity layoutBe = null;
@@ -5544,62 +5592,315 @@ public class QRules implements Serializable {
 
 		return layoutBe;
 	}
-	
+
 	public ContextList createTheme(List<Context> contexts) {
 		List<Context> themeContexts = new ArrayList<>();
-		
-		for(Context context : contexts) {
+
+		for (Context context : contexts) {
 			themeContexts.add(context);
-			
+
 			/* publishing the baseentity themes */
 			this.publishBaseEntityByCode(context.getEntity().getCode());
-		}	
+		}
 		return new ContextList(themeContexts);
 	}
-	
-	public void setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode, String linkValue) {
+
+	public void setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
+			String linkValue) {
 		BaseEntity parentBe = this.baseEntity.getBaseEntityByCode(parentCode);
-		
+
 		Set<EntityEntity> childLinks = new HashSet<>();
 		double index = 0.0;
-		
+
 		/* creating a dumb attribute for linking the search results to the parent */
 		Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
-		
-		for(BaseEntity be : beMsg.getItems()) {
+
+		for (BaseEntity be : beMsg.getItems()) {
 			EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
-			
+
 			/* creating link for child */
 			Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
-			
+
 			/* adding link */
 			ee.setLink(link);
-			
+
 			/* adding child link to set of links */
 			childLinks.add(ee);
-			
+
 			index++;
 		}
+
+		parentBe.setLinks(childLinks);
+		beMsg.add(parentBe);
+	}
+
+	/*
+	 * Generate List of asks from a SearchEntity Code
+	 */
+	public List<Ask> generateQuestions(String searchCode, String targetCode) {
+
+		SearchEntity search = this.baseEntity.getSearchEntityByCode(searchCode);
+		return this.generateQuestions(search, targetCode);
+
+	}
+
+	/*
+	 * Generate List of asks from a SearchEntity
+	 */
+	public List<Ask> generateQuestions(SearchEntity search, String targetCode) {
+
+		/* initialize an empty ask list */
+		List<Ask> askList = new ArrayList<>();
+
+		/* get the list of baseentities from search */
+		List<BaseEntity> bes = new ArrayList<>();
+		try {
+			bes = this.getSearchResultsAsList(search, true);
+			if (bes != null && bes.isEmpty() == false) {
+
+				/* loop through baseentities to generate ask */
+				for (BaseEntity be : bes) {
+
+					/* we add attributes for each be */
+					this.baseEntity.addAttributes(be);
+
+					/* initialize child ask list */
+					List<Ask> childAskList = new ArrayList<>();
+
+					/* loop through entityAttributes to generate ask */
+					for (EntityAttribute ea : be.getBaseEntityAttributes()) {
+
+						Question childQuestion = new Question("QUE_" + ea.getAttributeCode(), ea.getAttributeName(),
+								ea.getAttribute(), true);
+						Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
+
+						/* add the entityAttribute ask to list */
+						childAskList.add(childAsk);
+					}
+
+					/* converting childAsks list to array */
+					Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
+
+					/* Get the on-the-fly question attribute */
+					Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
+							new DataType(String.class));
+
+					/* Generate ask for the baseentity */
+					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
+							questionAttribute, true);
+					Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
+					
+					/* setting weight to parent ask */
+					parentAsk.setWeight(be.getIndex().doubleValue());
+
+					/* set all the childAsks to parentAsk */
+					parentAsk.setChildAsks(childAsArr);
+
+					/* add the baseentity asks to a list */
+					askList.add(parentAsk);
+				}
+
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		/* return list of asks */
+		return askList;
+	}
+
+	public BaseEntity createVirtualLink(BaseEntity source, List<Ask> asks, String linkCode, String linkValue) {
+
+		if (source != null) {
+
+			Set<EntityQuestion> entityQuestionList = source.getQuestions();
+
+			for (Ask ask : asks) {
+
+				Link link = new Link(source.getCode(), ask.getQuestion().getCode(), linkCode, linkValue);
+				link.setWeight(ask.getWeight());
+				EntityQuestion ee = new EntityQuestion(link);
+				entityQuestionList.add(ee);
+			}
+
+			source.setQuestions(entityQuestionList);
+		}
+		return source;
+	}
+
+	public BaseEntity createVirtualLink(BaseEntity source, Ask ask, String linkCode, String linkValue) {
+
+		if (source != null) {
+
+			Set<EntityQuestion> entityQuestionList = source.getQuestions();
+
+			Link link = new Link(source.getCode(), ask.getQuestion().getCode(), linkCode, linkValue);
+			link.setWeight(ask.getWeight());
+			EntityQuestion ee = new EntityQuestion(link);
+			entityQuestionList.add(ee);
+
+			source.setQuestions(entityQuestionList);
+		}
+		return source;
+	}
+
+	public BaseEntity createVirtualLink(String sourceCode, Ask ask, String linkCode, String linkValue) {
+
+		BaseEntity source = this.baseEntity.getBaseEntityByCode(sourceCode);
+		return this.createVirtualLink(source, ask, linkCode, linkValue);
+	}
+
+	public BaseEntity createVirtualLink(String sourceCode, List<Ask> asks, String linkCode, String linkValue) {
+
+		BaseEntity source = this.baseEntity.getBaseEntityByCode(sourceCode);
+		return this.createVirtualLink(source, asks, linkCode, linkValue);
+	}
+
+	public BaseEntity createVirtualLink(BaseEntity source, BaseEntity target, String linkCode, String linkValue,
+			Double weight) {
+
+		Attribute attribute = new Attribute(linkCode, linkCode, new DataType(String.class));
+
+		EntityEntity entityEntity = new EntityEntity(source, target, attribute, weight, linkValue);
+		Set<EntityEntity> entEntList = source.getLinks();
+		entEntList.add(entityEntity);
+
+		source.setLinks(entEntList);
+		return source;
+	}
+
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, String linkCode) {
+		List<BaseEntity> themeList = new ArrayList<>();
+		themeList.add(theme);
+		return createVirtualContext(ask, themeList, linkCode);
+	}
+	
+	/**
+	 * Embeds the list of contexts (themes, icon) into an ask 
+	 * @param ask
+	 * @param themes
+	 * @param linkCode
+	 * @return
+	 */
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, String linkCode) {
+		if (linkCode == null) {
+			linkCode = "THEME";
+		}	
 		
-		parentBe.setLinks(childLinks);	
-		beMsg.add(parentBe);		
+		List<Context> completeContext = new ArrayList<>();
+		
+		for(BaseEntity theme : themes) {
+			Context context = new Context(linkCode, theme);
+			completeContext.add(context);
+		}
+		
+		ContextList contextList = ask.getContextList();
+		if(contextList != null) {
+			List<Context> contexts = contextList.getContexts();
+			if(contexts.isEmpty()) {
+				contexts = new ArrayList<>();
+				contexts.addAll(completeContext);
+			} else {
+				contexts.addAll(completeContext);
+			}
+			contextList = new ContextList(contexts);
+		} else {
+			List<Context> contexts = new ArrayList<>();		
+			contexts.addAll(completeContext);
+			contextList = new ContextList(contexts);
+		}
+		ask.setContextList(contextList);
+		return ask;
 	}
 
-	/**
-	 * @return the serviceToken
-	 */
-	public String getServiceToken() {
-		return serviceToken;
+
+	public Map<String, String> getTableColumns(SearchEntity searchBe) {
+
+		Map<String, String> columns = new HashMap<String, String>();
+
+		String searchString = JsonUtils.toJson(searchBe);
+		JsonObject searchJson = new JsonObject(searchString);
+
+		JsonArray arr = searchJson.getJsonArray("baseEntityAttributes");
+
+		for (int i = 0; i < arr.size(); i++) {
+			JsonObject obj = arr.getJsonObject(i);
+			String attributeCode = obj.getString("attributeCode");
+			String attributeName = obj.getString("attributeName");
+			if (attributeCode.startsWith("COL_")) {
+				columns.put(attributeCode.split("COL_")[1], attributeName);
+			}
+		}
+		System.out.println("the Columns is :: " + columns);
+		return columns;
 	}
 
-	/**
-	 * @param serviceToken the serviceToken to set
-	 */
-	public void setServiceToken(String serviceToken) {
-		this.serviceToken = serviceToken;
+	public List<Ask> generateTableHeaderAsks(SearchEntity searchBe) {
+
+		List<Ask> asks = new ArrayList<>();
+
+		/* Validation for Search Attribute */
+		Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
+		List<Validation> validations = new ArrayList<>();
+		validations.add(validation);
+		ValidationList searchValidationList = new ValidationList();
+		searchValidationList.setValidationList(validations);
+
+		Attribute eventAttribute = RulesUtils.attributeMap.get("PRI_SORT");
+		Attribute labelAttribute = RulesUtils.attributeMap.get("PRI_LABEL");
+		Attribute questionAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
+
+		/* get table columns */
+		Map<String, String> columns = this.getTableColumns(searchBe);
+
+		for (Map.Entry<String, String> column : columns.entrySet()) {
+
+
+			String attributeCode = column.getKey();
+			String attributeName = column.getValue();
+
+			Attribute searchAttribute = new Attribute(attributeCode, attributeName,
+					new DataType("Text", searchValidationList, "Text"));
+
+			/* Initialize Column Header Ask group */
+			Question columnHeaderQuestion = new Question("QUE_" + attributeCode + "_GRP", attributeName,
+					questionAttribute, true);
+			Ask columnHeaderAsk = new Ask(columnHeaderQuestion, this.getUser().getCode(), searchBe.getCode());
+
+			/* Initialize Column Label, Sort and Search asks */
+
+			Question columnQues = new Question("QUE_" + attributeCode, attributeName, labelAttribute, false);
+			Question columnSortQues = new Question("QUE_SORT_" + attributeCode, "Sort", eventAttribute, false);
+			Question columnSearchQues = new Question("QUE_SEARCH_" + attributeCode, attributeName, searchAttribute,
+					false);
+
+			List<Question> questions = new ArrayList<>();
+			questions.add(columnQues);
+			questions.add(columnSortQues);
+			questions.add(columnSearchQues);
+
+			List<Ask> tableColumnChildAsks = new ArrayList<>();
+
+			for (Question question : questions) {
+
+				Ask columnAsk = new Ask(question, this.getUser().getCode(), searchBe.getCode());
+				tableColumnChildAsks.add(columnAsk);
+			}
+
+			/* Convert List to Array */
+			Ask[] tableColumnChildAsksArray = tableColumnChildAsks.toArray(new Ask[0]);
+
+			/* set the child asks */
+			columnHeaderAsk.setChildAsks(tableColumnChildAsksArray);
+
+			/* set Vertical Theme to columnHeaderAsk */
+			BaseEntity verticalTheme = this.baseEntity.getBaseEntityByCode("THM_DISPLAY_VERTICAL");
+			columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, verticalTheme, "THEME");
+			asks.add(columnHeaderAsk);
+		}
+		return asks;
+
 	}
 
-	
-	
 }
-
