@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 
+import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
 import org.drools.core.impl.EnvironmentFactory;
 import org.kie.api.KieBase;
@@ -58,6 +59,7 @@ import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
+import life.genny.qwandautils.QwandaUtils;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 
@@ -122,6 +124,19 @@ public class RulesLoader {
 		List<String> activeRealms = new ArrayList<String>();
 		JsonObject ar = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "REALMS");
 		String ars = ar.getString("value");
+		
+		if (ars == null) {
+			try {
+				ars = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl+"/utils/realms","NOTREQUIRED");
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 		Type listType = new TypeToken<List<String>>(){}.getType();
 		ars = ars.replaceAll("\\\"", "\"");
 		activeRealms = JsonUtils.fromJson(ars, listType);
