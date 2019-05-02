@@ -58,7 +58,7 @@ public static final String SKIP_NEWQA_TEST = "TRUE";
 		Attribute firstNameAttribute = new Attribute("PRI_FIRSTNAME", "link", new DataType(String.class));
 				
 		/* put the method which you want to test */
-		Ask testQuestion1 = getQuestionWithLabel(firstNameAttribute);
+		/*Ask testQuestion1 = getQuestionWithLabel(firstNameAttribute);
 		Ask questionWithLabelAndInputThemes = getQuestionWithLabelAndThemesForLabelAndInput(firstNameAttribute);
 		
 		Ask testQuestion2 = getQuestionWithNoLabel(firstNameAttribute);
@@ -67,19 +67,19 @@ public static final String SKIP_NEWQA_TEST = "TRUE";
 		Ask testQuestion4 = getQuestionWithLabelAndMandatory(firstNameAttribute);
 		Ask testQuestion5 = getQuestionWithLabelHintMandatory(firstNameAttribute);
 		
-		Ask testQuestion6 = getQuestionWithLabelAndDescription(firstNameAttribute);
+		Ask testQuestion6 = getQuestionWithLabelAndDescription(firstNameAttribute);*/
 		
 		
 		Ask testQuestion7 = getQuestionWithLabelAndIcon(firstNameAttribute);
 		
 		List<Ask> questionList = new ArrayList<>();
-		questionList.add(testQuestion1);
+		/*questionList.add(testQuestion1);
 		questionList.add(questionWithLabelAndInputThemes);
 		questionList.add(testQuestion2);
 		questionList.add(testQuestion3);
 		questionList.add(testQuestion4);
 		questionList.add(testQuestion5);
-		questionList.add(testQuestion6);
+		questionList.add(testQuestion6);*/
 		questionList.add(testQuestion7);
 		
 		/* adding the child ask to the parent question group */
@@ -382,10 +382,10 @@ public static final String SKIP_NEWQA_TEST = "TRUE";
 		/* create visual baseentity for question with label */
 		BaseEntity visualBaseEntity = new BaseEntity("THM_VISUAL_CONTROL_6", "Theme Visual Control One");
 		
-		Attribute labelAttr = new Attribute("PRI_HAS_LABEL", "Has Label?", new DataType("Text", getTextValidation(), "Text"));
+		Attribute labelAttr = new Attribute("PRI_HAS_LABEL", "Has Label?", new DataType(Boolean.class));
 		EntityAttribute labelEntityAttribute = new EntityAttribute(visualBaseEntity, labelAttr, 1.0, "TRUE");
 		
-		Attribute iconAttr = new Attribute("PRI_HAS_ICON", "Has Icon?", new DataType("Text", getTextValidation(), "Text"));
+		Attribute iconAttr = new Attribute("PRI_HAS_ICON", "Has Icon?", new DataType(Boolean.class));
 		EntityAttribute iconEntityAttribute = new EntityAttribute(visualBaseEntity, iconAttr, 1.0, "TRUE");
 		
 		Set<EntityAttribute> attributeSet = new HashSet<>();
@@ -399,6 +399,9 @@ public static final String SKIP_NEWQA_TEST = "TRUE";
 		
 		Context visualContext = new Context("THEME", visualBaseEntity, VisualControlType.DEFAULT);		
 		
+		/* getting icon context for edit */
+		Context editIconContext = getEditIconContext();
+		
 		/* create theme for input */
 		BaseEntity inputBackgroundColorThemeBe = new BaseEntity("THM_BACKGROUND_GRAY", "gray bg");
 		Context inputBackgroundColorContext = new Context("THEME", inputBackgroundColorThemeBe, VisualControlType.INPUT);
@@ -406,21 +409,39 @@ public static final String SKIP_NEWQA_TEST = "TRUE";
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_WHITE", "white");
 		Context inputColorContext = new Context("THEME", inputColorThemeBe, VisualControlType.INPUT);
 		
-		/* create theme for icon */
-		//Context iconContext = new Context("THEME", inputBackgroundColorThemeBe, VisualControlType.ICON);
-		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();
 		contexts.add(visualContext);
 		contexts.add(inputColorContext);
-		//contexts.add(iconContext);
 		contexts.add(inputBackgroundColorContext);
+		contexts.add(editIconContext);
 		/* add the context to the contextList */
 		ContextList contextList = new ContextList(contexts);
 		
 		ask.setContextList(contextList);
 		ask.setMandatory(true);
 		return ask;
+	}
+	
+	/* get theme context for "edit" icon */
+	public Context getEditIconContext() {
+		
+		BaseEntity editIcon = new BaseEntity("ICN_EDIT", "edit icon");
+		
+		Attribute iconAttr = new Attribute("PRI_ICON_CODE", "Icon Code", new DataType("Text", getTextValidation(), "Text"));
+		EntityAttribute iconEntityAttribute = new EntityAttribute(editIcon, iconAttr, 1.0, "edit");
+		
+		Set<EntityAttribute> attributeSet = new HashSet<>();
+		attributeSet.add(iconEntityAttribute);	
+		editIcon.setBaseEntityAttributes(attributeSet);
+		
+		QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(editIcon);
+		/* send icon baseentity */
+		sendTestMsg(beMsg);
+		
+		Context editIconContext = new Context("ICON", editIcon);
+		
+		return editIconContext;
 	}
 	
 	/* publishes the test-messages to front-end through bridge */
