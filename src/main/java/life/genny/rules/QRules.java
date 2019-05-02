@@ -5665,59 +5665,107 @@ public class QRules implements Serializable {
 		/* initialize an empty ask list */
 		List<Ask> askList = new ArrayList<>();
 
-		/* get the list of baseentities from search */
-		List<BaseEntity> bes = new ArrayList<>();
-		try {
-			bes = this.getSearchResultsAsList(search, true);
-			if (bes != null && bes.isEmpty() == false) {
+		/* get table columns from search */
+		Map<String, String> columns = this.getTableColumns(search);
+		
+		if(columns != null){
+			/* get the list of baseentities from search */
+			List<BaseEntity> bes = new ArrayList<>();
+			try {
+				bes = this.getSearchResultsAsList(search, true);
+				if (bes != null && bes.isEmpty() == false) {
+	
+					/* loop through baseentities to generate ask */
+					for (BaseEntity be : bes) {
+	
+						/* we add attributes for each be */
+						this.baseEntity.addAttributes(be);
+	
+						/* initialize child ask list */
+						List<Ask> childAskList = new ArrayList<>();
+	
+						for (Map.Entry<String, String> column : columns.entrySet()) {
+	
+							String attributeCode = column.getKey();
+							String attributeName = column.getValue();
+							Attribute attr = RulesUtils.attributeMap.get(attributeCode);
 
-				/* loop through baseentities to generate ask */
-				for (BaseEntity be : bes) {
+							/* if the column is an actions column */
+							if(attributeCode.equals("QUE_TABLE_ACTIONS_GRP")){
+					
+								/* creating actions ask group */
+								Question actionGroupQuestion = new Question("QUE_" + be.getCode() + "_TABLE_ACTIONS_GRP", "Actions", attr, true);
+								Ask childAsk = new Ask(actionGroupQuestion, targetCode, be.getCode());
 
-					/* we add attributes for each be */
-					this.baseEntity.addAttributes(be);
+								/* creating child ask for actions */
+								Attribute actionAttribute = RulesUtils.attributeMap.get("PRI_EVENT");
 
-					/* initialize child ask list */
-					List<Ask> childAskList = new ArrayList<>();
+								Question viewQues = new Question("QUE_VIEW_" + be.getCode(), "View", actionAttribute, true);
+								Question editQues = new Question("QUE_EDIT_" + be.getCode(), "Edit", actionAttribute, true);
+								Question deleteQues = new Question("QUE_DELETE_" + be.getCode(), "Delete", actionAttribute, true);
 
-					/* loop through entityAttributes to generate ask */
-					for (EntityAttribute ea : be.getBaseEntityAttributes()) {
+								List<Question> questions = new ArrayList<>();
+								questions.add(viewQues);
+								questions.add(editQues);
+								questions.add(deleteQues);
 
-						Question childQuestion = new Question("QUE_" + ea.getAttributeCode(), ea.getAttributeName(),
-								ea.getAttribute(), true);
-						Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
+								List<Ask> actionChildAsks = new ArrayList<>();
 
-						/* add the entityAttribute ask to list */
-						childAskList.add(childAsk);
+								for (Question question : questions) {
+
+									Ask actionChildAsk = new Ask(question, this.getUser().getCode(), be.getCode());
+									actionChildAsks.add(actionChildAsk);
+								}
+
+								/* converting asks list to array */
+								Ask[] actionChildAsksArr = actionChildAsks.stream().toArray(Ask[]::new);
+								childAsk.setChildAsks(actionChildAsksArr);
+								
+								/* add the entityAttribute ask to list */
+								childAskList.add(childAsk);
+
+							}else{
+								
+								Question childQuestion = new Question("QUE_" + attributeCode, attributeName, attr, true);
+								Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
+								
+								/* add the entityAttribute ask to list */
+								childAskList.add(childAsk);
+							}
+	
+						}
+	
+						/* converting childAsks list to array */
+						Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
+	
+						/* Get the on-the-fly question attribute */
+						Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
+								new DataType(String.class));
+	
+	
+						/* Generate ask for the baseentity */
+						Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
+								questionAttribute, true);
+						Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
+						
+						/* setting weight to parent ask */
+						parentAsk.setWeight(be.getIndex().doubleValue());
+	
+						/* set all the childAsks to parentAsk */
+						parentAsk.setChildAsks(childAsArr);
+	
+						/* add the baseentity asks to a list */
+						askList.add(parentAsk);
 					}
 
-					/* converting childAsks list to array */
-					Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
-
-					/* Get the on-the-fly question attribute */
-					Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
-							new DataType(String.class));
-
-					/* Generate ask for the baseentity */
-					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
-							questionAttribute, true);
-					Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
-					
-					/* setting weight to parent ask */
-					parentAsk.setWeight(be.getIndex().doubleValue());
-
-					/* set all the childAsks to parentAsk */
-					parentAsk.setChildAsks(childAsArr);
-
-					/* add the baseentity asks to a list */
-					askList.add(parentAsk);
 				}
-
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+
 		}
+
 
 		/* return list of asks */
 		return askList;
@@ -5843,12 +5891,15 @@ public class QRules implements Serializable {
 			if (attributeCode.startsWith("COL_")) {
 				columns.put(attributeCode.split("COL_")[1], attributeName);
 			}
+			if (attributeCode.startsWith("QUE_")) {
+				columns.put(attributeCode, attributeName);
+			}
 		}
 		System.out.println("the Columns is :: " + columns);
 		return columns;
 	}
 
-	public List<Ask> generateTableHeaderAsks(SearchEntity searchBe) {
+	public Ask generateTableHeaderAsks(SearchEntity searchBe) {
 
 		List<Ask> asks = new ArrayList<>();
 
@@ -5910,7 +5961,17 @@ public class QRules implements Serializable {
 			columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, verticalTheme, "THEME");
 			asks.add(columnHeaderAsk);
 		}
-		return asks;
+		
+		/* Convert List to Array */
+		Ask[] asksArray = asks.toArray(new Ask[0]);
+
+		/* we create a table-header ask grp and set all the column asks as it's childAsk */
+		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", "Table Header Question Group", questionAttribute, true);
+		
+		Ask tableHeaderAsk = new Ask(tableHeaderQuestion, this.getUser().getCode(), searchBe.getCode());
+		tableHeaderAsk.setChildAsks(asksArray);
+
+		return tableHeaderAsk;
 
 	}
 

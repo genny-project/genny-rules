@@ -78,4 +78,24 @@ public class ContextUtils {
 		return backgroundTheme;
 	}
 
+
+	public static BaseEntity getFullWidthTheme() {
+		/* create context */
+		BaseEntity fullWidthTheme = new BaseEntity("THM_WIDTH_FULL", "Width 100 Percent");
+		
+		String bgAttribute = "{ \"width\": \"100%\", \"justifyContent\": \"space-around\"}";
+		
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
+		EntityAttribute entAttr = new EntityAttribute(fullWidthTheme, att, 1.0, bgAttribute);
+		EntityAttribute inheritEntAtt = new EntityAttribute(fullWidthTheme, inheritableAtt, 1.0, "FALSE");
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+		entAttrSet.add(inheritEntAtt);
+		
+		fullWidthTheme.setBaseEntityAttributes(entAttrSet);
+
+		return fullWidthTheme;
+	}
+
 }
