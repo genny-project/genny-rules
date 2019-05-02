@@ -8,6 +8,7 @@ import java.io.StringReader;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -83,9 +84,9 @@ public class RulesLoader {
 
 
 	public static void addRules(final String rulesDir, List<Tuple3<String,String,String>> newrules) {
-		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir);
+		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir,realms);
 		rules.addAll(newrules);
-		realms = getRealms(rules);
+		//realms = getRealms(rules);
 		realms.stream().forEach(System.out::println);
 		realms.remove("genny");
 		setupKieRules("genny", rules); // run genny rules first
@@ -113,14 +114,6 @@ public class RulesLoader {
 		
 		log.info("Loading Rules and workflows!!!");
 		
-		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir);
-
-		realms = getRealms(rules);
-		realms.stream().forEach(System.out::println);
-		realms.remove("genny");
-//		Integer rulesCount = setupKieRules("genny", rules); // rNo need to run genny rules
-//		log.info("Rules Count for genny = "+rulesCount);
-		
 		List<String> activeRealms = new ArrayList<String>();
 		JsonObject ar = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "REALMS");
 		String ars = ar.getString("value");
@@ -140,6 +133,17 @@ public class RulesLoader {
 		Type listType = new TypeToken<List<String>>(){}.getType();
 		ars = ars.replaceAll("\\\"", "\"");
 		activeRealms = JsonUtils.fromJson(ars, listType);
+		realms = new HashSet<>( activeRealms);
+		
+		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
+
+//		realms = getRealms(rules);
+		realms.stream().forEach(System.out::println);
+		realms.remove("genny");
+//		Integer rulesCount = setupKieRules("genny", rules); // rNo need to run genny rules
+//		log.info("Rules Count for genny = "+rulesCount);
+		
+
 		for (String realm : activeRealms) {
 			log.info("LOADING "+realm+" RULES");
 			Integer rulesCount = setupKieRules(realm, rules);
@@ -236,12 +240,13 @@ public class RulesLoader {
 	// 	return null;
 	// }
 
-	static public List<Tuple3<String, String, String>> processFileRealms(final String realm, String inputFileStrs) {
+	static public List<Tuple3<String, String, String>> processFileRealms(final String realm, String inputFileStrs, Set<String> activeRealms) {
 		List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
 
 		String[] inputFileStrArray = inputFileStrs.split(";,"); // allow multiple rules dirs
 
 		for (String inputFileStr : inputFileStrArray) {
+			
 			//log.info("InputFileStr=" + inputFileStr);
 			File file = new File(inputFileStr);
 			String fileName = inputFileStr.replaceFirst(".*/(\\w+).*", "$1");
@@ -251,7 +256,11 @@ public class RulesLoader {
 				if (!fileName.startsWith("XX")) {
 					String localRealm = realm;
 					if (fileName.startsWith("prj_") || fileName.startsWith("PRJ_")) {
-						localRealm = fileName.substring("prj_".length()).toLowerCase(); // extract realm name
+						if ((activeRealms.stream().anyMatch(localRealm::equals))||("prj_genny".equalsIgnoreCase(fileName))) {
+							localRealm = fileName.substring("prj_".length()).toLowerCase(); // extract realm name
+						} else {
+							continue;
+						}
 					}
 					List<String> filesList = null;
 					
@@ -272,7 +281,7 @@ public class RulesLoader {
 					}
 
 					for (final String dirFileStr : filesList) {
-						List<Tuple3<String, String, String>> childRules = processFileRealms(localRealm, dirFileStr); // use
+						List<Tuple3<String, String, String>> childRules = processFileRealms(localRealm, dirFileStr,realms); // use
 																														// directory
 																														// name
 																														// as
@@ -684,25 +693,25 @@ public class RulesLoader {
 	}
 	public static void initMsg(final String msgType,String realm,final Object msg, final EventBusInterface eventBus) {
 		
-				Map<String,Object> adecodedTokenMap = new HashMap<String,Object>();
 			Set<String> auserRoles = new HashSet<String>();
 			auserRoles.add("admin");
 			auserRoles.add("user");
 
 			// Service Token
-			JsonObject jsonObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN"+realm);
+			JsonObject jsonObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN"+realm.toUpperCase());
+
 			String token = jsonObj.getString("value"); //RulesUtils.generateServiceToken(realm); // ruleGroup matches realm
 
-			QRules qRules = new QRules(eventBus, token, adecodedTokenMap);
+			QRules qRules = new QRules(eventBus, token);
 			qRules.set("realm", realm);
-			qRules.setServiceToken(jsonObj.getString("value"));
+			qRules.setServiceToken(token);
 
 			List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();
 
 			List<Object> facts = new ArrayList<Object>();
 			facts.add(qRules);
 			facts.add(msg);
-			facts.add(adecodedTokenMap);
+			facts.add(qRules.getDecodedTokenMap());
 			facts.add(auserRoles);
 	        User currentUser = new User("service", "Service", realm, "admin");
 			facts.add(currentUser);
@@ -735,18 +744,17 @@ public class RulesLoader {
 
 			String preferredUName = adecodedTokenMap.get("preferred_username").toString();
 			String fullName = adecodedTokenMap.get("name").toString();
-			String realm = adecodedTokenMap.get("azp").toString();
 //			if ("genny".equalsIgnoreCase(realm)) {
 //				realm = GennySettings.mainrealm;
 //				adecodedTokenMap.put("realm", GennySettings.mainrealm);
 //			}
 			String accessRoles = adecodedTokenMap.get("realm_access").toString();
 
-			QRules qRules = new QRules(eventBus, token, adecodedTokenMap);
-			qRules.set("realm", realm);
+			QRules qRules = new QRules(eventBus, token);
+			qRules.set("realm", qRules.realm());
 			
 			// Service Token
-			JsonObject jsonObj = VertxUtils.readCachedJson(realm, "CACHE:SERVICE_TOKEN"+realm);
+			JsonObject jsonObj = VertxUtils.readCachedJson(qRules.realm(), "CACHE:SERVICE_TOKEN"+qRules.realm().toUpperCase());
 			qRules.setServiceToken(jsonObj.getString("value"));
 
 			List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
@@ -760,7 +768,7 @@ public class RulesLoader {
 			if(userInSession!=null)
 				facts.add(usersSession.get(preferredUName));
 			else {
-	            User currentUser = new User(preferredUName, fullName, realm, accessRoles);
+	            User currentUser = new User(preferredUName, fullName, qRules.realm(), accessRoles);
 				usersSession.put(adecodedTokenMap.get("preferred_username").toString(), currentUser);
 				facts.add(currentUser);
 			}
@@ -769,10 +777,10 @@ public class RulesLoader {
 			Map<String, String> keyvalue = new HashMap<String, String>();
 			keyvalue.put("token", token);
 
-			if (!"GPS".equals(msgType)) { log.info("FIRE RULES ("+realm+") "+msgType); }
+			if (!"GPS".equals(msgType)) { log.info("FIRE RULES ("+qRules.realm()+") "+msgType); }
 
 			try {
-				RulesLoader.executeStateful(realm, eventBus, globals, facts, keyvalue);
+				RulesLoader.executeStateful(qRules.realm(), eventBus, globals, facts, keyvalue);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

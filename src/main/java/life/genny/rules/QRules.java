@@ -39,6 +39,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.Logger;
 import org.drools.core.spi.KnowledgeHelper;
 import org.javamoney.moneta.Money;
+import org.json.JSONException;
 
 import com.amazonaws.services.iotdata.model.GetThingShadowRequest;
 import com.google.api.client.json.Json;
@@ -193,15 +194,21 @@ public class QRules implements Serializable {
 	public CacheUtils cacheUtils;
 	public PaymentUtils paymentUtils;
 
+	
+	public QRules(final EventBusInterface eventBus, final String token) {
+		this(eventBus,token,RulesLoader.getDecodedTokenMap(token),DEFAULT_STATE);
+	}
+	
 	public QRules(final EventBusInterface eventBus, final String token, final Map<String, Object> decodedTokenMap,
 			String state) {
 		super();
 
 		this.eventBus = eventBus;
 		this.token = token;
-		this.decodedTokenMap = decodedTokenMap;
+		this.decodedTokenMap = decodedTokenMap;  // yes. I know.
+		this.set("realm", (String)this.decodedTokenMap.get("aud"));
 		this.stateMap = new HashMap<String, Boolean>();
-		stateMap.put(DEFAULT_STATE, true);
+		stateMap.put(state, true);
 		setStarted(false);
 
 		this.initUtils();
@@ -1527,8 +1534,8 @@ public class QRules implements Serializable {
 	public boolean loadRealmData()
 	{
 		// No need to load in files anymore as realms are fetched from cache
-		String localServiceToken = this.getServiceToken();
-		this.setNewTokenAndDecodedTokenMap(localServiceToken);
+//		String localServiceToken = this.getServiceToken();
+//		this.setNewTokenAndDecodedTokenMap(localServiceToken);
 		return true;
 	}
 	
@@ -3959,7 +3966,13 @@ public class QRules implements Serializable {
 		String realm = realm();
 		String name = "Service User";
 		String email = "adamcrow63@gmail.com";
-		String keycloakId = getAsString("sub").toLowerCase();
+		String token = getServiceToken();
+		String keycloakId = null;
+		try {
+			keycloakId = (String)KeycloakUtils.getDecodedToken(token).get("sub");
+		} catch (JSONException e1) {
+			keycloakId = realm; // give it something.
+		}
 
 		// Check if already exists
 		BaseEntity existing = this.baseEntity.getBaseEntityByAttributeAndValue("PRI_CODE", "PER_SERVICE"); // do not

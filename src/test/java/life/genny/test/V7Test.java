@@ -41,7 +41,7 @@ public class V7Test {
 
 	private static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
-	public static final String SKIP_NEWQA_TEST = "FALSE";
+	public static final String SKIP_NEWQA_TEST = "TRUE";
 
 	@Test
 	public void testOnlyIfSkipIsDisabled() {
