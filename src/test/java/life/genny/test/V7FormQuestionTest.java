@@ -14,6 +14,7 @@ import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
 import life.genny.qwanda.Context.VisualControlType;
 import life.genny.qwanda.ContextList;
+import life.genny.qwanda.ContextType;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
 import life.genny.qwanda.attribute.Attribute;
@@ -118,19 +119,19 @@ public class V7FormQuestionTest {
 	private ContextList getContextListForFormQuestion() {
 		
 		BaseEntity visualTheme = getVisualBaseEntityForEmailInput();
-		Context visualContext = new Context("THEME", visualTheme, VisualControlType.DEFAULT);
+		Context visualContext = new Context(ContextType.THEME, visualTheme, VisualControlType.DEFAULT);
 	
 		/* create theme for label */
 		BaseEntity labelThemeBe = new BaseEntity("THM_COLOR_RED", "red");
-		Context labelContext = new Context("THEME", labelThemeBe, VisualControlType.LABEL);
+		Context labelContext = new Context(ContextType.THEME, labelThemeBe, VisualControlType.LABEL);
 		
 		/* create default theme for question */
 		BaseEntity defaultThemeBe = new BaseEntity("THM_COLOR_BLACK", "black");
-		Context defaultContext = new Context("THEME", defaultThemeBe, VisualControlType.DEFAULT);
+		Context defaultContext = new Context(ContextType.THEME, defaultThemeBe, VisualControlType.DEFAULT);
 		
 		/* create theme for input */
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_WHITE", "white");
-		Context inputColorContext = new Context("THEME", inputColorThemeBe, VisualControlType.INPUT);
+		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.INPUT);
 		
 		//BaseEntity inputBackgroundThemeBe = new BaseEntity("THM_BACKGROUND_WHITE", "white bg");
 		
@@ -154,17 +155,17 @@ public class V7FormQuestionTest {
 		/* create context */
 		/* getting the visual theme baseentity */
 		BaseEntity visualTheme = getVisualBaseEntity();
-		Context visualContext = new Context("THEME", visualTheme, VisualControlType.DEFAULT);
+		Context visualContext = new Context(ContextType.THEME, visualTheme, VisualControlType.DEFAULT);
 	
 		/* create theme for input */
 		BaseEntity inputBackgroundColorThemeBe = new BaseEntity("THM_BACKGROUND_GRAY", "gray bg");
-		Context inputBackgroundColorContext = new Context("THEME", inputBackgroundColorThemeBe, VisualControlType.INPUT);
+		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.INPUT);
 		
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_WHITE", "white");
-		Context inputColorContext = new Context("THEME", inputColorThemeBe, VisualControlType.INPUT);
+		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.INPUT);
 		
 		BaseEntity iconThemeBe = new BaseEntity("THM_BACKGROUND_WHITE", "white bg");
-		Context iconContext = new Context("THEME", iconThemeBe, VisualControlType.ICON);
+		Context iconContext = new Context(ContextType.THEME, iconThemeBe, VisualControlType.ICON);
 		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();

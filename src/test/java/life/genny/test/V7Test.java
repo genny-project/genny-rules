@@ -14,10 +14,11 @@ import org.junit.Test;
 
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
+import life.genny.qwanda.Context.VisualControlType;
 import life.genny.qwanda.ContextList;
+import life.genny.qwanda.ContextType;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
-import life.genny.qwanda.Context.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
@@ -41,7 +42,7 @@ public class V7Test {
 
 	private static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
-	public static final String SKIP_NEWQA_TEST = "FALSE";
+	public static final String SKIP_NEWQA_TEST = "TRUE";
 
 	@Test
 	public void testOnlyIfSkipIsDisabled() {
@@ -511,7 +512,7 @@ public class V7Test {
 
 		/* publishing theme for expanding */
 		/* creating a context for the expandable-theme */
-		Context horizontalThemeContext = new Context("THEME", horizontalTheme);
+		Context horizontalThemeContext = new Context(ContextType.THEME, horizontalTheme);
 
 		return horizontalThemeContext;
 	}
@@ -523,7 +524,7 @@ public class V7Test {
 		
 		 /* publishing theme for vertical display */
 		/* creating a context for the vertical-display */
-		Context verticalThemeContext = new Context("THEME", verticalTheme);
+		Context verticalThemeContext = new Context(ContextType.THEME, verticalTheme);
 
 		return verticalThemeContext;
 	}
@@ -542,7 +543,7 @@ public class V7Test {
 		/* send visual baseentity */
 		sendTestMsg(beMsg);
 		
-		Context visualContext = new Context("THEME", visualBaseEntity, VisualControlType.LABEL);
+		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.LABEL);
 		return visualContext;
 	}
 	
@@ -568,7 +569,7 @@ public class V7Test {
 		
 		 /* publishing theme for expanding */
 		/* creating a context for the expandable-theme */
-		Context borderThemeContext = new Context("THEME", borderTheme);
+		Context borderThemeContext = new Context(ContextType.THEME, borderTheme);
 
 		return borderThemeContext;
 	}
@@ -588,7 +589,7 @@ public class V7Test {
 		QDataBaseEntityMessage bgMessage = new QDataBaseEntityMessage(backgroundTheme);
 		sendTestMsg(bgMessage);
 	
-		Context bgThemeContext = new Context("THEME", backgroundTheme);
+		Context bgThemeContext = new Context(ContextType.THEME, backgroundTheme);
 
 		return bgThemeContext;
 	}
@@ -608,7 +609,7 @@ public class V7Test {
 		QDataBaseEntityMessage bgMessage = new QDataBaseEntityMessage(backgroundTheme);
 		sendTestMsg(bgMessage);
 
-		Context bgThemeContext = new Context("THEME", backgroundTheme);
+		Context bgThemeContext = new Context(ContextType.THEME, backgroundTheme);
 
 		return bgThemeContext;
 	}

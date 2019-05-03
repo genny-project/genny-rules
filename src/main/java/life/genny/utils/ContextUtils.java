@@ -3,8 +3,6 @@ package life.genny.utils;
 import java.util.HashSet;
 import java.util.Set;
 
-import life.genny.qwanda.Context;
-import life.genny.qwanda.Context.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;

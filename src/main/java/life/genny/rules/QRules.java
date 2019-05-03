@@ -56,6 +56,7 @@ import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
 import life.genny.qwanda.ContextList;
+import life.genny.qwanda.ContextType;
 import life.genny.qwanda.GPS;
 
 import life.genny.qwanda.Layout;
@@ -3789,7 +3790,7 @@ public class QRules implements Serializable {
 		this.publishBaseEntityByCode(expandableBe.getCode());
 
 		/* creating a context for the expandable-theme */
-		Context expandableThemeContext = new Context("THEME", expandableBe);
+		Context expandableThemeContext = new Context(ContextType.THEME, expandableBe);
 		List<Context> expandableThemeContextList = new ArrayList<>();
 		expandableThemeContextList.add(expandableThemeContext);
 
@@ -5831,7 +5832,7 @@ public class QRules implements Serializable {
 		return source;
 	}
 
-	public Ask createVirtualContext(Ask ask, BaseEntity theme, String linkCode) {
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode) {
 		List<BaseEntity> themeList = new ArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode);
@@ -5844,9 +5845,9 @@ public class QRules implements Serializable {
 	 * @param linkCode
 	 * @return
 	 */
-	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, String linkCode) {
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode) {
 		if (linkCode == null) {
-			linkCode = "THEME";
+			linkCode = ContextType.THEME;
 		}	
 		
 		List<Context> completeContext = new ArrayList<>();
@@ -5958,7 +5959,7 @@ public class QRules implements Serializable {
 
 			/* set Vertical Theme to columnHeaderAsk */
 			BaseEntity verticalTheme = this.baseEntity.getBaseEntityByCode("THM_DISPLAY_VERTICAL");
-			columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, verticalTheme, "THEME");
+			columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, verticalTheme, ContextType.THEME);
 			asks.add(columnHeaderAsk);
 		}
 		
