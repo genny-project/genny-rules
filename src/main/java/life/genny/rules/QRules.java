@@ -39,6 +39,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.Logger;
 import org.drools.core.spi.KnowledgeHelper;
 import org.javamoney.moneta.Money;
+import org.json.JSONException;
 
 import com.amazonaws.services.iotdata.model.GetThingShadowRequest;
 import com.google.api.client.json.Json;
@@ -125,7 +126,7 @@ import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.qwandautils.ScoringUtils;
-import life.genny.security.SecureResources;
+
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
 import life.genny.utils.DateUtils;
@@ -141,6 +142,11 @@ import life.genny.utils.Layout.LayoutUtils;
 import life.genny.utils.Layout.LayoutViewData;
 
 public class QRules implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
@@ -158,6 +164,22 @@ public class QRules implements Serializable {
 	private long ruleStartMs = 0;
 
 	KnowledgeHelper drools;
+	
+	String serviceToken;
+
+	/**
+	 * @return the serviceToken
+	 */
+	public String getServiceToken() {
+		return serviceToken;
+	}
+
+	/**
+	 * @param serviceToken the serviceToken to set
+	 */
+	public void setServiceToken(String serviceToken) {
+		this.serviceToken = serviceToken;
+	}
 
 	public void setDrools(KnowledgeHelper drools) {
 		this.drools = drools;
@@ -173,15 +195,21 @@ public class QRules implements Serializable {
 	public CacheUtils cacheUtils;
 	public PaymentUtils paymentUtils;
 
+	
+	public QRules(final EventBusInterface eventBus, final String token) {
+		this(eventBus,token,RulesLoader.getDecodedTokenMap(token),DEFAULT_STATE);
+	}
+	
 	public QRules(final EventBusInterface eventBus, final String token, final Map<String, Object> decodedTokenMap,
 			String state) {
 		super();
 
 		this.eventBus = eventBus;
 		this.token = token;
-		this.decodedTokenMap = decodedTokenMap;
+		this.decodedTokenMap = decodedTokenMap;  // yes. I know.
+		this.set("realm", (String)this.decodedTokenMap.get("aud"));
 		this.stateMap = new HashMap<String, Boolean>();
-		stateMap.put(DEFAULT_STATE, true);
+		stateMap.put(state, true);
 		setStarted(false);
 
 		this.initUtils();
@@ -257,9 +285,7 @@ public class QRules implements Serializable {
 	public String realm() {
 
 		String str = getAsString("realm");
-		if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
-			str = GennySettings.mainrealm; // TODO, I don't like this, but...
-		}
+
 		return str.toLowerCase();
 	}
 
@@ -580,185 +606,412 @@ public class QRules implements Serializable {
 		return status;
 	}
 
-	public void publishBaseEntityByCode(BaseEntity[] beArr, String parentCode, String linkCode, String linkValue,
-			String[] recipientCodes, final Boolean replace, final Boolean delete, Object level, Long returnCount) {
-
-		/*
-		 * invoking constructor and setting the BEs, parent code, link code and link
-		 * value
-		 */
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArr, parentCode, linkCode, linkValue);
-
-		/* setting recipientcode to the message */
-		if (recipientCodes != null) {
-			msg.setRecipientCodeArray(recipientCodes);
-		} else {
-			String[] recipientArr = { this.getUser().getCode() };
-			msg.setRecipientCodeArray(recipientArr);
-		}
-
-		/*
-		 * delete the existing baseentity and links related to it and replaces it with
-		 * the current baseentity which we send in this method
-		 */
-		msg.setReplace(replace);
-
-		/* completely deletes the baseentity */
-		msg.setDelete(delete);
-
-		/*
-		 * if the level is greater than 0, then we set deletion levels for the
-		 * baseentity
-		 */
-		if (level instanceof java.lang.Integer) {
-			if (((java.lang.Integer) level) > 0) {
-				msg.setShouldDeleteLinkedBaseEntities(level);
-			}
-		} else if (level instanceof java.lang.Boolean) {
-			if (((java.lang.Boolean) level)) {
-				msg.setShouldDeleteLinkedBaseEntities(level);
-			}
-		}
-
-		/* set the child baseentities as links to parent */
-		if (parentCode != null) {
-			setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue);
-		}
-
-		/* set returnCount */
-		if (returnCount > 0) {
-			msg.setReturnCount(returnCount);
-		}
-
-		publishData(msg, recipientCodes);
+	public void publishBaseEntityByCode(final String be) {
+		publishBaseEntityByCode(be, null, null, null);
 	}
 
-	public void publishBaseEntityByCode(final String be) {
-		if (be != null) {
-			/* get the baseentity */
-			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
-			BaseEntity[] beArr = { baseentity };
-			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
-		}
+	public void publishBaseEntityByCode(List<BaseEntity> bes) {
+
+		BaseEntity[] itemArray = bes.toArray(new BaseEntity[0]);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray);
+		String[] recipientCodes = { this.getUser().getCode() };
+		msg.setRecipientCodeArray(recipientCodes);
+		publishData(msg, recipientCodes);
 	}
 
 	/* Publishes BaseEntity with replace true/false */
 	public void publishBaseEntityByCode(final String be, final Boolean replace) {
-		if (be != null) {
-			/* get the baseentity */
-			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
-			BaseEntity[] beArr = { baseentity };
-			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, 0, 0L);
-		}
+
+		BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = item;
+		String[] recipientCodes = { this.getUser().getCode() };
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setReplace(replace);
+		publishData(msg, recipientCodes);
 	}
 
 	/* Publishes BaseEntity with replace true/false */
 	public void publishBaseEntityByCode(final String be, final Boolean replace, int level) {
-		if (be != null) {
-			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
-			BaseEntity[] beArr = { baseentity };
-			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, level, 0L);
-		}
+
+		BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = item;
+		String[] recipientCodes = { this.getUser().getCode() };
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setReplace(replace);
+		msg.setShouldDeleteLinkedBaseEntities(level);
+		publishData(msg, recipientCodes);
 	}
 
-	/* Publish BaseEntity with LinkValue Set */
-	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
-			final String linkValue) {
-		if (be != null) {
-			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
-			BaseEntity[] beArr = { item };
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, 0L);
-		}
+	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode) {
+
+		BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = item;
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+
+		String[] recipientCodes = { this.getUser().getCode() };
+		msg.setRecipientCodeArray(recipientCodes);
+		publishData(msg, recipientCodes);
 	}
 
-	/* Publish BaseEntity with LinkValue Set */
-	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
-			final String linkValue, final String[] recipientCodes) {
-		if (be != null) {
-			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
-			BaseEntity[] beArr = { item };
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, false, 0, 0L);
-		}
-	}
+	public void publishBaseEntityByCode(BaseEntity[] bes, final String parentCode, final String linkCode,
+			String linkValue) {
 
-	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(String beCode, final String parentCode, final String linkCode,
-			final String linkValue, final String[] recipientCodes, final Boolean delete) {
-		if (beCode != null) {
-			BaseEntity be = this.baseEntity.getBaseEntityByCode(beCode);
-			BaseEntity[] beArr = { be };
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, delete, 0, 0L);
-		}
-	}
-
-	public void publishBaseEntityByCode(List<BaseEntity> bes) {
-		if (bes != null) {
-			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
-			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
-		}
+		List<BaseEntity> list = Arrays.asList(bes);
+		this.publishBaseEntityByCode(list, parentCode, linkCode, linkValue);
 	}
 
 	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
 			String linkValue) {
-		if (bes != null) {
-			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, 0L);
-		}
+
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(bes.toArray(new BaseEntity[0]), parentCode, linkCode,
+				linkValue);
+
+		String[] recipientCodes = { this.getUser().getCode() };
+		msg.setRecipientCodeArray(recipientCodes);
+		publishData(msg, recipientCodes);
 	}
 
-	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
-			String linkValue, Long returnCount) {
-		if (bes != null) {
-			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, returnCount);
-		}
+	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
+			final String[] recipientCodes) {
+
+		BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = item;
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		publishData(msg, recipientCodes);
+
 	}
 
-	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			final String linkValue, final String[] recipientCodes) {
-		if (items != null) {
-			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, false, 0, 0L);
-		}
-	}
+	/* Publish BaseEntity with LinkValue Set */
+	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
+			final String[] recipientCodes, final String linkValue) {
 
-	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			final String linkValue, final String[] recipientCodes, final Boolean delete) {
-		if (items != null) {
-			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, delete, 0, 0L);
-		}
-	}
+		BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = item;
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setLinkValue(linkValue);
+		publishData(msg, recipientCodes);
 
-	/* Publish BaseEntityList with LinkValue Set */
-	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			final String linkValue, final String[] recipientCodes, final Boolean delete, Boolean replace) {
-		if (items != null) {
-			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, 0,
-					0L);
-		}
 	}
 
 	/* Publish BaseEntityList with LinkValue Set */
 	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			final String linkValue, final String[] recipientCodes, final Boolean delete, Boolean replace, int level) {
-		if (items != null) {
-			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, level,
-					0L);
-		}
+			final String[] recipientCodes, final String linkValue) {
+
+		BaseEntity[] itemArray = items.toArray(new BaseEntity[0]);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setLinkValue(linkValue);
+		publishData(msg, recipientCodes);
+
 	}
 
+	/* Publish BaseEntityList with LinkValue Set */
 	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
-			final String linkValue, Boolean replace) {
-		if (items != null) {
-			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
-			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, replace, false, 0, 0L);
-		}
+			final String[] recipientCodes, final String linkValue, final Boolean delete) {
+
+		BaseEntity[] itemArray = items.toArray(new BaseEntity[0]);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setLinkValue(linkValue);
+		msg.setDelete(delete);
+		publishData(msg, recipientCodes);
+
 	}
+
+	/* Publish BaseEntityList with LinkValue Set */
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+			final String[] recipientCodes, final String linkValue, final Boolean delete, Boolean replace) {
+
+		BaseEntity[] itemArray = items.toArray(new BaseEntity[0]);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setLinkValue(linkValue);
+		msg.setDelete(delete);
+		msg.setReplace(replace);
+		publishData(msg, recipientCodes);
+	}
+
+	/* Publish BaseEntityList with LinkValue Set */
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+			final String[] recipientCodes, final String linkValue, final Boolean delete, Boolean replace, int level) {
+
+		BaseEntity[] itemArray = items.toArray(new BaseEntity[0]);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setLinkValue(linkValue);
+		msg.setDelete(delete);
+		msg.setReplace(replace);
+		msg.setShouldDeleteLinkedBaseEntities(level);
+		publishData(msg, recipientCodes);
+
+	}
+
+	/* Publish BaseEntityList with LinkValue Set */
+	public void publishBaseEntityByCode(BaseEntity be, final String parentCode, final String linkCode,
+			final String[] recipientCodes, final String linkValue, final Boolean replace) {
+
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = be;
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setLinkValue(linkValue);
+		msg.setReplace(replace);
+		publishData(msg, recipientCodes);
+	}
+
+	/* Publish BaseEntityList with LinkValue Set */
+	public void publishBaseEntityByCode(String beCode, final String parentCode, final String linkCode,
+			final String[] recipientCodes, final String linkValue, final Boolean delete) {
+
+		BaseEntity be = this.baseEntity.getBaseEntityByCode(beCode);
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = be;
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setLinkValue(linkValue);
+		msg.setDelete(delete);
+		publishData(msg, recipientCodes);
+	}
+
+	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
+			final String[] recipientCodes, final Boolean delete) {
+
+		BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = item;
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		msg.setDelete(delete);
+		publishData(msg, recipientCodes);
+
+	}
+
+	public void publishBaseEntityByCode(final BaseEntity item, final String parentCode, final String linkCode) {
+
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = item;
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		String[] recipients = new String[1];
+		recipients[0] = this.getUser().getCode();
+		msg.setRecipientCodeArray(recipients);
+		publishData(msg, recipients);
+	}
+
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode) {
+		this.publishBaseEntityByCode(items, parentCode, linkCode, false);
+	}
+
+	/* Publishes baseEntity with replace TRUE */
+	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+			Boolean replace) {
+
+		BaseEntity[] itemArray = items.toArray(new BaseEntity[0]);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		String[] recipients = new String[1];
+		recipients[0] = this.getUser().getCode();
+		msg.setRecipientCodeArray(recipients);
+		msg.setReplace(replace);
+		publishData(msg, recipients);
+	}
+
+	public void publishBaseEntityByCode(final BaseEntity item, final String parentCode, final String linkCode,
+			final String[] recipientCodes) {
+
+		BaseEntity[] itemArray = new BaseEntity[1];
+		itemArray[0] = item;
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(itemArray, parentCode, linkCode);
+		msg.setRecipientCodeArray(recipientCodes);
+		publishData(msg, recipientCodes);
+
+	}
+//	public void publishBaseEntityByCode(BaseEntity[] beArr, String parentCode, String linkCode, String linkValue,
+//			String[] recipientCodes, final Boolean replace, final Boolean delete, Object level, Long returnCount) {
+//
+//		/*
+//		 * invoking constructor and setting the BEs, parent code, link code and link
+//		 * value
+//		 */
+//		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArr, parentCode, linkCode, linkValue);
+//
+//		/* setting recipientcode to the message */
+//		if (recipientCodes != null) {
+//			msg.setRecipientCodeArray(recipientCodes);
+//		} else {
+//			String[] recipientArr = { this.getUser().getCode() };
+//			msg.setRecipientCodeArray(recipientArr);
+//		}
+//
+//		/*
+//		 * delete the existing baseentity and links related to it and replaces it with
+//		 * the current baseentity which we send in this method
+//		 */
+//		msg.setReplace(replace);
+//
+//		/* completely deletes the baseentity */
+//		msg.setDelete(delete);
+//
+//		/*
+//		 * if the level is greater than 0, then we set deletion levels for the
+//		 * baseentity
+//		 */
+//		if (level instanceof java.lang.Integer) {
+//			if (((java.lang.Integer) level) > 0) {
+//				msg.setShouldDeleteLinkedBaseEntities(level);
+//			}
+//		} else if (level instanceof java.lang.Boolean) {
+//			if (((java.lang.Boolean) level)) {
+//				msg.setShouldDeleteLinkedBaseEntities(level);
+//			}
+//		}
+//
+//		/* set the child baseentities as links to parent */
+//		if (parentCode != null) {
+//			setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue);
+//		}
+//
+//		/* set returnCount */
+//		if (returnCount > 0) {
+//			msg.setReturnCount(returnCount);
+//		}
+//
+//		publishData(msg, recipientCodes);
+//	}
+//
+//	public void publishBaseEntityByCode(final String be) {
+//		if (be != null) {
+//			/* get the baseentity */
+//			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
+//			BaseEntity[] beArr = { baseentity };
+//			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
+//		}
+//	}
+//
+//	/* Publishes BaseEntity with replace true/false */
+//	public void publishBaseEntityByCode(final String be, final Boolean replace) {
+//		if (be != null) {
+//			/* get the baseentity */
+//			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
+//			BaseEntity[] beArr = { baseentity };
+//			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, 0, 0L);
+//		}
+//	}
+//
+//	/* Publishes BaseEntity with replace true/false */
+//	public void publishBaseEntityByCode(final String be, final Boolean replace, int level) {
+//		if (be != null) {
+//			BaseEntity baseentity = this.baseEntity.getBaseEntityByCode(be);
+//			BaseEntity[] beArr = { baseentity };
+//			publishBaseEntityByCode(beArr, null, null, null, null, replace, false, level, 0L);
+//		}
+//	}
+//
+//	/* Publish BaseEntity with LinkValue Set */
+//	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
+//			final String linkValue) {
+//		if (be != null) {
+//			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
+//			BaseEntity[] beArr = { item };
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, 0L);
+//		}
+//	}
+//
+//	/* Publish BaseEntity with LinkValue Set */
+//	public void publishBaseEntityByCode(final String be, final String parentCode, final String linkCode,
+//			final String linkValue, final String[] recipientCodes) {
+//		if (be != null) {
+//			BaseEntity item = this.baseEntity.getBaseEntityByCode(be);
+//			BaseEntity[] beArr = { item };
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, false, 0, 0L);
+//		}
+//	}
+//
+//	/* Publish BaseEntityList with LinkValue Set */
+//	public void publishBaseEntityByCode(String beCode, final String parentCode, final String linkCode,
+//			final String linkValue, final String[] recipientCodes, final Boolean delete) {
+//		if (beCode != null) {
+//			BaseEntity be = this.baseEntity.getBaseEntityByCode(beCode);
+//			BaseEntity[] beArr = { be };
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, delete, 0, 0L);
+//		}
+//	}
+//
+//	public void publishBaseEntityByCode(List<BaseEntity> bes) {
+//		if (bes != null) {
+//			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
+//			publishBaseEntityByCode(beArr, null, null, null, null, false, false, 0, 0L);
+//		}
+//	}
+//
+//	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
+//			String linkValue) {
+//		if (bes != null) {
+//			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, 0L);
+//		}
+//	}
+//
+//	public void publishBaseEntityByCode(List<BaseEntity> bes, final String parentCode, final String linkCode,
+//			String linkValue, Long returnCount) {
+//		if (bes != null) {
+//			BaseEntity[] beArr = bes.stream().toArray(BaseEntity[]::new);
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, false, false, 0, returnCount);
+//		}
+//	}
+//
+//	/* Publish BaseEntityList with LinkValue Set */
+//	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+//			final String linkValue, final String[] recipientCodes) {
+//		if (items != null) {
+//			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, false, 0, 0L);
+//		}
+//	}
+//
+//	/* Publish BaseEntityList with LinkValue Set */
+//	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+//			final String linkValue, final String[] recipientCodes, final Boolean delete) {
+//		if (items != null) {
+//			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, false, delete, 0, 0L);
+//		}
+//	}
+//
+//	/* Publish BaseEntityList with LinkValue Set */
+//	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+//			final String linkValue, final String[] recipientCodes, final Boolean delete, Boolean replace) {
+//		if (items != null) {
+//			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, 0,
+//					0L);
+//		}
+//	}
+//
+//	/* Publish BaseEntityList with LinkValue Set */
+//	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+//			final String linkValue, final String[] recipientCodes, final Boolean delete, Boolean replace, int level) {
+//		if (items != null) {
+//			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, recipientCodes, replace, delete, level,
+//					0L);
+//		}
+//	}
+//
+//	public void publishBaseEntityByCode(final List<BaseEntity> items, final String parentCode, final String linkCode,
+//			final String linkValue, Boolean replace) {
+//		if (items != null) {
+//			BaseEntity[] beArr = items.stream().toArray(BaseEntity[]::new);
+//			this.publishBaseEntityByCode(beArr, parentCode, linkCode, linkValue, null, replace, false, 0, 0L);
+//		}
+//	}
 
 	public <T extends QMessage> void publishCmd(T msg) {
 		msg.setToken(getToken());
@@ -897,7 +1150,6 @@ public class QRules implements Serializable {
 		QMessageGennyMSG message = null; // TODO: Stop using json!?!?!?
 
 		/* Adding project code to context */
-		// String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
 		String projectCode = "PRJ_" + this.realm().toUpperCase();
 
 		this.println("project code for messages ::" + projectCode);
@@ -1507,6 +1759,14 @@ public class QRules implements Serializable {
 		VertxUtils.publish(getUser(), channel, payload);
 	}
 
+	public boolean loadRealmData()
+	{
+		// No need to load in files anymore as realms are fetched from cache
+//		String localServiceToken = this.getServiceToken();
+//		this.setNewTokenAndDecodedTokenMap(localServiceToken);
+		return true;
+	}
+	
 	public String loadUserRole() {
 
 		BaseEntity user = this.getUser();
@@ -1616,7 +1876,7 @@ public class QRules implements Serializable {
 		if (selBE != null) {
 			Long bitMaskValue = selBE.getValue("PRI_BITMASK_VALUE", null);
 			// String realm = realm();
-			String serviceToken = RulesUtils.generateServiceToken(realm());
+			String serviceToken = this.getServiceToken();
 			QDataBaseEntityMessage msg = null;
 			List<BaseEntity> beList = new ArrayList<BaseEntity>();
 			if (bitMaskValue != null) {
@@ -1675,7 +1935,7 @@ public class QRules implements Serializable {
 			Boolean pushSelection) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = this.getServiceToken();
 		return this.sendQuestions(sourceCode, targetCode, questionGroupCode, stakeholderCode, pushSelection, token);
 	}
 
@@ -1703,7 +1963,7 @@ public class QRules implements Serializable {
 	public Ask getQuestion(String sourceCode, String targetCode, String questionCode) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 
 		/* Get the ask Message */
 		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, serviceToken);
@@ -1722,7 +1982,7 @@ public class QRules implements Serializable {
 			String stakeholderCode) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 
 		return QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken, stakeholderCode,
 				true);
@@ -3411,7 +3671,7 @@ public class QRules implements Serializable {
 
 		try {
 
-			String serviceToken = RulesUtils.generateServiceToken(this.realm());
+			String serviceToken = getServiceToken();
 			String jsonSearchBE = JsonUtils.toJson(searchBE);
 			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 					jsonSearchBE, serviceToken);
@@ -3466,7 +3726,7 @@ public class QRules implements Serializable {
 	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
 			Boolean replace, Object shouldDeleteLinkedBaseEntities) throws IOException {
 
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 				jsonSearchBE, serviceToken);
@@ -3494,7 +3754,7 @@ public class QRules implements Serializable {
 	 * Get search Results returns QDataBaseEntityMessage
 	 */
 	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE) throws IOException {
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 		QDataBaseEntityMessage results = getSearchResults(searchBE, serviceToken);
 		if (results == null) {
 			results = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
@@ -3532,7 +3792,7 @@ public class QRules implements Serializable {
 
 		String token = null;
 		if (useServiceToken) {
-			token = RulesUtils.generateServiceToken(this.realm());
+			token = getServiceToken();
 		} else {
 			token = this.getToken();
 		}
@@ -3546,7 +3806,7 @@ public class QRules implements Serializable {
 
 		String token = null;
 		if (useServiceToken) {
-			token = RulesUtils.generateServiceToken(this.realm());
+			token = getServiceToken();
 		} else {
 			token = this.getToken();
 		}
@@ -3722,46 +3982,8 @@ public class QRules implements Serializable {
 		this.initUtils();
 	}
 
-	public boolean loadRealmData() {
 
-		println(RulesUtils.ANSI_BLUE + "PRE_INIT_STARTUP Loading in keycloak data and setting up service token for "
-				+ realm() + RulesUtils.ANSI_RESET);
 
-		for (String jsonFile : SecureResources.getKeycloakJsonMap().keySet()) {
-
-			String keycloakJson = SecureResources.getKeycloakJsonMap().get(jsonFile);
-			if (keycloakJson == null) {
-				log.info("No keycloakMap for " + realm());
-				if (GennySettings.devMode) {
-					log.info("Fudging realm so genny keycloak used");
-					// Use basic Genny json when project json not available
-					String gennyJson = SecureResources.getKeycloakJsonMap().get("genny.json");
-					SecureResources.getKeycloakJsonMap().put(jsonFile, gennyJson);
-					keycloakJson = gennyJson;
-				} else {
-					return false;
-				}
-			}
-
-			JsonObject realmJson = new JsonObject(keycloakJson);
-			String realm = realmJson.getString("realm");
-
-			if (realm != null) {
-
-				String token = RulesUtils.generateServiceToken(GennySettings.dynamicRealm(realm()));
-				this.println(token);
-				if (token != null) {
-
-					this.setNewTokenAndDecodedTokenMap(token);
-					this.set("realm", GennySettings.dynamicRealm(realm()));
-					return true;
-				}
-			}
-
-		}
-
-		return false;
-	}
 
 	public void sendTreeData() {
 		// we grab the root
@@ -3913,7 +4135,6 @@ public class QRules implements Serializable {
 
 		println("Startup Event called from " + caller);
 		if (!isState("GENERATE_STARTUP")) {
-			this.loadRealmData();
 			this.reloadCache();
 		}
 
@@ -3973,7 +4194,13 @@ public class QRules implements Serializable {
 		String realm = realm();
 		String name = "Service User";
 		String email = "adamcrow63@gmail.com";
-		String keycloakId = getAsString("sub").toLowerCase();
+		String token = getServiceToken();
+		String keycloakId = null;
+		try {
+			keycloakId = (String)KeycloakUtils.getDecodedToken(token).get("sub");
+		} catch (JSONException e1) {
+			keycloakId = realm; // give it something.
+		}
 
 		// Check if already exists
 		BaseEntity existing = this.baseEntity.getBaseEntityByAttributeAndValue("PRI_CODE", "PER_SERVICE"); // do not
@@ -5876,6 +6103,7 @@ public class QRules implements Serializable {
 		return ask;
 	}
 
+
 	public Map<String, String> getTableColumns(SearchEntity searchBe) {
 
 		Map<String, String> columns = new HashMap<String, String>();
@@ -5919,6 +6147,7 @@ public class QRules implements Serializable {
 		Map<String, String> columns = this.getTableColumns(searchBe);
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
+
 
 			String attributeCode = column.getKey();
 			String attributeName = column.getValue();
