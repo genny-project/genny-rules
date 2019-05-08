@@ -5833,44 +5833,6 @@ public class QRules implements Serializable {
 		source.setLinks(entEntList);
 		return source;
 	}
-	
-	/**
-	 * Embeds the list of contexts (themes, icon) into an ask 
-	 * @param ask
-	 * @param themes
-	 * @param linkCode
-	 * @return
-	 */
-	/*public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode) {
-		if (linkCode == null) {
-			linkCode = ContextType.THEME;
-		}	
-		
-		List<Context> completeContext = new ArrayList<>();
-		
-		for(BaseEntity theme : themes) {
-			Context context = new Context(linkCode, theme);
-			completeContext.add(context);
-		}
-		
-		ContextList contextList = ask.getContextList();
-		if(contextList != null) {
-			List<Context> contexts = contextList.getContexts();
-			if(contexts.isEmpty()) {
-				contexts = new ArrayList<>();
-				contexts.addAll(completeContext);
-			} else {
-				contexts.addAll(completeContext);
-			}
-			contextList = new ContextList(contexts);
-		} else {
-			List<Context> contexts = new ArrayList<>();		
-			contexts.addAll(completeContext);
-			contextList = new ContextList(contexts);
-		}
-		ask.setContextList(contextList);
-		return ask;
-	}*/
 
 	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode) {
 		List<BaseEntity> themeList = new ArrayList<>();
