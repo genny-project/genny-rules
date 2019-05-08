@@ -256,7 +256,8 @@ public class RulesLoader {
 				if (!fileName.startsWith("XX")) {
 					String localRealm = realm;
 					if (fileName.startsWith("prj_") || fileName.startsWith("PRJ_")) {
-						if ((activeRealms.stream().anyMatch(localRealm::equals))||("prj_genny".equalsIgnoreCase(fileName))) {
+						String fileprj = fileName.substring("prj_".length());
+						if ((activeRealms.stream().anyMatch(fileprj::equals))||("prj_genny".equalsIgnoreCase(fileName))) {
 							localRealm = fileName.substring("prj_".length()).toLowerCase(); // extract realm name
 						} else {
 							continue;
