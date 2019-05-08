@@ -702,6 +702,11 @@ public class RulesLoader {
 
 			String token = jsonObj.getString("value"); //RulesUtils.generateServiceToken(realm); // ruleGroup matches realm
 
+			if ("DUMMY".equalsIgnoreCase(token)) {
+				log.error("NO SERVICE TOKEN FOR "+realm+" IN CACHE");
+				return;
+			}
+			
 			QRules qRules = new QRules(eventBus, token);
 			qRules.set("realm", realm);
 			qRules.setServiceToken(token);
