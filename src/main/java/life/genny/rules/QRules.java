@@ -55,6 +55,7 @@ import life.genny.eventbus.EventBusInterface;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
+import life.genny.qwanda.Context.VisualControlType;
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.ContextType;
 import life.genny.qwanda.GPS;
@@ -128,6 +129,7 @@ import life.genny.qwandautils.ScoringUtils;
 import life.genny.security.SecureResources;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
+import life.genny.utils.ContextUtils;
 import life.genny.utils.DateUtils;
 import life.genny.utils.PaymentEndpoint;
 import life.genny.utils.PaymentUtils;
@@ -5831,12 +5833,6 @@ public class QRules implements Serializable {
 		source.setLinks(entEntList);
 		return source;
 	}
-
-	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode) {
-		List<BaseEntity> themeList = new ArrayList<>();
-		themeList.add(theme);
-		return createVirtualContext(ask, themeList, linkCode);
-	}
 	
 	/**
 	 * Embeds the list of contexts (themes, icon) into an ask 
@@ -5845,7 +5841,7 @@ public class QRules implements Serializable {
 	 * @param linkCode
 	 * @return
 	 */
-	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode) {
+	/*public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode) {
 		if (linkCode == null) {
 			linkCode = ContextType.THEME;
 		}	
@@ -5874,11 +5870,62 @@ public class QRules implements Serializable {
 		}
 		ask.setContextList(contextList);
 		return ask;
-	}
+	}*/
 
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode) {
+		List<BaseEntity> themeList = new ArrayList<>();
+		themeList.add(theme);
+		return createVirtualContext(ask, themeList, linkCode, VisualControlType.DEFAULT);
+	}
+	
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themeList, ContextType linkCode) {
+		return createVirtualContext(ask, themeList, linkCode, VisualControlType.DEFAULT);
+	}
+	
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType) {
+		List<BaseEntity> themeList = new ArrayList<>();
+		themeList.add(theme);
+		return createVirtualContext(ask, themeList, linkCode, visualControlType);
+	}
+	
+	/**
+	 * Embeds the list of contexts (themes, icon) into an ask 
+	 * @param ask
+	 * @param themes
+	 * @param linkCode
+	 * @return
+	 */
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType) {
+				
+		List<Context> completeContext = new ArrayList<>();
+		
+		for(BaseEntity theme : themes) {
+			Context context = new Context(linkCode, theme, visualControlType);
+			completeContext.add(context);
+		}
+		
+		ContextList contextList = ask.getContextList();
+		if(contextList != null) {
+			List<Context> contexts = contextList.getContexts();
+			if(contexts.isEmpty()) {
+				contexts = new ArrayList<>();
+				contexts.addAll(completeContext);
+			} else {
+				contexts.addAll(completeContext);
+			}
+			contextList = new ContextList(contexts);
+		} else {
+			List<Context> contexts = new ArrayList<>();		
+			contexts.addAll(completeContext);
+			contextList = new ContextList(contexts);
+		}
+		ask.setContextList(contextList);
+		return ask;
+	}
+	
 	public Map<String, String> getTableColumns(SearchEntity searchBe) {
 
-		Map<String, String> columns = new HashMap<String, String>();
+		Map<String, String> columns = new HashMap<>();
 
 		String searchString = JsonUtils.toJson(searchBe);
 		JsonObject searchJson = new JsonObject(searchString);
@@ -5896,7 +5943,7 @@ public class QRules implements Serializable {
 				columns.put(attributeCode, attributeName);
 			}
 		}
-		System.out.println("the Columns is :: " + columns);
+		println("the Columns is :: " + columns);
 		return columns;
 	}
 
@@ -5912,11 +5959,13 @@ public class QRules implements Serializable {
 		searchValidationList.setValidationList(validations);
 
 		Attribute eventAttribute = RulesUtils.attributeMap.get("PRI_SORT");
-		Attribute labelAttribute = RulesUtils.attributeMap.get("PRI_LABEL");
 		Attribute questionAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
 
 		/* get table columns */
 		Map<String, String> columns = this.getTableColumns(searchBe);
+		
+		/* get vertical display theme */
+		BaseEntity verticalTheme = this.baseEntity.getBaseEntityByCode("THM_DISPLAY_VERTICAL");
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
 
@@ -5931,25 +5980,18 @@ public class QRules implements Serializable {
 					questionAttribute, true);
 			Ask columnHeaderAsk = new Ask(columnHeaderQuestion, this.getUser().getCode(), searchBe.getCode());
 
-			/* Initialize Column Label, Sort and Search asks */
-
-			Question columnQues = new Question("QUE_" + attributeCode, attributeName, labelAttribute, false);
-			Question columnSortQues = new Question("QUE_SORT_" + attributeCode, "Sort", eventAttribute, false);
+			/* creating ask for table header label-sort */
+			Ask columnSortAsk = getAskForTableHeaderSort(searchBe, attributeCode, attributeName, eventAttribute);
+					
+			/* creating Ask for table header search input */
 			Question columnSearchQues = new Question("QUE_SEARCH_" + attributeCode, attributeName, searchAttribute,
 					false);
+			Ask columnSearchAsk = new Ask(columnSearchQues, this.getUser().getCode(), searchBe.getCode());
 
-			List<Question> questions = new ArrayList<>();
-			questions.add(columnQues);
-			questions.add(columnSortQues);
-			questions.add(columnSearchQues);
-
+			/* adding label-sort & search asks to header-ask Group */
 			List<Ask> tableColumnChildAsks = new ArrayList<>();
-
-			for (Question question : questions) {
-
-				Ask columnAsk = new Ask(question, this.getUser().getCode(), searchBe.getCode());
-				tableColumnChildAsks.add(columnAsk);
-			}
+			tableColumnChildAsks.add(columnSortAsk);
+			tableColumnChildAsks.add(columnSearchAsk);
 
 			/* Convert List to Array */
 			Ask[] tableColumnChildAsksArray = tableColumnChildAsks.toArray(new Ask[0]);
@@ -5958,7 +6000,6 @@ public class QRules implements Serializable {
 			columnHeaderAsk.setChildAsks(tableColumnChildAsksArray);
 
 			/* set Vertical Theme to columnHeaderAsk */
-			BaseEntity verticalTheme = this.baseEntity.getBaseEntityByCode("THM_DISPLAY_VERTICAL");
 			columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, verticalTheme, ContextType.THEME);
 			asks.add(columnHeaderAsk);
 		}
@@ -5973,7 +6014,39 @@ public class QRules implements Serializable {
 		tableHeaderAsk.setChildAsks(asksArray);
 
 		return tableHeaderAsk;
-
+	}
+	
+	private Ask getAskForTableHeaderSort(SearchEntity searchBe, String attributeCode, String attributeName, Attribute eventAttribute) {
+		
+		/* creating Ask for table header column sort */
+		Question columnSortQues = new Question("QUE_SORT_" + attributeCode, attributeName, eventAttribute, false);
+		Ask columnSortAsk = new Ask(columnSortQues, this.getUser().getCode(), searchBe.getCode());
+		
+		/* ADDING DEFAULT TABLE HEADER THEMES */
+		
+		/* showing the icon */
+		BaseEntity sortIconBe = this.baseEntity.getBaseEntityByCode("ICN_SORT");
+		publishBaseEntityByCode(sortIconBe.getCode());
+		
+		/* create visual baseentity for question with label */
+		BaseEntity visualBaseEntity = this.baseEntity.getBaseEntityByCode("THM_TABLE_HEADER_VISUAL_CONTROL");
+		publishBaseEntityByCode(visualBaseEntity.getCode());
+		
+		/* get the BaseEntity for wrapper context */
+		BaseEntity horizontalWrapperBe = this.baseEntity.getBaseEntityByCode("THM_HORIZONTAL_WRAPPER_INLINE");
+		publishBaseEntityByCode(horizontalWrapperBe.getCode());
+		
+		/* get the theme for Label and Sort */
+		BaseEntity headerLabelSortThemeBe = this.baseEntity.getBaseEntityByCode("THM_TABLE_HEADER_SORT_THEME");
+		publishBaseEntityByCode(headerLabelSortThemeBe.getCode());
+		
+		/* set the contexts to the ask */
+		createVirtualContext(columnSortAsk, horizontalWrapperBe, ContextType.THEME, VisualControlType.WRAPPER);
+		createVirtualContext(columnSortAsk, sortIconBe, ContextType.ICON, VisualControlType.ICON);
+		createVirtualContext(columnSortAsk, visualBaseEntity, ContextType.THEME, VisualControlType.DEFAULT);
+		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.LABEL);
+				
+		return columnSortAsk;
 	}
 
 }
