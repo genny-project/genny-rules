@@ -2,11 +2,11 @@ package life.genny.utils;
 
 import java.util.HashSet;
 import java.util.Set;
-
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
+
 
 public class ContextUtils {
 	
@@ -94,6 +94,22 @@ public class ContextUtils {
 		fullWidthTheme.setBaseEntityAttributes(entAttrSet);
 
 		return fullWidthTheme;
+	}
+
+	public static BaseEntity getThemeForTableScroll() {
+		/* create context */
+		BaseEntity tableScrollTheme = new BaseEntity("THM_VERTICAL_SCROLL", "table scroll");
+
+		String bgAttribute = "{  \"overflowY\": \"auto\"}";
+
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+		EntityAttribute entAttr = new EntityAttribute(tableScrollTheme, att, 1.0, bgAttribute);
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+
+		tableScrollTheme.setBaseEntityAttributes(entAttrSet);
+
+		return tableScrollTheme;
 	}
 
 }
