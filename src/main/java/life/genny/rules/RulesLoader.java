@@ -699,9 +699,7 @@ public class RulesLoader {
 			auserRoles.add("user");
 
 			// Service Token
-			JsonObject jsonObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN"+realm.toUpperCase());
-
-			String token = jsonObj.getString("value"); //RulesUtils.generateServiceToken(realm); // ruleGroup matches realm
+			String token = VertxUtils.getObject(realm, "CACHE", "SERVICE_TOKEN", String.class);
 
 			if ("DUMMY".equalsIgnoreCase(token)) {
 				log.error("NO SERVICE TOKEN FOR "+realm+" IN CACHE");
@@ -760,8 +758,8 @@ public class RulesLoader {
 			qRules.set("realm", qRules.realm());
 			
 			// Service Token
-			JsonObject jsonObj = VertxUtils.readCachedJson(qRules.realm(), "CACHE:SERVICE_TOKEN"+qRules.realm().toUpperCase());
-			qRules.setServiceToken(jsonObj.getString("value"));
+			String serviceToken = VertxUtils.getObject(qRules.realm(), "CACHE", "SERVICE_TOKEN", String.class);
+			qRules.setServiceToken(serviceToken);
 
 			List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
 			RulesLoader.getStandardGlobals();
