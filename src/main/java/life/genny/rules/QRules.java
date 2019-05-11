@@ -900,10 +900,10 @@ public class QRules implements Serializable {
 	 *          String userEmailId = userBe.getValue("PRI_USER_EMAIL", null); //Can
 	 *          use any appropriate userEmailId AttributeCode <br>
 	 *          String[] directRecipientEmailIds = { userEmailId }; <br>
-	 * 
+	 *
 	 *          HashMap<String, String> contextMap = new HashMap<>(); <br>
 	 *          contextMap.put("USER", userBe); <br>
-	 * 
+	 *
 	 *          rules.sendMessage(directRecipientEmailIds, "MSG_USER_CONTACTED",
 	 *          contextMap, "EMAIL");
 	 */
@@ -1807,7 +1807,7 @@ public class QRules implements Serializable {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param themesForQuestions
 	 * @param asks
 	 */
@@ -4290,7 +4290,7 @@ public class QRules implements Serializable {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param attributeCode of the slack-notification-channel
 	 * @param message       to be sent to the webhook
 	 */
@@ -5670,32 +5670,61 @@ public class QRules implements Serializable {
 
 		/* get table columns from search */
 		Map<String, String> columns = this.getTableColumns(search);
-		
+
 		if(columns != null){
 			/* get the list of baseentities from search */
 			List<BaseEntity> bes = new ArrayList<>();
 			try {
 				bes = this.getSearchResultsAsList(search, true);
 				if (bes != null && bes.isEmpty() == false) {
-	
+
+					/* we grab the theme for table actions */
+					BaseEntity visualBaseEntity = this.baseEntity.getBaseEntityByCode("THM_TABLE_ACTIONS_VISUAL_CONTROL");
+
+					/* we grab the icons for actions */
+					BaseEntity viewIconBe = this.baseEntity.getBaseEntityByCode("ICN_VIEW");
+					BaseEntity editIconBe = this.baseEntity.getBaseEntityByCode("ICN_EDIT");
+					BaseEntity deleteIconBe = this.baseEntity.getBaseEntityByCode("ICN_DELETE");
+
+					publishBaseEntityByCode(visualBaseEntity.getCode());
+					publishBaseEntityByCode(viewIconBe.getCode());
+					publishBaseEntityByCode(editIconBe.getCode());
+					publishBaseEntityByCode(deleteIconBe.getCode());
+
+					this.println(visualBaseEntity.getCode());
+					this.println(viewIconBe.getCode());
+					this.println(editIconBe.getCode());
+					this.println(deleteIconBe.getCode());
+
+					// QDataBaseEntityMessage viewIconBeMsg = new QDataBaseEntityMessage(viewIconBe);
+					// QDataBaseEntityMessage editIconBeMsg = new QDataBaseEntityMessage(editIconBe);
+					// QDataBaseEntityMessage deleteIconBeMsg = new QDataBaseEntityMessage(deleteIconBe);
+
+					// QBulkMessage bulkMsg = new QBulkMessage();
+					// bulkMsg.add(viewIconBeMsg);
+					// bulkMsg.add(editIconBeMsg);
+					// bulkMsg.add(deleteIconBeMsg);
+
+					// this.publishCmd(bulkMsg);
+
 					/* loop through baseentities to generate ask */
 					for (BaseEntity be : bes) {
-	
+
 						/* we add attributes for each be */
 						this.baseEntity.addAttributes(be);
-	
+
 						/* initialize child ask list */
 						List<Ask> childAskList = new ArrayList<>();
-	
+
 						for (Map.Entry<String, String> column : columns.entrySet()) {
-	
+
 							String attributeCode = column.getKey();
 							String attributeName = column.getValue();
 							Attribute attr = RulesUtils.attributeMap.get(attributeCode);
 
 							/* if the column is an actions column */
 							if(attributeCode.equals("QUE_TABLE_ACTIONS_GRP")){
-					
+
 								/* creating actions ask group */
 								Question actionGroupQuestion = new Question("QUE_" + be.getCode() + "_TABLE_ACTIONS_GRP", "Actions", attr, true);
 								Ask childAsk = new Ask(actionGroupQuestion, targetCode, be.getCode());
@@ -5703,60 +5732,69 @@ public class QRules implements Serializable {
 								/* creating child ask for actions */
 								Attribute actionAttribute = RulesUtils.attributeMap.get("PRI_EVENT");
 
+
 								Question viewQues = new Question("QUE_VIEW_" + be.getCode(), "View", actionAttribute, true);
 								Question editQues = new Question("QUE_EDIT_" + be.getCode(), "Edit", actionAttribute, true);
 								Question deleteQues = new Question("QUE_DELETE_" + be.getCode(), "Delete", actionAttribute, true);
 
-								List<Question> questions = new ArrayList<>();
-								questions.add(viewQues);
-								questions.add(editQues);
-								questions.add(deleteQues);
-
 								List<Ask> actionChildAsks = new ArrayList<>();
 
-								for (Question question : questions) {
+								Ask viewAsk = new Ask(viewQues, this.getUser().getCode(), be.getCode());
+								Ask editAsk = new Ask(editQues, this.getUser().getCode(), be.getCode());
+								Ask deleteAsk = new Ask(deleteQues, this.getUser().getCode(), be.getCode());
 
-									Ask actionChildAsk = new Ask(question, this.getUser().getCode(), be.getCode());
-									actionChildAsks.add(actionChildAsk);
-								}
+								/* set the contexts to the ask */
+								viewAsk = this.createVirtualContext(viewAsk, viewIconBe, ContextType.ICON, VisualControlType.ICON);
+								viewAsk = this.createVirtualContext(viewAsk, visualBaseEntity, ContextType.THEME, VisualControlType.DEFAULT);
+
+								editAsk = this.createVirtualContext(editAsk, editIconBe, ContextType.ICON, VisualControlType.ICON);
+								editAsk = this.createVirtualContext(editAsk, visualBaseEntity, ContextType.THEME, VisualControlType.DEFAULT);
+
+								deleteAsk = this.createVirtualContext(deleteAsk, deleteIconBe, ContextType.ICON, VisualControlType.ICON);
+								deleteAsk = this.createVirtualContext(deleteAsk, visualBaseEntity, ContextType.THEME, VisualControlType.DEFAULT);
+
+
+								actionChildAsks.add(viewAsk);
+								actionChildAsks.add(editAsk);
+								actionChildAsks.add(deleteAsk);
 
 								/* converting asks list to array */
 								Ask[] actionChildAsksArr = actionChildAsks.stream().toArray(Ask[]::new);
 								childAsk.setChildAsks(actionChildAsksArr);
-								
+
 								/* add the entityAttribute ask to list */
 								childAskList.add(childAsk);
 
 							}else{
-								
+
 								Question childQuestion = new Question("QUE_" + attributeCode, attributeName, attr, true);
 								Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
-								
+
 								/* add the entityAttribute ask to list */
 								childAskList.add(childAsk);
 							}
-	
+
 						}
-	
+
 						/* converting childAsks list to array */
 						Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
-	
+
 						/* Get the on-the-fly question attribute */
 						Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
 								new DataType(String.class));
-	
-	
+
+
 						/* Generate ask for the baseentity */
 						Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
 								questionAttribute, true);
 						Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
-						
+
 						/* setting weight to parent ask */
 						parentAsk.setWeight(be.getIndex().doubleValue());
-	
+
 						/* set all the childAsks to parentAsk */
 						parentAsk.setChildAsks(childAsArr);
-	
+
 						/* add the baseentity asks to a list */
 						askList.add(parentAsk);
 					}
@@ -5839,33 +5877,33 @@ public class QRules implements Serializable {
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, VisualControlType.DEFAULT);
 	}
-	
+
 	public Ask createVirtualContext(Ask ask, List<BaseEntity> themeList, ContextType linkCode) {
 		return createVirtualContext(ask, themeList, linkCode, VisualControlType.DEFAULT);
 	}
-	
+
 	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType) {
 		List<BaseEntity> themeList = new ArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType);
 	}
-	
+
 	/**
-	 * Embeds the list of contexts (themes, icon) into an ask 
+	 * Embeds the list of contexts (themes, icon) into an ask
 	 * @param ask
 	 * @param themes
 	 * @param linkCode
 	 * @return
 	 */
 	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType) {
-				
+
 		List<Context> completeContext = new ArrayList<>();
-		
+
 		for(BaseEntity theme : themes) {
 			Context context = new Context(linkCode, theme, visualControlType);
 			completeContext.add(context);
 		}
-		
+
 		ContextList contextList = ask.getContextList();
 		if(contextList != null) {
 			List<Context> contexts = contextList.getContexts();
@@ -5877,7 +5915,7 @@ public class QRules implements Serializable {
 			}
 			contextList = new ContextList(contexts);
 		} else {
-			List<Context> contexts = new ArrayList<>();		
+			List<Context> contexts = new ArrayList<>();
 			contexts.addAll(completeContext);
 			contextList = new ContextList(contexts);
 		}
@@ -5925,7 +5963,7 @@ public class QRules implements Serializable {
 
 		/* get table columns */
 		Map<String, String> columns = this.getTableColumns(searchBe);
-		
+
 		/* get vertical display theme */
 		BaseEntity verticalTheme = this.baseEntity.getBaseEntityByCode("THM_DISPLAY_VERTICAL");
 
@@ -5945,7 +5983,7 @@ public class QRules implements Serializable {
 
 			/* creating ask for table header label-sort */
 			Ask columnSortAsk = getAskForTableHeaderSort(searchBe, attributeCode, attributeName, eventAttribute);
-					
+
 			/* creating Ask for table header search input */
 			Question columnSearchQues = new Question("QUE_SEARCH_" + attributeCode, attributeName, searchAttribute,
 					false);
@@ -5966,49 +6004,49 @@ public class QRules implements Serializable {
 			columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, verticalTheme, ContextType.THEME);
 			asks.add(columnHeaderAsk);
 		}
-		
+
 		/* Convert List to Array */
 		Ask[] asksArray = asks.toArray(new Ask[0]);
 
 		/* we create a table-header ask grp and set all the column asks as it's childAsk */
 		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", "Table Header Question Group", questionAttribute, true);
-		
+
 		Ask tableHeaderAsk = new Ask(tableHeaderQuestion, this.getUser().getCode(), searchBe.getCode());
 		tableHeaderAsk.setChildAsks(asksArray);
 
 		return tableHeaderAsk;
 	}
-	
+
 	private Ask getAskForTableHeaderSort(SearchEntity searchBe, String attributeCode, String attributeName, Attribute eventAttribute) {
-		
+
 		/* creating Ask for table header column sort */
 		Question columnSortQues = new Question("QUE_SORT_" + attributeCode, attributeName, eventAttribute, false);
 		Ask columnSortAsk = new Ask(columnSortQues, this.getUser().getCode(), searchBe.getCode());
-		
+
 		/* ADDING DEFAULT TABLE HEADER THEMES */
-		
+
 		/* showing the icon */
 		BaseEntity sortIconBe = this.baseEntity.getBaseEntityByCode("ICN_SORT");
 		publishBaseEntityByCode(sortIconBe.getCode());
-		
+
 		/* create visual baseentity for question with label */
 		BaseEntity visualBaseEntity = this.baseEntity.getBaseEntityByCode("THM_TABLE_HEADER_VISUAL_CONTROL");
 		publishBaseEntityByCode(visualBaseEntity.getCode());
-		
+
 		/* get the BaseEntity for wrapper context */
 		BaseEntity horizontalWrapperBe = this.baseEntity.getBaseEntityByCode("THM_HORIZONTAL_WRAPPER_INLINE");
 		publishBaseEntityByCode(horizontalWrapperBe.getCode());
-		
+
 		/* get the theme for Label and Sort */
 		BaseEntity headerLabelSortThemeBe = this.baseEntity.getBaseEntityByCode("THM_TABLE_HEADER_SORT_THEME");
 		publishBaseEntityByCode(headerLabelSortThemeBe.getCode());
-		
+
 		/* set the contexts to the ask */
 		createVirtualContext(columnSortAsk, horizontalWrapperBe, ContextType.THEME, VisualControlType.WRAPPER);
 		createVirtualContext(columnSortAsk, sortIconBe, ContextType.ICON, VisualControlType.ICON);
 		createVirtualContext(columnSortAsk, visualBaseEntity, ContextType.THEME, VisualControlType.DEFAULT);
 		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.LABEL);
-				
+
 		return columnSortAsk;
 	}
 
