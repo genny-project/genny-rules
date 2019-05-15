@@ -29,6 +29,12 @@ import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
 import org.kie.api.builder.Message;
 import org.kie.api.builder.ReleaseId;
+import org.kie.api.event.process.DefaultProcessEventListener;
+import org.kie.api.event.process.ProcessCompletedEvent;
+import org.kie.api.event.process.ProcessNodeLeftEvent;
+import org.kie.api.event.process.ProcessNodeTriggeredEvent;
+import org.kie.api.event.process.ProcessStartedEvent;
+import org.kie.api.event.process.ProcessVariableChangedEvent;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
@@ -36,6 +42,8 @@ import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
 import org.kie.api.runtime.conf.TimedRuleExecutionOption;
+import org.kie.api.runtime.process.NodeInstance;
+import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.api.runtime.Environment;
@@ -136,7 +144,7 @@ public class RulesLoader {
 		realms = new HashSet<>( activeRealms);
 		
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
-
+		log.info("LOADED ALL RULES");
 //		realms = getRealms(rules);
 		realms.stream().forEach(System.out::println);
 		realms.remove("genny");
@@ -318,6 +326,9 @@ public class RulesLoader {
 						Tuple3<String, String, String> rule = (Tuple.of(realm, fileName + "." + fileNameExt, ruleText));
 						String filerule = inputFileStr.substring(inputFileStr.indexOf("/rules/"));
 						log.info("("+realm+") Loading in DRL Rule:" + rule._1 + " of " + inputFileStr);
+						if ("/rules/prj_internmatch/rules/05_Workflows/30_Company/HostCompany/10_Add/30_AskHostCompanyQuestion.drl".equals(inputFileStr)) {
+							log.info("got to here");
+						}
 						rules.add(rule);
 					} else if ((!fileName.startsWith("XX")) && (fileNameExt.equalsIgnoreCase("bpmn"))) { // ignore files
 																											// that
@@ -387,13 +398,12 @@ public class RulesLoader {
 		Integer count = 0;
 		try {
 			// load up the knowledge base
+			if (ks == null) {
+				log.error("ks is NULL");
+				ks = KieServices.Factory.get();
+			}
 			final KieFileSystem kfs = ks.newKieFileSystem();
 
-			// final String content =
-			// new
-			// String(Files.readAllBytes(Paths.get("src/main/resources/validateApplicant.drl")),
-			// Charset.forName("UTF-8"));
-			// log.info("Read New Rules set from File");
 
 			// Write each rule into it's realm cache
 			for (final Tuple3<String, String, String> rule : rules) {
@@ -527,8 +537,8 @@ public class RulesLoader {
 //			 }
 //			 ksession.fireAllRules();
 //			 ksession.dispose();
-			KieSession  kieSession = null;
-			//StatefulKnowledgeSession  kieSession = null;
+		//	KieSession  kieSession = null;
+			StatefulKnowledgeSession  kieSession = null;
 			if (getKieBaseCache().get(realm) == null) {
 				log.error("The realm  kieBaseCache is null, not loaded " + realm);
 				return;
@@ -544,7 +554,7 @@ public class RulesLoader {
 			if (false) {
 				kieSession = JPAKnowledgeService.newStatefulKnowledgeSession( getKieBaseCache().get(realm), ksconf, env ); // This is stateful
 			} else {
-				kieSession = getKieBaseCache().get(realm).newKieSession(ksconf, env);
+				kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
 			}
 
 			int sessionId = kieSession.getId();
@@ -582,8 +592,107 @@ public class RulesLoader {
 			for (final Object fact : facts) {
 				kieSession.insert(fact);
 			}
+			
+			kieSession.insert(log);
 
 			kieSession.insert(keyValueMap);
+			
+//			kieSession.addEventListener(new DefaultProcessEventListener() {
+//			    public void beforeProcessStarted(ProcessStartedEvent event) {
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        log.info("jBPM event 'beforeProcessStarted'. Process ID: " + process.getId()
+//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//			                + process.getParentProcessInstanceId());
+//			    }
+//
+//			    public void afterProcessStarted(ProcessStartedEvent event) {
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        log.info("jBPM event 'afterProcessStarted'. Process ID: " + process.getId()
+//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//			                + process.getParentProcessInstanceId());
+//			    }
+//
+//			    public void beforeProcessCompleted(ProcessCompletedEvent event) {
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        log.info("jBPM event 'beforeProcessCompleted'. Process ID: " + process.getId()
+//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//			                + process.getParentProcessInstanceId());
+//			    }
+//
+//			    public void afterProcessCompleted(ProcessCompletedEvent event) {
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        log.info("jBPM event 'afterProcessCompleted'. Process ID: " + process.getId()
+//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//			                + process.getParentProcessInstanceId());
+//			    }
+//
+//			    public void beforeNodeTriggered(ProcessNodeTriggeredEvent event) {
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        NodeInstance node = event.getNodeInstance();
+//			        log.info("jBPM event 'beforeNodeTriggered'. Process ID: " + process.getId()
+//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//			                + process.getParentProcessInstanceId() + ", Node instance ID: " + node.getId() + ", Node ID: "
+//			                + node.getNodeId() + ", Node name: " + node.getNodeName());
+//
+//			    }
+//
+//			    public void afterNodeTriggered(ProcessNodeTriggeredEvent event) {
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        NodeInstance node = event.getNodeInstance();
+//			        log.info("jBPM event 'afterNodeTriggered'. Process ID: " + process.getId()
+//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//			                + process.getParentProcessInstanceId() + ", Node instance ID: " + node.getId() + ", Node ID: "
+//			                + node.getNodeId() + ", Node name: " + node.getNodeName());
+//
+//			    }
+//
+//			    public void beforeNodeLeft(ProcessNodeLeftEvent event) {
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        NodeInstance node = event.getNodeInstance();
+//			        log.info("jBPM event 'beforeNodeLeft'. Process ID: " + process.getId() + ", Process definition ID: "
+//			                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
+//			                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
+//			                + ", Node instance ID: " + node.getId() + ", Node ID: " + node.getNodeId() + ", Node name: "
+//			                + node.getNodeName());
+//
+//			    }
+//
+//			    public void afterNodeLeft(ProcessNodeLeftEvent event) {
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        NodeInstance node = event.getNodeInstance();
+//			        log.info("jBPM event 'afterNodeLeft'. Process ID: " + process.getId() + ", Process definition ID: "
+//			                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
+//			                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
+//			                + ", Node instance ID: " + node.getId() + ", Node ID: " + node.getNodeId() + ", Node name: "
+//			                + node.getNodeName());
+//
+//			    }
+//
+//			    public void beforeVariableChanged(ProcessVariableChangedEvent event){
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        log.info("jBPM event 'beforeVariableChanged'. Process ID: " + process.getId() + ", Process definition ID: "
+//			                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
+//			                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
+//			                + ", Variable ID: " + event.getVariableId() + ", Variable instance ID: " + event.getVariableInstanceId() + ", Old value: "
+//			                + (event.getOldValue() == null ? "null" : event.getOldValue().toString())+ ", New value: "+(event.getNewValue() == null ? "null" : event.getNewValue().toString()));
+//			    }
+//
+//			    public void afterVariableChanged(ProcessVariableChangedEvent event){
+//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//			        log.info("jBPM event 'afterVariableChanged'. Process ID: " + process.getId() + ", Process definition ID: "
+//			                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
+//			                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
+//			                + ", Variable ID: " + event.getVariableId() + ", Variable instance ID: " + event.getVariableInstanceId() + ", Old value: "
+//			                + (event.getOldValue() == null ? "null" : event.getOldValue().toString())+ ", New value: "+(event.getNewValue() == null ? "null" : event.getNewValue().toString()));
+//			    }
+//
+//			});
 
 			// Set the focus on the Init agenda group to force proper startup
 			kieSession.getAgenda().getAgendaGroup("Init").setFocus();
@@ -795,4 +904,6 @@ public class RulesLoader {
 	public static Map<File, ResourceType> getKieResources() {
 		return new HashMap<File,ResourceType>(); // TODO
 	}
+	
+
 }
