@@ -2511,7 +2511,7 @@ public class QRules implements Serializable {
 
 			QDataAttributeMessage msg = RulesUtils.loadAllAttributesIntoCache(getToken());
 			this.publishCmd(msg);
-			println("All the attributes sent");
+			println("All the attributes sent "+msg.getItems().length+" of them");
 
 		} catch (Exception e) {
 			e.printStackTrace();
