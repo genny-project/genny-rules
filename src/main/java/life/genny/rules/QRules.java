@@ -5575,6 +5575,7 @@ public class QRules implements Serializable {
 
 		// Sort results
 		Comparator<Tuple2<BaseEntity, Double>> comparator = new Comparator<Tuple2<BaseEntity, Double>>() {
+   @Override
 			public int compare(Tuple2<BaseEntity, Double> tupleA, Tuple2<BaseEntity, Double> tupleB) {
 				return tupleB._2.compareTo(tupleA._2);
 			}
@@ -5685,16 +5686,19 @@ public class QRules implements Serializable {
 					BaseEntity viewIconBe = this.baseEntity.getBaseEntityByCode("ICN_VIEW");
 					BaseEntity editIconBe = this.baseEntity.getBaseEntityByCode("ICN_EDIT");
 					BaseEntity deleteIconBe = this.baseEntity.getBaseEntityByCode("ICN_DELETE");
+					BaseEntity selectableTheme = this.baseEntity.getBaseEntityByCode("THM_SELECTABLE");
 
 					publishBaseEntityByCode(visualBaseEntity.getCode());
 					publishBaseEntityByCode(viewIconBe.getCode());
 					publishBaseEntityByCode(editIconBe.getCode());
 					publishBaseEntityByCode(deleteIconBe.getCode());
+					publishBaseEntityByCode(selectableTheme.getCode());
 
 					this.println(visualBaseEntity.getCode());
 					this.println(viewIconBe.getCode());
 					this.println(editIconBe.getCode());
 					this.println(deleteIconBe.getCode());
+					this.println(selectableTheme.getCode());
 
 					// QDataBaseEntityMessage viewIconBeMsg = new QDataBaseEntityMessage(viewIconBe);
 					// QDataBaseEntityMessage editIconBeMsg = new QDataBaseEntityMessage(editIconBe);
@@ -5789,6 +5793,11 @@ public class QRules implements Serializable {
 								questionAttribute, true);
 						Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
 
+						/* apply selectable theme to each parent ask group */
+						createVirtualContext(parentAsk, selectableTheme, ContextType.THEME,
+								VisualControlType.DEFAULT);
+
+
 						/* setting weight to parent ask */
 						parentAsk.setWeight(be.getIndex().doubleValue());
 
@@ -5832,6 +5841,8 @@ public class QRules implements Serializable {
 	}
 
 	public BaseEntity createVirtualLink(BaseEntity source, Ask ask, String linkCode, String linkValue) {
+		
+		
 
 		if (source != null) {
 
@@ -5887,20 +5898,30 @@ public class QRules implements Serializable {
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType);
 	}
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType, Double weight) {
+		List<BaseEntity> themeList = new ArrayList<>();
+		themeList.add(theme);
+		return createVirtualContext(ask, themeList, linkCode, visualControlType, weight);
+	}
+
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType) {
+		return createVirtualContext(ask, themes, linkCode, visualControlType, 2.0);
+	}
 
 	/**
 	 * Embeds the list of contexts (themes, icon) into an ask
 	 * @param ask
 	 * @param themes
 	 * @param linkCode
+	 * @param weight
 	 * @return
 	 */
-	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType) {
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType, Double weight) {
 
 		List<Context> completeContext = new ArrayList<>();
 
 		for(BaseEntity theme : themes) {
-			Context context = new Context(linkCode, theme, visualControlType);
+			Context context = new Context(linkCode, theme, visualControlType, weight);
 			completeContext.add(context);
 		}
 
@@ -6047,6 +6068,32 @@ public class QRules implements Serializable {
 		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.LABEL);
 
 		return columnSortAsk;
+	}
+
+	/*
+		* returns a new SearchEntity using the given
+		* searchEntity code and
+		* current user's sessionId
+	*/
+	public SearchEntity getSessionBasedSearchEntity(String searchCode){
+
+		SearchEntity searchBe = null;
+		try{
+			/* get searchBe from cache */
+			searchBe = this.baseEntity.getSearchEntityByCode(searchCode);
+
+			/* initialize unique session-based search code */
+			String sessionSearchBeCode = searchBe.getCode() + getAsString("session_state");
+
+			/* set the unique search code to searchBe */
+			searchBe.setCode(sessionSearchBeCode);
+
+			return searchBe;
+
+		}catch (Exception e) {
+
+		}
+		return searchBe;
 	}
 
 }
