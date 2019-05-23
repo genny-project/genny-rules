@@ -6104,7 +6104,6 @@ public class QRules implements Serializable {
 		BaseEntity defaultFormThemeBe = ContextUtils.getDefaultFormTheme();
 		BaseEntity defaultFormContainerBe = ContextUtils.getDefaultFormContainerTheme();
 		BaseEntity verticalScrollBe = this.baseEntity.getBaseEntityByCode("THM_CONTENT_VERTICAL_SCROLL");
-		BaseEntity buttonThemeBe = ContextUtils.getFormButtonTheme();
 		
 		/* iterate through all child asks and create link between between the ask and the theme */
 		if(askArr != null) {
@@ -6119,12 +6118,12 @@ public class QRules implements Serializable {
 				
 				List<Ask> list = new ArrayList<>(Arrays.asList(childAsk.getChildAsks()));
 				
-				//TODO Add one more util for creating ASKS for buttons according to the QuestionGroup's attribute
-				/* create ask for submit button */
-				Ask buttonAsk = getQuestion(sourceCode, targetCode, "QUE_SUBMIT_BUTTON");
-				createVirtualContext(buttonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
+				String questionAttribute = childAsk.getAttributeCode();
 				
-				list.add(buttonAsk);
+				/* create asks for question-group buttons according to attribute code of the question-group */
+				List<Ask> buttonAsks = getFormButtonAsks(questionAttribute, sourceCode, targetCode);
+				
+				list.addAll(buttonAsks);
 				
 				childAsk.setChildAsks(list.stream().toArray(Ask[]::new));
 			}
@@ -6146,6 +6145,44 @@ public class QRules implements Serializable {
 			frameMsg.setReplace(true);
 			publishCmd(frameMsg);
 		}		
+	}
+
+	private List<Ask> getFormButtonAsks(String questionAttribute, String sourceCode, String targetCode) {
+		
+		List<Ask> formButtonAsks = new ArrayList<>();
+		
+		/* get theme for button */
+		BaseEntity buttonThemeBe = ContextUtils.getFormButtonTheme();
+		
+		switch (questionAttribute) {
+		
+		case "QQQ_QUESTION_GROUP":
+		case "QQQ_QUESTION_GROUP_BUTTON_SUBMIT":
+			
+			/* create ask for default submit button */
+			Ask buttonAsk = getQuestion(sourceCode, targetCode, "QUE_SUBMIT_BUTTON");
+			createVirtualContext(buttonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
+			formButtonAsks.add(buttonAsk);
+			break;
+			
+		case "QQQ_QUESTION_GROUP_BUTTON_CANCEL_SUBMIT":
+			
+			/* create ask for submit button */
+			Ask submitButtonAsk = getQuestion(sourceCode, targetCode, "QUE_SUBMIT_BUTTON");
+			createVirtualContext(submitButtonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
+			
+			/* create ask for cancel button */
+			Ask cancelButtonAsk = getQuestion(sourceCode, targetCode, "QUE_CANCEL_BUTTON");
+			createVirtualContext(cancelButtonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
+			
+			formButtonAsks.add(submitButtonAsk);
+			formButtonAsks.add(cancelButtonAsk);
+			break;
+		default:
+			break;
+		}
+		
+		return formButtonAsks;
 	}
 
 	/*
