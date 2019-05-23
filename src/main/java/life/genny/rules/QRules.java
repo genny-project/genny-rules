@@ -3782,13 +3782,13 @@ public class QRules implements Serializable {
 		BaseEntity expandableBe = this.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
 		
 		/* get all themes for treeview */
-		BaseEntity treeviewDefaultTheme = ContextUtils.getDefaultTreeViewTheme();
-		BaseEntity treeviewMarginTheme = ContextUtils.getTreeViewMarginTheme();
-		BaseEntity treeviewWidthTheme = ContextUtils.getTreeViewFullWidthTheme();
-		BaseEntity treeviewContainerTheme = ContextUtils.getTreeViewContainerTheme();
-		BaseEntity treeviewInputTheme = ContextUtils.getTreeViewDefaultInputTheme();
-		BaseEntity treeviewInputIconTheme = ContextUtils.getTreeViewInputIconTheme();
-		BaseEntity treeviewShowIconTheme = ContextUtils.getTreeViewShowIconTheme();
+		BaseEntity treeviewDefaultTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_DEFAULT");
+		BaseEntity treeviewMarginTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_MARGINLEFT_10");
+		BaseEntity treeviewWidthTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_WIDTH_FULL");
+		BaseEntity treeviewContainerTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_CONTAINER_DEFAULT");
+		BaseEntity treeviewInputTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_INPUT_DEFAULT");
+		BaseEntity treeviewInputIconTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_INPUT_ICON");
+		BaseEntity treeviewShowIconTheme = this.baseEntity.getBaseEntityByCode("THM_SHOW_ICON");
 
 		/* we generate the tree view questions */
 		Ask treeAsk = generateQuestionsForTree(root.getCode(), expandableBe, rolesOfCurrentUser);
