@@ -41,8 +41,6 @@ import org.drools.core.spi.KnowledgeHelper;
 import org.javamoney.moneta.Money;
 import org.json.JSONException;
 
-import com.amazonaws.services.iotdata.model.GetThingShadowRequest;
-import com.google.api.client.json.Json;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Sets;
 import com.google.gson.reflect.TypeToken;
@@ -59,8 +57,6 @@ import life.genny.qwanda.Context;
 import life.genny.qwanda.Context.VisualControlType;
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.ContextType;
-import life.genny.qwanda.GPS;
-
 import life.genny.qwanda.Layout;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
@@ -127,7 +123,6 @@ import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.qwandautils.ScoringUtils;
-
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
 import life.genny.utils.ContextUtils;
@@ -1722,7 +1717,7 @@ public class QRules implements Serializable {
 		/* we get the questions */
 		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, token,
 				stakeholderCode, pushSelection);
-
+		
 		if (questions != null) {
 
 			this.println(JsonUtils.toJson(questions));
@@ -3758,8 +3753,6 @@ public class QRules implements Serializable {
 	}
 
 
-
-
 	public void sendTreeData() {
 		// we grab the root
 		BaseEntity root = this.baseEntity.getBaseEntityByCode("GRP_ROOT");
@@ -3782,20 +3775,31 @@ public class QRules implements Serializable {
 
 		/* getting the expandable theme baseentity */
 		BaseEntity expandableBe = this.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
-
-		/* publishing theme for expanding */
-		this.publishBaseEntityByCode(expandableBe.getCode());
-
-		/* creating a context for the expandable-theme */
-		Context expandableThemeContext = new Context(ContextType.THEME, expandableBe);
-		List<Context> expandableThemeContextList = new ArrayList<>();
-		expandableThemeContextList.add(expandableThemeContext);
-
-		/* add the context to the contextList */
-		ContextList contextList = new ContextList(expandableThemeContextList);
+		
+		/* get all themes for treeview */
+		BaseEntity treeviewDefaultTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_DEFAULT");
+		BaseEntity treeviewMarginTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_MARGINLEFT_10");
+		BaseEntity treeviewWidthTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_WIDTH_FULL");
+		BaseEntity treeviewContainerTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_CONTAINER_DEFAULT");
+		BaseEntity treeviewInputTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_INPUT_DEFAULT");
+		BaseEntity treeviewInputIconTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_INPUT_ICON");
+		BaseEntity treeviewShowIconTheme = this.baseEntity.getBaseEntityByCode("THM_SHOW_ICON");
 
 		/* we generate the tree view questions */
-		Ask treeAsk = generateQuestionsForTree(root.getCode(), contextList, rolesOfCurrentUser);
+		Ask treeAsk = generateQuestionsForTree(root.getCode(), expandableBe, rolesOfCurrentUser);
+		
+		/* setting all the default treeview-themes to the parent ask */
+		List<BaseEntity> defaultTreeViewThemes = new ArrayList<>();
+		defaultTreeViewThemes.add(treeviewMarginTheme);
+		defaultTreeViewThemes.add(treeviewWidthTheme);
+		defaultTreeViewThemes.add(treeviewDefaultTheme);
+		defaultTreeViewThemes.add(treeviewContainerTheme);
+		defaultTreeViewThemes.add(treeviewInputIconTheme);
+		
+		createVirtualContext(treeAsk, defaultTreeViewThemes, ContextType.THEME);
+		createVirtualContext(treeAsk, treeviewInputTheme, ContextType.THEME, VisualControlType.INPUT);
+		createVirtualContext(treeAsk, treeviewShowIconTheme, ContextType.THEME, VisualControlType.INPUT);
+		
 		Ask[] completeAsk = { treeAsk };
 
 		/* Creating AskMessage with complete asks */
@@ -3810,7 +3814,7 @@ public class QRules implements Serializable {
 		this.publishCmd(treeMessage);
 	}
 
-	public Ask generateQuestionsForTree(String parentCode, ContextList contextList, List<String> rolesOfCurrentUser) {
+	public Ask generateQuestionsForTree(String parentCode, BaseEntity expandableTheme, List<String> rolesOfCurrentUser) {
 
 		// we grab the root
 		BaseEntity parent = this.baseEntity.getBaseEntityByCode(parentCode);
@@ -3832,7 +3836,10 @@ public class QRules implements Serializable {
 			 * except GRP_ROOT
 			 */
 			if (!"GRP_ROOT".equals(parent.getCode())) {
-				parentAsk.setContextList(contextList);
+				
+				/* apply expandable theme to the ask which has children */
+				createVirtualContext(parentAsk, expandableTheme, ContextType.THEME);
+				
 			}
 
 			/* getting filtered kids list according to the parentCode */
@@ -3860,7 +3867,7 @@ public class QRules implements Serializable {
 				 * we call the same generateQuestionsForTree function recursively to generate
 				 * tree questions for the kids and their children and so forth
 				 */
-				Ask ask = generateQuestionsForTree(kid.getCode(), contextList, rolesOfCurrentUser);
+				Ask ask = generateQuestionsForTree(kid.getCode(), expandableTheme, rolesOfCurrentUser);
 
 				/* setting the weight to the ask for positioning the item in the tree */
 				ask.setWeight(weight);
@@ -3869,7 +3876,16 @@ public class QRules implements Serializable {
 
 			/* setting the generated childAsks to the parent ask */
 			Ask[] kidAskArr = kidsAsk.stream().toArray(Ask[]::new);
+			
 			parentAsk.setChildAsks(kidAskArr);
+		}
+		
+		/* set the icon for the ask */
+		List<BaseEntity> iconBe = this.baseEntity.getLinkedBaseEntities(parentCode, "LNK_ICON");
+		if(iconBe != null && !iconBe.isEmpty()) {
+			log.info("Icons ::"+iconBe.toString() + " for parent code ::"+parentCode);
+			log.info("icon item ::"+iconBe.get(0));
+			createVirtualContext(parentAsk, iconBe.get(0), ContextType.ICON, VisualControlType.ICON);
 		}
 
 		return parentAsk;
@@ -5575,6 +5591,7 @@ public class QRules implements Serializable {
 
 		// Sort results
 		Comparator<Tuple2<BaseEntity, Double>> comparator = new Comparator<Tuple2<BaseEntity, Double>>() {
+   @Override
 			public int compare(Tuple2<BaseEntity, Double> tupleA, Tuple2<BaseEntity, Double> tupleB) {
 				return tupleB._2.compareTo(tupleA._2);
 			}
@@ -5685,16 +5702,19 @@ public class QRules implements Serializable {
 					BaseEntity viewIconBe = this.baseEntity.getBaseEntityByCode("ICN_VIEW");
 					BaseEntity editIconBe = this.baseEntity.getBaseEntityByCode("ICN_EDIT");
 					BaseEntity deleteIconBe = this.baseEntity.getBaseEntityByCode("ICN_DELETE");
+					BaseEntity selectableTheme = this.baseEntity.getBaseEntityByCode("THM_SELECTABLE");
 
 					publishBaseEntityByCode(visualBaseEntity.getCode());
 					publishBaseEntityByCode(viewIconBe.getCode());
 					publishBaseEntityByCode(editIconBe.getCode());
 					publishBaseEntityByCode(deleteIconBe.getCode());
+					publishBaseEntityByCode(selectableTheme.getCode());
 
 					this.println(visualBaseEntity.getCode());
 					this.println(viewIconBe.getCode());
 					this.println(editIconBe.getCode());
 					this.println(deleteIconBe.getCode());
+					this.println(selectableTheme.getCode());
 
 					// QDataBaseEntityMessage viewIconBeMsg = new QDataBaseEntityMessage(viewIconBe);
 					// QDataBaseEntityMessage editIconBeMsg = new QDataBaseEntityMessage(editIconBe);
@@ -5789,6 +5809,11 @@ public class QRules implements Serializable {
 								questionAttribute, true);
 						Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
 
+						/* apply selectable theme to each parent ask group */
+						createVirtualContext(parentAsk, selectableTheme, ContextType.THEME,
+								VisualControlType.DEFAULT);
+
+
 						/* setting weight to parent ask */
 						parentAsk.setWeight(be.getIndex().doubleValue());
 
@@ -5832,6 +5857,8 @@ public class QRules implements Serializable {
 	}
 
 	public BaseEntity createVirtualLink(BaseEntity source, Ask ask, String linkCode, String linkValue) {
+		
+		
 
 		if (source != null) {
 
@@ -5887,21 +5914,35 @@ public class QRules implements Serializable {
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType);
 	}
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType, Double weight) {
+		List<BaseEntity> themeList = new ArrayList<>();
+		themeList.add(theme);
+		return createVirtualContext(ask, themeList, linkCode, visualControlType, weight);
+	}
+
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType) {
+		return createVirtualContext(ask, themes, linkCode, visualControlType, 2.0);
+	}
 
 	/**
-	 * Embeds the list of contexts (themes, icon) into an ask
+	 * Embeds the list of contexts (themes, icon) into an ask and also publishes the themes
 	 * @param ask
 	 * @param themes
 	 * @param linkCode
+	 * @param weight
 	 * @return
 	 */
-	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType) {
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType, Double weight) {
 
 		List<Context> completeContext = new ArrayList<>();
 
 		for(BaseEntity theme : themes) {
-			Context context = new Context(linkCode, theme, visualControlType);
+			Context context = new Context(linkCode, theme, visualControlType, weight);
 			completeContext.add(context);
+			
+			/* publish the theme baseentity message */
+			QDataBaseEntityMessage themeMsg = new QDataBaseEntityMessage(theme);
+			publishCmd(themeMsg);
 		}
 
 		ContextList contextList = ask.getContextList();
@@ -6027,19 +6068,15 @@ public class QRules implements Serializable {
 
 		/* showing the icon */
 		BaseEntity sortIconBe = this.baseEntity.getBaseEntityByCode("ICN_SORT");
-		publishBaseEntityByCode(sortIconBe.getCode());
 
 		/* create visual baseentity for question with label */
 		BaseEntity visualBaseEntity = this.baseEntity.getBaseEntityByCode("THM_TABLE_HEADER_VISUAL_CONTROL");
-		publishBaseEntityByCode(visualBaseEntity.getCode());
 
 		/* get the BaseEntity for wrapper context */
 		BaseEntity horizontalWrapperBe = this.baseEntity.getBaseEntityByCode("THM_HORIZONTAL_WRAPPER_INLINE");
-		publishBaseEntityByCode(horizontalWrapperBe.getCode());
 
 		/* get the theme for Label and Sort */
 		BaseEntity headerLabelSortThemeBe = this.baseEntity.getBaseEntityByCode("THM_TABLE_HEADER_SORT_THEME");
-		publishBaseEntityByCode(headerLabelSortThemeBe.getCode());
 
 		/* set the contexts to the ask */
 		createVirtualContext(columnSortAsk, horizontalWrapperBe, ContextType.THEME, VisualControlType.WRAPPER);
@@ -6048,6 +6085,93 @@ public class QRules implements Serializable {
 		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.LABEL);
 
 		return columnSortAsk;
+	}
+	
+	public void sendForm(String questionGroupCode, String sourceCode, String targetCode) {
+		
+		/* get the content frame */
+		BaseEntity contentBe = this.baseEntity.getBaseEntityByCode("FRM_CONTENT");
+		
+		/* Get the ask Message for the question group code */
+		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionGroupCode, serviceToken);
+		Ask[] askArr = askMessage.getItems();
+						
+		/* get all visual baseentities and themes */
+		BaseEntity defaultFormInputBe = ContextUtils.getDefaultFormInputTheme();
+		BaseEntity defaultFormLabelBe = ContextUtils.getDefaultFormLabelTheme();
+		BaseEntity defaultFormWrapperBe = ContextUtils.getDefaultFormWrapperTheme();
+		BaseEntity defaultFormErrorBe = ContextUtils.getDefaultFormErrorTheme();
+		BaseEntity defaultFormThemeBe = ContextUtils.getDefaultFormTheme();
+		BaseEntity defaultFormContainerBe = ContextUtils.getDefaultFormContainerTheme();
+		BaseEntity verticalScrollBe = this.baseEntity.getBaseEntityByCode("THM_CONTENT_VERTICAL_SCROLL");
+		BaseEntity buttonThemeBe = ContextUtils.getFormButtonTheme();
+		
+		/* iterate through all child asks and create link between between the ask and the theme */
+		if(askArr != null) {
+			for(Ask childAsk : askArr) {
+				/* create virtual themes for the ask */				
+				createVirtualContext(childAsk, defaultFormInputBe, ContextType.THEME, VisualControlType.INPUT);
+				createVirtualContext(childAsk, defaultFormLabelBe, ContextType.THEME, VisualControlType.LABEL);
+				createVirtualContext(childAsk, defaultFormWrapperBe, ContextType.THEME, VisualControlType.WRAPPER);
+				createVirtualContext(childAsk, defaultFormErrorBe, ContextType.THEME, VisualControlType.ERROR);
+				createVirtualContext(childAsk, defaultFormThemeBe, ContextType.THEME, VisualControlType.DEFAULT);
+				createVirtualContext(childAsk, defaultFormContainerBe, ContextType.THEME, VisualControlType.DEFAULT);
+				
+				List<Ask> list = new ArrayList<>(Arrays.asList(childAsk.getChildAsks()));
+				
+				//TODO Add one more util for creating ASKS for buttons according to the QuestionGroup's attribute
+				/* create ask for submit button */
+				Ask buttonAsk = getQuestion(sourceCode, targetCode, "QUE_SUBMIT_BUTTON");
+				createVirtualContext(buttonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
+				
+				list.add(buttonAsk);
+				
+				childAsk.setChildAsks(list.stream().toArray(Ask[]::new));
+			}
+		}
+		
+		/* publishing vertical scroll be and ask message */
+		QDataBaseEntityMessage scrollThemeMsg = new QDataBaseEntityMessage(verticalScrollBe);
+		publishCmd(scrollThemeMsg);
+		publishCmd(askMessage);
+		
+		/* publish frame message */
+		if(askMessage.getItems() != null && askMessage.getItems().length > 0) {
+			BaseEntity frameBe = createVirtualLink(contentBe, askMessage.getItems()[0], "LNK_ASK", "CENTRE");
+			
+			/* create virtual link between a scroll theme and content-frame */
+			createVirtualLink(frameBe, verticalScrollBe, "LNK_THEME", "CENTRE", 0.0);
+			
+			QDataBaseEntityMessage frameMsg = new QDataBaseEntityMessage(frameBe);
+			frameMsg.setReplace(true);
+			publishCmd(frameMsg);
+		}		
+	}
+
+	/*
+		* returns a new SearchEntity using the given
+		* searchEntity code and
+		* current user's sessionId
+	*/
+	public SearchEntity getSessionBasedSearchEntity(String searchCode){
+
+		SearchEntity searchBe = null;
+		try{
+			/* get searchBe from cache */
+			searchBe = this.baseEntity.getSearchEntityByCode(searchCode);
+
+			/* initialize unique session-based search code */
+			String sessionSearchBeCode = searchBe.getCode() + getAsString("session_state");
+
+			/* set the unique search code to searchBe */
+			searchBe.setCode(sessionSearchBeCode);
+
+			return searchBe;
+
+		}catch (Exception e) {
+
+		}
+		return searchBe;
 	}
 
 }
