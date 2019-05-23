@@ -1787,8 +1787,8 @@ public class QRules implements Serializable {
 	public void askQuestions(String sourceCode, String targetCode, String questionGroupCode, String frameCode,
 			LayoutPosition position, Map<String, List<Context>> themesForQuestions) {
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
-		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken,
+
+		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, this.getToken(),
 				sourceCode, true);
 
 		Ask[] asks = questions.asks.getItems();
