@@ -39,9 +39,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.Logger;
 import org.drools.core.spi.KnowledgeHelper;
 import org.javamoney.moneta.Money;
+import org.json.JSONException;
 
-import com.amazonaws.services.iotdata.model.GetThingShadowRequest;
-import com.google.api.client.json.Json;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Sets;
 import com.google.gson.reflect.TypeToken;
@@ -58,8 +57,6 @@ import life.genny.qwanda.Context;
 import life.genny.qwanda.Context.VisualControlType;
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.ContextType;
-import life.genny.qwanda.GPS;
-
 import life.genny.qwanda.Layout;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
@@ -126,7 +123,6 @@ import life.genny.qwandautils.MessageUtils;
 import life.genny.qwandautils.QwandaMessage;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.qwandautils.ScoringUtils;
-import life.genny.security.SecureResources;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CacheUtils;
 import life.genny.utils.ContextUtils;
@@ -144,6 +140,11 @@ import life.genny.utils.Layout.LayoutViewData;
 
 public class QRules implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
@@ -160,6 +161,22 @@ public class QRules implements Serializable {
 	private long ruleStartMs = 0;
 
 	KnowledgeHelper drools;
+	
+	String serviceToken;
+
+	/**
+	 * @return the serviceToken
+	 */
+	public String getServiceToken() {
+		return serviceToken;
+	}
+
+	/**
+	 * @param serviceToken the serviceToken to set
+	 */
+	public void setServiceToken(String serviceToken) {
+		this.serviceToken = serviceToken;
+	}
 
 	public void setDrools(KnowledgeHelper drools) {
 		this.drools = drools;
@@ -175,15 +192,21 @@ public class QRules implements Serializable {
 	public CacheUtils cacheUtils;
 	public PaymentUtils paymentUtils;
 
+	
+	public QRules(final EventBusInterface eventBus, final String token) {
+		this(eventBus,token,RulesLoader.getDecodedTokenMap(token),DEFAULT_STATE);
+	}
+	
 	public QRules(final EventBusInterface eventBus, final String token, final Map<String, Object> decodedTokenMap,
 			String state) {
 		super();
 
 		this.eventBus = eventBus;
 		this.token = token;
-		this.decodedTokenMap = decodedTokenMap;
+		this.decodedTokenMap = decodedTokenMap;  // yes. I know.
+		this.set("realm", (String)this.decodedTokenMap.get("aud"));
 		this.stateMap = new HashMap<String, Boolean>();
-		stateMap.put(DEFAULT_STATE, true);
+		stateMap.put(state, true);
 		setStarted(false);
 
 		this.initUtils();
@@ -259,9 +282,7 @@ public class QRules implements Serializable {
 	public String realm() {
 
 		String str = getAsString("realm");
-		if (GennySettings.devMode || (GennySettings.defaultLocalIP.equals(GennySettings.hostIP))) {
-			str = GennySettings.mainrealm; // TODO, I don't like this, but...
-		}
+
 		return str.toLowerCase();
 	}
 
@@ -899,7 +920,6 @@ public class QRules implements Serializable {
 		QMessageGennyMSG message = null; // TODO: Stop using json!?!?!?
 
 		/* Adding project code to context */
-		// String projectCode = "PRJ_" + GennySettings.mainrealm.toUpperCase();
 		String projectCode = "PRJ_" + this.realm().toUpperCase();
 
 		this.println("project code for messages ::" + projectCode);
@@ -1509,6 +1529,14 @@ public class QRules implements Serializable {
 		VertxUtils.publish(getUser(), channel, payload);
 	}
 
+	public boolean loadRealmData()
+	{
+		// No need to load in files anymore as realms are fetched from cache
+//		String localServiceToken = this.getServiceToken();
+//		this.setNewTokenAndDecodedTokenMap(localServiceToken);
+		return true;
+	}
+	
 	public String loadUserRole() {
 
 		BaseEntity user = this.getUser();
@@ -1618,7 +1646,7 @@ public class QRules implements Serializable {
 		if (selBE != null) {
 			Long bitMaskValue = selBE.getValue("PRI_BITMASK_VALUE", null);
 			// String realm = realm();
-			String serviceToken = RulesUtils.generateServiceToken(realm());
+			String serviceToken = this.getServiceToken();
 			QDataBaseEntityMessage msg = null;
 			List<BaseEntity> beList = new ArrayList<BaseEntity>();
 			if (bitMaskValue != null) {
@@ -1677,7 +1705,7 @@ public class QRules implements Serializable {
 			Boolean pushSelection) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = this.getServiceToken();
 		return this.sendQuestions(sourceCode, targetCode, questionGroupCode, stakeholderCode, pushSelection, token);
 	}
 
@@ -1689,7 +1717,7 @@ public class QRules implements Serializable {
 		/* we get the questions */
 		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, token,
 				stakeholderCode, pushSelection);
-
+		
 		if (questions != null) {
 
 			this.println(JsonUtils.toJson(questions));
@@ -1705,7 +1733,7 @@ public class QRules implements Serializable {
 	public Ask getQuestion(String sourceCode, String targetCode, String questionCode) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 
 		/* Get the ask Message */
 		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, serviceToken);
@@ -1724,7 +1752,7 @@ public class QRules implements Serializable {
 			String stakeholderCode) {
 
 		/* we grab the service token */
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 
 		return QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken, stakeholderCode,
 				true);
@@ -2478,7 +2506,7 @@ public class QRules implements Serializable {
 
 			QDataAttributeMessage msg = RulesUtils.loadAllAttributesIntoCache(getToken());
 			this.publishCmd(msg);
-			println("All the attributes sent");
+			println("All the attributes sent "+msg.getItems().length+" of them");
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -3413,7 +3441,7 @@ public class QRules implements Serializable {
 
 		try {
 
-			String serviceToken = RulesUtils.generateServiceToken(this.realm());
+			String serviceToken = getServiceToken();
 			String jsonSearchBE = JsonUtils.toJson(searchBE);
 			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 					jsonSearchBE, serviceToken);
@@ -3468,7 +3496,7 @@ public class QRules implements Serializable {
 	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
 			Boolean replace, Object shouldDeleteLinkedBaseEntities) throws IOException {
 
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 				jsonSearchBE, serviceToken);
@@ -3496,7 +3524,7 @@ public class QRules implements Serializable {
 	 * Get search Results returns QDataBaseEntityMessage
 	 */
 	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE) throws IOException {
-		String serviceToken = RulesUtils.generateServiceToken(this.realm());
+		String serviceToken = getServiceToken();
 		QDataBaseEntityMessage results = getSearchResults(searchBE, serviceToken);
 		if (results == null) {
 			results = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
@@ -3534,7 +3562,7 @@ public class QRules implements Serializable {
 
 		String token = null;
 		if (useServiceToken) {
-			token = RulesUtils.generateServiceToken(this.realm());
+			token = getServiceToken();
 		} else {
 			token = this.getToken();
 		}
@@ -3548,7 +3576,7 @@ public class QRules implements Serializable {
 
 		String token = null;
 		if (useServiceToken) {
-			token = RulesUtils.generateServiceToken(this.realm());
+			token = getServiceToken();
 		} else {
 			token = this.getToken();
 		}
@@ -3724,46 +3752,6 @@ public class QRules implements Serializable {
 		this.initUtils();
 	}
 
-	public boolean loadRealmData() {
-
-		println(RulesUtils.ANSI_BLUE + "PRE_INIT_STARTUP Loading in keycloak data and setting up service token for "
-				+ realm() + RulesUtils.ANSI_RESET);
-
-		for (String jsonFile : SecureResources.getKeycloakJsonMap().keySet()) {
-
-			String keycloakJson = SecureResources.getKeycloakJsonMap().get(jsonFile);
-			if (keycloakJson == null) {
-				log.info("No keycloakMap for " + realm());
-				if (GennySettings.devMode) {
-					log.info("Fudging realm so genny keycloak used");
-					// Use basic Genny json when project json not available
-					String gennyJson = SecureResources.getKeycloakJsonMap().get("genny.json");
-					SecureResources.getKeycloakJsonMap().put(jsonFile, gennyJson);
-					keycloakJson = gennyJson;
-				} else {
-					return false;
-				}
-			}
-
-			JsonObject realmJson = new JsonObject(keycloakJson);
-			String realm = realmJson.getString("realm");
-
-			if (realm != null) {
-
-				String token = RulesUtils.generateServiceToken(GennySettings.dynamicRealm(realm()));
-				this.println(token);
-				if (token != null) {
-
-					this.setNewTokenAndDecodedTokenMap(token);
-					this.set("realm", GennySettings.dynamicRealm(realm()));
-					return true;
-				}
-			}
-
-		}
-
-		return false;
-	}
 
 	public void sendTreeData() {
 		// we grab the root
@@ -3787,20 +3775,31 @@ public class QRules implements Serializable {
 
 		/* getting the expandable theme baseentity */
 		BaseEntity expandableBe = this.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
-
-		/* publishing theme for expanding */
-		this.publishBaseEntityByCode(expandableBe.getCode());
-
-		/* creating a context for the expandable-theme */
-		Context expandableThemeContext = new Context(ContextType.THEME, expandableBe);
-		List<Context> expandableThemeContextList = new ArrayList<>();
-		expandableThemeContextList.add(expandableThemeContext);
-
-		/* add the context to the contextList */
-		ContextList contextList = new ContextList(expandableThemeContextList);
+		
+		/* get all themes for treeview */
+		BaseEntity treeviewDefaultTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_DEFAULT");
+		BaseEntity treeviewMarginTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_MARGINLEFT_10");
+		BaseEntity treeviewWidthTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_WIDTH_FULL");
+		BaseEntity treeviewContainerTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_CONTAINER_DEFAULT");
+		BaseEntity treeviewInputTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_INPUT_DEFAULT");
+		BaseEntity treeviewInputIconTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_INPUT_ICON");
+		BaseEntity treeviewShowIconTheme = this.baseEntity.getBaseEntityByCode("THM_SHOW_ICON");
 
 		/* we generate the tree view questions */
-		Ask treeAsk = generateQuestionsForTree(root.getCode(), contextList, rolesOfCurrentUser);
+		Ask treeAsk = generateQuestionsForTree(root.getCode(), expandableBe, rolesOfCurrentUser);
+		
+		/* setting all the default treeview-themes to the parent ask */
+		List<BaseEntity> defaultTreeViewThemes = new ArrayList<>();
+		defaultTreeViewThemes.add(treeviewMarginTheme);
+		defaultTreeViewThemes.add(treeviewWidthTheme);
+		defaultTreeViewThemes.add(treeviewDefaultTheme);
+		defaultTreeViewThemes.add(treeviewContainerTheme);
+		defaultTreeViewThemes.add(treeviewInputIconTheme);
+		
+		createVirtualContext(treeAsk, defaultTreeViewThemes, ContextType.THEME);
+		createVirtualContext(treeAsk, treeviewInputTheme, ContextType.THEME, VisualControlType.INPUT);
+		createVirtualContext(treeAsk, treeviewShowIconTheme, ContextType.THEME, VisualControlType.INPUT);
+		
 		Ask[] completeAsk = { treeAsk };
 
 		/* Creating AskMessage with complete asks */
@@ -3815,7 +3814,7 @@ public class QRules implements Serializable {
 		this.publishCmd(treeMessage);
 	}
 
-	public Ask generateQuestionsForTree(String parentCode, ContextList contextList, List<String> rolesOfCurrentUser) {
+	public Ask generateQuestionsForTree(String parentCode, BaseEntity expandableTheme, List<String> rolesOfCurrentUser) {
 
 		// we grab the root
 		BaseEntity parent = this.baseEntity.getBaseEntityByCode(parentCode);
@@ -3837,7 +3836,10 @@ public class QRules implements Serializable {
 			 * except GRP_ROOT
 			 */
 			if (!"GRP_ROOT".equals(parent.getCode())) {
-				parentAsk.setContextList(contextList);
+				
+				/* apply expandable theme to the ask which has children */
+				createVirtualContext(parentAsk, expandableTheme, ContextType.THEME);
+				
 			}
 
 			/* getting filtered kids list according to the parentCode */
@@ -3865,7 +3867,7 @@ public class QRules implements Serializable {
 				 * we call the same generateQuestionsForTree function recursively to generate
 				 * tree questions for the kids and their children and so forth
 				 */
-				Ask ask = generateQuestionsForTree(kid.getCode(), contextList, rolesOfCurrentUser);
+				Ask ask = generateQuestionsForTree(kid.getCode(), expandableTheme, rolesOfCurrentUser);
 
 				/* setting the weight to the ask for positioning the item in the tree */
 				ask.setWeight(weight);
@@ -3874,7 +3876,16 @@ public class QRules implements Serializable {
 
 			/* setting the generated childAsks to the parent ask */
 			Ask[] kidAskArr = kidsAsk.stream().toArray(Ask[]::new);
+			
 			parentAsk.setChildAsks(kidAskArr);
+		}
+		
+		/* set the icon for the ask */
+		List<BaseEntity> iconBe = this.baseEntity.getLinkedBaseEntities(parentCode, "LNK_ICON");
+		if(iconBe != null && !iconBe.isEmpty()) {
+			log.info("Icons ::"+iconBe.toString() + " for parent code ::"+parentCode);
+			log.info("icon item ::"+iconBe.get(0));
+			createVirtualContext(parentAsk, iconBe.get(0), ContextType.ICON, VisualControlType.ICON);
 		}
 
 		return parentAsk;
@@ -3915,7 +3926,6 @@ public class QRules implements Serializable {
 
 		println("Startup Event called from " + caller);
 		if (!isState("GENERATE_STARTUP")) {
-			this.loadRealmData();
 			this.reloadCache();
 		}
 
@@ -3975,7 +3985,13 @@ public class QRules implements Serializable {
 		String realm = realm();
 		String name = "Service User";
 		String email = "adamcrow63@gmail.com";
-		String keycloakId = getAsString("sub").toLowerCase();
+		String token = getServiceToken();
+		String keycloakId = null;
+		try {
+			keycloakId = (String)KeycloakUtils.getDecodedToken(token).get("sub");
+		} catch (JSONException e1) {
+			keycloakId = realm; // give it something.
+		}
 
 		// Check if already exists
 		BaseEntity existing = this.baseEntity.getBaseEntityByAttributeAndValue("PRI_CODE", "PER_SERVICE"); // do not
@@ -5909,7 +5925,7 @@ public class QRules implements Serializable {
 	}
 
 	/**
-	 * Embeds the list of contexts (themes, icon) into an ask
+	 * Embeds the list of contexts (themes, icon) into an ask and also publishes the themes
 	 * @param ask
 	 * @param themes
 	 * @param linkCode
@@ -5923,6 +5939,10 @@ public class QRules implements Serializable {
 		for(BaseEntity theme : themes) {
 			Context context = new Context(linkCode, theme, visualControlType, weight);
 			completeContext.add(context);
+			
+			/* publish the theme baseentity message */
+			QDataBaseEntityMessage themeMsg = new QDataBaseEntityMessage(theme);
+			publishCmd(themeMsg);
 		}
 
 		ContextList contextList = ask.getContextList();
@@ -5990,6 +6010,7 @@ public class QRules implements Serializable {
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
 
+
 			String attributeCode = column.getKey();
 			String attributeName = column.getValue();
 
@@ -6047,19 +6068,15 @@ public class QRules implements Serializable {
 
 		/* showing the icon */
 		BaseEntity sortIconBe = this.baseEntity.getBaseEntityByCode("ICN_SORT");
-		publishBaseEntityByCode(sortIconBe.getCode());
 
 		/* create visual baseentity for question with label */
 		BaseEntity visualBaseEntity = this.baseEntity.getBaseEntityByCode("THM_TABLE_HEADER_VISUAL_CONTROL");
-		publishBaseEntityByCode(visualBaseEntity.getCode());
 
 		/* get the BaseEntity for wrapper context */
 		BaseEntity horizontalWrapperBe = this.baseEntity.getBaseEntityByCode("THM_HORIZONTAL_WRAPPER_INLINE");
-		publishBaseEntityByCode(horizontalWrapperBe.getCode());
 
 		/* get the theme for Label and Sort */
 		BaseEntity headerLabelSortThemeBe = this.baseEntity.getBaseEntityByCode("THM_TABLE_HEADER_SORT_THEME");
-		publishBaseEntityByCode(headerLabelSortThemeBe.getCode());
 
 		/* set the contexts to the ask */
 		createVirtualContext(columnSortAsk, horizontalWrapperBe, ContextType.THEME, VisualControlType.WRAPPER);
@@ -6068,6 +6085,67 @@ public class QRules implements Serializable {
 		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.LABEL);
 
 		return columnSortAsk;
+	}
+	
+	public void sendForm(String questionGroupCode, String sourceCode, String targetCode) {
+		
+		/* get the content frame */
+		BaseEntity contentBe = this.baseEntity.getBaseEntityByCode("FRM_CONTENT");
+		
+		/* Get the ask Message for the question group code */
+		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionGroupCode, serviceToken);
+		Ask[] askArr = askMessage.getItems();
+						
+		/* get all visual baseentities and themes */
+		BaseEntity defaultFormInputBe = ContextUtils.getDefaultFormInputTheme();
+		BaseEntity defaultFormLabelBe = ContextUtils.getDefaultFormLabelTheme();
+		BaseEntity defaultFormWrapperBe = ContextUtils.getDefaultFormWrapperTheme();
+		BaseEntity defaultFormErrorBe = ContextUtils.getDefaultFormErrorTheme();
+		BaseEntity defaultFormThemeBe = ContextUtils.getDefaultFormTheme();
+		BaseEntity defaultFormContainerBe = ContextUtils.getDefaultFormContainerTheme();
+		BaseEntity verticalScrollBe = this.baseEntity.getBaseEntityByCode("THM_CONTENT_VERTICAL_SCROLL");
+		BaseEntity buttonThemeBe = ContextUtils.getFormButtonTheme();
+		
+		/* iterate through all child asks and create link between between the ask and the theme */
+		if(askArr != null) {
+			for(Ask childAsk : askArr) {
+				/* create virtual themes for the ask */				
+				createVirtualContext(childAsk, defaultFormInputBe, ContextType.THEME, VisualControlType.INPUT);
+				createVirtualContext(childAsk, defaultFormLabelBe, ContextType.THEME, VisualControlType.LABEL);
+				createVirtualContext(childAsk, defaultFormWrapperBe, ContextType.THEME, VisualControlType.WRAPPER);
+				createVirtualContext(childAsk, defaultFormErrorBe, ContextType.THEME, VisualControlType.ERROR);
+				createVirtualContext(childAsk, defaultFormThemeBe, ContextType.THEME, VisualControlType.DEFAULT);
+				createVirtualContext(childAsk, defaultFormContainerBe, ContextType.THEME, VisualControlType.DEFAULT);
+				
+				List<Ask> list = new ArrayList<>(Arrays.asList(childAsk.getChildAsks()));
+				
+				//TODO Add one more util for creating ASKS for buttons according to the QuestionGroup's attribute
+				/* create ask for submit button */
+				Ask buttonAsk = getQuestion(sourceCode, targetCode, "QUE_SUBMIT_BUTTON");
+				createVirtualContext(buttonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
+				
+				list.add(buttonAsk);
+				
+				childAsk.setChildAsks(list.stream().toArray(Ask[]::new));
+			}
+		}
+		
+		/* publishing vertical scroll be and ask message */
+		QDataBaseEntityMessage scrollThemeMsg = new QDataBaseEntityMessage(verticalScrollBe);
+		publishCmd(scrollThemeMsg);
+		publishCmd(askMessage);
+		
+		/* publish frame message */
+		if(askMessage.getItems() != null && askMessage.getItems().length > 0) {
+			BaseEntity frameBe = createVirtualLink(contentBe, askMessage.getItems()[0], "LNK_ASK", "CENTRE");
+			
+			/* create virtual link between a scroll theme and content-frame */
+			createVirtualLink(frameBe, verticalScrollBe, "LNK_THEME", "CENTRE", 0.0);
+			
+			QDataBaseEntityMessage frameMsg = new QDataBaseEntityMessage(frameBe);
+			frameMsg.setReplace(true);
+			publishCmd(frameMsg);
+		}		
 	}
 
 	/*
