@@ -1916,7 +1916,9 @@ public class QRules implements Serializable {
 	}
 
 	public void update() {
-		this.drools.update(this);
+		if (drools!=null) {  // handle jbpm
+			this.drools.update(this);
+		}
 	}
 
 	public void debug() {
