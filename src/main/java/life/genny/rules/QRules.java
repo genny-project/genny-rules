@@ -3996,25 +3996,26 @@ public class QRules implements Serializable {
 		}
 
 		// Check if already exists
-		BaseEntity existing = this.baseEntity.getBaseEntityByAttributeAndValue("PRI_CODE", "PER_SERVICE"); // do not
+		
+		BaseEntity existing = this.baseEntity.getBaseEntityByCode("PER_SERVICE");//this.baseEntity.getBaseEntityByAttributeAndValue("PRI_CODE", "PER_SERVICE"); // do not
 		// check
 		// cache!
 
-		if (existing == null) {
-
-			try {
-				be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
-						email, realm, name, keycloakId);
-				VertxUtils.writeCachedJson(realm(), be.getCode(), JsonUtils.toJson(be));
-				be = getUser();
-				set("USER", be);
-				println("New User Created " + be);
-				this.setState("DID_CREATE_NEW_USER");
-
-			} catch (IOException e) {
-				log.error("Error in Creating User ");
-			}
-		}
+//		if (existing == null) {
+//
+//			try {
+//				be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
+//						email, realm, name, keycloakId);
+//				VertxUtils.writeCachedJson(realm(), be.getCode(), JsonUtils.toJson(be));
+//				be = getUser();
+//				set("USER", be);
+//				println("New User Created " + be);
+//				this.setState("DID_CREATE_NEW_USER");
+//
+//			} catch (IOException e) {
+//				log.error("Error in Creating User ");
+//			}
+//		}
 	}
 
 	public void getRolesFromKeycloak() {
