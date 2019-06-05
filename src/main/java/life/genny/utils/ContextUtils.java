@@ -6,7 +6,6 @@ import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
-
 public class ContextUtils {
 
 
@@ -63,16 +62,69 @@ public class ContextUtils {
 		/* create context */
 		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_ODD", "table background");
 
-		String bgAttribute = "{  \"backgroundColor\": \"#FFFFFF\", \"color\": \"#212529\", \"boxSizing\": \"borderBox\"}";
+		String bgAttribute = "{  \"backgroundColor\": \"#FFFFFF\", \"color\": \"#212529\", \"boxSizing\": \"borderBox\" }";
 
 		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
+
 		EntityAttribute entAttr = new EntityAttribute(backgroundTheme, att, 2.0, bgAttribute);
+		EntityAttribute inheritEntAtt = new EntityAttribute(backgroundTheme, inheritableAtt, 1.0, "FALSE");
+
 		Set<EntityAttribute> entAttrSet = new HashSet<>();
 		entAttrSet.add(entAttr);
+		entAttrSet.add(inheritEntAtt);
 
 		backgroundTheme.setBaseEntityAttributes(entAttrSet);
 
 		return backgroundTheme;
+	}
+	public static BaseEntity getNoBackgroundTheme() {
+		/* create context */
+		BaseEntity backgroundTheme = new BaseEntity("THM_NO_BACKGROUND", "transparent background");
+
+		String bgAttribute = "{\"backgroundColor\": \"none\"}";
+
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+
+		EntityAttribute entAttr = new EntityAttribute(backgroundTheme, att, 1.0, bgAttribute);
+
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+
+		backgroundTheme.setBaseEntityAttributes(entAttrSet);
+		return backgroundTheme;
+	}
+	public static BaseEntity getTableIconColorTheme() {
+		/* create context */
+		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_ICON", "table icon theme");
+
+		String bgAttribute = "{\"color\": \"#898989\"}";
+
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+
+		EntityAttribute entAttr = new EntityAttribute(backgroundTheme, att, 1.0, bgAttribute);
+
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+
+		backgroundTheme.setBaseEntityAttributes(entAttrSet);
+		return backgroundTheme;
+	}
+	public static BaseEntity getTableHeaderLabelTheme() {
+		/* create context */
+		BaseEntity theme = new BaseEntity("THM_TABLE_HEADER_LABEL", "table header label");
+
+		String bgAttribute = "{\"fontWeight\": \"bold\"}";
+
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+
+		EntityAttribute entAttr = new EntityAttribute(theme, att, 1.0, bgAttribute);
+
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+
+		theme.setBaseEntityAttributes(entAttrSet);
+		return theme;
 	}
 
 
@@ -80,7 +132,7 @@ public class ContextUtils {
 		/* create context */
 		BaseEntity fullWidthTheme = new BaseEntity("THM_WIDTH_FULL", "Width 100 Percent");
 
-		String bgAttribute = "{ \"width\": \"100%\", \"justifyContent\": \"space-around\"}";
+		String bgAttribute = "{ \"width\": \"100%\", \"justifyContent\": \"space-between\"}";
 
 		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
 		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
@@ -93,6 +145,57 @@ public class ContextUtils {
 		fullWidthTheme.setBaseEntityAttributes(entAttrSet);
 
 		return fullWidthTheme;
+	}
+	public static BaseEntity getTableCellDefaultTheme() {
+		/* create context */
+		BaseEntity tableCellTheme = new BaseEntity("THM_TABLE_CELL_DEFAULT", "Table Cell Default Theme");
+
+		String bgAttribute = "{ \"placeholderColor\" : \"#898989\", \"flex\" : 1}";
+
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
+		EntityAttribute entAttr = new EntityAttribute(tableCellTheme, att, 1.0, bgAttribute);
+		EntityAttribute inheritEntAtt = new EntityAttribute(tableCellTheme, inheritableAtt, 1.0, "TRUE");
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+		entAttrSet.add(inheritEntAtt);
+
+		tableCellTheme.setBaseEntityAttributes(entAttrSet);
+
+		return tableCellTheme;
+	}
+	public static BaseEntity getNoFlexTheme() {
+		/* create context */
+		BaseEntity flexTheme = new BaseEntity("THM_NO_FLEX", "No Flex Theme");
+
+		String bgAttribute = "{ \"flex\" : \"none\"}";
+
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+		EntityAttribute entAttr = new EntityAttribute(flexTheme, att, 1.0, bgAttribute);
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+
+		flexTheme.setBaseEntityAttributes(entAttrSet);
+
+		return flexTheme;
+	}
+	public static BaseEntity getTableCellUnInheritableTheme() {
+		/* create context */
+		BaseEntity tableCellTheme = new BaseEntity("THM_TABLE_CELL_UNINHERITABLE", "Table Cell UnInheritable Theme");
+
+		String bgAttribute = "{ \"placeholderColor\" : \"#898989\", \"flex\" : 1}";
+
+		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
+		EntityAttribute entAttr = new EntityAttribute(tableCellTheme, att, 1.0, bgAttribute);
+		EntityAttribute inheritEntAtt = new EntityAttribute(tableCellTheme, inheritableAtt, 1.0, "FALSE");
+		Set<EntityAttribute> entAttrSet = new HashSet<>();
+		entAttrSet.add(entAttr);
+		entAttrSet.add(inheritEntAtt);
+
+		tableCellTheme.setBaseEntityAttributes(entAttrSet);
+
+		return tableCellTheme;
 	}
 
 	public static BaseEntity getThemeForTableScroll() {
