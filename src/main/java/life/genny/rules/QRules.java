@@ -1786,11 +1786,12 @@ public class QRules implements Serializable {
 		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, this.getToken(),
 				sourceCode, true);
 
-		Ask[] asks = questions.asks.getItems();
+		if (questions.asks != null) {
+			Ask[] asks = questions.asks.getItems();
 
-		/* set the contexts/themes to the asks and childAsks */
-		setContextsToQuestions(themesForQuestions, asks);
-
+			/* set the contexts/themes to the asks and childAsks */
+			setContextsToQuestions(themesForQuestions, asks);
+		}
 		/* publish the questions */
 		publishCmd(questions);
 
