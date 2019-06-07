@@ -1017,7 +1017,7 @@ public class QRules implements Serializable {
 			lastname = StringUtils.capitalize(lastname);
 			name = StringUtils.capitalize(name);
 
-			String token = RulesUtils.generateServiceToken(realm());
+			String token = RulesUtils.generateServiceToken(realm(),getToken());
 
 			String realm = realm();
 			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
@@ -3761,7 +3761,7 @@ public class QRules implements Serializable {
 		BaseEntity root = this.baseEntity.getBaseEntityByCode("GRP_ROOT");
 
 		/* create an ask for GRP_ROOT */
-		Ask rootAsk = QuestionUtils.createQuestionForBaseEntity(root, true);
+		Ask rootAsk = QuestionUtils.createQuestionForBaseEntity(root, true,getToken());
 
 		/* create an object for the complete ask */
 		QDataAskMessage askMsg = null;
@@ -3830,9 +3830,9 @@ public class QRules implements Serializable {
 
 		/* create an ask for GRP_ROOT */
 		if (kids.isEmpty()) {
-			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, false);
+			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, false,getToken());
 		} else {
-			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, true);
+			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, true,getToken());
 
 			/*
 			 * set theme - expandable through contextList if GRP_XXX is question-group
@@ -5102,7 +5102,7 @@ public class QRules implements Serializable {
 	public void processAddresses(String realm) {
 		// load in all the people in the db
 		QDataBaseEntityMessage qMsg = null;
-		String token = RulesUtils.generateServiceToken(realm);
+		String token = RulesUtils.generateServiceToken(realm,getToken());
 		SearchEntity allPeople = new SearchEntity("SBE_ALL_PEOPLE", "All People")
 				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "PER_%").setPageStart(0).setPageSize(100000);
 		try {
@@ -5183,7 +5183,7 @@ public class QRules implements Serializable {
 		List<Attribute> capabilityManifest = new ArrayList<Attribute>();
 
 		String proj_realm = System.getenv("PROJECT_REALM");
-		String token = RulesUtils.generateServiceToken(proj_realm);
+		String token = RulesUtils.generateServiceToken(proj_realm,getToken());
 
 		addCapability(capabilityManifest, "ADD_QUOTE", "Allowed to post a quote", token);
 		addCapability(capabilityManifest, "READ_QUOTE", "Allowed to read a quote", token);
