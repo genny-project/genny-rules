@@ -137,11 +137,10 @@ import life.genny.utils.Layout.LayoutPosition;
 import life.genny.utils.Layout.LayoutUtils;
 //import life.genny.rules.Layout.LayoutUtils;
 import life.genny.utils.Layout.LayoutViewData;
-
 public class QRules implements Serializable {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 
@@ -161,7 +160,7 @@ public class QRules implements Serializable {
 	private long ruleStartMs = 0;
 
 	KnowledgeHelper drools;
-	
+
 	String serviceToken;
 
 	/**
@@ -192,19 +191,18 @@ public class QRules implements Serializable {
 	public CacheUtils cacheUtils;
 	public PaymentUtils paymentUtils;
 
-	
 	public QRules(final EventBusInterface eventBus, final String token) {
-		this(eventBus,token,RulesLoader.getDecodedTokenMap(token),DEFAULT_STATE);
+		this(eventBus, token, RulesLoader.getDecodedTokenMap(token), DEFAULT_STATE);
 	}
-	
+
 	public QRules(final EventBusInterface eventBus, final String token, final Map<String, Object> decodedTokenMap,
 			String state) {
 		super();
 
 		this.eventBus = eventBus;
 		this.token = token;
-		this.decodedTokenMap = decodedTokenMap;  // yes. I know.
-		this.set("realm", (String)this.decodedTokenMap.get("aud"));
+		this.decodedTokenMap = decodedTokenMap; // yes. I know.
+		this.set("realm", (String) this.decodedTokenMap.get("aud"));
 		this.stateMap = new HashMap<String, Boolean>();
 		stateMap.put(state, true);
 		setStarted(false);
@@ -1321,6 +1319,13 @@ public class QRules implements Serializable {
 		return msg;
 	}
 
+	public QMessage publishCmd(final QCmdMessage msg) {
+		msg.setToken(getToken());
+		String json = JsonUtils.toJson(msg);
+		publish("cmds", json);
+		return msg;
+	}
+
 	public QMessage publishCmd(final QDataAskMessage msg) {
 		msg.setToken(getToken());
 		String json = JsonUtils.toJson(msg);
@@ -1464,10 +1469,10 @@ public class QRules implements Serializable {
 		publish("webdata", RulesUtils.toJsonObject(msg));
 	}
 
-	public void publishCmd(final QCmdMessage cmdMsg) {
-		cmdMsg.setToken(getToken());
-		publish("cmds", RulesUtils.toJsonObject(cmdMsg));
-	}
+	// public void publishCmd(final QCmdMessage cmdMsg) {
+	// cmdMsg.setToken(getToken());
+	// publish("cmds", RulesUtils.toJsonObject(cmdMsg));
+	// }
 
 	public void publishCmd(final QEventLinkChangeMessage cmdMsg, final String[] recipientsCode) {
 
@@ -1529,14 +1534,13 @@ public class QRules implements Serializable {
 		VertxUtils.publish(getUser(), channel, payload);
 	}
 
-	public boolean loadRealmData()
-	{
+	public boolean loadRealmData() {
 		// No need to load in files anymore as realms are fetched from cache
-//		String localServiceToken = this.getServiceToken();
-//		this.setNewTokenAndDecodedTokenMap(localServiceToken);
+		// String localServiceToken = this.getServiceToken();
+		// this.setNewTokenAndDecodedTokenMap(localServiceToken);
 		return true;
 	}
-	
+
 	public String loadUserRole() {
 
 		BaseEntity user = this.getUser();
@@ -1717,7 +1721,7 @@ public class QRules implements Serializable {
 		/* we get the questions */
 		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, token,
 				stakeholderCode, pushSelection);
-		
+
 		if (questions != null) {
 
 			this.println(JsonUtils.toJson(questions));
@@ -2509,7 +2513,7 @@ public class QRules implements Serializable {
 
 			QDataAttributeMessage msg = RulesUtils.loadAllAttributesIntoCache(getToken());
 			this.publishCmd(msg);
-			println("All the attributes sent "+msg.getItems().length+" of them");
+			println("All the attributes sent " + msg.getItems().length + " of them");
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -3755,7 +3759,6 @@ public class QRules implements Serializable {
 		this.initUtils();
 	}
 
-
 	public void sendTreeData() {
 		// we grab the root
 		BaseEntity root = this.baseEntity.getBaseEntityByCode("GRP_ROOT");
@@ -3778,7 +3781,7 @@ public class QRules implements Serializable {
 
 		/* getting the expandable theme baseentity */
 		BaseEntity expandableBe = this.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
-		
+
 		/* get all themes for treeview */
 		BaseEntity treeviewDefaultTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_DEFAULT");
 		BaseEntity treeviewMarginTheme = this.baseEntity.getBaseEntityByCode("THM_TREE_MARGINLEFT_10");
@@ -3790,7 +3793,7 @@ public class QRules implements Serializable {
 
 		/* we generate the tree view questions */
 		Ask treeAsk = generateQuestionsForTree(root.getCode(), expandableBe, rolesOfCurrentUser);
-		
+
 		/* setting all the default treeview-themes to the parent ask */
 		List<BaseEntity> defaultTreeViewThemes = new ArrayList<>();
 		defaultTreeViewThemes.add(treeviewMarginTheme);
@@ -3798,11 +3801,11 @@ public class QRules implements Serializable {
 		defaultTreeViewThemes.add(treeviewDefaultTheme);
 		defaultTreeViewThemes.add(treeviewContainerTheme);
 		defaultTreeViewThemes.add(treeviewInputIconTheme);
-		
+
 		createVirtualContext(treeAsk, defaultTreeViewThemes, ContextType.THEME);
 		createVirtualContext(treeAsk, treeviewInputTheme, ContextType.THEME, VisualControlType.INPUT);
 		createVirtualContext(treeAsk, treeviewShowIconTheme, ContextType.THEME, VisualControlType.INPUT);
-		
+
 		Ask[] completeAsk = { treeAsk };
 
 		/* Creating AskMessage with complete asks */
@@ -3817,7 +3820,8 @@ public class QRules implements Serializable {
 		this.publishCmd(treeMessage);
 	}
 
-	public Ask generateQuestionsForTree(String parentCode, BaseEntity expandableTheme, List<String> rolesOfCurrentUser) {
+	public Ask generateQuestionsForTree(String parentCode, BaseEntity expandableTheme,
+			List<String> rolesOfCurrentUser) {
 
 		// we grab the root
 		BaseEntity parent = this.baseEntity.getBaseEntityByCode(parentCode);
@@ -3839,10 +3843,10 @@ public class QRules implements Serializable {
 			 * except GRP_ROOT
 			 */
 			if (!"GRP_ROOT".equals(parent.getCode())) {
-				
+
 				/* apply expandable theme to the ask which has children */
 				createVirtualContext(parentAsk, expandableTheme, ContextType.THEME);
-				
+
 			}
 
 			/* getting filtered kids list according to the parentCode */
@@ -3879,15 +3883,15 @@ public class QRules implements Serializable {
 
 			/* setting the generated childAsks to the parent ask */
 			Ask[] kidAskArr = kidsAsk.stream().toArray(Ask[]::new);
-			
+
 			parentAsk.setChildAsks(kidAskArr);
 		}
-		
+
 		/* set the icon for the ask */
 		List<BaseEntity> iconBe = this.baseEntity.getLinkedBaseEntities(parentCode, "LNK_ICON");
-		if(iconBe != null && !iconBe.isEmpty()) {
-			log.info("Icons ::"+iconBe.toString() + " for parent code ::"+parentCode);
-			log.info("icon item ::"+iconBe.get(0));
+		if (iconBe != null && !iconBe.isEmpty()) {
+			log.info("Icons ::" + iconBe.toString() + " for parent code ::" + parentCode);
+			log.info("icon item ::" + iconBe.get(0));
 			createVirtualContext(parentAsk, iconBe.get(0), ContextType.ICON, VisualControlType.ICON);
 		}
 
@@ -3991,7 +3995,7 @@ public class QRules implements Serializable {
 		String token = getServiceToken();
 		String keycloakId = null;
 		try {
-			keycloakId = (String)KeycloakUtils.getDecodedToken(token).get("sub");
+			keycloakId = (String) KeycloakUtils.getDecodedToken(token).get("sub");
 		} catch (JSONException e1) {
 			keycloakId = realm; // give it something.
 		}
@@ -5595,7 +5599,7 @@ public class QRules implements Serializable {
 
 		// Sort results
 		Comparator<Tuple2<BaseEntity, Double>> comparator = new Comparator<Tuple2<BaseEntity, Double>>() {
-   @Override
+			@Override
 			public int compare(Tuple2<BaseEntity, Double> tupleA, Tuple2<BaseEntity, Double> tupleB) {
 				return tupleB._2.compareTo(tupleA._2);
 			}
@@ -5692,7 +5696,7 @@ public class QRules implements Serializable {
 		/* get table columns from search */
 		Map<String, String> columns = this.getTableColumns(search);
 
-		if(columns != null){
+		if (columns != null) {
 			/* get the list of baseentities from search */
 			List<BaseEntity> bes = new ArrayList<>();
 			try {
@@ -5700,29 +5704,40 @@ public class QRules implements Serializable {
 				if (bes != null && bes.isEmpty() == false) {
 
 					/* we grab the theme for table actions */
-					BaseEntity visualBaseEntity = this.baseEntity.getBaseEntityByCode("THM_TABLE_ACTIONS_VISUAL_CONTROL");
+					BaseEntity visualBaseEntity = this.baseEntity
+							.getBaseEntityByCode("THM_TABLE_ACTIONS_VISUAL_CONTROL");
 
 					/* we grab the icons for actions */
 					BaseEntity viewIconBe = this.baseEntity.getBaseEntityByCode("ICN_VIEW");
 					BaseEntity editIconBe = this.baseEntity.getBaseEntityByCode("ICN_EDIT");
 					BaseEntity deleteIconBe = this.baseEntity.getBaseEntityByCode("ICN_DELETE");
 					BaseEntity selectableTheme = this.baseEntity.getBaseEntityByCode("THM_SELECTABLE");
+					/* BaseEntity tableCellUnInheritableTheme = ContextUtils.getTableCellUnInheritableTheme(); */
+					BaseEntity tableCellUnInheritableTheme = this.baseEntity.getBaseEntityByCode("THM_TABLE_CELL_UNINHERITABLE");
+					BaseEntity noFlexTheme = ContextUtils.getNoFlexTheme();
 
 					publishBaseEntityByCode(visualBaseEntity.getCode());
 					publishBaseEntityByCode(viewIconBe.getCode());
 					publishBaseEntityByCode(editIconBe.getCode());
 					publishBaseEntityByCode(deleteIconBe.getCode());
 					publishBaseEntityByCode(selectableTheme.getCode());
+					publishBaseEntityByCode(tableCellUnInheritableTheme.getCode());
+					publishBaseEntityByCode(noFlexTheme.getCode());
 
 					this.println(visualBaseEntity.getCode());
 					this.println(viewIconBe.getCode());
 					this.println(editIconBe.getCode());
 					this.println(deleteIconBe.getCode());
 					this.println(selectableTheme.getCode());
+					this.println(tableCellUnInheritableTheme.getCode());
+					this.println(noFlexTheme.getCode());
 
-					// QDataBaseEntityMessage viewIconBeMsg = new QDataBaseEntityMessage(viewIconBe);
-					// QDataBaseEntityMessage editIconBeMsg = new QDataBaseEntityMessage(editIconBe);
-					// QDataBaseEntityMessage deleteIconBeMsg = new QDataBaseEntityMessage(deleteIconBe);
+					// QDataBaseEntityMessage viewIconBeMsg = new
+					// QDataBaseEntityMessage(viewIconBe);
+					// QDataBaseEntityMessage editIconBeMsg = new
+					// QDataBaseEntityMessage(editIconBe);
+					// QDataBaseEntityMessage deleteIconBeMsg = new
+					// QDataBaseEntityMessage(deleteIconBe);
 
 					// QBulkMessage bulkMsg = new QBulkMessage();
 					// bulkMsg.add(viewIconBeMsg);
@@ -5747,19 +5762,22 @@ public class QRules implements Serializable {
 							Attribute attr = RulesUtils.attributeMap.get(attributeCode);
 
 							/* if the column is an actions column */
-							if(attributeCode.equals("QUE_TABLE_ACTIONS_GRP")){
+							if (attributeCode.equals("QUE_TABLE_ACTIONS_GRP")) {
 
 								/* creating actions ask group */
-								Question actionGroupQuestion = new Question("QUE_" + be.getCode() + "_TABLE_ACTIONS_GRP", "Actions", attr, true);
+								Question actionGroupQuestion = new Question(
+										"QUE_" + be.getCode() + "_TABLE_ACTIONS_GRP", "Actions", attr, true);
 								Ask childAsk = new Ask(actionGroupQuestion, targetCode, be.getCode());
 
 								/* creating child ask for actions */
 								Attribute actionAttribute = RulesUtils.attributeMap.get("PRI_EVENT");
 
-
-								Question viewQues = new Question("QUE_VIEW_" + be.getCode(), "View", actionAttribute, true);
-								Question editQues = new Question("QUE_EDIT_" + be.getCode(), "Edit", actionAttribute, true);
-								Question deleteQues = new Question("QUE_DELETE_" + be.getCode(), "Delete", actionAttribute, true);
+								Question viewQues = new Question("QUE_VIEW_" + be.getCode(), "View", actionAttribute,
+										true);
+								Question editQues = new Question("QUE_EDIT_" + be.getCode(), "Edit", actionAttribute,
+										true);
+								Question deleteQues = new Question("QUE_DELETE_" + be.getCode(), "Delete",
+										actionAttribute, true);
 
 								List<Ask> actionChildAsks = new ArrayList<>();
 
@@ -5768,15 +5786,20 @@ public class QRules implements Serializable {
 								Ask deleteAsk = new Ask(deleteQues, this.getUser().getCode(), be.getCode());
 
 								/* set the contexts to the ask */
-								viewAsk = this.createVirtualContext(viewAsk, viewIconBe, ContextType.ICON, VisualControlType.ICON);
-								viewAsk = this.createVirtualContext(viewAsk, visualBaseEntity, ContextType.THEME, VisualControlType.DEFAULT);
+								viewAsk = this.createVirtualContext(viewAsk, viewIconBe, ContextType.ICON,
+										VisualControlType.ICON);
+								viewAsk = this.createVirtualContext(viewAsk, visualBaseEntity, ContextType.THEME,
+										VisualControlType.DEFAULT);
 
-								editAsk = this.createVirtualContext(editAsk, editIconBe, ContextType.ICON, VisualControlType.ICON);
-								editAsk = this.createVirtualContext(editAsk, visualBaseEntity, ContextType.THEME, VisualControlType.DEFAULT);
+								editAsk = this.createVirtualContext(editAsk, editIconBe, ContextType.ICON,
+										VisualControlType.ICON);
+								editAsk = this.createVirtualContext(editAsk, visualBaseEntity, ContextType.THEME,
+										VisualControlType.DEFAULT);
 
-								deleteAsk = this.createVirtualContext(deleteAsk, deleteIconBe, ContextType.ICON, VisualControlType.ICON);
-								deleteAsk = this.createVirtualContext(deleteAsk, visualBaseEntity, ContextType.THEME, VisualControlType.DEFAULT);
-
+								deleteAsk = this.createVirtualContext(deleteAsk, deleteIconBe, ContextType.ICON,
+										VisualControlType.ICON);
+								deleteAsk = this.createVirtualContext(deleteAsk, visualBaseEntity, ContextType.THEME,
+										VisualControlType.DEFAULT);
 
 								actionChildAsks.add(viewAsk);
 								actionChildAsks.add(editAsk);
@@ -5786,12 +5809,16 @@ public class QRules implements Serializable {
 								Ask[] actionChildAsksArr = actionChildAsks.stream().toArray(Ask[]::new);
 								childAsk.setChildAsks(actionChildAsksArr);
 
+								this.createVirtualContext(childAsk, tableCellUnInheritableTheme, ContextType.THEME);
+								this.createVirtualContext(childAsk, noFlexTheme, ContextType.THEME);
+
 								/* add the entityAttribute ask to list */
 								childAskList.add(childAsk);
 
-							}else{
+							} else {
 
-								Question childQuestion = new Question("QUE_" + attributeCode, attributeName, attr, true);
+								Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(),
+										attributeName, attr, true);
 								Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 
 								/* add the entityAttribute ask to list */
@@ -5807,16 +5834,13 @@ public class QRules implements Serializable {
 						Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
 								new DataType(String.class));
 
-
 						/* Generate ask for the baseentity */
 						Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
 								questionAttribute, true);
 						Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
 
 						/* apply selectable theme to each parent ask group */
-						createVirtualContext(parentAsk, selectableTheme, ContextType.THEME,
-								VisualControlType.DEFAULT);
-
+						createVirtualContext(parentAsk, selectableTheme, ContextType.THEME, VisualControlType.DEFAULT);
 
 						/* setting weight to parent ask */
 						parentAsk.setWeight(be.getIndex().doubleValue());
@@ -5835,7 +5859,6 @@ public class QRules implements Serializable {
 			}
 
 		}
-
 
 		/* return list of asks */
 		return askList;
@@ -5861,8 +5884,6 @@ public class QRules implements Serializable {
 	}
 
 	public BaseEntity createVirtualLink(BaseEntity source, Ask ask, String linkCode, String linkValue) {
-		
-		
 
 		if (source != null) {
 
@@ -5913,46 +5934,53 @@ public class QRules implements Serializable {
 		return createVirtualContext(ask, themeList, linkCode, VisualControlType.DEFAULT);
 	}
 
-	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType) {
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode,
+			VisualControlType visualControlType) {
 		List<BaseEntity> themeList = new ArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType);
 	}
-	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType, Double weight) {
+
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode,
+			VisualControlType visualControlType, Double weight) {
 		List<BaseEntity> themeList = new ArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType, weight);
 	}
 
-	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType) {
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode,
+			VisualControlType visualControlType) {
 		return createVirtualContext(ask, themes, linkCode, visualControlType, 2.0);
 	}
 
 	/**
-	 * Embeds the list of contexts (themes, icon) into an ask and also publishes the themes
+	 * Embeds the list of contexts (themes, icon) into an ask and also publishes the
+	 * themes
+	 *
 	 * @param ask
 	 * @param themes
 	 * @param linkCode
 	 * @param weight
 	 * @return
 	 */
-	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode, VisualControlType visualControlType, Double weight) {
+	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode,
+			VisualControlType visualControlType, Double weight) {
 
 		List<Context> completeContext = new ArrayList<>();
 
-		for(BaseEntity theme : themes) {
+		for (BaseEntity theme : themes) {
 			Context context = new Context(linkCode, theme, visualControlType, weight);
 			completeContext.add(context);
-			
+
 			/* publish the theme baseentity message */
 			QDataBaseEntityMessage themeMsg = new QDataBaseEntityMessage(theme);
 			publishCmd(themeMsg);
 		}
 
 		ContextList contextList = ask.getContextList();
-		if(contextList != null) {
+		if (contextList != null) {
 			List<Context> contexts = contextList.getContexts();
-			if(contexts.isEmpty()) {
+			if (contexts.isEmpty()) {
 				contexts = new ArrayList<>();
 				contexts.addAll(completeContext);
 			} else {
@@ -6014,7 +6042,6 @@ public class QRules implements Serializable {
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
 
-
 			String attributeCode = column.getKey();
 			String attributeName = column.getValue();
 
@@ -6030,7 +6057,7 @@ public class QRules implements Serializable {
 			Ask columnSortAsk = getAskForTableHeaderSort(searchBe, attributeCode, attributeName, eventAttribute);
 
 			/* creating Ask for table header search input */
-			Question columnSearchQues = new Question("QUE_SEARCH_" + attributeCode, attributeName, searchAttribute,
+			Question columnSearchQues = new Question("QUE_SEARCH_" + attributeCode, "Search " + attributeName + "..", searchAttribute,
 					false);
 			Ask columnSearchAsk = new Ask(columnSearchQues, this.getUser().getCode(), searchBe.getCode());
 
@@ -6053,8 +6080,11 @@ public class QRules implements Serializable {
 		/* Convert List to Array */
 		Ask[] asksArray = asks.toArray(new Ask[0]);
 
-		/* we create a table-header ask grp and set all the column asks as it's childAsk */
-		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", "Table Header Question Group", questionAttribute, true);
+		/*
+		 * we create a table-header ask grp and set all the column asks as it's childAsk
+		 */
+		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", "Table Header Question Group",
+				questionAttribute, true);
 
 		Ask tableHeaderAsk = new Ask(tableHeaderQuestion, this.getUser().getCode(), searchBe.getCode());
 		tableHeaderAsk.setChildAsks(asksArray);
@@ -6062,7 +6092,8 @@ public class QRules implements Serializable {
 		return tableHeaderAsk;
 	}
 
-	private Ask getAskForTableHeaderSort(SearchEntity searchBe, String attributeCode, String attributeName, Attribute eventAttribute) {
+	private Ask getAskForTableHeaderSort(SearchEntity searchBe, String attributeCode, String attributeName,
+			Attribute eventAttribute) {
 
 		/* creating Ask for table header column sort */
 		Question columnSortQues = new Question("QUE_SORT_" + attributeCode, attributeName, eventAttribute, false);
@@ -6090,16 +6121,16 @@ public class QRules implements Serializable {
 
 		return columnSortAsk;
 	}
-	
+
 	public void sendForm(String questionGroupCode, String sourceCode, String targetCode) {
-		
+
 		/* get the content frame */
 		BaseEntity contentBe = this.baseEntity.getBaseEntityByCode("FRM_CONTENT");
-		
+
 		/* Get the ask Message for the question group code */
 		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionGroupCode, serviceToken);
 		Ask[] askArr = askMessage.getItems();
-						
+
 		/* get all visual baseentities and themes */
 		BaseEntity defaultFormInputBe = ContextUtils.getDefaultFormInputTheme();
 		BaseEntity defaultFormLabelBe = ContextUtils.getDefaultFormLabelTheme();
@@ -6108,96 +6139,100 @@ public class QRules implements Serializable {
 		BaseEntity defaultFormThemeBe = ContextUtils.getDefaultFormTheme();
 		BaseEntity defaultFormContainerBe = ContextUtils.getDefaultFormContainerTheme();
 		BaseEntity verticalScrollBe = this.baseEntity.getBaseEntityByCode("THM_CONTENT_VERTICAL_SCROLL");
-		
-		/* iterate through all child asks and create link between between the ask and the theme */
-		if(askArr != null) {
-			for(Ask childAsk : askArr) {
-				/* create virtual themes for the ask */				
+
+		/*
+		 * iterate through all child asks and create link between between the ask and
+		 * the theme
+		 */
+		if (askArr != null) {
+			for (Ask childAsk : askArr) {
+				/* create virtual themes for the ask */
 				createVirtualContext(childAsk, defaultFormInputBe, ContextType.THEME, VisualControlType.INPUT);
 				createVirtualContext(childAsk, defaultFormLabelBe, ContextType.THEME, VisualControlType.LABEL);
 				createVirtualContext(childAsk, defaultFormWrapperBe, ContextType.THEME, VisualControlType.WRAPPER);
 				createVirtualContext(childAsk, defaultFormErrorBe, ContextType.THEME, VisualControlType.ERROR);
 				createVirtualContext(childAsk, defaultFormThemeBe, ContextType.THEME, VisualControlType.DEFAULT);
 				createVirtualContext(childAsk, defaultFormContainerBe, ContextType.THEME, VisualControlType.DEFAULT);
-				
+
 				List<Ask> list = new ArrayList<>(Arrays.asList(childAsk.getChildAsks()));
-				
+
 				String questionAttribute = childAsk.getAttributeCode();
-				
-				/* create asks for question-group buttons according to attribute code of the question-group */
+
+				/*
+				 * create asks for question-group buttons according to attribute code of the
+				 * question-group
+				 */
 				List<Ask> buttonAsks = getFormButtonAsks(questionAttribute, sourceCode, targetCode);
-				
+
 				list.addAll(buttonAsks);
-				
+
 				childAsk.setChildAsks(list.stream().toArray(Ask[]::new));
 			}
 		}
-		
+
 		/* publishing vertical scroll be and ask message */
 		QDataBaseEntityMessage scrollThemeMsg = new QDataBaseEntityMessage(verticalScrollBe);
 		publishCmd(scrollThemeMsg);
 		publishCmd(askMessage);
-		
+
 		/* publish frame message */
-		if(askMessage.getItems() != null && askMessage.getItems().length > 0) {
+		if (askMessage.getItems() != null && askMessage.getItems().length > 0) {
 			BaseEntity frameBe = createVirtualLink(contentBe, askMessage.getItems()[0], "LNK_ASK", "CENTRE");
-			
+
 			/* create virtual link between a scroll theme and content-frame */
 			createVirtualLink(frameBe, verticalScrollBe, "LNK_THEME", "CENTRE", 0.0);
-			
+
 			QDataBaseEntityMessage frameMsg = new QDataBaseEntityMessage(frameBe);
 			frameMsg.setReplace(true);
 			publishCmd(frameMsg);
-		}		
+		}
 	}
 
 	private List<Ask> getFormButtonAsks(String questionAttribute, String sourceCode, String targetCode) {
-		
+
 		List<Ask> formButtonAsks = new ArrayList<>();
-		
+
 		/* get theme for button */
 		BaseEntity buttonThemeBe = ContextUtils.getFormButtonTheme();
-		
+
 		switch (questionAttribute) {
-		
+
 		case "QQQ_QUESTION_GROUP":
 		case "QQQ_QUESTION_GROUP_BUTTON_SUBMIT":
-			
+
 			/* create ask for default submit button */
 			Ask buttonAsk = getQuestion(sourceCode, targetCode, "QUE_SUBMIT_BUTTON");
 			createVirtualContext(buttonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
 			formButtonAsks.add(buttonAsk);
 			break;
-			
+
 		case "QQQ_QUESTION_GROUP_BUTTON_CANCEL_SUBMIT":
-			
+
 			/* create ask for submit button */
 			Ask submitButtonAsk = getQuestion(sourceCode, targetCode, "QUE_SUBMIT_BUTTON");
 			createVirtualContext(submitButtonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
-			
+
 			/* create ask for cancel button */
 			Ask cancelButtonAsk = getQuestion(sourceCode, targetCode, "QUE_CANCEL_BUTTON");
 			createVirtualContext(cancelButtonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
-			
+
 			formButtonAsks.add(submitButtonAsk);
 			formButtonAsks.add(cancelButtonAsk);
 			break;
 		default:
 			break;
 		}
-		
+
 		return formButtonAsks;
 	}
 
 	/*
-		* returns a new SearchEntity using the given
-		* searchEntity code and
-		* current user's sessionId
-	*/
-	public SearchEntity getSessionBasedSearchEntity(String searchCode){
-
+	 * returns a new SearchEntity using the given searchEntity code and current
+	 * user's sessionId
+	 */
+	public SearchEntity getSessionBasedSearchEntity(String searchCode) {
 		SearchEntity searchBe = null;
-		try{
+		try {
 			/* get searchBe from cache */
 			searchBe = this.baseEntity.getSearchEntityByCode(searchCode);
 
@@ -6209,10 +6244,13 @@ public class QRules implements Serializable {
 
 			return searchBe;
 
-		}catch (Exception e) {
+		} catch (Exception e) {
 
 		}
 		return searchBe;
+
+		//
+
 	}
 
 }
