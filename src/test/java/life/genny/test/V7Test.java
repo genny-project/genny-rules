@@ -63,7 +63,7 @@ public class V7Test {
 
 		/* create table-footer frame */
 		BaseEntity frameTableFooterBe = new BaseEntity("FRM_TABLE_FOOTER", "table-footer");
-		
+
 		/* create a frame-content baseentity */
 		BaseEntity contentBe = new BaseEntity("FRM_CONTENT", "content-frame");
 
@@ -94,26 +94,26 @@ public class V7Test {
 
 		/* send table content */
 		sendTableContent(frameTableBe, frameTableContentBe);
-		
+
 		/* send table footer */
 		sendTableFooter(frameTableBe, frameTableFooterBe);
-		
+
 		/* link content-frame to table-frame */
 		linkTableToContentFrame(frameTableBe, contentBe);
 
 	}
-	
+
 	public void sendTableFooter(BaseEntity frameTableBe, BaseEntity frameTableFooterBe) {
-		
+
 		/* Get the on-the-fly question attribute */
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 
 		/* Construct a table footer question: QUE_FRM_TABLE_FOOTER_GRP */
 		Question tableFooterQues = new Question("QUE_TABLE_FOOTER_GRP", "Table Footer", questionAttribute, true);
-		
+
 		/* Construct a table footer Ask */
 		Ask tableFooterAsk = new Ask(tableFooterQues, "PER_USER1", "SBE_HOSTCOMPANIES_7fa24b4b-a19a-4938-b363-a40fe9aa5b28", false, 1.0, false, false, true);
-		
+
 		/* Ask List to store all the table-footer and table-column child asks */
 		List<Ask> tableFooterChildAsks = new ArrayList<>();
 
@@ -132,7 +132,7 @@ public class V7Test {
 		Attribute previousAttr = new Attribute("PRI_PREVIOUS", "PRI_PREVIOUS", new DataType("Event", eventValidationList, "Event"));
 		Attribute nextAttr = new Attribute("PRI_NEXT", "PRI_NEXT", new DataType("Event", eventValidationList, "Event"));
 		Attribute dropdownAttr = new Attribute("LNK_ITEMS_PER_PAGE", "No Of Items", new DataType("dropdown", dropdownValidationList, "dropdown"));
-		
+
 		List<Attribute> attributeList = new ArrayList<>();
 		attributeList.add(previousAttr);
 		attributeList.add(nextAttr);
@@ -160,7 +160,7 @@ public class V7Test {
 		Attribute linkAttribute = new Attribute("LNK_CORE", "link", new DataType(String.class));
 
 		Set<EntityEntity> entEntSet = new HashSet<>();
-		
+
 		for(BaseEntity item : itemList ){
 			EntityEntity ee = new EntityEntity(grpItems, item, linkAttribute, 1.0, "ITEMS");
 			entEntSet.add(ee);
@@ -172,7 +172,7 @@ public class V7Test {
 		/* we publish GRP_ITEMS_PER_PAGE */
 		QDataBaseEntityMessage grpItemsMsg = new QDataBaseEntityMessage(grpItems);
 		sendTestMsg(grpItemsMsg);
-		
+
 		QDataBaseEntityMessage itemsMsg = new QDataBaseEntityMessage(itemList, grpItems.getCode(), "LNK_CORE");
 		sendTestMsg(itemsMsg);
 
@@ -196,16 +196,16 @@ public class V7Test {
 
 		/* set the child asks to Table Footer */
 		tableFooterAsk.setChildAsks(tableFooterChildAsksArray);
-		
+
 		/* set the horizontal theme to tableFooterAsk */
 		Context horizontalTheme = getHorizontalThemeForTableContent();
-		
+
 		/* setting context to footerAsk */
 		List<Context> contexts = new ArrayList<>();
 		contexts.add(horizontalTheme);
 		ContextList footerContext = new ContextList(contexts);
 		tableFooterAsk.setContextList(footerContext);
-		
+
 		Ask[] askArr = { tableFooterAsk };
 
 		/* Creating AskMessage */
@@ -213,13 +213,13 @@ public class V7Test {
 
 		/* Send Table Footer Questions */
 		sendTestMsg(tableFooterAskMsg);
-			
+
 		/* Link Table Footer Frame and Table Footer Question */
 		Link link = new Link(frameTableFooterBe.getCode(), tableFooterQues.getCode(), "LNK_ASK", "NORTH");
 
 		/* we create the entity entity */
 		EntityQuestion entityQuestion = new EntityQuestion(link);
-		
+
 		/* creating entity entity between table-frame and table-footer */
 		Set<EntityQuestion> entQuestionList = new HashSet<>();
 		entQuestionList.add(entityQuestion);
@@ -228,12 +228,12 @@ public class V7Test {
 		frameTableFooterBe.setQuestions(entQuestionList);
 
 		QDataBaseEntityMessage frameTableFooterMsg = new QDataBaseEntityMessage(frameTableFooterBe);
-		
+
 		/* Send Table Footer Frame with questions attached. */
 		sendTestMsg(frameTableFooterMsg);
 
 	}
-	
+
 	public void sendTableHeader(BaseEntity frameTableBe, BaseEntity frameTableHeaderBe) {
 
 		/* Get the on-the-fly question attribute */
@@ -241,39 +241,39 @@ public class V7Test {
 
 		/* Construct a table header question: QUE_FRM_TABLE_HEADER_GRP */
 		Question tableHeaderQues = new Question("QUE_TABLE_HEADER_GRP", "Table Header", questionAttribute, true);
-		
+
 		/* Construct a table header Ask */
 		Ask tableHeaderAsk = new Ask(tableHeaderQues, "PER_USER1", "PER_USER1", false, 1.0, false, false, true);
-		
+
 		/* Ask List to store all the table-header and table-column child asks */
 		List<Ask> tableHeaderChildAsks = new ArrayList<>();
-		
+
 		/* Get Search Results */
 		BaseEntity[] searchResult = getCompaniesSearchResult();
-		
+
 		/* Get list of attributes we want to show in table header */
 		if (searchResult != null) {
 
 			BaseEntity be = searchResult[0];
-			
+
 			/* Validation for Quesion Event */
 			ValidationList eventValidationList = new ValidationList();
 			Attribute eventAttr = new Attribute("PRI_SORT", "PRI_SORT", new DataType("Event", eventValidationList, "Event"));
-			
+
 			/* Validation for Quesion Label */
 			ValidationList labelValidationList = new ValidationList();
 			Attribute labelAttr = new Attribute("PRI_LABEL", "PRI_LABEL",new DataType("QuestionName", labelValidationList, "QuestionName"));
-			
+
 			List<Attribute> attributes = new ArrayList<>();
 			attributes.add(eventAttr);
 			//attributes.add(labelAttr);
-			
+
 			Attribute[] attributesArray = attributes.toArray(new Attribute[0]);
 			QDataAttributeMessage attrMsg = new QDataAttributeMessage(attributesArray);
 
 			/* Send new attributes */
 			sendTestMsg(attrMsg);
-		
+
 			/* get the required themes */
 			Context verticalTheme = getVerticalThemeForTableContent();
 			Context labelTheme = getLabelVisualControlContext();
@@ -287,25 +287,25 @@ public class V7Test {
 				validations.add(validation);
 				ValidationList validationList = new ValidationList();
 				validationList.setValidationList(validations);
-				
-				Attribute attr = new Attribute(ea.getAttributeCode(), ea.getAttributeName(), new DataType("Text", validationList, "Text"));				
+
+				Attribute attr = new Attribute(ea.getAttributeCode(), ea.getAttributeName(), new DataType("Text", validationList, "Text"));
 
 				/* question for column label */
 				String attributeCode = ea.getAttributeCode();
 				String[] parts = attributeCode.split("_");
 				String questionName = parts[1];
 				System.out.println("questionName    ::   " + questionName);
-				
+
 				/* question for column header group */
 				Question columnHeaderQuestion = new Question("QUE_" + ea.getAttributeCode() + "_GRP", questionName, questionAttribute, true);
-				
+
 				/* ask for column header group */
 				Ask columnHeaderAsk = new Ask(columnHeaderQuestion, "PER_USER1", "PER_USER1");
-				
+
 				Question columnQuestion = new Question("QUE_" + ea.getAttributeCode(), questionName, labelAttr, true);
 				/* creating ask for table header topic */
 				Ask columnTopicAsk = new Ask(columnQuestion, "PER_USER1", "PER_USER1");
-				
+
 				List<Context> contexts = new ArrayList<>();
 				contexts.add(labelTheme);
 				ContextList contextList = new ContextList(contexts);
@@ -314,7 +314,7 @@ public class V7Test {
 				/* question for column SORT */
 				Question columnSortQuestion = new Question("QUE_SORT_" + eventAttr.getCode(), "Sort", eventAttr, true);
 				columnSortQuestion.setMandatory(false);
-				
+
 				/* question for column SEARCH */
 				Question columnSearchQuestion = new Question("QUE_SEARCH_" + ea.getAttributeCode(), ea.getAttributeName(), attr, true);
 
@@ -324,19 +324,19 @@ public class V7Test {
 
 				List<Ask> tableColumnChildAsks = new ArrayList<>();
 				tableColumnChildAsks.add(columnTopicAsk);
-				
+
 				for (Question question : questions) {
 					Ask columnAsk = new Ask(question, "PER_USER1", "PER_USER1");
 
 					tableColumnChildAsks.add(columnAsk);
 				}
-				
+
 				/* Convert ask list to Array */
 				Ask[] tableColumnChildAsksArray = tableColumnChildAsks.toArray(new Ask[0]);
 
 				/* set the child asks */
 				columnHeaderAsk.setChildAsks(tableColumnChildAsksArray);
-				
+
 				/* setting all theme contexts to header Ask */
 				List<Context> columnHeaderContexts = new ArrayList<>();
 				columnHeaderContexts.add(verticalTheme);
@@ -356,13 +356,13 @@ public class V7Test {
 
 			/* set the horizontal theme to tableHeaderAsk */
 			Context horizontalTheme = getHorizontalThemeForTableContent();
-		
+
 			/* setting theme contexts for tableHeader */
 			List<Context> headerAskContexts = new ArrayList<>();
 			headerAskContexts.add(horizontalTheme);
 			ContextList headerAskContextList = new ContextList(headerAskContexts);
 			tableHeaderAsk.setContextList(headerAskContextList);
-			
+
 			Ask[] askArr = { tableHeaderAsk };
 
 			/* Creating AskMessage */
@@ -370,7 +370,7 @@ public class V7Test {
 
 			/* Send Table Header Questions */
 			sendTestMsg(tableHeaderAskMsg);
-			
+
 		}
 
 
@@ -404,7 +404,7 @@ public class V7Test {
 		BaseEntity[] searchResult = getCompaniesSearchResult();
 
 		if (searchResult != null) {
-			
+
 			/* get the theme contexts */
 			Context evenColumnTheme = getThemeForEvenTableContent();
 			Context oddColoumnTheme = getThemeForOddTableContent();
@@ -412,21 +412,21 @@ public class V7Test {
 			Context horizontalThemeContext = getHorizontalThemeForTableContent();
 			/* getting border theme */
 			Context borderContext = getBorderThemeForTableContent();
-			
+
 			/*create theme context list for even column */
 			List<Context> contextsForEvenColumn = new ArrayList<>();
 			contextsForEvenColumn.add(horizontalThemeContext);
 			contextsForEvenColumn.add(borderContext);
 			contextsForEvenColumn.add(evenColumnTheme);
 			ContextList contextListForEvenColumn = new ContextList(contextsForEvenColumn);
-			
+
 			/*create theme context list for odd column */
 			List<Context> contextsForOddColumn = new ArrayList<>();
 			contextsForOddColumn.add(horizontalThemeContext);
 			contextsForOddColumn.add(borderContext);
 			contextsForOddColumn.add(oddColoumnTheme);
 			ContextList contextListForOddColumn = new ContextList(contextsForOddColumn);
-			
+
 			for (BaseEntity be : searchResult) {
 
 				List<Ask> childAskList = new ArrayList<>();
@@ -435,9 +435,9 @@ public class V7Test {
 				 * iterating through each attribute of baseentity and creating questions for the
 				 * attribute
 				 */
-				
+
 				for (EntityAttribute ea : be.getBaseEntityAttributes()) {
-					
+
 					/* get text validation */
 					ValidationList validationList = getTextValidation();
 
@@ -453,7 +453,7 @@ public class V7Test {
 				/* We generate the question the baseentity */
 				Question newQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(), questionAttribute,
 						true);
-				
+
 				/* We generate the ask */
 				Ask beAsk = new Ask(newQuestion, "PER_USER1", be.getCode());
 
@@ -463,7 +463,7 @@ public class V7Test {
 				}else {
 					beAsk.setContextList(contextListForOddColumn);
 				}
-					
+
 				Ask[] childArr = childAskList.stream().toArray(Ask[]::new);
 				beAsk.setChildAsks(childArr);
 
@@ -479,7 +479,7 @@ public class V7Test {
 				entQuestionList.add(entityEntity);
 				System.out.println("index of "+be.getCode()+" is"+be.getIndex());
 				Ask[] beAskArr = { beAsk };
-				
+
 				/* Creating AskMessage with complete asks */
 				QDataAskMessage totalAskMsg = new QDataAskMessage(beAskArr);
 				sendTestMsg(totalAskMsg);
@@ -521,39 +521,39 @@ public class V7Test {
 		/* create context */
         /* getting the vertical theme baseentity */
 		BaseEntity verticalTheme = new BaseEntity("THM_DISPLAY_VERTICAL", "vertical");
-		
+
 		 /* publishing theme for vertical display */
 		/* creating a context for the vertical-display */
 		Context verticalThemeContext = new Context(ContextType.THEME, verticalTheme);
 
 		return verticalThemeContext;
 	}
-	
+
 	private Context getLabelVisualControlContext() {
 		/* create visual baseentity for question with label */
 		BaseEntity visualBaseEntity = new BaseEntity("THM_VISUAL_CONTROL_LABEL", "Theme Visual Control For Label");
-		
+
 		Attribute labelAttr = new Attribute("PRI_HAS_LABEL", "Has Label?", new DataType(Boolean.class));
 		EntityAttribute labelEntityAttribute = new EntityAttribute(visualBaseEntity, labelAttr, 1.0, "TRUE");
 		Set<EntityAttribute> attributeSet = new HashSet<>();
-		attributeSet.add(labelEntityAttribute);	
+		attributeSet.add(labelEntityAttribute);
 		visualBaseEntity.setBaseEntityAttributes(attributeSet);
-		
+
 		QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(visualBaseEntity);
 		/* send visual baseentity */
 		sendTestMsg(beMsg);
-		
+
 		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.LABEL);
 		return visualContext;
 	}
-	
+
 	private Context getBorderThemeForTableContent() {
 		/* create context */
         /* getting the expandable theme baseentity */
 		BaseEntity borderTheme = new BaseEntity("THM_TABLE_BORDER", "table border");
-		
+
 		String borderAttribute = "{  \"borderStyle\": \"solid\", \"borderColour\" : \"#dee2e6\", \"borderWidth\" : 0.5 }";
-		
+
 		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
 		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
 		EntityAttribute entAttr = new EntityAttribute(borderTheme, att, 1.0, borderAttribute);
@@ -561,50 +561,50 @@ public class V7Test {
 		Set<EntityAttribute> entAttrSet = new HashSet<>();
 		entAttrSet.add(entAttr);
 		entAttrSet.add(inheritEntAtt);
-		
+
 		borderTheme.setBaseEntityAttributes(entAttrSet);
-		
+
 		QDataBaseEntityMessage borderThemeMsg = new QDataBaseEntityMessage(borderTheme);
 		sendTestMsg(borderThemeMsg);
-		
+
 		 /* publishing theme for expanding */
 		/* creating a context for the expandable-theme */
 		Context borderThemeContext = new Context(ContextType.THEME, borderTheme);
 
 		return borderThemeContext;
 	}
-	
+
 	private Context getThemeForEvenTableContent() {
 		/* create context */
 		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_EVEN", "table background");
-		
+
 		String bgAttribute = "{  \"backgroundColor\": \"#F2F2F2\", \"color\": \"#212529\" , \"padding\" : \"5px\", \"boxSizing\": \"borderBox\"}";
-		
+
 		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
 		EntityAttribute entAttr = new EntityAttribute(backgroundTheme, att, 1.0, bgAttribute);
 		Set<EntityAttribute> entAttrSet = new HashSet<>();
 		entAttrSet.add(entAttr);
-		
+
 		backgroundTheme.setBaseEntityAttributes(entAttrSet);
 		QDataBaseEntityMessage bgMessage = new QDataBaseEntityMessage(backgroundTheme);
 		sendTestMsg(bgMessage);
-	
+
 		Context bgThemeContext = new Context(ContextType.THEME, backgroundTheme);
 
 		return bgThemeContext;
 	}
-	
+
 	private Context getThemeForOddTableContent() {
 		/* create context */
 		BaseEntity backgroundTheme = new BaseEntity("THM_TABLE_ODD", "table background");
-		
+
 		String bgAttribute = "{  \"backgroundColor\": \"#FFFFFF\", \"color\": \"#212529\" , \"padding\" : \"5px\", \"boxSizing\": \"borderBox\"}";
-		
+
 		Attribute att = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
 		EntityAttribute entAttr = new EntityAttribute(backgroundTheme, att, 1.0, bgAttribute);
 		Set<EntityAttribute> entAttrSet = new HashSet<>();
 		entAttrSet.add(entAttr);
-		
+
 		backgroundTheme.setBaseEntityAttributes(entAttrSet);
 		QDataBaseEntityMessage bgMessage = new QDataBaseEntityMessage(backgroundTheme);
 		sendTestMsg(bgMessage);
@@ -613,7 +613,7 @@ public class V7Test {
 
 		return bgThemeContext;
 	}
-	
+
 	private ValidationList getTextValidation() {
 		Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
 		List<Validation> validations = new ArrayList<>();
@@ -675,7 +675,7 @@ public class V7Test {
 			        .addFilter("PRI_IS_HOST_COMPANY", true)
 			        .setPageStart(0)
 			        .setPageSize(11);
-			
+
 			String jsonSearchBE = JsonUtils.toJson(hostCompanies);
 			resultJson = QwandaUtils.apiPostEntity("http://keycloak.genny.life:8280/qwanda/baseentitys/search",
 					jsonSearchBE, serviceToken);
