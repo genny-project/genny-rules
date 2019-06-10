@@ -64,6 +64,7 @@ import life.genny.eventbus.EventBusInterface;
 import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
+import life.genny.models.GennyToken;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.GennySettings;
@@ -89,6 +90,9 @@ public class RulesLoader {
 	public static Map<String, User> usersSession = new HashMap<String, User>();
 
 	static Environment env; // drools persistence
+	
+	static KieSessionConfiguration ksconf = null;
+
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
@@ -155,6 +159,11 @@ public class RulesLoader {
 			Integer rulesCount = setupKieRules(realm, rules);
 			log.info("Rules Count for " + realm + " = " + rulesCount);
 		}
+		
+		// set up kie conf
+		ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+		ksconf.setOption(TimedRuleExecutionOption.YES);
+
 	}
 
 	/**
@@ -754,31 +763,9 @@ public class RulesLoader {
 	}
 
 	public static Map<String, Object> getDecodedTokenMap(final String token) {
-		Map<String, Object> decodedToken = null;
-		if ((token != null) && (!token.isEmpty())) {
-			// Getting decoded token in Hash Map from QwandaUtils
-			decodedToken = KeycloakUtils.getJsonMap(token);
-			/*
-			 * Getting Prj Realm name from KeyCloakUtils - Just cheating the keycloak realm
-			 * names as we can't add multiple realms in genny keyclaok as it is open-source
-			 */
-			final String projectRealm = KeycloakUtils.getPRJRealmFromDevEnv();
-			if ((projectRealm != null) && (!projectRealm.isEmpty())) {
-				decodedToken.put("realm", projectRealm);
-			} else {
-				// Extracting realm name from iss value
-				final String realm = (decodedToken.get("iss").toString()
-						.substring(decodedToken.get("iss").toString().lastIndexOf("/") + 1));
-				// Adding realm name to the decoded token
-				decodedToken.put("realm", realm);
-			}
-			// log.info("###### The realm name is: ##### " + decodedToken.get("realm"));
-			// Printing Decoded Token values
-			// for (final Map.Entry entry : decodedToken.entrySet()) {
-			// log.info(entry.getKey() + ", " + entry.getValue());
-			// }
-		}
-		return decodedToken;
+		GennyToken gennyToken = new GennyToken(token);
+		
+		return gennyToken.getAdecodedTokenMap();
 	}
 
 	public static List<Tuple2<String, Object>> getStandardGlobals() {
@@ -926,4 +913,61 @@ public class RulesLoader {
 		return new HashMap<File, ResourceType>(); // TODO
 	}
 
+	public static KieSession setupStatefulKieSession(final String realm)
+	{
+		StatefulKnowledgeSession kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(realm), ksconf, env); // This
+		addHandlers(kieSession);
+		return kieSession;
+	}
+	
+	public static void addHandlers(KieSession kieSession)
+	{
+		// Register handlers
+		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
+		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
+		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
+
+	}
+	
+	public static void processStatefulMessage(QEventMessage message,final GennyToken gennyToken) {
+
+		final String realm = gennyToken.getToken();
+		// Service Token
+		String serviceTokenStr = VertxUtils.getObject(realm, "CACHE", "SERVICE_TOKEN", String.class);
+		GennyToken serviceToken = new GennyToken("PER_SERVICE",serviceTokenStr);
+		List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
+		RulesLoader.getStandardGlobals();
+
+
+
+		try {
+			if (getKieBaseCache().get(realm) == null) {
+				log.error("The realm  kieBaseCache is null, not loaded " + realm);
+				return;
+			}
+
+			// create a new knowledge session that uses JPA to store the runtime state
+			// is
+			KieSession kieSession = setupStatefulKieSession(realm);
+			int sessionId = kieSession.getId();
+			log.info("Session id = " + sessionId);
+
+			kieSession.insert(log);
+
+			kieSession.insert(message);
+			kieSession.insert(gennyToken);
+			kieSession.insert(serviceToken);
+
+			int rulesFired = kieSession.fireAllRules();
+
+			log.info("Fired " + rulesFired + " rules");
+			log.info("finished rules");
+			kieSession.dispose();
+
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
 }
