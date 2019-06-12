@@ -833,6 +833,8 @@ public class RulesLoader {
 		QRules qRules = new QRules(eventBus, token);
 		qRules.set("realm", realm);
 		qRules.setServiceToken(token);
+		
+		GennyToken serviceToken = new GennyToken("PER_SERVICE",token);
 
 		List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();
 
@@ -840,6 +842,7 @@ public class RulesLoader {
 		facts.add(qRules);
 		facts.add(msg);
 		facts.add(qRules.getDecodedTokenMap());
+		facts.add(serviceToken);
 		facts.add(auserRoles);
 		User currentUser = new User("service", "Service", realm, "admin");
 		facts.add(currentUser);

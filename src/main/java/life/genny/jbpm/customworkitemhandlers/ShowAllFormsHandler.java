@@ -22,6 +22,7 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.QRules;
 import life.genny.utils.QuestionUtils;
+import life.genny.utils.VertxUtils;
 
 public class ShowAllFormsHandler implements WorkItemHandler {
 
@@ -44,7 +45,14 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 
 			/* create a test baseentity */
 			BaseEntity testBe = new BaseEntity("GRP_FORM_TEST_BE", "Forms test");
-
+			
+			BaseEntity rootGrp = VertxUtils.readFromDDT(rules.realm(),  "GRP_ROOT", true,rules.getServiceToken());
+			log.info("ROOT_GRP "+rootGrp);
+			rootGrp = rules.createVirtualLink(rootGrp, testBe, "LINK_CORE", "TEST",1000.0);
+			QDataBaseEntityMessage rootMsg = new QDataBaseEntityMessage(rootGrp);
+			rules.publishCmd(rootMsg);
+						
+			
 			/* get the theme */
 			BaseEntity expandable = rules.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
 
@@ -59,26 +67,20 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 				List<String> formCodes = JsonUtils.fromJson(jsonFormCodes, type);
 				log.info("Form Codes=" + formCodes);
 
-//				List<Ask> askList = new ArrayList<>();
-//				String userCode = rules.getUser().getCode();
-//		//		 String formCode = "QUE_BUYER_GRP";
-//				int i=0;
-//				for (String formCode : formCodes) {
-//					log.info("Asking group = "+formCode);
-//					if ("QUE_BUYER_COMPANY_GRP".equals(formCode)) {
-//					rules.sendForm(formCode, userCode, userCode);
-//					/*
-//					 * create child Asks for the parents question to test different formats of
-//					 * question groups
-//					 */
-//					BaseEntity grpBe = new BaseEntity(formCode, formCode);
-//					Ask ask = QuestionUtils.createQuestionForBaseEntity(grpBe, false, rules.getToken());
-//					/* collect all child asks and set to the parent ask */
-//					askList.add(ask);
-//					}
-//					i++;
-//			//		if (i > 3) { break;}
-//				}
+				List<Ask> askList = new ArrayList<>();
+				String userCode = rules.getUser().getCode();
+				for (String formCode : formCodes) {
+					log.info("Asking group = "+formCode);
+					/*
+					 * create child Asks for the parents question to test different formats of
+					 * question groups
+					 */
+					BaseEntity grpBe = new BaseEntity(formCode, formCode);
+					Ask ask = QuestionUtils.createQuestionForBaseEntity(grpBe, false, rules.getToken());
+					/* collect all child asks and set to the parent ask */
+					askList.add(ask);
+
+					}
 
 //				formCode = "QUE_ADD_HOST_COMPANY_STAFF_GRP";
 //				
@@ -90,27 +92,27 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 //				askList.add(ask);
 		
 				/* create child Asks for the parents question to test different formats of question groups */
-				BaseEntity buyerGroupTestBe = new BaseEntity("GRP_BUYER_GROUP_FORM_TEST_BE", "Buyer group test form");
-				Ask buyerGroupAsk = QuestionUtils.createQuestionForBaseEntity(buyerGroupTestBe, false,rules.getToken());
-				
-				/* create child Ask for the test-seller question group to test different formats of question groups */
-				BaseEntity sellerGroupTestBe = new BaseEntity("GRP_INTERN_GROUP_FORM_TEST_BE", "Intern group test form");
-				Ask sellerGroupAsk = QuestionUtils.createQuestionForBaseEntity(sellerGroupTestBe, false,rules.getToken());
-				
-				/* create child Ask for the test-seller question group to test different formats of question groups */
-				BaseEntity nestedInternshipTestBe = new BaseEntity("GRP_INTERNSHIP_NESTED_GROUP_FORM_TEST_BE", "Internship test nested form");
-				Ask internshipAsk = QuestionUtils.createQuestionForBaseEntity(nestedInternshipTestBe, false,rules.getToken());
-				
-				/* create child Ask for the test-seller question group to test different formats of question groups */
-				BaseEntity internProfileTestBe = new BaseEntity("GRP_INTERN_PROFILE_GROUP_FORM_TEST_BE", "Intern Profile test nested form");
-				Ask internProfileAsk = QuestionUtils.createQuestionForBaseEntity(internProfileTestBe, false,rules.getToken());
+//				BaseEntity buyerGroupTestBe = new BaseEntity("FAK_QUE_BUYER_COMPANY_GRP", "FAK_QUE_BUYER_COMPANY_GRP");
+//				Ask buyerGroupAsk = QuestionUtils.createQuestionForBaseEntity(buyerGroupTestBe, false,rules.getToken());
+//				
+//				/* create child Ask for the test-seller question group to test different formats of question groups */
+//				BaseEntity sellerGroupTestBe = new BaseEntity("GRP_INTERN_GROUP_FORM_TEST_BE", "Intern group test form");
+//				Ask sellerGroupAsk = QuestionUtils.createQuestionForBaseEntity(sellerGroupTestBe, false,rules.getToken());
+//				
+//				/* create child Ask for the test-seller question group to test different formats of question groups */
+//				BaseEntity nestedInternshipTestBe = new BaseEntity("GRP_INTERNSHIP_NESTED_GROUP_FORM_TEST_BE", "Internship test nested form");
+//				Ask internshipAsk = QuestionUtils.createQuestionForBaseEntity(nestedInternshipTestBe, false,rules.getToken());
+//				
+//				/* create child Ask for the test-seller question group to test different formats of question groups */
+//				BaseEntity internProfileTestBe = new BaseEntity("GRP_INTERN_PROFILE_GROUP_FORM_TEST_BE", "Intern Profile test nested form");
+//				Ask internProfileAsk = QuestionUtils.createQuestionForBaseEntity(internProfileTestBe, false,rules.getToken());
 				
 				/* collect all child asks and set to the parent ask */
-				List<Ask> askList = new ArrayList<>();
-				askList.add(buyerGroupAsk);
-				askList.add(sellerGroupAsk);
-				askList.add(internshipAsk);
-				askList.add(internProfileAsk);
+//				List<Ask> askList = new ArrayList<>();
+//				askList.add(buyerGroupAsk);
+//				askList.add(sellerGroupAsk);
+//				askList.add(internshipAsk);
+//				askList.add(internProfileAsk);
 
 				Ask[] childAskArr = askList.stream().toArray(Ask[]::new);
 				;
@@ -124,7 +126,7 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 				BaseEntity headerFrameBe = rules.baseEntity.getBaseEntityByCode("FRM_HEADER");
 
 				/* link the form-testing related question and link it to sidebar */
-				headerFrameBe = rules.createVirtualLink(headerFrameBe, testBeAsk, "LNK_ASK", "SOUTH");
+				headerFrameBe = rules.createVirtualLink(headerFrameBe, testBeAsk, "LNK_ASK", "EAST");
 
 				QDataBaseEntityMessage testMsg = new QDataBaseEntityMessage(headerFrameBe);
 				rules.publishCmd(testMsg);
