@@ -17,3 +17,5 @@ buildNumber.properties
 .settings
 .factorypath
 /bin/
+/.apt_generated/
+/.apt_generated_tests/
