@@ -44,7 +44,7 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 		try {
 
 			/* create a test baseentity */
-			BaseEntity testBe = new BaseEntity("GRP_FORM_TEST_BE", "Forms test");
+			BaseEntity testBe = new BaseEntity("GRP_FORM_TEST_BE", "Forms test!");
 			
 			BaseEntity rootGrp = VertxUtils.readFromDDT(rules.realm(),  "GRP_ROOT", true,rules.getServiceToken());
 			log.info("ROOT_GRP "+rootGrp);

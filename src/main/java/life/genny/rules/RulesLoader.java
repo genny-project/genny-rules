@@ -67,6 +67,7 @@ import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.message.QEventMessage;
+import life.genny.qwanda.message.QMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.KeycloakUtils;
@@ -863,6 +864,10 @@ public class RulesLoader {
 	public static void processMsg(final String msgType, String ruleGroup, final Object msg,
 			final EventBusInterface eventBus, final String token) {
 
+		QMessage rawMsg = (QMessage)msg;
+		String sourceAddress = rawMsg.getSourceAddress();
+		log.info("*** INCOMING MSG FROM "+sourceAddress);
+		
 		Map<String, Object> adecodedTokenMap = RulesLoader.getDecodedTokenMap(token);
 		// check for token expiry
 
@@ -875,6 +880,7 @@ public class RulesLoader {
 
 		QRules qRules = new QRules(eventBus, token);
 		qRules.set("realm", qRules.realm());
+		qRules.set("sourceAddress", sourceAddress);
 
 		// Service Token
 		String serviceToken = VertxUtils.getObject(qRules.realm(), "CACHE", "SERVICE_TOKEN", String.class);

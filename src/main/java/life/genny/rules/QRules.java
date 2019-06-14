@@ -1531,7 +1531,15 @@ public class QRules implements Serializable {
 	}
 
 	public void publish(String channel, Object payload) {
-		VertxUtils.publish(getUser(), channel, payload);
+		if (("cmds".equals(channel) )||("webcmds".equals(channel))) {
+			channel = this.getAsString("sourceAddress"); // send abck to the original bridge
+			log.info("Sending to bridge at "+channel);
+			//VertxUtils.publish(getUser(), "mytest", payload);
+		} 
+		//else {
+			VertxUtils.publish(getUser(), channel, payload);
+		//}
+		
 	}
 
 	public boolean loadRealmData() {
