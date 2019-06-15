@@ -33,7 +33,7 @@ import life.genny.qwandautils.QwandaUtils;
 
 public class V7QuestionTypeTest {
 	
-public static final String SKIP_NEWQA_TEST = "TRUE";
+public static final String SKIP_NEWQA_TEST = "FALSE";
 	
 	private static String ENV_GENNY_BRIDGE_URL = "http://bridge.genny.life";
 	

@@ -137,6 +137,7 @@ import life.genny.utils.Layout.LayoutPosition;
 import life.genny.utils.Layout.LayoutUtils;
 //import life.genny.rules.Layout.LayoutUtils;
 import life.genny.utils.Layout.LayoutViewData;
+
 public class QRules implements Serializable {
 
 	/**
@@ -1015,7 +1016,7 @@ public class QRules implements Serializable {
 			lastname = StringUtils.capitalize(lastname);
 			name = StringUtils.capitalize(name);
 
-			String token = RulesUtils.generateServiceToken(realm(),getToken());
+			String token = RulesUtils.generateServiceToken(realm(), getToken());
 
 			String realm = realm();
 			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
@@ -1929,7 +1930,7 @@ public class QRules implements Serializable {
 	}
 
 	public void update() {
-		if (drools!=null) {  // handle jbpm
+		if (drools != null) { // handle jbpm
 			this.drools.update(this);
 		}
 	}
@@ -3772,7 +3773,7 @@ public class QRules implements Serializable {
 		BaseEntity root = this.baseEntity.getBaseEntityByCode("GRP_ROOT");
 
 		/* create an ask for GRP_ROOT */
-		Ask rootAsk = QuestionUtils.createQuestionForBaseEntity(root, true,getToken());
+		Ask rootAsk = QuestionUtils.createQuestionForBaseEntity(root, true, getToken());
 
 		/* create an object for the complete ask */
 		QDataAskMessage askMsg = null;
@@ -3842,9 +3843,9 @@ public class QRules implements Serializable {
 
 		/* create an ask for GRP_ROOT */
 		if (kids.isEmpty()) {
-			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, false,getToken());
+			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, false, getToken());
 		} else {
-			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, true,getToken());
+			parentAsk = QuestionUtils.createQuestionForBaseEntity(parent, true, getToken());
 
 			/*
 			 * set theme - expandable through contextList if GRP_XXX is question-group
@@ -4009,26 +4010,28 @@ public class QRules implements Serializable {
 		}
 
 		// Check if already exists
-		
-		BaseEntity existing = this.baseEntity.getBaseEntityByCode("PER_SERVICE");//this.baseEntity.getBaseEntityByAttributeAndValue("PRI_CODE", "PER_SERVICE"); // do not
+
+		BaseEntity existing = this.baseEntity.getBaseEntityByCode("PER_SERVICE");// this.baseEntity.getBaseEntityByAttributeAndValue("PRI_CODE",
+																					// "PER_SERVICE"); // do not
 		// check
 		// cache!
 
-//		if (existing == null) {
-//
-//			try {
-//				be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
-//						email, realm, name, keycloakId);
-//				VertxUtils.writeCachedJson(realm(), be.getCode(), JsonUtils.toJson(be));
-//				be = getUser();
-//				set("USER", be);
-//				println("New User Created " + be);
-//				this.setState("DID_CREATE_NEW_USER");
-//
-//			} catch (IOException e) {
-//				log.error("Error in Creating User ");
-//			}
-//		}
+		// if (existing == null) {
+		//
+		// try {
+		// be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(),
+		// username, firstname, lastname,
+		// email, realm, name, keycloakId);
+		// VertxUtils.writeCachedJson(realm(), be.getCode(), JsonUtils.toJson(be));
+		// be = getUser();
+		// set("USER", be);
+		// println("New User Created " + be);
+		// this.setState("DID_CREATE_NEW_USER");
+		//
+		// } catch (IOException e) {
+		// log.error("Error in Creating User ");
+		// }
+		// }
 	}
 
 	public void getRolesFromKeycloak() {
@@ -5114,7 +5117,7 @@ public class QRules implements Serializable {
 	public void processAddresses(String realm) {
 		// load in all the people in the db
 		QDataBaseEntityMessage qMsg = null;
-		String token = RulesUtils.generateServiceToken(realm,getToken());
+		String token = RulesUtils.generateServiceToken(realm, getToken());
 		SearchEntity allPeople = new SearchEntity("SBE_ALL_PEOPLE", "All People")
 				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "PER_%").setPageStart(0).setPageSize(100000);
 		try {
@@ -5195,7 +5198,7 @@ public class QRules implements Serializable {
 		List<Attribute> capabilityManifest = new ArrayList<Attribute>();
 
 		String proj_realm = System.getenv("PROJECT_REALM");
-		String token = RulesUtils.generateServiceToken(proj_realm,getToken());
+		String token = RulesUtils.generateServiceToken(proj_realm, getToken());
 
 		addCapability(capabilityManifest, "ADD_QUOTE", "Allowed to post a quote", token);
 		addCapability(capabilityManifest, "READ_QUOTE", "Allowed to read a quote", token);
@@ -5719,9 +5722,14 @@ public class QRules implements Serializable {
 					BaseEntity viewIconBe = this.baseEntity.getBaseEntityByCode("ICN_VIEW");
 					BaseEntity editIconBe = this.baseEntity.getBaseEntityByCode("ICN_EDIT");
 					BaseEntity deleteIconBe = this.baseEntity.getBaseEntityByCode("ICN_DELETE");
+					BaseEntity moreVerticalIconBe = this.baseEntity.getBaseEntityByCode("ICN_MORE_VERTICAL");
 					BaseEntity selectableTheme = this.baseEntity.getBaseEntityByCode("THM_SELECTABLE");
-					/* BaseEntity tableCellUnInheritableTheme = ContextUtils.getTableCellUnInheritableTheme(); */
-					BaseEntity tableCellUnInheritableTheme = this.baseEntity.getBaseEntityByCode("THM_TABLE_CELL_UNINHERITABLE");
+					/*
+					 * BaseEntity tableCellUnInheritableTheme =
+					 * ContextUtils.getTableCellUnInheritableTheme();
+					 */
+					BaseEntity tableCellUnInheritableTheme = this.baseEntity
+							.getBaseEntityByCode("THM_TABLE_CELL_UNINHERITABLE");
 					BaseEntity noFlexTheme = ContextUtils.getNoFlexTheme();
 
 					publishBaseEntityByCode(visualBaseEntity.getCode());
@@ -5731,6 +5739,7 @@ public class QRules implements Serializable {
 					publishBaseEntityByCode(selectableTheme.getCode());
 					publishBaseEntityByCode(tableCellUnInheritableTheme.getCode());
 					publishBaseEntityByCode(noFlexTheme.getCode());
+					publishBaseEntityByCode(moreVerticalIconBe.getCode());
 
 					this.println(visualBaseEntity.getCode());
 					this.println(viewIconBe.getCode());
@@ -5739,20 +5748,7 @@ public class QRules implements Serializable {
 					this.println(selectableTheme.getCode());
 					this.println(tableCellUnInheritableTheme.getCode());
 					this.println(noFlexTheme.getCode());
-
-					// QDataBaseEntityMessage viewIconBeMsg = new
-					// QDataBaseEntityMessage(viewIconBe);
-					// QDataBaseEntityMessage editIconBeMsg = new
-					// QDataBaseEntityMessage(editIconBe);
-					// QDataBaseEntityMessage deleteIconBeMsg = new
-					// QDataBaseEntityMessage(deleteIconBe);
-
-					// QBulkMessage bulkMsg = new QBulkMessage();
-					// bulkMsg.add(viewIconBeMsg);
-					// bulkMsg.add(editIconBeMsg);
-					// bulkMsg.add(deleteIconBeMsg);
-
-					// this.publishCmd(bulkMsg);
+					this.println(moreVerticalIconBe.getCode());
 
 					/* loop through baseentities to generate ask */
 					for (BaseEntity be : bes) {
@@ -5822,6 +5818,175 @@ public class QRules implements Serializable {
 
 								/* add the entityAttribute ask to list */
 								childAskList.add(childAsk);
+
+							} else if (attributeCode.equals("QUE_CARD_GRP")) {
+
+								/* we get the themes */
+								BaseEntity horizontalThemeBe = this.baseEntity
+										.getBaseEntityByCode("THM_DISPLAY_HORIZONTAL");
+								BaseEntity verticalThemeBe = this.baseEntity
+										.getBaseEntityByCode("THM_DISPLAY_VERTICAL");
+								BaseEntity imageFitThemeBe = this.baseEntity.getBaseEntityByCode("THM_IMAGE_FIT");
+								BaseEntity elementHeightFitThemeBe = ContextUtils.getElementHeightFitTheme();
+								BaseEntity cardContainerThemeBe = ContextUtils.getCardContainerTheme();
+
+								QBulkMessage bulkMsg = new QBulkMessage();
+
+								QDataBaseEntityMessage elementHeightFitThemeBeMsg = new QDataBaseEntityMessage(
+										elementHeightFitThemeBe);
+								QDataBaseEntityMessage cardContainerThemeBeMsg = new QDataBaseEntityMessage(
+										cardContainerThemeBe);
+
+								bulkMsg.add(elementHeightFitThemeBeMsg);
+								bulkMsg.add(cardContainerThemeBeMsg);
+								this.publishCmd(bulkMsg);
+
+								publishBaseEntityByCode(horizontalThemeBe.getCode());
+								publishBaseEntityByCode(verticalThemeBe.getCode());
+								publishBaseEntityByCode(imageFitThemeBe.getCode());
+								this.println(elementHeightFitThemeBe.getCode());
+								this.println(cardContainerThemeBe.getCode());
+
+								/* we get the attributes */
+								Attribute quesGrpAttr = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
+								Attribute imgAttr = RulesUtils.attributeMap.get("PRI_IMAGE_URL");
+								Attribute fNameAttr = RulesUtils.attributeMap.get("PRI_FIRSTNAME");
+								Attribute lNameAttr = RulesUtils.attributeMap.get("PRI_LASTNAME");
+								Attribute emailAttr = RulesUtils.attributeMap.get("PRI_EMAIL");
+								Attribute mobileAttr = RulesUtils.attributeMap.get("PRI_MOBILE");
+								Attribute addressAttr = RulesUtils.attributeMap.get("PRI_ADDRESS_FULL");
+								Attribute actionAttribute = RulesUtils.attributeMap.get("PRI_EVENT");
+
+								/* creating card group */
+								Question cardGrpQues = new Question("QUE_CARD_GRP", "Card Group", quesGrpAttr, true);
+								Ask cardGrpAsk = new Ask(cardGrpQues, targetCode, be.getCode());
+								cardGrpAsk = this.createVirtualContext(cardGrpAsk, verticalThemeBe, ContextType.THEME);
+								cardGrpAsk = this.createVirtualContext(cardGrpAsk, cardContainerThemeBe,
+										ContextType.THEME);
+								cardGrpAsk = this.createVirtualContext(cardGrpAsk, elementHeightFitThemeBe,
+										ContextType.THEME, VisualControlType.WRAPPER);
+
+								/* creating card-main group */
+								Question cardMainGrpQues = new Question("QUE_CARD_MAIN_GRP", "Card Main Group",
+										quesGrpAttr, true);
+								Ask cardMainGrpAsk = new Ask(cardMainGrpQues, targetCode, be.getCode());
+								cardMainGrpAsk = this.createVirtualContext(cardMainGrpAsk, horizontalThemeBe,
+										ContextType.THEME);
+
+								/* creating card-secondary group */
+								Question cardSecondaryGrpQues = new Question("QUE_CARD_SECONDARY_GRP",
+										"Card Secondary Group", quesGrpAttr, true);
+								Ask cardSecondaryGrpAsk = new Ask(cardSecondaryGrpQues, targetCode, be.getCode());
+								cardSecondaryGrpAsk = this.createVirtualContext(cardSecondaryGrpAsk, horizontalThemeBe,
+										ContextType.THEME);
+
+								/* creating left-card group */
+								Question cardLeftGrpQues = new Question("QUE_CARD_LEFT_GRP", "Card Left Group",
+										quesGrpAttr, true);
+								Ask cardLeftGrpAsk = new Ask(cardLeftGrpQues, targetCode, be.getCode());
+								cardLeftGrpAsk = this.createVirtualContext(cardLeftGrpAsk, verticalThemeBe,
+										ContextType.THEME);
+
+								/* image */
+								Question imgQues = new Question("QUE_IMAGE", "Image Question", imgAttr, true);
+								Ask imgAsk = new Ask(imgQues, targetCode, be.getCode());
+								imgAsk = this.createVirtualContext(imgAsk, imageFitThemeBe, ContextType.THEME);
+								Ask[] imgAskArr = { imgAsk };
+
+								/* link asks */
+								cardLeftGrpAsk.setChildAsks(imgAskArr);
+
+								/* creating centre-card group */
+								Question cardCentreGrpQues = new Question("QUE_CARD_CENTRE_GRP", "Card Centre Group",
+										quesGrpAttr, true);
+								Ask cardCentreGrpAsk = new Ask(cardCentreGrpQues, targetCode, be.getCode());
+								cardCentreGrpAsk = this.createVirtualContext(cardCentreGrpAsk, verticalThemeBe,
+										ContextType.THEME);
+
+								/* name-group */
+								Question nameGrpQues = new Question("QUE_NAME_GRP", "Name Group", quesGrpAttr, true);
+								Ask nameGrpAsk = new Ask(nameGrpQues, targetCode, be.getCode());
+								nameGrpAsk = this.createVirtualContext(nameGrpAsk, horizontalThemeBe,
+										ContextType.THEME);
+
+								/* first-name */
+								Question fNameQues = new Question("QUE_FIRSTNAME", "First Name", fNameAttr, true);
+								Ask fNameAsk = new Ask(fNameQues, targetCode, be.getCode());
+
+								/* last-name */
+								Question lNameQues = new Question("QUE_LASTNAME", "Last Name", lNameAttr, true);
+								Ask lNameAsk = new Ask(lNameQues, targetCode, be.getCode());
+
+								/* link asks */
+								List<Ask> nameChildAsks = new ArrayList<>();
+								nameChildAsks.add(fNameAsk);
+								nameChildAsks.add(lNameAsk);
+								Ask[] nameChildAsksArr = nameChildAsks.stream().toArray(Ask[]::new);
+								nameGrpAsk.setChildAsks(nameChildAsksArr);
+
+								/* email */
+								Question emailQues = new Question("QUE_EMAIL", "Email Question", emailAttr, true);
+								Ask emailAsk = new Ask(emailQues, targetCode, be.getCode());
+
+								/* mobile */
+								Question mobileQues = new Question("QUE_MOBILE", "Mobile Question", mobileAttr, true);
+								Ask mobileAsk = new Ask(mobileQues, targetCode, be.getCode());
+
+								/* address */
+								Question addressQues = new Question("QUE_ADDRESS", "Address Question", addressAttr,
+										true);
+								Ask addressAsk = new Ask(addressQues, targetCode, be.getCode());
+
+								/* link asks */
+								List<Ask> cardCentreChildAsks = new ArrayList<>();
+								cardCentreChildAsks.add(nameGrpAsk);
+								cardCentreChildAsks.add(emailAsk);
+								cardCentreChildAsks.add(mobileAsk);
+								/* cardCentreChildAsks.add(addressAsk); */
+
+								Ask[] cardCentreChildAsksArr = cardCentreChildAsks.stream().toArray(Ask[]::new);
+								cardCentreGrpAsk.setChildAsks(cardCentreChildAsksArr);
+
+								/* creating right-card group */
+								Question cardRightGrpQues = new Question("QUE_CARD_RIGHT_GRP", "Card Right Group",
+										quesGrpAttr, true);
+								Ask cardRightGrpAsk = new Ask(cardRightGrpQues, targetCode, be.getCode());
+								cardRightGrpAsk = this.createVirtualContext(cardRightGrpAsk, verticalThemeBe,
+										ContextType.THEME);
+
+								/* options-menu */
+								Question optionsQues = new Question("QUE_CARD_OPTIONS" + be.getCode(), "options",
+										actionAttribute, true);
+								Ask optionsAsk = new Ask(optionsQues, this.getUser().getCode(), be.getCode());
+								optionsAsk = this.createVirtualContext(optionsAsk, moreVerticalIconBe, ContextType.ICON,
+										VisualControlType.ICON);
+								optionsAsk = this.createVirtualContext(optionsAsk, visualBaseEntity, ContextType.THEME,
+										VisualControlType.DEFAULT);
+
+								Ask[] optionsAskArr = { optionsAsk };
+								cardRightGrpAsk.setChildAsks(optionsAskArr);
+
+								/* link asks */
+								List<Ask> cardMainGrpAskChildAsks = new ArrayList<>();
+								cardMainGrpAskChildAsks.add(cardLeftGrpAsk);
+								cardMainGrpAskChildAsks.add(cardCentreGrpAsk);
+								cardMainGrpAskChildAsks.add(cardRightGrpAsk);
+
+								Ask[] cardMainGrpAskChildAsksArr = cardMainGrpAskChildAsks.stream().toArray(Ask[]::new);
+
+								/* link asks */
+								List<Ask> cardSecondaryGrpAskChildAsks = new ArrayList<>();
+								cardSecondaryGrpAskChildAsks.add(cardLeftGrpAsk);
+								cardSecondaryGrpAskChildAsks.add(cardCentreGrpAsk);
+								cardSecondaryGrpAskChildAsks.add(cardRightGrpAsk);
+
+								Ask[] cardSecondaryGrpAskChildAsksArr = cardSecondaryGrpAskChildAsks.stream()
+										.toArray(Ask[]::new);
+
+								cardGrpAsk.setChildAsks(cardMainGrpAskChildAsksArr);
+								cardGrpAsk.setChildAsks(cardSecondaryGrpAskChildAsksArr);
+
+								childAskList.add(cardGrpAsk);
 
 							} else {
 
@@ -6065,8 +6230,8 @@ public class QRules implements Serializable {
 			Ask columnSortAsk = getAskForTableHeaderSort(searchBe, attributeCode, attributeName, eventAttribute);
 
 			/* creating Ask for table header search input */
-			Question columnSearchQues = new Question("QUE_SEARCH_" + attributeCode, "Search " + attributeName + "..", searchAttribute,
-					false);
+			Question columnSearchQues = new Question("QUE_SEARCH_" + attributeCode, "Search " + attributeName + "..",
+					searchAttribute, false);
 			Ask columnSearchAsk = new Ask(columnSearchQues, this.getUser().getCode(), searchBe.getCode());
 
 			/* adding label-sort & search asks to header-ask Group */
