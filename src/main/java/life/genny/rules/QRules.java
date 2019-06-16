@@ -1798,6 +1798,8 @@ public class QRules implements Serializable {
 
 		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, this.getToken(),
 				sourceCode, true);
+		
+		if (questions != null) {
 
 		if (questions.asks != null) {
 			Ask[] asks = questions.asks.getItems();
@@ -1813,6 +1815,9 @@ public class QRules implements Serializable {
 
 		/* we send the message in the required frame and position */
 		this.publishCmd(message);
+		} else {
+			log.error("No questions returned for "+questionGroupCode);
+		}
 	}
 
 	/**
