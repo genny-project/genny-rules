@@ -8,7 +8,6 @@ import java.io.StringReader;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -30,11 +29,7 @@ import org.kie.api.builder.KieFileSystem;
 import org.kie.api.builder.Message;
 import org.kie.api.builder.ReleaseId;
 import org.kie.api.event.process.DefaultProcessEventListener;
-import org.kie.api.event.process.ProcessCompletedEvent;
-import org.kie.api.event.process.ProcessNodeLeftEvent;
-import org.kie.api.event.process.ProcessNodeTriggeredEvent;
 import org.kie.api.event.process.ProcessStartedEvent;
-import org.kie.api.event.process.ProcessVariableChangedEvent;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
@@ -42,13 +37,9 @@ import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
 import org.kie.api.runtime.conf.TimedRuleExecutionOption;
-import org.kie.api.runtime.process.NodeInstance;
 import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
-import org.kie.api.runtime.Environment;
-import org.kie.api.runtime.EnvironmentName;
-import org.kie.api.runtime.KieContainer;
 
 import com.google.common.io.Files;
 import com.google.gson.reflect.TypeToken;
@@ -70,7 +61,6 @@ import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwanda.message.QMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
-import life.genny.qwandautils.KeycloakUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
@@ -530,19 +520,16 @@ public class RulesLoader {
 			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
 
 			 addHandlers(kieSession);
-			//kieSession.addEventListener(new JbpmInitListener(gennyToken));
-			// addListeners(kieSession,gennyToken);
 
-
-//			if (bus != null) { // assist testing
-//				kieSession.insert(bus);
-//			}
+			if (bus != null) { // assist testing
+				kieSession.insert(bus);
+			}
 
 			for (final Object fact : facts) {
 				kieSession.insert(fact);
 			}
 
-			kieSession.insert(log);
+			kieSession.setGlobal("log", log);
 
 
 
@@ -708,7 +695,7 @@ public class RulesLoader {
 
 		QMessage rawMsg = (QMessage) msg;
 		String sourceAddress = rawMsg.getSourceAddress();
-		log.info("*** INCOMING MSG FROM " + sourceAddress);
+		log.info("*** INCOMING MSG FROM " + sourceAddress+" processMsg");
 		
 		GennyToken userToken = new GennyToken("userToken",token);
 

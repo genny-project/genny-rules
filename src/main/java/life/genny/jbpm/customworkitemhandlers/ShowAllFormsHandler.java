@@ -82,37 +82,6 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 
 					}
 
-//				formCode = "QUE_ADD_HOST_COMPANY_STAFF_GRP";
-//				
-//				rules.sendForm(formCode,userCode , userCode);
-//				/* create child Asks for the parents question to test different formats of question groups */
-//				grpBe = new BaseEntity(formCode, formCode);
-//				ask = QuestionUtils.createQuestionForBaseEntity(grpBe, false,rules.getToken());
-//				/* collect all child asks and set to the parent ask */				
-//				askList.add(ask);
-		
-				/* create child Asks for the parents question to test different formats of question groups */
-//				BaseEntity buyerGroupTestBe = new BaseEntity("FAK_QUE_BUYER_COMPANY_GRP", "FAK_QUE_BUYER_COMPANY_GRP");
-//				Ask buyerGroupAsk = QuestionUtils.createQuestionForBaseEntity(buyerGroupTestBe, false,rules.getToken());
-//				
-//				/* create child Ask for the test-seller question group to test different formats of question groups */
-//				BaseEntity sellerGroupTestBe = new BaseEntity("GRP_INTERN_GROUP_FORM_TEST_BE", "Intern group test form");
-//				Ask sellerGroupAsk = QuestionUtils.createQuestionForBaseEntity(sellerGroupTestBe, false,rules.getToken());
-//				
-//				/* create child Ask for the test-seller question group to test different formats of question groups */
-//				BaseEntity nestedInternshipTestBe = new BaseEntity("GRP_INTERNSHIP_NESTED_GROUP_FORM_TEST_BE", "Internship test nested form");
-//				Ask internshipAsk = QuestionUtils.createQuestionForBaseEntity(nestedInternshipTestBe, false,rules.getToken());
-//				
-//				/* create child Ask for the test-seller question group to test different formats of question groups */
-//				BaseEntity internProfileTestBe = new BaseEntity("GRP_INTERN_PROFILE_GROUP_FORM_TEST_BE", "Intern Profile test nested form");
-//				Ask internProfileAsk = QuestionUtils.createQuestionForBaseEntity(internProfileTestBe, false,rules.getToken());
-				
-				/* collect all child asks and set to the parent ask */
-//				List<Ask> askList = new ArrayList<>();
-//				askList.add(buyerGroupAsk);
-//				askList.add(sellerGroupAsk);
-//				askList.add(internshipAsk);
-//				askList.add(internProfileAsk);
 
 				Ask[] childAskArr = askList.stream().toArray(Ask[]::new);
 				;
