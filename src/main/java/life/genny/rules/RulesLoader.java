@@ -91,9 +91,8 @@ public class RulesLoader {
 	public static Map<String, User> usersSession = new HashMap<String, User>();
 
 	static Environment env; // drools persistence
-	
-	static KieSessionConfiguration ksconf = null;
 
+	static KieSessionConfiguration ksconf = null;
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
@@ -160,7 +159,7 @@ public class RulesLoader {
 			Integer rulesCount = setupKieRules(realm, rules);
 			log.info("Rules Count for " + realm + " = " + rulesCount);
 		}
-		
+
 		// set up kie conf
 		ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 		ksconf.setOption(TimedRuleExecutionOption.YES);
@@ -173,24 +172,15 @@ public class RulesLoader {
 	 */
 	public static void triggerStartupRules(final String rulesDir, EventBusInterface eventBus) {
 		log.info("Triggering Startup Rules for all realms");
-		log.info("---- Realm:genny Startup Rules ----------");
-
-		if (realms.isEmpty()) {
-			initMsg("Event:INIT_STARTUP", "genny", new QEventMessage("EVT_MSG", "INIT_STARTUP"), eventBus);
-		}
-		// }
-		else {
 			for (String realm : realms) {
 
-				// Trigger Startup Rules
 				log.info("---- Realm:" + realm + " Startup Rules ----------");
 				initMsg("Event:INIT_STARTUP", realm, new QEventMessage("EVT_MSG", "INIT_STARTUP"), eventBus);
 			}
-		}
+
 		log.info("Startup Rules Triggered");
 		try {
 
-			// FileUtils.touch(new File("/tmp/ready"));
 			Files.touch(new File("/tmp/ready"));
 		} catch (IOException e) {
 			log.info("Could not save readiness file");
@@ -525,7 +515,7 @@ public class RulesLoader {
 
 	public static void executeStateless(final String realm, final EventBusInterface bus,
 			final List<Tuple2<String, Object>> globals, final List<Object> facts,
-			final Map<String, String> keyValueMap) {
+			 final GennyToken gennyToken) {
 
 		try {
 			StatefulKnowledgeSession kieSession = null;
@@ -535,43 +525,30 @@ public class RulesLoader {
 			}
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-			ksconf.setOption(TimedRuleExecutionOption.YES);
+		//	ksconf.setOption(TimedRuleExecutionOption.YES);
 
 			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
 
-			// Register handlers
-			kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
-			kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
-			kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
+			 addHandlers(kieSession);
+			//kieSession.addEventListener(new JbpmInitListener(gennyToken));
+			// addListeners(kieSession,gennyToken);
 
-			int sessionId = kieSession.getId();
-			log.info("Session id = " + sessionId);
 
-			if (bus != null) { // assist testing
-				kieSession.insert(bus);
-			}
+//			if (bus != null) { // assist testing
+//				kieSession.insert(bus);
+//			}
 
-			// Load globals
-			for (final Tuple2<String, Object> t : globals) {
-				try {
-					kieSession.setGlobal(t._1, t._2);
-				} catch (java.lang.RuntimeException e) {
-					log.info(e.getMessage());
-				}
-			}
 			for (final Object fact : facts) {
 				kieSession.insert(fact);
 			}
 
 			kieSession.insert(log);
 
-			kieSession.insert(keyValueMap);
 
-			// Set the focus on the Init agenda group to force proper startup
-			kieSession.getAgenda().getAgendaGroup("Init").setFocus();
 
+			log.info("******** Launching rules from executeStateless");
 			int rulesFired = kieSession.fireAllRules();
-
+			//kieSession.startProcess("init_project");
 			log.info("Fired " + rulesFired + " rules");
 			log.info("finished rules");
 			kieSession.dispose();
@@ -582,7 +559,7 @@ public class RulesLoader {
 
 	public static void executeStateful2(final String realm, final EventBusInterface bus,
 			final List<Tuple2<String, Object>> globals, final List<Object> facts,
-			final Map<String, String> keyValueMap) {
+			final GennyToken gennyToken) {
 
 		try {
 //			 KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
@@ -612,23 +589,19 @@ public class RulesLoader {
 
 			// create a new knowledge session that uses JPA to store the runtime state
 
-				kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(realm), ksconf, env); // This
-																															// is
-																															// stateful
+			kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(realm), ksconf, env); // This
+																														// is
+																														// stateful
 
 			// Register handlers
-			kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
-			kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
-			kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
-
-			int sessionId = kieSession.getId();
-			log.info("Session id = " + sessionId);
+			addHandlers(kieSession);
+			//addListeners(kieSession,gennyToken);
 
 			// invoke methods on your method here
 			for (final Object fact : facts) {
 				if (fact instanceof QRules) {
-					// QRules cannot be persisted 
-					
+					// QRules cannot be persisted
+
 				} else {
 					kieSession.insert(fact);
 				}
@@ -636,9 +609,8 @@ public class RulesLoader {
 
 			kieSession.insert(log);
 
-			kieSession.insert(keyValueMap);
 
-			kieSession.startProcess( "MyProcess" );
+	//		kieSession.startProcess("MyProcess");
 //
 //			kieSession.dispose();
 
@@ -648,104 +620,6 @@ public class RulesLoader {
 			 * kSession.addEventListener(new DebugAgendaEventListener());
 			 * kSession.addEventListener(new DebugRuleRuntimeEventListener());
 			 */
-
-
-//			kieSession.addEventListener(new DefaultProcessEventListener() {
-//			    public void beforeProcessStarted(ProcessStartedEvent event) {
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        log.info("jBPM event 'beforeProcessStarted'. Process ID: " + process.getId()
-//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
-//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
-//			                + process.getParentProcessInstanceId());
-//			    }
-//
-//			    public void afterProcessStarted(ProcessStartedEvent event) {
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        log.info("jBPM event 'afterProcessStarted'. Process ID: " + process.getId()
-//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
-//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
-//			                + process.getParentProcessInstanceId());
-//			    }
-//
-//			    public void beforeProcessCompleted(ProcessCompletedEvent event) {
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        log.info("jBPM event 'beforeProcessCompleted'. Process ID: " + process.getId()
-//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
-//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
-//			                + process.getParentProcessInstanceId());
-//			    }
-//
-//			    public void afterProcessCompleted(ProcessCompletedEvent event) {
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        log.info("jBPM event 'afterProcessCompleted'. Process ID: " + process.getId()
-//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
-//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
-//			                + process.getParentProcessInstanceId());
-//			    }
-//
-//			    public void beforeNodeTriggered(ProcessNodeTriggeredEvent event) {
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        NodeInstance node = event.getNodeInstance();
-//			        log.info("jBPM event 'beforeNodeTriggered'. Process ID: " + process.getId()
-//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
-//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
-//			                + process.getParentProcessInstanceId() + ", Node instance ID: " + node.getId() + ", Node ID: "
-//			                + node.getNodeId() + ", Node name: " + node.getNodeName());
-//
-//			    }
-//
-//			    public void afterNodeTriggered(ProcessNodeTriggeredEvent event) {
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        NodeInstance node = event.getNodeInstance();
-//			        log.info("jBPM event 'afterNodeTriggered'. Process ID: " + process.getId()
-//			                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
-//			                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
-//			                + process.getParentProcessInstanceId() + ", Node instance ID: " + node.getId() + ", Node ID: "
-//			                + node.getNodeId() + ", Node name: " + node.getNodeName());
-//
-//			    }
-//
-//			    public void beforeNodeLeft(ProcessNodeLeftEvent event) {
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        NodeInstance node = event.getNodeInstance();
-//			        log.info("jBPM event 'beforeNodeLeft'. Process ID: " + process.getId() + ", Process definition ID: "
-//			                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
-//			                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
-//			                + ", Node instance ID: " + node.getId() + ", Node ID: " + node.getNodeId() + ", Node name: "
-//			                + node.getNodeName());
-//
-//			    }
-//
-//			    public void afterNodeLeft(ProcessNodeLeftEvent event) {
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        NodeInstance node = event.getNodeInstance();
-//			        log.info("jBPM event 'afterNodeLeft'. Process ID: " + process.getId() + ", Process definition ID: "
-//			                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
-//			                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
-//			                + ", Node instance ID: " + node.getId() + ", Node ID: " + node.getNodeId() + ", Node name: "
-//			                + node.getNodeName());
-//
-//			    }
-//
-//			    public void beforeVariableChanged(ProcessVariableChangedEvent event){
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        log.info("jBPM event 'beforeVariableChanged'. Process ID: " + process.getId() + ", Process definition ID: "
-//			                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
-//			                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
-//			                + ", Variable ID: " + event.getVariableId() + ", Variable instance ID: " + event.getVariableInstanceId() + ", Old value: "
-//			                + (event.getOldValue() == null ? "null" : event.getOldValue().toString())+ ", New value: "+(event.getNewValue() == null ? "null" : event.getNewValue().toString()));
-//			    }
-//
-//			    public void afterVariableChanged(ProcessVariableChangedEvent event){
-//			        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-//			        log.info("jBPM event 'afterVariableChanged'. Process ID: " + process.getId() + ", Process definition ID: "
-//			                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
-//			                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
-//			                + ", Variable ID: " + event.getVariableId() + ", Variable instance ID: " + event.getVariableInstanceId() + ", Old value: "
-//			                + (event.getOldValue() == null ? "null" : event.getOldValue().toString())+ ", New value: "+(event.getNewValue() == null ? "null" : event.getNewValue().toString()));
-//			    }
-//
-//			});
 
 			log.info("started workflow");
 			kieSession.dispose();
@@ -765,7 +639,7 @@ public class RulesLoader {
 
 	public static Map<String, Object> getDecodedTokenMap(final String token) {
 		GennyToken gennyToken = new GennyToken(token);
-		
+
 		return gennyToken.getAdecodedTokenMap();
 	}
 
@@ -794,67 +668,35 @@ public class RulesLoader {
 		return globals;
 	}
 
-	public static void initMsgs(final String msgType, final Object msg, final EventBusInterface eventBus) {
-		if (realms.isEmpty()) {
-			initMsg("Event:INIT_STARTUP", "genny", new QEventMessage("EVT_MSG", "INIT_STARTUP"), eventBus);
-		}
-		// }
-		else {
-			for (String realm : realms) {
 
-				// Trigger Startup Rules
-				log.info("---- Realm:" + realm + " Startup Rules ----------");
-				initMsg("Event:INIT_STARTUP", realm, new QEventMessage("EVT_MSG", "INIT_STARTUP"), eventBus);
-			}
-		}
-		log.info("Startup Rules Triggered");
-		try {
-
-			// FileUtils.touch(new File("/tmp/ready"));
-			Files.touch(new File("/tmp/ready"));
-		} catch (IOException e) {
-			log.info("Could not save readiness file");
-		}
-	}
 
 	public static void initMsg(final String msgType, String realm, final Object msg, final EventBusInterface eventBus) {
 
-		Set<String> auserRoles = new HashSet<String>();
-		auserRoles.add("admin");
-		auserRoles.add("user");
-
+		log.info("INIT MSG with Stateless");
 		// Service Token
-		String token = VertxUtils.getObject(realm, "CACHE", "SERVICE_TOKEN", String.class);
+		String serviceToken = VertxUtils.getObject(realm, "CACHE", "SERVICE_TOKEN", String.class);
 
-		if ("DUMMY".equalsIgnoreCase(token)) {
+		if ("DUMMY".equalsIgnoreCase(serviceToken)) {
 			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
 			return;
 		}
 
-		QRules qRules = new QRules(eventBus, token);
+		QRules qRules = new QRules(eventBus, serviceToken);
 		qRules.set("realm", realm);
-		qRules.setServiceToken(token);
-		
-		GennyToken serviceToken = new GennyToken("PER_SERVICE",token);
+		qRules.setServiceToken(serviceToken);
+
+		GennyToken gennyServiceToken = new GennyToken("serviceToken", serviceToken);
 
 		List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();
 
 		List<Object> facts = new ArrayList<Object>();
 		facts.add(qRules);
 		facts.add(msg);
-		facts.add(qRules.getDecodedTokenMap());
-		facts.add(serviceToken);
-		facts.add(auserRoles);
-		User currentUser = new User("service", "Service", realm, "admin");
-		facts.add(currentUser);
+		facts.add(gennyServiceToken);
 
-		Map<String, String> keyvalue = new HashMap<String, String>();
-		// calculate service token for this ...
-		log.info("Realm:" + realm + " -> generated service token=" + token);
-		keyvalue.put("token", token);
 
 		try {
-			executeStateless(realm, eventBus, globals, facts, keyvalue);
+			executeStateless(realm, eventBus, globals, facts, gennyServiceToken);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -864,53 +706,36 @@ public class RulesLoader {
 	public static void processMsg(final String msgType, String ruleGroup, final Object msg,
 			final EventBusInterface eventBus, final String token) {
 
-		QMessage rawMsg = (QMessage)msg;
+		QMessage rawMsg = (QMessage) msg;
 		String sourceAddress = rawMsg.getSourceAddress();
-		log.info("*** INCOMING MSG FROM "+sourceAddress);
+		log.info("*** INCOMING MSG FROM " + sourceAddress);
 		
-		Map<String, Object> adecodedTokenMap = RulesLoader.getDecodedTokenMap(token);
-		// check for token expiry
+		GennyToken userToken = new GennyToken("userToken",token);
 
-		Set<String> auserRoles = KeycloakUtils.getRoleSet(adecodedTokenMap.get("realm_access").toString());
-		User userInSession = usersSession.get(adecodedTokenMap.get("preferred_username").toString());
-
-		String preferredUName = adecodedTokenMap.get("preferred_username").toString();
-		String fullName = adecodedTokenMap.get("name").toString();
-		String accessRoles = adecodedTokenMap.get("realm_access").toString();
-
+		// Service Token
+		String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
+		GennyToken serviceToken = new GennyToken("serviceToken",serviceTokenStr);
+		
+	
 		QRules qRules = new QRules(eventBus, token);
 		qRules.set("realm", qRules.realm());
 		qRules.set("sourceAddress", sourceAddress);
+		qRules.setServiceToken(serviceTokenStr);
 
-		// Service Token
-		String serviceToken = VertxUtils.getObject(qRules.realm(), "CACHE", "SERVICE_TOKEN", String.class);
-		qRules.setServiceToken(serviceToken);
+
 
 		List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
-		RulesLoader.getStandardGlobals();
+		//RulesLoader.getStandardGlobals();
 
 		List<Object> facts = new ArrayList<Object>();
 		facts.add(qRules);
 		facts.add(msg);
-		facts.add(adecodedTokenMap);
-		facts.add(auserRoles);
-		if (userInSession != null)
-			facts.add(usersSession.get(preferredUName));
-		else {
-			User currentUser = new User(preferredUName, fullName, qRules.realm(), accessRoles);
-			usersSession.put(adecodedTokenMap.get("preferred_username").toString(), currentUser);
-			facts.add(currentUser);
-		}
+		facts.add(userToken);
+		facts.add(serviceToken);
 
-		Map<String, String> keyvalue = new HashMap<String, String>();
-		keyvalue.put("token", token);
-
-		if (!"GPS".equals(msgType)) {
-			log.info("FIRE RULES (" + qRules.realm() + ") " + msgType);
-		}
 
 		try {
-				RulesLoader.executeStateless(qRules.realm(), eventBus, globals, facts, keyvalue);
+			RulesLoader.executeStateless(qRules.realm(), eventBus, globals, facts,userToken);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -922,32 +747,30 @@ public class RulesLoader {
 		return new HashMap<File, ResourceType>(); // TODO
 	}
 
-	public static KieSession setupStatefulKieSession(final String realm)
-	{
-		StatefulKnowledgeSession kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(realm), ksconf, env); // This
+	public static KieSession setupStatefulKieSession(final String realm, GennyToken gennyToken) {
+		StatefulKnowledgeSession kieSession = JPAKnowledgeService
+				.newStatefulKnowledgeSession(getKieBaseCache().get(realm), ksconf, env); // This
 		addHandlers(kieSession);
+		addListeners(kieSession,gennyToken);
 		return kieSession;
 	}
-	
-	public static void addHandlers(KieSession kieSession)
-	{
+
+	public static void addHandlers(StatefulKnowledgeSession kieSession) {
 		// Register handlers
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
-
+		
 	}
-	
-	public static void processStatefulMessage(QEventMessage message,final GennyToken gennyToken) {
+
+	public static void processStatefulMessage(QEventMessage message, final GennyToken gennyToken) {
 
 		final String realm = gennyToken.getToken();
 		// Service Token
 		String serviceTokenStr = VertxUtils.getObject(realm, "CACHE", "SERVICE_TOKEN", String.class);
-		GennyToken serviceToken = new GennyToken("PER_SERVICE",serviceTokenStr);
+		GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
 		List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
 		RulesLoader.getStandardGlobals();
-
-
 
 		try {
 			if (getKieBaseCache().get(realm) == null) {
@@ -957,7 +780,7 @@ public class RulesLoader {
 
 			// create a new knowledge session that uses JPA to store the runtime state
 			// is
-			KieSession kieSession = setupStatefulKieSession(realm);
+			KieSession kieSession = setupStatefulKieSession(realm,gennyToken);
 			int sessionId = kieSession.getId();
 			log.info("Session id = " + sessionId);
 
@@ -967,16 +790,221 @@ public class RulesLoader {
 			kieSession.insert(gennyToken);
 			kieSession.insert(serviceToken);
 
+			log.info("******** Launching rules from executeStateful with NO QRules");
+			
 			int rulesFired = kieSession.fireAllRules();
 
 			log.info("Fired " + rulesFired + " rules");
 			log.info("finished rules");
 			kieSession.dispose();
 
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 	}
+
+	private static void addListeners(StatefulKnowledgeSession kieSession,  GennyToken gennyToken) {
+		kieSession.addEventListener(new DefaultProcessEventListener() {
+			long processStartTime = 0;
+
+			@Override
+			public void beforeProcessStarted(ProcessStartedEvent event) {
+
+//				processStartTime = System.nanoTime();
+//				WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+////				log.info("jBPM event 'beforeProcessStarted'. Process ID: " + process.getId()
+////						+ ", Process definition ID: " + process.getProcessId() + ", Process name: "
+////						+ process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+////						+ process.getParentProcessInstanceId());
+//				processStart(process,gennyToken);
+//				printProcessText(process,gennyToken,"Number of passed objs ="+event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
+//			       event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().forEach(obj -> {
+//			    	  
+//			    	   if(obj instanceof String){
+//			    	   		process.setVariable("name", (String)obj);
+//			    	   	/* System.out.println("FOUND STRING"); */
+//			    	   	} else if(obj instanceof QEventMessage){
+//			    	   		QEventMessage msg = (QEventMessage)obj;
+//			    	   		process.setVariable("message", msg);
+//			    	   		printProcessText(process,gennyToken,"FOUND QEventMessage  "+msg.getEvent_type()+":"+msg.getMsg_type());
+//
+//			    	   	} else if (obj instanceof QRules){
+//			    	   		process.setVariable("rules", (QRules)obj);
+//			    	   		printProcessText(process,gennyToken,"FOUND QRULE ");
+//			    	   		
+//			    	   	}  else if (obj instanceof GennyToken){
+//			    	   		GennyToken gennyToken =(GennyToken)obj;
+//			    	   		process.setVariable(gennyToken.getCode(), gennyToken);
+//			    	   		printProcessText(process,gennyToken,"FOUND GennyToken  "+gennyToken.getCode());
+//			    	   		
+//			    	   	}  else if (obj instanceof Logger){
+//			    	   		Logger log = (Logger)obj;
+//			    	   		process.setVariable("log", log);
+//			    	   		printProcessText(process,gennyToken,"FOUND Logger  ");
+//			    	   		
+//			    	   	}  else {
+//			    	   	 printProcessText(process,gennyToken,"FOUND OBJ "+obj.getClass().getSimpleName());
+//			    	   	}
+//			    	       });
+
+			   //    event.getKieRuntime().insert(process);  // this is useful for the Rules Tasks
+			}
+
+//    public void afterProcessStarted(ProcessStartedEvent event) {
+//        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//        log.info("jBPM event 'afterProcessStarted'. Process ID: " + process.getId()
+//                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//                + process.getParentProcessInstanceId());
+
+    // Set up the vars passed in
+
+ 
+//    }
+//
+//    public void beforeProcessCompleted(ProcessCompletedEvent event) {
+//        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//        log.info("jBPM event 'beforeProcessCompleted'. Process ID: " + process.getId()
+//                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//                + process.getParentProcessInstanceId());
+//    }
+
+//			public void afterProcessCompleted(ProcessCompletedEvent event) {
+//				long endTime = System.nanoTime();
+//				double difference = (endTime - processStartTime) / 1e6; // get ms
+//
+//				WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+////				log.info("jBPM event 'afterProcessCompleted'. Process ID: " + process.getId()
+////						+ ", Process definition ID: " + process.getProcessId() + ", Process name: "
+////						+ process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+////						+ process.getParentProcessInstanceId());
+//				
+//				processEnd(process,gennyToken,difference);
+
+//			}
+
+//    public void beforeNodeTriggered(ProcessNodeTriggeredEvent event) {
+//        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//        NodeInstance node = event.getNodeInstance();
+//        log.info("jBPM event 'beforeNodeTriggered'. Process ID: " + process.getId()
+//                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//                + process.getParentProcessInstanceId() + ", Node instance ID: " + node.getId() + ", Node ID: "
+//                + node.getNodeId() + ", Node name: " + node.getNodeName());
+//
+//    }
+//
+//    public void afterNodeTriggered(ProcessNodeTriggeredEvent event) {
+//        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//        NodeInstance node = event.getNodeInstance();
+//        log.info("jBPM event 'afterNodeTriggered'. Process ID: " + process.getId()
+//                + ", Process definition ID: " + process.getProcessId() + ", Process name: "
+//                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
+//                + process.getParentProcessInstanceId() + ", Node instance ID: " + node.getId() + ", Node ID: "
+//                + node.getNodeId() + ", Node name: " + node.getNodeName());
+//
+//    }
+//
+//    public void beforeNodeLeft(ProcessNodeLeftEvent event) {
+//        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//        NodeInstance node = event.getNodeInstance();
+//        log.info("jBPM event 'beforeNodeLeft'. Process ID: " + process.getId() + ", Process definition ID: "
+//                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
+//                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
+//                + ", Node instance ID: " + node.getId() + ", Node ID: " + node.getNodeId() + ", Node name: "
+//                + node.getNodeName());
+//
+//    }
+//
+//    public void afterNodeLeft(ProcessNodeLeftEvent event) {
+//        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//        NodeInstance node = event.getNodeInstance();
+//        log.info("jBPM event 'afterNodeLeft'. Process ID: " + process.getId() + ", Process definition ID: "
+//                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
+//                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
+//                + ", Node instance ID: " + node.getId() + ", Node ID: " + node.getNodeId() + ", Node name: "
+//                + node.getNodeName());
+//
+//    }
+//
+//    public void beforeVariableChanged(ProcessVariableChangedEvent event){
+//        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//        log.info("jBPM event 'beforeVariableChanged'. Process ID: " + process.getId() + ", Process definition ID: "
+//                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
+//                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
+//                + ", Variable ID: " + event.getVariableId() + ", Variable instance ID: " + event.getVariableInstanceId() + ", Old value: "
+//                + (event.getOldValue() == null ? "null" : event.getOldValue().toString())+ ", New value: "+(event.getNewValue() == null ? "null" : event.getNewValue().toString()));
+//    }
+//
+//    public void afterVariableChanged(ProcessVariableChangedEvent event){
+//        WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+//        log.info("jBPM event 'afterVariableChanged'. Process ID: " + process.getId() + ", Process definition ID: "
+//                + process.getProcessId() + ", Process name: " + process.getProcessName() + ", Process state: "
+//                + process.getState() + ", Parent process ID: " + process.getParentProcessInstanceId()
+//                + ", Variable ID: " + event.getVariableId() + ", Variable instance ID: " + event.getVariableInstanceId() + ", Old value: "
+//                + (event.getOldValue() == null ? "null" : event.getOldValue().toString())+ ", New value: "+(event.getNewValue() == null ? "null" : event.getNewValue().toString()));
+//    }
+
+		});
+		
+	
+	}
+
+	private static void processStart( WorkflowProcessInstance process, GennyToken gennyToken) {
+
+		try {
+			String starttext = RulesUtils.executeRuleLogger(">>>>>>>>>> START PROCESS ", processDetails(process,gennyToken), RulesUtils.ANSI_RED,
+					RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
+					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
+
+			RulesUtils.println(starttext);
+
+		} catch (NullPointerException e) {
+			RulesUtils.println("Error in process: " + processDetails(process,gennyToken), "ANSI_RED");
+		}
+
+	}
+	
+	private static void processEnd(WorkflowProcessInstance process, GennyToken gennyToken,double differenceMs) {
+
+		try {
+			String text = processDetails(process,gennyToken)+"  time="+differenceMs+" ms"; // This is
+																											// faster
+																											// than
+																											// calling
+																											// getUser()
+			String starttext = RulesUtils.executeRuleLogger(">>>>>>>>>> END PROCESS", text, RulesUtils.ANSI_RED,
+					RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
+					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
+
+			RulesUtils.println(starttext);
+
+		} catch (NullPointerException e) {
+			RulesUtils.println("Error in process: " + gennyToken.getRealm() + ":" + process.getProcessName(), "ANSI_RED");
+		}
+
+	}
+	
+	private static void printProcessText(WorkflowProcessInstance process, GennyToken gennyToken,final String text) {
+
+		try {
+			String starttext = RulesUtils.executeRuleLogger("PROCESS:"+processDetails(process,gennyToken), text, RulesUtils.ANSI_RED,
+					RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
+					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
+
+			RulesUtils.println(starttext);
+
+		} catch (NullPointerException e) {
+			RulesUtils.println("Error in process: " + processDetails(process,gennyToken), "ANSI_RED");
+		}
+
+	}
+	
+	private static String processDetails(WorkflowProcessInstance process, GennyToken gennyToken)
+	{
+		return gennyToken.getRealm()+":"+process.getId()+":"+process.getProcessId()+":"+gennyToken.getString("preferred_username");
+	}
+
 }
