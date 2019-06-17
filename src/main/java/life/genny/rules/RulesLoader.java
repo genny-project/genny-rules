@@ -68,6 +68,8 @@ import life.genny.utils.VertxUtils;
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+	
+	static String RESOURCE_PATH = "src/main/resources/life/genny/rules/";
 
 	public static Map<String, KieBase> kieBaseCache = new ConcurrentHashMap<String, KieBase>();;
 	static {
@@ -83,6 +85,8 @@ public class RulesLoader {
 	static Environment env; // drools persistence
 
 	static KieSessionConfiguration ksconf = null;
+	
+	public static List<String> activeRealms = new ArrayList<String>();
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
@@ -162,11 +166,11 @@ public class RulesLoader {
 	 */
 	public static void triggerStartupRules(final String rulesDir, EventBusInterface eventBus) {
 		log.info("Triggering Startup Rules for all realms");
-			for (String realm : realms) {
+		for (String realm : realms) {
 
-				log.info("---- Realm:" + realm + " Startup Rules ----------");
-				initMsg("Event:INIT_STARTUP", realm, new QEventMessage("EVT_MSG", "INIT_STARTUP"), eventBus);
-			}
+			log.info("---- Realm:" + realm + " Startup Rules ----------");
+			initMsg("Event:INIT_STARTUP", realm, new QEventMessage("EVT_MSG", "INIT_STARTUP"), eventBus);
+		}
 
 		log.info("Startup Rules Triggered");
 		try {
@@ -479,22 +483,23 @@ public class RulesLoader {
 				}
 			}
 			if (rule._2.endsWith(".drl")) {
-				final String inMemoryDrlFileName = "src/main/resources/" + rule._2;
+				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 				kfs.write(inMemoryDrlFileName, ks.getResources().newReaderResource(new StringReader(rule._3))
 						.setResourceType(ResourceType.DRL));
 			} else if (rule._2.endsWith(".bpmn")) {
-				final String inMemoryDrlFileName = "src/main/resources/" + rule._2;
+				//final String inMemoryDrlFileName = "src/main/resources/" + rule._2;
+				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 				kfs.write(inMemoryDrlFileName, ks.getResources().newReaderResource(new StringReader(rule._3))
 						.setResourceType(ResourceType.BPMN2));
 			} else if (rule._2.endsWith(".xls")) {
-				final String inMemoryDrlFileName = "src/main/resources/" + rule._2;
+				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 				// Needs t handle byte[]
 				// kfs.write(inMemoryDrlFileName, ks.getResources().newReaderResource(new
 				// FileReader(rule._2))
 				// .setResourceType(ResourceType.DTABLE));
 
 			} else {
-				final String inMemoryDrlFileName = "src/main/resources/" + rule._2;
+				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 				kfs.write(inMemoryDrlFileName, ks.getResources().newReaderResource(new StringReader(rule._3))
 						.setResourceType(ResourceType.DRL));
 			}
@@ -504,22 +509,22 @@ public class RulesLoader {
 	}
 
 	public static void executeStateless(final String realm, final EventBusInterface bus,
-			final List<Tuple2<String, Object>> globals, final List<Object> facts,
-			 final GennyToken gennyToken) {
+			final List<Tuple2<String, Object>> globals, final List<Object> facts, final GennyToken gennyToken) {
+		StatefulKnowledgeSession kieSession = null;
 
 		try {
-			StatefulKnowledgeSession kieSession = null;
+
 			if (getKieBaseCache().get(realm) == null) {
 				log.error("The realm  kieBaseCache is null, not loaded " + realm);
 				return;
 			}
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-		//	ksconf.setOption(TimedRuleExecutionOption.YES);
+			// ksconf.setOption(TimedRuleExecutionOption.YES);
 
 			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
 
-			 addHandlers(kieSession);
+			addHandlers(kieSession);
 
 			if (bus != null) { // assist testing
 				kieSession.insert(bus);
@@ -529,24 +534,27 @@ public class RulesLoader {
 				kieSession.insert(fact);
 			}
 
-			kieSession.setGlobal("log", log);
-
-
+			try {
+				kieSession.setGlobal("log", log);
+			} catch (RuntimeException e) {
+				log.error("kieSession.setGlobal(\"log\", log); has an error "+e.getLocalizedMessage());
+			}
 
 			log.info("******** Launching rules from executeStateless");
 			int rulesFired = kieSession.fireAllRules();
-			//kieSession.startProcess("init_project");
+			// kieSession.startProcess("init_project");
 			log.info("Fired " + rulesFired + " rules");
-			log.info("finished rules");
-			kieSession.dispose();
+
 		} catch (final Throwable t) {
 			t.printStackTrace();
+		} finally {
+			log.info("finished rules");
+			kieSession.dispose();
 		}
 	}
 
 	public static void executeStateful2(final String realm, final EventBusInterface bus,
-			final List<Tuple2<String, Object>> globals, final List<Object> facts,
-			final GennyToken gennyToken) {
+			final List<Tuple2<String, Object>> globals, final List<Object> facts, final GennyToken gennyToken) {
 
 		try {
 //			 KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
@@ -582,7 +590,7 @@ public class RulesLoader {
 
 			// Register handlers
 			addHandlers(kieSession);
-			//addListeners(kieSession,gennyToken);
+			// addListeners(kieSession,gennyToken);
 
 			// invoke methods on your method here
 			for (final Object fact : facts) {
@@ -596,8 +604,7 @@ public class RulesLoader {
 
 			kieSession.insert(log);
 
-
-	//		kieSession.startProcess("MyProcess");
+			// kieSession.startProcess("MyProcess");
 //
 //			kieSession.dispose();
 
@@ -655,8 +662,6 @@ public class RulesLoader {
 		return globals;
 	}
 
-
-
 	public static void initMsg(final String msgType, String realm, final Object msg, final EventBusInterface eventBus) {
 
 		log.info("INIT MSG with Stateless");
@@ -681,7 +686,6 @@ public class RulesLoader {
 		facts.add(msg);
 		facts.add(gennyServiceToken);
 
-
 		try {
 			executeStateless(realm, eventBus, globals, facts, gennyServiceToken);
 		} catch (Exception e) {
@@ -695,24 +699,21 @@ public class RulesLoader {
 
 		QMessage rawMsg = (QMessage) msg;
 		String sourceAddress = rawMsg.getSourceAddress();
-		log.info("*** INCOMING MSG FROM " + sourceAddress+" processMsg");
-		
-		GennyToken userToken = new GennyToken("userToken",token);
+		log.info("*** INCOMING MSG FROM " + sourceAddress + " processMsg");
+
+		GennyToken userToken = new GennyToken("userToken", token);
 
 		// Service Token
 		String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
-		GennyToken serviceToken = new GennyToken("serviceToken",serviceTokenStr);
-		
-	
+		GennyToken serviceToken = new GennyToken("serviceToken", serviceTokenStr);
+
 		QRules qRules = new QRules(eventBus, token);
 		qRules.set("realm", qRules.realm());
 		qRules.set("sourceAddress", sourceAddress);
 		qRules.setServiceToken(serviceTokenStr);
 
-
-
 		List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
-		//RulesLoader.getStandardGlobals();
+		// RulesLoader.getStandardGlobals();
 
 		List<Object> facts = new ArrayList<Object>();
 		facts.add(qRules);
@@ -720,9 +721,8 @@ public class RulesLoader {
 		facts.add(userToken);
 		facts.add(serviceToken);
 
-
 		try {
-			RulesLoader.executeStateless(qRules.realm(), eventBus, globals, facts,userToken);
+			RulesLoader.executeStateless(qRules.realm(), eventBus, globals, facts, userToken);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -738,7 +738,7 @@ public class RulesLoader {
 		StatefulKnowledgeSession kieSession = JPAKnowledgeService
 				.newStatefulKnowledgeSession(getKieBaseCache().get(realm), ksconf, env); // This
 		addHandlers(kieSession);
-		addListeners(kieSession,gennyToken);
+		addListeners(kieSession, gennyToken);
 		return kieSession;
 	}
 
@@ -747,7 +747,7 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
-		
+
 	}
 
 	public static void processStatefulMessage(QEventMessage message, final GennyToken gennyToken) {
@@ -759,6 +759,8 @@ public class RulesLoader {
 		List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
 		RulesLoader.getStandardGlobals();
 
+		KieSession kieSession = null;
+		
 		try {
 			if (getKieBaseCache().get(realm) == null) {
 				log.error("The realm  kieBaseCache is null, not loaded " + realm);
@@ -767,7 +769,7 @@ public class RulesLoader {
 
 			// create a new knowledge session that uses JPA to store the runtime state
 			// is
-			KieSession kieSession = setupStatefulKieSession(realm,gennyToken);
+			kieSession = setupStatefulKieSession(realm, gennyToken);
 			int sessionId = kieSession.getId();
 			log.info("Session id = " + sessionId);
 
@@ -778,20 +780,23 @@ public class RulesLoader {
 			kieSession.insert(serviceToken);
 
 			log.info("******** Launching rules from executeStateful with NO QRules");
-			
+
 			int rulesFired = kieSession.fireAllRules();
 
 			log.info("Fired " + rulesFired + " rules");
-			log.info("finished rules");
-			kieSession.dispose();
+
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		finally {
+			log.info("finished rules");
+			kieSession.dispose();
+		}
 
 	}
 
-	private static void addListeners(StatefulKnowledgeSession kieSession,  GennyToken gennyToken) {
+	private static void addListeners(StatefulKnowledgeSession kieSession, GennyToken gennyToken) {
 		kieSession.addEventListener(new DefaultProcessEventListener() {
 			long processStartTime = 0;
 
@@ -835,7 +840,7 @@ public class RulesLoader {
 //			    	   	}
 //			    	       });
 
-			   //    event.getKieRuntime().insert(process);  // this is useful for the Rules Tasks
+				// event.getKieRuntime().insert(process); // this is useful for the Rules Tasks
 			}
 
 //    public void afterProcessStarted(ProcessStartedEvent event) {
@@ -845,9 +850,8 @@ public class RulesLoader {
 //                + process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
 //                + process.getParentProcessInstanceId());
 
-    // Set up the vars passed in
+			// Set up the vars passed in
 
- 
 //    }
 //
 //    public void beforeProcessCompleted(ProcessCompletedEvent event) {
@@ -935,33 +939,33 @@ public class RulesLoader {
 //    }
 
 		});
-		
-	
+
 	}
 
-	private static void processStart( WorkflowProcessInstance process, GennyToken gennyToken) {
+	private static void processStart(WorkflowProcessInstance process, GennyToken gennyToken) {
 
 		try {
-			String starttext = RulesUtils.executeRuleLogger(">>>>>>>>>> START PROCESS ", processDetails(process,gennyToken), RulesUtils.ANSI_RED,
-					RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
+			String starttext = RulesUtils.executeRuleLogger(">>>>>>>>>> START PROCESS ",
+					processDetails(process, gennyToken), RulesUtils.ANSI_RED, RulesUtils.ANSI_YELLOW)
+					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
 
 			RulesUtils.println(starttext);
 
 		} catch (NullPointerException e) {
-			RulesUtils.println("Error in process: " + processDetails(process,gennyToken), "ANSI_RED");
+			RulesUtils.println("Error in process: " + processDetails(process, gennyToken), "ANSI_RED");
 		}
 
 	}
-	
-	private static void processEnd(WorkflowProcessInstance process, GennyToken gennyToken,double differenceMs) {
+
+	private static void processEnd(WorkflowProcessInstance process, GennyToken gennyToken, double differenceMs) {
 
 		try {
-			String text = processDetails(process,gennyToken)+"  time="+differenceMs+" ms"; // This is
-																											// faster
-																											// than
-																											// calling
-																											// getUser()
+			String text = processDetails(process, gennyToken) + "  time=" + differenceMs + " ms"; // This is
+																									// faster
+																									// than
+																									// calling
+																									// getUser()
 			String starttext = RulesUtils.executeRuleLogger(">>>>>>>>>> END PROCESS", text, RulesUtils.ANSI_RED,
 					RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
@@ -969,29 +973,77 @@ public class RulesLoader {
 			RulesUtils.println(starttext);
 
 		} catch (NullPointerException e) {
-			RulesUtils.println("Error in process: " + gennyToken.getRealm() + ":" + process.getProcessName(), "ANSI_RED");
+			RulesUtils.println("Error in process: " + gennyToken.getRealm() + ":" + process.getProcessName(),
+					"ANSI_RED");
 		}
 
 	}
-	
-	private static void printProcessText(WorkflowProcessInstance process, GennyToken gennyToken,final String text) {
+
+	private static void printProcessText(WorkflowProcessInstance process, GennyToken gennyToken, final String text) {
 
 		try {
-			String starttext = RulesUtils.executeRuleLogger("PROCESS:"+processDetails(process,gennyToken), text, RulesUtils.ANSI_RED,
-					RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
+			String starttext = RulesUtils.executeRuleLogger("PROCESS:" + processDetails(process, gennyToken), text,
+					RulesUtils.ANSI_RED, RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
 
 			RulesUtils.println(starttext);
 
 		} catch (NullPointerException e) {
-			RulesUtils.println("Error in process: " + processDetails(process,gennyToken), "ANSI_RED");
+			RulesUtils.println("Error in process: " + processDetails(process, gennyToken), "ANSI_RED");
 		}
 
 	}
-	
-	private static String processDetails(WorkflowProcessInstance process, GennyToken gennyToken)
-	{
-		return gennyToken.getRealm()+":"+process.getId()+":"+process.getProcessId()+":"+gennyToken.getString("preferred_username");
+
+	private static String processDetails(WorkflowProcessInstance process, GennyToken gennyToken) {
+		return gennyToken.getRealm() + ":" + process.getId() + ":" + process.getProcessId() + ":"
+				+ gennyToken.getString("preferred_username");
 	}
 
+	/**
+	 * @param rulesDir
+	 */
+	public static void loadRules(final String realm,final String rulesDir) {
+
+
+		log.info("Loading Rules and workflows!!! for realm "+realm);
+		List<String> reloadRealms = new ArrayList<String>();
+		reloadRealms.add(realm);
+		realms = new HashSet<>(reloadRealms);
+
+		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
+		log.info("LOADED ALL RULES");
+
+		realms.stream().forEach(System.out::println);
+		realms.remove("genny");
+
+			log.info("LOADING " + realm + " RULES");
+			Integer rulesCount = setupKieRules(realm, rules);
+			log.info("Rules Count for " + realm + " = " + rulesCount);
+
+
+		// set up kie conf
+		ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+		ksconf.setOption(TimedRuleExecutionOption.YES);
+
+	}
+
+	/**
+	 * @param vertx
+	 * @return
+	 */
+	public static void triggerStartupRules(final String realm, final String rulesDir, EventBusInterface eventBus) {
+		log.info("Triggering Startup Rules for all realm "+realm);
+		log.info("---- Realm:" + realm + " Startup Rules ----------");
+		initMsg("Event:INIT_STARTUP", realm, new QEventMessage("EVT_MSG", "INIT_STARTUP"), eventBus);
+
+
+		log.info("Startup Rules Triggered");
+//		try {
+//			Files.touch(new File("/tmp/ready"));
+//		} catch (IOException e) {
+//			log.info("Could not save readiness file");
+//		}
+
+	}
+	
 }
