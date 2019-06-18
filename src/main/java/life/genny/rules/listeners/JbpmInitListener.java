@@ -1,6 +1,8 @@
 package life.genny.rules.listeners;
 
-import org.kie.api.event.process.DefaultProcessEventListener;
+import java.lang.invoke.MethodHandles;
+
+import org.apache.logging.log4j.Logger;
 import org.kie.api.event.process.ProcessCompletedEvent;
 import org.kie.api.event.process.ProcessEventListener;
 import org.kie.api.event.process.ProcessNodeLeftEvent;
@@ -14,10 +16,6 @@ import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.rules.QRules;
 import life.genny.utils.RulesUtils;
-
-import java.lang.invoke.MethodHandles;
-
-import org.apache.logging.log4j.Logger;
 
 public class JbpmInitListener implements ProcessEventListener {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -49,8 +47,8 @@ public class JbpmInitListener implements ProcessEventListener {
 			} else if (obj instanceof QEventMessage) {
 				QEventMessage msg = (QEventMessage) obj;
 				process.setVariable("message", msg);
-				printProcessText(process, gennyToken,
-						"FOUND QEventMessage  " + msg.getEvent_type() + ":" + msg.getMsg_type());
+//				printProcessText(process, gennyToken,
+//						"FOUND QEventMessage  " + msg.getEvent_type() + ":" + msg.getMsg_type());
 
 			} else if (obj instanceof QRules) {
 				process.setVariable("rules", (QRules) obj);
@@ -59,19 +57,19 @@ public class JbpmInitListener implements ProcessEventListener {
 			} else if (obj instanceof GennyToken) {
 				GennyToken gennyToken = (GennyToken) obj;
 				process.setVariable(gennyToken.getCode(), gennyToken);
-				printProcessText(process, gennyToken, "FOUND GennyToken  " + gennyToken.getCode());
+//				printProcessText(process, gennyToken, "FOUND GennyToken  " + gennyToken.getCode());
 
 			} else if (obj instanceof Logger) {
 				Logger log = (Logger) obj;
 				process.setVariable("log", log);
-				printProcessText(process, gennyToken, "FOUND Logger  ");
+//				printProcessText(process, gennyToken, "FOUND Logger  ");
 
 			} else {
-				printProcessText(process, gennyToken, "FOUND OBJ " + obj.getClass().getSimpleName());
+//				printProcessText(process, gennyToken, "FOUND OBJ " + obj.getClass().getSimpleName());
 			}
 		});
 
-		event.getKieRuntime().insert(process);
+		//event.getKieRuntime().insert(process);
 
 	}
 
@@ -141,7 +139,10 @@ public class JbpmInitListener implements ProcessEventListener {
 	private void processStart(WorkflowProcessInstance process, GennyToken gennyToken) {
 
 		try {
-			String starttext = RulesUtils.executeRuleLogger(">>>>>>>>>> START PROCESS ",
+			// Check if parent process exists , if so then indent .. (To indicate it is a sub process)
+			String indent= process.getParentProcessInstanceId()<0?"":(process.getParentProcessInstanceId()+">>>>>>>>>>");
+			
+			String starttext = RulesUtils.executeRuleLogger(indent+">>>>>>>>>> START PROCESS ",
 					processDetails(process, gennyToken), RulesUtils.ANSI_RED, RulesUtils.ANSI_YELLOW)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
@@ -157,12 +158,14 @@ public class JbpmInitListener implements ProcessEventListener {
 	private void processEnd(WorkflowProcessInstance process, GennyToken gennyToken, double differenceMs) {
 
 		try {
+			String indent= process.getParentProcessInstanceId()<0?"":(process.getParentProcessInstanceId()+">>>>>>>>>>");
+
 			String text = processDetails(process, gennyToken) + "  time=" + differenceMs + " ms"; // This is
 																									// faster
 																									// than
 																									// calling
 																									// getUser()
-			String starttext = RulesUtils.executeRuleLogger(">>>>>>>>>> END PROCESS", text, RulesUtils.ANSI_RED,
+			String starttext = RulesUtils.executeRuleLogger(indent+">>>>>>>>>> END PROCESS", text, RulesUtils.ANSI_RED,
 					RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
 
@@ -178,7 +181,9 @@ public class JbpmInitListener implements ProcessEventListener {
 	private void printProcessText(WorkflowProcessInstance process, GennyToken gennyToken, final String text) {
 
 		try {
-			String starttext = RulesUtils.executeRuleLogger("PROCESS:" + processDetails(process, gennyToken), text,
+			String indent= process.getParentProcessInstanceId()<0?"":(process.getParentProcessInstanceId()+">>>>>>>>>>");
+
+			String starttext = RulesUtils.executeRuleLogger(indent+">>>>>>>>>>     PROCESS:" + processDetails(process, gennyToken), text,
 					RulesUtils.ANSI_RED, RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
 
