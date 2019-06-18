@@ -462,12 +462,12 @@ public class ContextUtils {
 		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
 		Attribute expandableAtt = new Attribute("PRI_IS_EXPANDABLE", "expandable", new DataType(Boolean.class));
 
-		EntityAttribute expandableEntAtt = new EntityAttribute(themeBe, expandableAtt, 1.0, "FALSE");
 		EntityAttribute inheritEntAtt = new EntityAttribute(themeBe, inheritableAtt, 1.0, "FALSE");
+		EntityAttribute expandableEntAtt = new EntityAttribute(themeBe, expandableAtt, 1.0, "TRUE");
 
 		Set<EntityAttribute> attributeSet = new HashSet<>();
-		attributeSet.add(expandableEntAtt);
 		attributeSet.add(inheritEntAtt);
+		attributeSet.add(expandableEntAtt);
 		themeBe.setBaseEntityAttributes(attributeSet);
 
 		return themeBe;
