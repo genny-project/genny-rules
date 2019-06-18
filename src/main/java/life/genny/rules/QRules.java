@@ -5840,6 +5840,7 @@ public class QRules implements Serializable {
 								BaseEntity imageFitThemeBe = this.baseEntity.getBaseEntityByCode("THM_IMAGE_FIT");
 								BaseEntity elementHeightFitThemeBe = ContextUtils.getElementHeightFitTheme();
 								BaseEntity cardContainerThemeBe = ContextUtils.getCardContainerTheme();
+								BaseEntity cardContentExpandableThemeBe = ContextUtils.getCardContentExpandTheme();
 
 								QBulkMessage bulkMsg = new QBulkMessage();
 
@@ -5855,8 +5856,6 @@ public class QRules implements Serializable {
 								publishBaseEntityByCode(horizontalThemeBe.getCode());
 								publishBaseEntityByCode(verticalThemeBe.getCode());
 								publishBaseEntityByCode(imageFitThemeBe.getCode());
-								this.println(elementHeightFitThemeBe.getCode());
-								this.println(cardContainerThemeBe.getCode());
 
 								/* we get the attributes */
 								Attribute quesGrpAttr = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
@@ -5868,29 +5867,19 @@ public class QRules implements Serializable {
 								Attribute addressAttr = RulesUtils.attributeMap.get("PRI_ADDRESS_FULL");
 								Attribute actionAttribute = RulesUtils.attributeMap.get("PRI_EVENT");
 
-								/* creating card group */
-								Question cardGrpQues = new Question("QUE_CARD_GRP", "Card Group", quesGrpAttr, true);
-								Ask cardGrpAsk = new Ask(cardGrpQues, targetCode, be.getCode());
-								cardGrpAsk = this.createVirtualContext(cardGrpAsk, verticalThemeBe, ContextType.THEME);
-								cardGrpAsk = this.createVirtualContext(cardGrpAsk, cardContainerThemeBe,
-										ContextType.THEME);
-								cardGrpAsk = this.createVirtualContext(cardGrpAsk, elementHeightFitThemeBe,
-										ContextType.THEME, VisualControlType.WRAPPER);
+								/*
+								 * -----------------------------------------------------------------------------
+								 * ----------------------
+								 */
+								/*
+								 * -----------------------------------------------------------------------------
+								 * ----------------------
+								 */
 
-								/* creating card-main group */
-								Question cardMainGrpQues = new Question("QUE_CARD_MAIN_GRP", "Card Main Group",
-										quesGrpAttr, true);
-								Ask cardMainGrpAsk = new Ask(cardMainGrpQues, targetCode, be.getCode());
-								cardMainGrpAsk = this.createVirtualContext(cardMainGrpAsk, horizontalThemeBe,
-										ContextType.THEME);
-
-								/* creating card-secondary group */
-								Question cardSecondaryGrpQues = new Question("QUE_CARD_SECONDARY_GRP",
-										"Card Secondary Group", quesGrpAttr, true);
-								Ask cardSecondaryGrpAsk = new Ask(cardSecondaryGrpQues, targetCode, be.getCode());
-								cardSecondaryGrpAsk = this.createVirtualContext(cardSecondaryGrpAsk, horizontalThemeBe,
-										ContextType.THEME);
-
+								/*
+								 * ------------------------------------------- LEFT CARD GROUP
+								 * -------------------------------------------
+								 */
 								/* creating left-card group */
 								Question cardLeftGrpQues = new Question("QUE_CARD_LEFT_GRP", "Card Left Group",
 										quesGrpAttr, true);
@@ -5906,6 +5895,11 @@ public class QRules implements Serializable {
 
 								/* link asks */
 								cardLeftGrpAsk.setChildAsks(imgAskArr);
+
+								/*
+								 * ------------------------------------------- CENTRE CARD GROUP
+								 * -------------------------------------------
+								 */
 
 								/* creating centre-card group */
 								Question cardCentreGrpQues = new Question("QUE_CARD_CENTRE_GRP", "Card Centre Group",
@@ -5958,6 +5952,11 @@ public class QRules implements Serializable {
 								Ask[] cardCentreChildAsksArr = cardCentreChildAsks.stream().toArray(Ask[]::new);
 								cardCentreGrpAsk.setChildAsks(cardCentreChildAsksArr);
 
+								/*
+								 * ------------------------------------------- RIGHT CARD GROUP
+								 * -------------------------------------------
+								 */
+
 								/* creating right-card group */
 								Question cardRightGrpQues = new Question("QUE_CARD_RIGHT_GRP", "Card Right Group",
 										quesGrpAttr, true);
@@ -5977,25 +5976,74 @@ public class QRules implements Serializable {
 								Ask[] optionsAskArr = { optionsAsk };
 								cardRightGrpAsk.setChildAsks(optionsAskArr);
 
-								/* link asks */
-								List<Ask> cardMainGrpAskChildAsks = new ArrayList<>();
-								cardMainGrpAskChildAsks.add(cardLeftGrpAsk);
-								cardMainGrpAskChildAsks.add(cardCentreGrpAsk);
-								cardMainGrpAskChildAsks.add(cardRightGrpAsk);
+								/*
+								 * -----------------------------------------------------------------------------
+								 * --------------------------
+								 */
+								/* bundle left, centre, right groups */
+								/*
+								 * -----------------------------------------------------------------------------
+								 * --------------------------
+								 */
 
-								Ask[] cardMainGrpAskChildAsksArr = cardMainGrpAskChildAsks.stream().toArray(Ask[]::new);
+								/* link left, centre, right group asks */
+								List<Ask> contentAsks = new ArrayList<>();
+								contentAsks.add(cardLeftGrpAsk);
+								contentAsks.add(cardCentreGrpAsk);
+								contentAsks.add(cardRightGrpAsk);
+								/* cardCentreChildAsks.add(addressAsk); */
 
-								/* link asks */
-								List<Ask> cardSecondaryGrpAskChildAsks = new ArrayList<>();
-								cardSecondaryGrpAskChildAsks.add(cardLeftGrpAsk);
-								cardSecondaryGrpAskChildAsks.add(cardCentreGrpAsk);
-								cardSecondaryGrpAskChildAsks.add(cardRightGrpAsk);
+								Ask[] contentAsksArr = contentAsks.stream().toArray(Ask[]::new);
 
-								Ask[] cardSecondaryGrpAskChildAsksArr = cardSecondaryGrpAskChildAsks.stream()
-										.toArray(Ask[]::new);
+								/*
+								 * ------------------------------------------- MAIN CARD GROUP
+								 * -------------------------------------------
+								 */
+								/* creating card-main group */
+								Question cardMainGrpQues = new Question("QUE_CARD_MAIN_GRP", "Card Main Group",
+										quesGrpAttr, true);
+								Ask cardMainGrpAsk = new Ask(cardMainGrpQues, targetCode, be.getCode());
+								cardMainGrpAsk = this.createVirtualContext(cardMainGrpAsk, horizontalThemeBe,
+										ContextType.THEME);
 
-								cardGrpAsk.setChildAsks(cardMainGrpAskChildAsksArr);
-								cardGrpAsk.setChildAsks(cardSecondaryGrpAskChildAsksArr);
+								cardMainGrpAsk.setChildAsks(contentAsksArr);
+
+								/*
+								 * ------------------------------------------- SECONDARY CARD GROUP
+								 * -------------------------------------------
+								 */
+								/* creating card-secondary group */
+								Question cardSecondaryGrpQues = new Question("QUE_CARD_SECONDARY_GRP",
+										"Card Secondary Group", quesGrpAttr, true);
+								Ask cardSecondaryGrpAsk = new Ask(cardSecondaryGrpQues, targetCode, be.getCode());
+								cardSecondaryGrpAsk = this.createVirtualContext(cardSecondaryGrpAsk, horizontalThemeBe,
+										ContextType.THEME);
+								cardSecondaryGrpAsk = this.createVirtualContext(cardSecondaryGrpAsk,
+										cardContentExpandableThemeBe, ContextType.THEME);
+
+								cardSecondaryGrpAsk.setChildAsks(contentAsksArr);
+
+								/*
+								 * ------------------------------------------- CARD GROUP
+								 * -------------------------------------------
+								 */
+								/* creating card group */
+								Question cardGrpQues = new Question("QUE_CARD_GRP", "Card Group", quesGrpAttr, true);
+								Ask cardGrpAsk = new Ask(cardGrpQues, targetCode, be.getCode());
+								cardGrpAsk = this.createVirtualContext(cardGrpAsk, verticalThemeBe, ContextType.THEME);
+								cardGrpAsk = this.createVirtualContext(cardGrpAsk, cardContainerThemeBe,
+										ContextType.THEME);
+								cardGrpAsk = this.createVirtualContext(cardGrpAsk, elementHeightFitThemeBe,
+										ContextType.THEME, VisualControlType.WRAPPER);
+
+								/* link child asks to card-group asks */
+								List<Ask> cardGrpAskChildAsks = new ArrayList<>();
+								cardGrpAskChildAsks.add(cardMainGrpAsk);
+								cardGrpAskChildAsks.add(cardSecondaryGrpAsk);
+
+								Ask[] cardGrpAskChildAsksArr = cardGrpAskChildAsks.stream().toArray(Ask[]::new);
+
+								cardGrpAsk.setChildAsks(cardGrpAskChildAsksArr);
 
 								childAskList.add(cardGrpAsk);
 
