@@ -62,6 +62,8 @@ import life.genny.qwanda.message.QMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
+
+import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 
@@ -525,6 +527,9 @@ public class RulesLoader {
 			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
 
 			addHandlers(kieSession);
+
+
+		    kieSession.addEventListener(new GennyAgendaEventListener());
 
 			if (bus != null) { // assist testing
 				kieSession.insert(bus);

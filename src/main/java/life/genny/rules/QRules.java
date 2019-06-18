@@ -1735,7 +1735,9 @@ public class QRules implements Serializable {
 			String questionsJson = null;
 			
 			try {
+				questions.setToken(this.getToken());
 				questionsJson = JsonUtils.toJson(questions);
+				
 			} catch (Exception e) {
 				log.error("Bad Json Conversion for Asks "+sourceCode+":"+ targetCode+":"+questionGroupCode);
 			}
