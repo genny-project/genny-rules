@@ -442,7 +442,7 @@ public class ContextUtils {
 		Attribute themeAttribute = new Attribute("PRI_CONTENT", "Content", new DataType(String.class));
 		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
 
-		String themeContent = "{ \"margin\": 10, \"backgroundColor\": \"white\", \"shadowColor\": \"#000\", \"shadowOpacity\": \"0.4\", \"shadowRadius\": 5, \"shadowOffset\": { \"width\": 0, \"height\": 0} }";
+		String themeContent = "{ \"margin\": 10, \"height\": \"initial\", \"backgroundColor\": \"white\", \"shadowColor\": \"#000\", \"shadowOpacity\": \"0.4\", \"shadowRadius\": 5, \"shadowOffset\": { \"width\": 0, \"height\": 0}, \"maxWidth\" : 600, \"padding\" : 10 }";
 
 		EntityAttribute themeEntityAttribute = new EntityAttribute(themeBe, themeAttribute, 1.0, themeContent);
 		EntityAttribute inheritEntAtt = new EntityAttribute(themeBe, inheritableAtt, 1.0, "FALSE");
@@ -468,6 +468,26 @@ public class ContextUtils {
 		Set<EntityAttribute> attributeSet = new HashSet<>();
 		attributeSet.add(inheritEntAtt);
 		attributeSet.add(expandableEntAtt);
+		themeBe.setBaseEntityAttributes(attributeSet);
+
+		return themeBe;
+	}
+
+	public static BaseEntity getCentreCardTheme() {
+
+		BaseEntity themeBe = new BaseEntity("THM_CARD_CENTRE", "Theme Card Centre Theme");
+
+		Attribute themeAttribute = new Attribute("PRI_CONTENT", "Content", new DataType(String.class));
+		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
+
+		String themeContent = "{ \"justifyContent\": \"flex-start\"}";
+
+		EntityAttribute inheritEntAtt = new EntityAttribute(themeBe, inheritableAtt, 1.0, "FALSE");
+		EntityAttribute themeEntityAttribute = new EntityAttribute(themeBe, themeAttribute, 1.0, themeContent);
+
+		Set<EntityAttribute> attributeSet = new HashSet<>();
+		attributeSet.add(inheritEntAtt);
+		attributeSet.add(themeEntityAttribute);
 		themeBe.setBaseEntityAttributes(attributeSet);
 
 		return themeBe;
