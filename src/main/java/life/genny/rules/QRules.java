@@ -1732,17 +1732,24 @@ public class QRules implements Serializable {
 				stakeholderCode, pushSelection);
 
 		if (questions != null) {
-			String questionsJson = null;
 			
 			try {
-				questionsJson = JsonUtils.toJson(questions);
+				// split up data
+				
+				QBulkMessage askData = questions.askData;
+				if (askData.getMessages().length > 0) {
+					askData.setToken(token);
+					this.publish("webcmds",askData);
+				}
+				
+				QDataAskMessage asks = questions.asks;
+				asks.setToken(token);
+				this.publish("webcmds",asks);
+				
 			} catch (Exception e) {
 				log.error("Bad Json Conversion for Asks "+sourceCode+":"+ targetCode+":"+questionGroupCode);
 			}
 			
-
-			/* we publish them */
-			this.publish("webcmds",questionsJson);
 			return true;
 		}
 
