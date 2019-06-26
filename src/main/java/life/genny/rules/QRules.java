@@ -1333,6 +1333,14 @@ public class QRules implements Serializable {
 		publish("cmds", json);
 		return msg;
 	}
+	public QMessage publishCmd(final QDataAskMessage msg, final String targetStr, final String replaceStr) {
+		msg.setToken(getToken());
+		String json = JsonUtils.toJson(msg);
+    	String jsonStr = json.replaceAll(targetStr, replaceStr); // set the user
+
+		publish("cmds", jsonStr);
+		return msg;
+	}
 
 	public void publishCmd(final QBulkMessage msg) {
 		msg.setToken(getToken());

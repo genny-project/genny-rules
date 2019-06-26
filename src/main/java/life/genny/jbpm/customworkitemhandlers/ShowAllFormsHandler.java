@@ -68,7 +68,6 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 				log.info("Form Codes=" + formCodes);
 
 				List<Ask> askList = new ArrayList<>();
-				String userCode = rules.getUser().getCode();
 				for (String formCode : formCodes) {
 					log.info("Asking group = "+formCode);
 					/*
