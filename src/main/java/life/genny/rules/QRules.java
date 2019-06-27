@@ -1536,11 +1536,11 @@ public class QRules implements Serializable {
 			channel = this.getAsString("sourceAddress"); // send abck to the original bridge
 			log.info("Sending to bridge at "+channel);
 			//VertxUtils.publish(getUser(), "mytest", payload);
-		} 
+		}
 		//else {
 			VertxUtils.publish(getUser(), channel, payload);
 		//}
-		
+
 	}
 
 	public boolean loadRealmData() {
@@ -1732,24 +1732,24 @@ public class QRules implements Serializable {
 				stakeholderCode, pushSelection);
 
 		if (questions != null) {
-			
+
 			try {
 				// split up data
-				
+
 				QBulkMessage askData = questions.askData;
 				if (askData.getMessages().length > 0) {
 					askData.setToken(token);
 					this.publish("webcmds",askData);
 				}
-				
+
 				QDataAskMessage asks = questions.asks;
 				asks.setToken(token);
 				this.publish("webcmds",asks);
-				
+
 			} catch (Exception e) {
 				log.error("Bad Json Conversion for Asks "+sourceCode+":"+ targetCode+":"+questionGroupCode);
 			}
-			
+
 			return true;
 		}
 
@@ -1811,7 +1811,7 @@ public class QRules implements Serializable {
 
 		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, this.getToken(),
 				sourceCode, true);
-		
+
 		if (questions != null) {
 
 		if (questions.asks != null) {
@@ -6491,5 +6491,44 @@ public class QRules implements Serializable {
 		//
 
 	}
+	public Ask createVirtualAsk(String questionCode, String questionName, String attributeCode, String sourceCode,
+			String targetCode) {
+		return this.createVirtualAsk(questionCode, questionName, attributeCode, sourceCode, targetCode, false);
+	}
+
+	public Ask createVirtualAsk(String questionCode, String questionName, String attributeCode, String sourceCode,
+			String targetCode, Boolean mandatory) {
+		Attribute attribute = RulesUtils.attributeMap.get(attributeCode);
+		if (attribute == null) {
+			this.println(attributeCode + "not found");
+		}
+		Question question = new Question(questionCode, questionName, attribute, mandatory);
+		Ask ask = new Ask(question, sourceCode, targetCode);
+		return ask;
+	}
+
+	public Ask setChildAsks(Ask parentAsk, Ask childAsk) {
+		List<Ask> childAsks = new ArrayList<Ask>();
+		childAsks.add(childAsk);
+		return this.setChildAsks(parentAsk, childAsks);
+	}
+
+	public Ask setChildAsks(Ask parentAsk, List<Ask> childAsks) {
+		Ask[] childAsksArr = childAsks.stream().toArray(Ask[]::new);
+		parentAsk.setChildAsks(childAsksArr);
+		return parentAsk;
+	}
+
+	public void sendAsk(Ask ask) {
+		this.sendAsk(ask, false);
+	}
+
+	public void sendAsk(Ask ask, Boolean replace) {
+		Ask[] asksArr = { ask };
+		QDataAskMessage askMsg = new QDataAskMessage(asksArr);
+		askMsg.setReplace(replace);
+		this.publishCmd(askMsg);
+	}
+
 
 }
