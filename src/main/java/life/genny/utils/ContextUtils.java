@@ -493,4 +493,24 @@ public class ContextUtils {
 		return themeBe;
 	}
 
+	public static BaseEntity getMainCardTheme() {
+
+		BaseEntity themeBe = new BaseEntity("THM_CARD_MAIN", "Theme Card Main Theme");
+
+		Attribute themeAttribute = new Attribute("PRI_CONTENT", "Content", new DataType(String.class));
+		Attribute inheritableAtt = new Attribute("PRI_IS_INHERITABLE", "inheritable", new DataType(Boolean.class));
+
+		String themeContent = "{ \"flexBasis\": \"initial\", \"flexShrink\": 0}";
+
+		EntityAttribute inheritEntAtt = new EntityAttribute(themeBe, inheritableAtt, 1.0, "FALSE");
+		EntityAttribute themeEntityAttribute = new EntityAttribute(themeBe, themeAttribute, 1.0, themeContent);
+
+		Set<EntityAttribute> attributeSet = new HashSet<>();
+		attributeSet.add(inheritEntAtt);
+		attributeSet.add(themeEntityAttribute);
+		themeBe.setBaseEntityAttributes(attributeSet);
+
+		return themeBe;
+	}
+
 }

@@ -1534,12 +1534,21 @@ public class QRules implements Serializable {
 	public void publish(String channel, Object payload) {
 		if (GennySettings.multiBridgeMode && (("cmds".equals(channel)) || ("webcmds".equals(channel)))) {
 			channel = this.getAsString("sourceAddress"); // send abck to the original bridge
+<<<<<<< HEAD
 			log.info("Sending to bridge at " + channel);
 			// VertxUtils.publish(getUser(), "mytest", payload);
 		}
 		// else {
 		VertxUtils.publish(getUser(), channel, payload);
 		// }
+=======
+			log.info("Sending to bridge at "+channel);
+			//VertxUtils.publish(getUser(), "mytest", payload);
+		}
+	// else {
+	VertxUtils.publish(getUser(), channel, payload);
+		//}
+>>>>>>> v2.4.0
 
 	}
 
@@ -1732,16 +1741,33 @@ public class QRules implements Serializable {
 				stakeholderCode, pushSelection);
 
 		if (questions != null) {
+<<<<<<< HEAD
 			String questionsJson = null;
+=======
+>>>>>>> v2.4.0
 
 			try {
-				questionsJson = JsonUtils.toJson(questions);
+				// split up data
+
+				QBulkMessage askData = questions.askData;
+				if (askData.getMessages().length > 0) {
+					askData.setToken(token);
+					this.publish("webcmds",askData);
+				}
+
+				QDataAskMessage asks = questions.asks;
+				asks.setToken(token);
+				this.publish("webcmds",asks);
+
 			} catch (Exception e) {
 				log.error("Bad Json Conversion for Asks " + sourceCode + ":" + targetCode + ":" + questionGroupCode);
 			}
 
+<<<<<<< HEAD
 			/* we publish them */
 			this.publish("webcmds", questionsJson);
+=======
+>>>>>>> v2.4.0
 			return true;
 		}
 
@@ -6523,5 +6549,4 @@ public class QRules implements Serializable {
 		askMsg.setReplace(replace);
 		this.publishCmd(askMsg);
 	}
-
 }
