@@ -755,9 +755,9 @@ public class RulesLoader {
 
 	}
 
-	public static void processStatefulMessage(QEventMessage message, final GennyToken gennyToken) {
+	public static void processStatefulMessage(QEventMessage message, final GennyToken userToken) {
 
-		final String realm = gennyToken.getToken();
+		final String realm = userToken.getRealm();
 		// Service Token
 		String serviceTokenStr = VertxUtils.getObject(realm, "CACHE", "SERVICE_TOKEN", String.class);
 		GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
@@ -774,14 +774,14 @@ public class RulesLoader {
 
 			// create a new knowledge session that uses JPA to store the runtime state
 			// is
-			kieSession = setupStatefulKieSession(realm, gennyToken);
+			kieSession = setupStatefulKieSession(realm, userToken);
 			int sessionId = kieSession.getId();
 			log.info("Session id = " + sessionId);
 
 			kieSession.insert(log);
 
 			kieSession.insert(message);
-			kieSession.insert(gennyToken);
+			kieSession.insert(userToken);
 			kieSession.insert(serviceToken);
 
 			log.info("******** Launching rules from executeStateful with NO QRules");

@@ -54,12 +54,13 @@ import life.genny.eventbus.EventBusInterface;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
-import life.genny.qwanda.Context.VisualControlType;
+
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.ContextType;
 import life.genny.qwanda.Layout;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
+import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.AttributeBoolean;
 import life.genny.qwanda.attribute.AttributeInteger;
@@ -3838,8 +3839,8 @@ public class QRules implements Serializable {
 		defaultTreeViewThemes.add(treeviewInputIconTheme);
 
 		createVirtualContext(treeAsk, defaultTreeViewThemes, ContextType.THEME);
-		createVirtualContext(treeAsk, treeviewInputTheme, ContextType.THEME, VisualControlType.INPUT);
-		createVirtualContext(treeAsk, treeviewShowIconTheme, ContextType.THEME, VisualControlType.INPUT);
+		createVirtualContext(treeAsk, treeviewInputTheme, ContextType.THEME, VisualControlType.VCL_INPUT);
+		createVirtualContext(treeAsk, treeviewShowIconTheme, ContextType.THEME, VisualControlType.VCL_INPUT);
 
 		Ask[] completeAsk = { treeAsk };
 
@@ -3927,7 +3928,7 @@ public class QRules implements Serializable {
 		if (iconBe != null && !iconBe.isEmpty()) {
 			log.info("Icons ::" + iconBe.toString() + " for parent code ::" + parentCode);
 			log.info("icon item ::" + iconBe.get(0));
-			createVirtualContext(parentAsk, iconBe.get(0), ContextType.ICON, VisualControlType.ICON);
+			createVirtualContext(parentAsk, iconBe.get(0), ContextType.ICON, VisualControlType.VCL_ICON);
 		}
 
 		return parentAsk;
@@ -5817,19 +5818,19 @@ public class QRules implements Serializable {
 
 								/* set the contexts to the ask */
 								viewAsk = this.createVirtualContext(viewAsk, viewIconBe, ContextType.ICON,
-										VisualControlType.ICON);
+										VisualControlType.VCL_ICON);
 								viewAsk = this.createVirtualContext(viewAsk, visualBaseEntity, ContextType.THEME,
-										VisualControlType.DEFAULT);
+										VisualControlType.VCL_INPUT);
 
 								editAsk = this.createVirtualContext(editAsk, editIconBe, ContextType.ICON,
-										VisualControlType.ICON);
+										VisualControlType.VCL_ICON);
 								editAsk = this.createVirtualContext(editAsk, visualBaseEntity, ContextType.THEME,
-										VisualControlType.DEFAULT);
+										VisualControlType.VCL_INPUT);
 
 								deleteAsk = this.createVirtualContext(deleteAsk, deleteIconBe, ContextType.ICON,
-										VisualControlType.ICON);
+										VisualControlType.VCL_ICON);
 								deleteAsk = this.createVirtualContext(deleteAsk, visualBaseEntity, ContextType.THEME,
-										VisualControlType.DEFAULT);
+										VisualControlType.VCL_INPUT);
 
 								actionChildAsks.add(viewAsk);
 								actionChildAsks.add(editAsk);
@@ -5890,7 +5891,7 @@ public class QRules implements Serializable {
 								cardGrpAsk = this.createVirtualContext(cardGrpAsk, cardContainerThemeBe,
 										ContextType.THEME);
 								cardGrpAsk = this.createVirtualContext(cardGrpAsk, elementHeightFitThemeBe,
-										ContextType.THEME, VisualControlType.WRAPPER);
+										ContextType.THEME, VisualControlType.VCL_WRAPPER);
 
 								/* creating card-main group */
 								Question cardMainGrpQues = new Question("QUE_CARD_MAIN_GRP", "Card Main Group",
@@ -5985,9 +5986,9 @@ public class QRules implements Serializable {
 										actionAttribute, true);
 								Ask optionsAsk = new Ask(optionsQues, this.getUser().getCode(), be.getCode());
 								optionsAsk = this.createVirtualContext(optionsAsk, moreVerticalIconBe, ContextType.ICON,
-										VisualControlType.ICON);
+										VisualControlType.VCL_ICON);
 								optionsAsk = this.createVirtualContext(optionsAsk, visualBaseEntity, ContextType.THEME,
-										VisualControlType.DEFAULT);
+										VisualControlType.VCL_INPUT);
 
 								Ask[] optionsAskArr = { optionsAsk };
 								cardRightGrpAsk.setChildAsks(optionsAskArr);
@@ -6039,7 +6040,7 @@ public class QRules implements Serializable {
 						Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
 
 						/* apply selectable theme to each parent ask group */
-						createVirtualContext(parentAsk, selectableTheme, ContextType.THEME, VisualControlType.DEFAULT);
+						createVirtualContext(parentAsk, selectableTheme, ContextType.THEME, VisualControlType.VCL_INPUT);
 
 						/* setting weight to parent ask */
 						parentAsk.setWeight(be.getIndex().doubleValue());
@@ -6126,11 +6127,11 @@ public class QRules implements Serializable {
 	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode) {
 		List<BaseEntity> themeList = new ArrayList<>();
 		themeList.add(theme);
-		return createVirtualContext(ask, themeList, linkCode, VisualControlType.DEFAULT);
+		return createVirtualContext(ask, themeList, linkCode, VisualControlType.VCL_INPUT);
 	}
 
 	public Ask createVirtualContext(Ask ask, List<BaseEntity> themeList, ContextType linkCode) {
-		return createVirtualContext(ask, themeList, linkCode, VisualControlType.DEFAULT);
+		return createVirtualContext(ask, themeList, linkCode, VisualControlType.VCL_INPUT);
 	}
 
 	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode,
@@ -6313,10 +6314,10 @@ public class QRules implements Serializable {
 		BaseEntity headerLabelSortThemeBe = this.baseEntity.getBaseEntityByCode("THM_TABLE_HEADER_SORT_THEME");
 
 		/* set the contexts to the ask */
-		createVirtualContext(columnSortAsk, horizontalWrapperBe, ContextType.THEME, VisualControlType.WRAPPER);
-		createVirtualContext(columnSortAsk, sortIconBe, ContextType.ICON, VisualControlType.ICON);
-		createVirtualContext(columnSortAsk, visualBaseEntity, ContextType.THEME, VisualControlType.DEFAULT);
-		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.LABEL);
+		createVirtualContext(columnSortAsk, horizontalWrapperBe, ContextType.THEME, VisualControlType.VCL_WRAPPER);
+		createVirtualContext(columnSortAsk, sortIconBe, ContextType.ICON, VisualControlType.VCL_ICON);
+		createVirtualContext(columnSortAsk, visualBaseEntity, ContextType.THEME, VisualControlType.VCL_INPUT);
+		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.VCL_LABEL);
 
 		return columnSortAsk;
 	}
@@ -6346,12 +6347,12 @@ public class QRules implements Serializable {
 		if (askArr != null) {
 			for (Ask childAsk : askArr) {
 				/* create virtual themes for the ask */
-				createVirtualContext(childAsk, defaultFormInputBe, ContextType.THEME, VisualControlType.INPUT);
-				createVirtualContext(childAsk, defaultFormLabelBe, ContextType.THEME, VisualControlType.LABEL);
-				createVirtualContext(childAsk, defaultFormWrapperBe, ContextType.THEME, VisualControlType.WRAPPER);
-				createVirtualContext(childAsk, defaultFormErrorBe, ContextType.THEME, VisualControlType.ERROR);
-				createVirtualContext(childAsk, defaultFormThemeBe, ContextType.THEME, VisualControlType.DEFAULT);
-				createVirtualContext(childAsk, defaultFormContainerBe, ContextType.THEME, VisualControlType.DEFAULT);
+				createVirtualContext(childAsk, defaultFormInputBe, ContextType.THEME, VisualControlType.VCL_INPUT);
+				createVirtualContext(childAsk, defaultFormLabelBe, ContextType.THEME, VisualControlType.VCL_LABEL);
+				createVirtualContext(childAsk, defaultFormWrapperBe, ContextType.THEME, VisualControlType.VCL_WRAPPER);
+				createVirtualContext(childAsk, defaultFormErrorBe, ContextType.THEME, VisualControlType.VCL_ERROR);
+				createVirtualContext(childAsk, defaultFormThemeBe, ContextType.THEME, VisualControlType.VCL_INPUT);
+				createVirtualContext(childAsk, defaultFormContainerBe, ContextType.THEME, VisualControlType.VCL_INPUT);
 
 				List<Ask> list = new ArrayList<>(Arrays.asList(childAsk.getChildAsks()));
 
@@ -6401,7 +6402,7 @@ public class QRules implements Serializable {
 
 			/* create ask for default submit button */
 			Ask buttonAsk = getQuestion(sourceCode, targetCode, "QUE_SUBMIT_BUTTON");
-			createVirtualContext(buttonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
+			createVirtualContext(buttonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.VCL_INPUT);
 			formButtonAsks.add(buttonAsk);
 			break;
 
@@ -6409,11 +6410,11 @@ public class QRules implements Serializable {
 
 			/* create ask for submit button */
 			Ask submitButtonAsk = getQuestion(sourceCode, targetCode, "QUE_SUBMIT_BUTTON");
-			createVirtualContext(submitButtonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
+			createVirtualContext(submitButtonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.VCL_INPUT);
 
 			/* create ask for cancel button */
 			Ask cancelButtonAsk = getQuestion(sourceCode, targetCode, "QUE_CANCEL_BUTTON");
-			createVirtualContext(cancelButtonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.INPUT);
+			createVirtualContext(cancelButtonAsk, buttonThemeBe, ContextType.THEME, VisualControlType.VCL_INPUT);
 
 			formButtonAsks.add(submitButtonAsk);
 			formButtonAsks.add(cancelButtonAsk);

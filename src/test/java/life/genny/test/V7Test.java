@@ -14,11 +14,12 @@ import org.junit.Test;
 
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
-import life.genny.qwanda.Context.VisualControlType;
+
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.ContextType;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
+import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
@@ -543,7 +544,7 @@ public class V7Test {
 		/* send visual baseentity */
 		sendTestMsg(beMsg);
 
-		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.LABEL);
+		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.VCL_LABEL);
 		return visualContext;
 	}
 

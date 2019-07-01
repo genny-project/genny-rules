@@ -12,11 +12,12 @@ import org.junit.Test;
 
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
-import life.genny.qwanda.Context.VisualControlType;
+
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.ContextType;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
+import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
@@ -129,7 +130,7 @@ public static final String SKIP_NEWQA_TEST = "FALSE";
 		/* send visual baseentity */
 		sendTestMsg(beMsg);
 		
-		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.DEFAULT);
+		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.VCL_INPUT);
 		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();
@@ -161,19 +162,19 @@ public static final String SKIP_NEWQA_TEST = "FALSE";
 		/* send visual baseentity */
 		sendTestMsg(beMsg);
 		
-		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.DEFAULT);
+		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.VCL_INPUT);
 		
 		/* create theme for input */
 		BaseEntity inputBackgroundColorThemeBe = new BaseEntity("THM_BACKGROUND_GRAY", "gray bg");
-		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.INPUT);
+		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_WHITE", "white");
-		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.INPUT);
+		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		BaseEntity labelBgColorThemeBe = new BaseEntity("THM_BACKGROUND_INTERNMATCH", "gray bg");
 		BaseEntity labelColorThemeBe = new BaseEntity("THM_COLOR_RED", "red");
-		Context labelContext = new Context(ContextType.THEME, labelColorThemeBe, VisualControlType.LABEL);
-		Context labelBackgroundColorContext = new Context(ContextType.THEME, labelBgColorThemeBe, VisualControlType.LABEL);
+		Context labelContext = new Context(ContextType.THEME, labelColorThemeBe, VisualControlType.VCL_LABEL);
+		Context labelBackgroundColorContext = new Context(ContextType.THEME, labelBgColorThemeBe, VisualControlType.VCL_LABEL);
 		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();
@@ -206,7 +207,7 @@ public static final String SKIP_NEWQA_TEST = "FALSE";
 		Ask ask = new Ask(question, "PER_USER1", "BEG_TEST_BE");
 		
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_RED", "red");
-		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.INPUT);
+		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();
@@ -242,14 +243,14 @@ public static final String SKIP_NEWQA_TEST = "FALSE";
 		/* send visual baseentity */
 		sendTestMsg(beMsg);
 		
-		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.DEFAULT);
+		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.VCL_INPUT);
 		
 		/* create theme for input */
 		BaseEntity inputBackgroundColorThemeBe = new BaseEntity("THM_BACKGROUND_GRAY", "gray bg");
-		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.INPUT);
+		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_WHITE", "white");
-		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.INPUT);
+		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();
@@ -293,14 +294,14 @@ public static final String SKIP_NEWQA_TEST = "FALSE";
 		/* send visual baseentity */
 		sendTestMsg(beMsg);
 		
-		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.DEFAULT);
+		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.VCL_INPUT);
 		
 		/* create theme for input */
 		BaseEntity inputBackgroundColorThemeBe = new BaseEntity("THM_BACKGROUND_GRAY", "gray bg");
-		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.INPUT);
+		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_WHITE", "white");
-		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.INPUT);
+		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();
@@ -350,14 +351,14 @@ public static final String SKIP_NEWQA_TEST = "FALSE";
 		/* send visual baseentity */
 		sendTestMsg(beMsg);
 		
-		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.DEFAULT);
+		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.VCL_INPUT);
 		
 		/* create theme for input */
 		BaseEntity inputBackgroundColorThemeBe = new BaseEntity("THM_BACKGROUND_GRAY", "gray bg");
-		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.INPUT);
+		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_WHITE", "white");
-		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.INPUT);
+		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();
@@ -398,17 +399,17 @@ public static final String SKIP_NEWQA_TEST = "FALSE";
 		/* send visual baseentity */
 		sendTestMsg(beMsg);
 		
-		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.DEFAULT);		
+		Context visualContext = new Context(ContextType.THEME, visualBaseEntity, VisualControlType.VCL_INPUT);		
 		
 		/* getting icon context for edit */
 		Context editIconContext = getEditIconContext();
 		
 		/* create theme for input */
 		BaseEntity inputBackgroundColorThemeBe = new BaseEntity("THM_BACKGROUND_GRAY", "gray bg");
-		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.INPUT);
+		Context inputBackgroundColorContext = new Context(ContextType.THEME, inputBackgroundColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		BaseEntity inputColorThemeBe = new BaseEntity("THM_COLOR_WHITE", "white");
-		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.INPUT);
+		Context inputColorContext = new Context(ContextType.THEME, inputColorThemeBe, VisualControlType.VCL_INPUT);
 		
 		/* creating list of contexts */
 		List<Context> contexts = new ArrayList<>();
