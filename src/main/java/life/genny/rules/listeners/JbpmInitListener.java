@@ -39,7 +39,6 @@ public class JbpmInitListener implements ProcessEventListener {
 //		processStart(process, gennyToken);
 //		printProcessText(process, gennyToken,
 //				"Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
-		System.out.println("Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
 		event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().forEach(obj -> {
 
 			if (obj instanceof String) {
@@ -60,9 +59,9 @@ public class JbpmInitListener implements ProcessEventListener {
 				process.setVariable(gennyToken.getCode(), gennyToken);
 //				printProcessText(process, gennyToken, "FOUND GennyToken  " + gennyToken.getCode());
 
-			} else if (obj instanceof Logger) {
-				Logger log = (Logger) obj;
-				process.setVariable("log", log);
+//			} else if (obj instanceof org.apache.logging.log4j.Logger) {
+//				org.apache.logging.log4j.Logger log = (org.apache.logging.log4j.Logger) obj;
+//				process.setVariable("log", log);
 //				printProcessText(process, gennyToken, "FOUND Logger  ");
 
 			} else {
@@ -71,6 +70,7 @@ public class JbpmInitListener implements ProcessEventListener {
 		});
 
 		//event.getKieRuntime().insert(process);
+		System.out.println("Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
 
 	}
 
