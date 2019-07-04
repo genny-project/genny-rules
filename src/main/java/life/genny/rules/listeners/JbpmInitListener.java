@@ -56,7 +56,11 @@ public class JbpmInitListener implements ProcessEventListener {
 
 			} else if (obj instanceof GennyToken) {
 				GennyToken gennyToken = (GennyToken) obj;
-				process.setVariable(gennyToken.getCode(), gennyToken);
+				if ("PER_SERVICE".equals(gennyToken.getCode())) {
+					process.setVariable("serviceToken", gennyToken);
+				} else {
+					process.setVariable("userToken", gennyToken);
+				}
 //				printProcessText(process, gennyToken, "FOUND GennyToken  " + gennyToken.getCode());
 
 //			} else if (obj instanceof org.apache.logging.log4j.Logger) {
@@ -70,7 +74,7 @@ public class JbpmInitListener implements ProcessEventListener {
 		});
 
 		//event.getKieRuntime().insert(process);
-		System.out.println("Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
+		//System.out.println("Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
 
 	}
 
