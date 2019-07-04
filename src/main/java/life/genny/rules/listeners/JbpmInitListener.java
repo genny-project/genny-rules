@@ -36,9 +36,10 @@ public class JbpmInitListener implements ProcessEventListener {
 ////				+ ", Process definition ID: " + process.getProcessId() + ", Process name: "
 ////				+ process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
 ////				+ process.getParentProcessInstanceId());
-		processStart(process, gennyToken);
-		printProcessText(process, gennyToken,
-				"Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
+//		processStart(process, gennyToken);
+//		printProcessText(process, gennyToken,
+//				"Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
+		System.out.println("Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
 		event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().forEach(obj -> {
 
 			if (obj instanceof String) {
@@ -52,7 +53,7 @@ public class JbpmInitListener implements ProcessEventListener {
 
 			} else if (obj instanceof QRules) {
 				process.setVariable("rules", (QRules) obj);
-				printProcessText(process, gennyToken, "FOUND QRULE ");
+			//	printProcessText(process, gennyToken, "FOUND QRULE ");
 
 			} else if (obj instanceof GennyToken) {
 				GennyToken gennyToken = (GennyToken) obj;
@@ -90,7 +91,7 @@ public class JbpmInitListener implements ProcessEventListener {
 
 		long endTime = System.nanoTime();
 		double difference = (endTime - processStartTime) / 1e6; // get ms
-		processEnd(process, gennyToken, difference);
+//		processEnd(process, gennyToken, difference);
 
 	}
 
