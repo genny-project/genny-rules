@@ -51,7 +51,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
     //	log.info("Running rule flow group "+ruleFlowGroup);
     	System.out.println("Running rule flow group "+ruleFlowGroup);
     	
-    	System.out.println("ProcessInstanceId = "+workItem.getProcessInstanceId());
+    //	System.out.println("ProcessInstanceId = "+workItem.getProcessInstanceId());
 		KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 		// ksconf.setOption(TimedRuleExecutionOption.YES);
 
