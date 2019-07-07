@@ -43,8 +43,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
     if (serviceToken == null) {
     	log.error("Must supply serviceToken!");
-    } else  if (!"PER_SERVICE".equals(serviceToken.getCode())) {
-    	log.error("Must supply an actual serviceToken not a normal token!");
+    } else  if ((!"PER_SERVICE".equals(serviceToken.getCode()))) {
+    	log.error("Must supply an actual serviceToken not a normal token! check PER_SERVICE is the code (and not serviceToken");
     } else {
     
     //	log.info("serviceToken = "+serviceToken.getCode());
