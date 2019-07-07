@@ -714,7 +714,7 @@ public class RulesLoader {
 
 		// Service Token
 		String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
-		GennyToken serviceToken = new GennyToken("serviceToken", serviceTokenStr);
+		GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
 
 		QRules qRules = new QRules(eventBus, token);
 		qRules.set("realm", qRules.realm());
