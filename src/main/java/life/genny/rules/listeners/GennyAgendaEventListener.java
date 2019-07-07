@@ -63,6 +63,7 @@ public class GennyAgendaEventListener extends DefaultAgendaEventListener{
 
                 WorkingMemory workingMemory) {
         	super.afterRuleFlowGroupActivated(event);
+        	System.out.println("Fire All Rules in GennyAgendaEventListener");
             workingMemory.fireAllRules();
 
         }

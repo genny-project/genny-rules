@@ -53,8 +53,13 @@ import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.core.buffer.Buffer;
 import life.genny.eventbus.EventBusInterface;
 import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
+import life.genny.jbpm.customworkitemhandlers.GenerateFrames;
+import life.genny.jbpm.customworkitemhandlers.GenerateSearches;
+import life.genny.jbpm.customworkitemhandlers.GenerateThemes;
+import life.genny.jbpm.customworkitemhandlers.GenerateTree;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
+import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.message.QEventMessage;
@@ -62,7 +67,6 @@ import life.genny.qwanda.message.QMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
-
 import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
@@ -525,11 +529,14 @@ public class RulesLoader {
 			// ksconf.setOption(TimedRuleExecutionOption.YES);
 
 			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
+//			kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(realm), ksconf, env); // This
+			// is
+			// stateful
 
 			addHandlers(kieSession);
 
 
-		    kieSession.addEventListener(new GennyAgendaEventListener());
+		    kieSession.addEventListener(new GennyAgendaEventListener()); 
 
 			if (bus != null) { // assist testing
 				kieSession.insert(bus);
@@ -682,7 +689,7 @@ public class RulesLoader {
 		qRules.set("realm", realm);
 		qRules.setServiceToken(serviceToken);
 
-		GennyToken gennyServiceToken = new GennyToken("serviceToken", serviceToken);
+		GennyToken gennyServiceToken = new GennyToken("PER_SERVICE", serviceToken);
 
 		List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();
 
@@ -752,7 +759,11 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
-
+		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame());
+		kieSession.getWorkItemManager().registerWorkItemHandler("GenerateSearches", new GenerateSearches());
+		kieSession.getWorkItemManager().registerWorkItemHandler("GenerateThemes", new GenerateThemes());
+		kieSession.getWorkItemManager().registerWorkItemHandler("GenerateFrames", new GenerateFrames());
+		kieSession.getWorkItemManager().registerWorkItemHandler("GenerateTree", new GenerateTree());
 	}
 
 	public static void processStatefulMessage(QEventMessage message, final GennyToken userToken) {

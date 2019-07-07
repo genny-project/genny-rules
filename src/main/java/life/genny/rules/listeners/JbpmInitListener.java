@@ -57,7 +57,8 @@ public class JbpmInitListener implements ProcessEventListener {
 			} else if (obj instanceof GennyToken) {
 				GennyToken gennyToken = (GennyToken) obj;
 				if (("PER_SERVICE".equals(gennyToken.getCode()))||("serviceToken".equals(gennyToken.getCode()))) {
-					process.setVariable("serviceToken", gennyToken);
+					System.out.println("Setting variable serviceToken token in JbpmInitListener");
+					process.setVariable("serviceToken",gennyToken);
 				} else {
 					process.setVariable("userToken", gennyToken);
 				}
