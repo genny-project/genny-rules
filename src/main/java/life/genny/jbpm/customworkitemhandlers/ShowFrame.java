@@ -43,13 +43,11 @@ public class ShowFrame implements WorkItemHandler {
     		log.error("Must supply a root Frame Code!");
     	} else {
     		log.info("root Frame Code = "+rootFrameCode);
-    		// test cache has data
-    		QDataBaseEntityMessage frameMsg = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-MSG",
-    				QDataBaseEntityMessage.class, userToken.getToken());
-
-    		/* send message */
-    		VertxUtils.writeMsg("webcmds",frameMsg); // Send QDataBaseEntityMessage
-
+    		
+    		QDataBaseEntityMessage bucketMsg= VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-MSG", QDataBaseEntityMessage.class, userToken.getToken());
+    		bucketMsg.setToken(userToken.getToken());
+    		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(bucketMsg));
+    		
     		Type setType = new TypeToken<Set<QDataAskMessage>>() {
     		}.getType();
 
@@ -64,9 +62,10 @@ public class ShowFrame implements WorkItemHandler {
     			String json = JsonUtils.toJson(askMsg);
     	    	String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the user
 
-    	    	VertxUtils.writeMsg("cmds", jsonStr);
-
-     		}
+    	    	VertxUtils.writeMsg("webcmds", jsonStr);    																							// QDataAskMessage
+    		}
+    		
+   
                        
     	}
     	
