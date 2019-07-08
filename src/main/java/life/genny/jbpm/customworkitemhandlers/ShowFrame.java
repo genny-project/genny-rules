@@ -1,13 +1,26 @@
 package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Type;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.logging.log4j.Logger;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
 
+import com.google.gson.reflect.TypeToken;
+
+import io.vertx.core.json.JsonObject;
+import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
+import life.genny.qwanda.message.QDataAskMessage;
+import life.genny.qwanda.message.QDataBaseEntityMessage;
+import life.genny.qwandautils.JsonUtils;
+import life.genny.rules.QRules;
+import life.genny.utils.FrameUtils2;
+import life.genny.utils.VertxUtils;
 
 public class ShowFrame implements WorkItemHandler {
 
@@ -30,6 +43,31 @@ public class ShowFrame implements WorkItemHandler {
     		log.error("Must supply a root Frame Code!");
     	} else {
     		log.info("root Frame Code = "+rootFrameCode);
+    		// test cache has data
+    		QDataBaseEntityMessage frameMsg = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-MSG",
+    				QDataBaseEntityMessage.class, userToken.getToken());
+
+    		/* send message */
+    		VertxUtils.writeMsg("webcmds",frameMsg); // Send QDataBaseEntityMessage
+
+    		Type setType = new TypeToken<Set<QDataAskMessage>>() {
+    		}.getType();
+
+    		String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-ASKS", String.class,
+    				userToken.getToken());
+
+    		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+
+    		System.out.println("Sending Asks");
+    		for (QDataAskMessage askMsg : askMsgs2) {
+    			askMsg.setToken(userToken.getToken());
+    			String json = JsonUtils.toJson(askMsg);
+    	    	String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the user
+
+    	    	VertxUtils.writeMsg("cmds", jsonStr);
+
+     		}
+                       
     	}
     	
     }
