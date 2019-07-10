@@ -16,6 +16,7 @@ import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.rules.QRules;
 import life.genny.utils.RulesUtils;
+import life.genny.utils.VertxUtils;
 
 public class JbpmInitListener implements ProcessEventListener {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -23,15 +24,23 @@ public class JbpmInitListener implements ProcessEventListener {
 
 	long processStartTime = 0;
 	GennyToken gennyToken;
+	VertxUtils vertxUtils;
 
 	public JbpmInitListener(final GennyToken gennyToken) {
 		this.gennyToken = gennyToken;
 	}
+	
+	public JbpmInitListener(VertxUtils vertxUtils) {
+		this.vertxUtils = vertxUtils;
+	}
+
 
 	@Override
 	public void beforeProcessStarted(ProcessStartedEvent event) {
 		processStartTime = System.nanoTime();
 		WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
+		
+	
 ////		log.info("jBPM event 'beforeProcessStarted'. Process ID: " + process.getId()
 ////				+ ", Process definition ID: " + process.getProcessId() + ", Process name: "
 ////				+ process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
@@ -61,6 +70,8 @@ public class JbpmInitListener implements ProcessEventListener {
 					process.setVariable("serviceToken",gennyToken);
 				} else {
 					process.setVariable("userToken", gennyToken);
+					VertxUtils.writeCachedJson(gennyToken.getRealm(), gennyToken.getSessionCode(), process.getId()+"", gennyToken.getToken());
+
 				}
 //				printProcessText(process, gennyToken, "FOUND GennyToken  " + gennyToken.getCode());
 
@@ -77,6 +88,9 @@ public class JbpmInitListener implements ProcessEventListener {
 		//event.getKieRuntime().insert(process);
 		//System.out.println("Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
 
+		//Now save this session_state to the Cache associated with the processId
+		
+		
 	}
 
 	@Override
