@@ -70,8 +70,9 @@ public class JbpmInitListener implements ProcessEventListener {
 					process.setVariable("serviceToken",gennyToken);
 				} else {
 					process.setVariable("userToken", gennyToken);
-					VertxUtils.writeCachedJson(gennyToken.getRealm(), gennyToken.getSessionCode(), process.getId()+"", gennyToken.getToken());
-
+					if (process.getProcessId().contains("ession")) { // only bother with session type workflows
+						VertxUtils.writeCachedJson(gennyToken.getRealm(), gennyToken.getSessionCode(), process.getId()+"", gennyToken.getToken());
+					}
 				}
 //				printProcessText(process, gennyToken, "FOUND GennyToken  " + gennyToken.getCode());
 
