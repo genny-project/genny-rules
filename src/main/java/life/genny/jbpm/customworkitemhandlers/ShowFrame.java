@@ -44,11 +44,14 @@ public class ShowFrame implements WorkItemHandler {
     	} else {
     		log.info("root Frame Code = "+rootFrameCode);
     		
-    		QDataBaseEntityMessage bucketMsg= VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-MSG", QDataBaseEntityMessage.class, userToken.getToken());
-    		bucketMsg.setToken(userToken.getToken());
-    		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(bucketMsg));
-    		
-    		Type setType = new TypeToken<Set<QDataAskMessage>>() {
+    		QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-MSG",
+    				QDataBaseEntityMessage.class, userToken.getToken());	
+    		FRM_MSG.setToken(userToken.getToken());
+    		String frmStr = JsonUtils.toJson(FRM_MSG);
+    		frmStr = frmStr.replaceAll(rootFrameCode, "FRM_ROOT");
+    		QDataBaseEntityMessage FRM_MSG_ROOT = JsonUtils.fromJson(frmStr, QDataBaseEntityMessage.class);
+    		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(FRM_MSG_ROOT));
+       		Type setType = new TypeToken<Set<QDataAskMessage>>() {
     		}.getType();
 
     		String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-ASKS", String.class,
@@ -64,8 +67,6 @@ public class ShowFrame implements WorkItemHandler {
 
     	    	VertxUtils.writeMsg("webcmds", jsonStr);    																							// QDataAskMessage
     		}
-    		
-   
                        
     	}
     	
