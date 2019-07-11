@@ -60,6 +60,7 @@ import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.entity.User;
+import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwanda.message.QMessage;
 import life.genny.qwandautils.GennySettings;
@@ -541,8 +542,18 @@ public class RulesLoader {
 				kieSession.insert(bus);
 			}
 
+			QEventMessage eventMsg = null;
+			QDataMessage dataMsg = null;
+			
 			for (final Object fact : facts) {
 				kieSession.insert(fact);
+				if (fact instanceof QEventMessage)  {
+					eventMsg = (QEventMessage)fact;
+				}
+				if (fact instanceof QDataMessage)  {
+					dataMsg = (QDataMessage)fact;
+				}
+
 			}
 
 			try {
@@ -552,6 +563,35 @@ public class RulesLoader {
 			}
 
 			log.info("******** Launching rules from executeStateless");
+			
+			if (!gennyToken.getCode().equals("PER_SERVICE")) {
+				// This is a userToken so send the event through 
+				String session_state = gennyToken.getSessionCode();
+				String processIdStr = null;
+				
+				// Check if an existing userSession is there
+				JsonObject processIdJson = VertxUtils.readCachedJson(gennyToken.getRealm(), session_state, gennyToken.getToken());
+				if (processIdJson.getString("status").equals("ok")) {
+					processIdStr = processIdJson.getString("value");
+					Long processId = Long.decode(processIdStr);
+					// So send the event through to the userSession
+					if (eventMsg != null) {
+						kieSession.signalEvent("events",eventMsg , processId);
+					} else 
+					if (dataMsg != null) {
+						kieSession.signalEvent("data",dataMsg , processId);
+					}
+
+				} else {
+					// Must be the AUTH_INIT
+					if (eventMsg.getData().getCode().equals("AUTH_INIT")) {
+						kieSession.signalEvent("new_session",eventMsg);
+					} else {
+						log.error("NO EXISTING SESSION AND NOT AUTHH_INIT");;
+					}
+				}
+			}
+			
 			int rulesFired = kieSession.fireAllRules();
 			// kieSession.startProcess("init_project");
 			log.info("Fired " + rulesFired + " rules");

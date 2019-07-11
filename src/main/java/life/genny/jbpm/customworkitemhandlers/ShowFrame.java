@@ -15,8 +15,10 @@ import com.google.gson.reflect.TypeToken;
 import io.vertx.core.json.JsonObject;
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
+import life.genny.qwanda.Ask;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
+import life.genny.qwanda.validation.Validation;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.QRules;
 import life.genny.utils.FrameUtils2;
@@ -31,6 +33,7 @@ public class ShowFrame implements WorkItemHandler {
     // extract parameters
     GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
     String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
+    String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
     
     if (userToken == null) {
     	log.error("Must supply userToken!");
@@ -48,7 +51,10 @@ public class ShowFrame implements WorkItemHandler {
     				QDataBaseEntityMessage.class, userToken.getToken());	
     		FRM_MSG.setToken(userToken.getToken());
     		String frmStr = JsonUtils.toJson(FRM_MSG);
-    		frmStr = frmStr.replaceAll(rootFrameCode, "FRM_ROOT");
+    		if (targetFrameCode == null) {
+    			targetFrameCode = "FRM_ROOT";
+    		}
+    		frmStr = frmStr.replaceAll(rootFrameCode, targetFrameCode);
     		QDataBaseEntityMessage FRM_MSG_ROOT = JsonUtils.fromJson(frmStr, QDataBaseEntityMessage.class);
     		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(FRM_MSG_ROOT));
        		Type setType = new TypeToken<Set<QDataAskMessage>>() {
@@ -61,6 +67,14 @@ public class ShowFrame implements WorkItemHandler {
 
     		System.out.println("Sending Asks");
     		for (QDataAskMessage askMsg : askMsgs2) {
+    			for (Ask aask : askMsg.getItems()) {
+    				for (Validation val : aask.getQuestion().getAttribute().getDataType().getValidationList()) {
+    					if (val.getRegex()==null)  {
+    						log.error("Regex for "+aask.getQuestion().getCode()+" == null");
+    					}
+
+    				}
+    			}
     			askMsg.setToken(userToken.getToken());
     			String json = JsonUtils.toJson(askMsg);
     	    	String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the user
