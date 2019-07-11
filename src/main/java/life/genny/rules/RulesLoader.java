@@ -68,6 +68,7 @@ import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
+import life.genny.models.GennyToken;
 
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
