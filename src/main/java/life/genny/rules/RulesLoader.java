@@ -549,9 +549,11 @@ public class RulesLoader {
 				kieSession.insert(fact);
 				if (fact instanceof QEventMessage)  {
 					eventMsg = (QEventMessage)fact;
+					eventMsg.setToken(gennyToken.getToken());
 				}
 				if (fact instanceof QDataMessage)  {
 					dataMsg = (QDataMessage)fact;
+					dataMsg.setToken(gennyToken.getToken());
 				}
 
 			}
@@ -585,6 +587,7 @@ public class RulesLoader {
 				} else {
 					// Must be the AUTH_INIT
 					if (eventMsg.getData().getCode().equals("AUTH_INIT")) {
+						
 						kieSession.signalEvent("new_session",eventMsg);
 					} else {
 						log.error("NO EXISTING SESSION AND NOT AUTHH_INIT");;
