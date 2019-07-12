@@ -600,7 +600,7 @@ public class RulesLoader {
 			log.info("Fired " + rulesFired + " rules");
 
 		} catch (final Throwable t) {
-			t.printStackTrace();
+			log.error(t.getLocalizedMessage());;
 		} finally {
 			log.info("finished rules");
 			kieSession.dispose();
