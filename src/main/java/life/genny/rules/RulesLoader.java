@@ -588,7 +588,7 @@ public class RulesLoader {
 					// Must be the AUTH_INIT
 					if (eventMsg.getData().getCode().equals("AUTH_INIT")) {
 						
-						kieSession.signalEvent("new_session",eventMsg);
+						kieSession.signalEvent("newSession",eventMsg);
 					} else {
 						log.error("NO EXISTING SESSION AND NOT AUTHH_INIT");;
 					}
