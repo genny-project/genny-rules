@@ -66,7 +66,7 @@ public class JbpmInitListener implements ProcessEventListener {
 			} else if (obj instanceof GennyToken) {
 				GennyToken gennyToken = (GennyToken) obj;
 				if (("PER_SERVICE".equals(gennyToken.getCode()))||("serviceToken".equals(gennyToken.getCode()))) {
-					System.out.println("JbpmListener: serviceToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode());
+			//		System.out.println("JbpmListener: serviceToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode());
 					process.setVariable("serviceToken",gennyToken);
 				} else {
 					process.setVariable("userToken", gennyToken);
@@ -74,7 +74,7 @@ public class JbpmInitListener implements ProcessEventListener {
 					if (processId.contains("ession")) { // only bother with session type workflows
 //						System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode());
 						VertxUtils.writeCachedJson(gennyToken.getRealm(), gennyToken.getSessionCode(), process.getId()+"", gennyToken.getToken());
-						System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode()+" written to Cache");
+				//		System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode()+" written to Cache");
 
 					} 
 				}
