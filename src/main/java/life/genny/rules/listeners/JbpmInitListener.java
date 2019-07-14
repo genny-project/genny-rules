@@ -72,7 +72,7 @@ public class JbpmInitListener implements ProcessEventListener {
 					process.setVariable("userToken", gennyToken);
 					String processId = process.getProcessId();
 					if (processId.contains("ession")) { // only bother with session type workflows
-//						System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode());
+						System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode());
 						VertxUtils.writeCachedJson(gennyToken.getRealm(), gennyToken.getSessionCode(), process.getId()+"", gennyToken.getToken());
 				//		System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode()+" written to Cache");
 
