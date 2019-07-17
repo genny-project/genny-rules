@@ -23,11 +23,11 @@ public class JbpmInitListener implements ProcessEventListener {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	long processStartTime = 0;
-	GennyToken gennyToken;
+	GennyToken serviceToken;
 	VertxUtils vertxUtils;
 
-	public JbpmInitListener(final GennyToken gennyToken) {
-		this.gennyToken = gennyToken;
+	public JbpmInitListener(final GennyToken serviceToken) {
+		this.serviceToken = serviceToken;
 	}
 	
 	public JbpmInitListener(VertxUtils vertxUtils) {
@@ -40,6 +40,7 @@ public class JbpmInitListener implements ProcessEventListener {
 		processStartTime = System.nanoTime();
 		WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
 		
+		process.setVariable("serviceToken",serviceToken);
 	
 ////		log.info("jBPM event 'beforeProcessStarted'. Process ID: " + process.getId()
 ////				+ ", Process definition ID: " + process.getProcessId() + ", Process name: "

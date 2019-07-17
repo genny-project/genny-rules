@@ -67,6 +67,7 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.listeners.GennyAgendaEventListener;
+import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 import life.genny.models.GennyToken;
@@ -515,7 +516,7 @@ public class RulesLoader {
 	}
 
 	public static void executeStateless(final String realm, final EventBusInterface bus,
-			final List<Tuple2<String, Object>> globals, final List<Object> facts, final GennyToken gennyToken) {
+			final List<Tuple2<String, Object>> globals, final List<Object> facts, final GennyToken serviceToken,final GennyToken userToken) {
 		StatefulKnowledgeSession kieSession = null;
 
 		try {
@@ -537,7 +538,8 @@ public class RulesLoader {
 
 
 		    kieSession.addEventListener(new GennyAgendaEventListener()); 
-
+		    kieSession.addEventListener(new JbpmInitListener(serviceToken)); 
+		    
 			if (bus != null) { // assist testing
 				kieSession.insert(bus);
 			}
@@ -549,11 +551,15 @@ public class RulesLoader {
 				kieSession.insert(fact);
 				if (fact instanceof QEventMessage)  {
 					eventMsg = (QEventMessage)fact;
-					eventMsg.setToken(gennyToken.getToken());
+					if (userToken != null) {
+						eventMsg.setToken(userToken.getToken());
+					} else {
+						eventMsg.setToken(serviceToken.getToken());
+					}
 				}
 				if (fact instanceof QDataMessage)  {
 					dataMsg = (QDataMessage)fact;
-					dataMsg.setToken(gennyToken.getToken());
+					dataMsg.setToken(userToken.getToken());
 				}
 
 			}
@@ -566,13 +572,13 @@ public class RulesLoader {
 
 			log.info("******** Launching rules from executeStateless");
 			
-			if (!gennyToken.getCode().equals("PER_SERVICE")) {
+			if (userToken != null) {
 				// This is a userToken so send the event through 
-				String session_state = gennyToken.getSessionCode();
+				String session_state = userToken.getSessionCode();
 				String processIdStr = null;
 				
 				// Check if an existing userSession is there
-				JsonObject processIdJson = VertxUtils.readCachedJson(gennyToken.getRealm(), session_state, gennyToken.getToken());
+				JsonObject processIdJson = VertxUtils.readCachedJson(serviceToken.getRealm(), session_state, serviceToken.getToken());
 				if (processIdJson.getString("status").equals("ok")) {
 					processIdStr = processIdJson.getString("value");
 					Long processId = Long.decode(processIdStr);
@@ -587,7 +593,7 @@ public class RulesLoader {
 				} else {
 					// Must be the AUTH_INIT
 					if (eventMsg.getData().getCode().equals("AUTH_INIT")) {
-						
+						eventMsg.getData().setValue("NEW_SESSION");
 						kieSession.signalEvent("newSession",eventMsg);
 					} else {
 						log.error("NO EXISTING SESSION AND NOT AUTHH_INIT");;
@@ -596,7 +602,6 @@ public class RulesLoader {
 			}
 			
 			int rulesFired = kieSession.fireAllRules();
-			// kieSession.startProcess("init_project");
 			log.info("Fired " + rulesFired + " rules");
 
 		} catch (final Throwable t) {
@@ -741,7 +746,7 @@ public class RulesLoader {
 		facts.add(gennyServiceToken);
 
 		try {
-			executeStateless(realm, eventBus, globals, facts, gennyServiceToken);
+			executeStateless(realm, eventBus, globals, facts, gennyServiceToken,null);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -776,7 +781,7 @@ public class RulesLoader {
 		facts.add(serviceToken);
 
 		try {
-			RulesLoader.executeStateless(qRules.realm(), eventBus, globals, facts, userToken);
+			RulesLoader.executeStateless(qRules.realm(), eventBus, globals, facts, serviceToken,userToken);
 
 		} catch (Exception e) {
 			e.printStackTrace();
