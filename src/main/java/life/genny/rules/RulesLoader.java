@@ -15,7 +15,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 
 import org.apache.http.client.ClientProtocolException;
@@ -519,7 +521,16 @@ public class RulesLoader {
 			final List<Tuple2<String, Object>> globals, final List<Object> facts, final GennyToken serviceToken,final GennyToken userToken) {
 		StatefulKnowledgeSession kieSession = null;
 
+
+	//	EntityManagerFactory emf2 =  (EntityManagerFactory)env.get(EnvironmentName.ENTITY_MANAGER_FACTORY);
+	//	EntityManager em = emf2.createEntityManager();
+		
+	//	EntityTransaction tx = em.getTransaction();
+		
 		try {
+//
+//		tx.begin();
+		
 
 			if (getKieBaseCache().get(realm) == null) {
 				log.error("The realm  kieBaseCache is null, not loaded " + realm);
@@ -540,9 +551,6 @@ public class RulesLoader {
 		    kieSession.addEventListener(new GennyAgendaEventListener()); 
 		    kieSession.addEventListener(new JbpmInitListener(serviceToken)); 
 		    
-			if (bus != null) { // assist testing
-				kieSession.insert(bus);
-			}
 
 			QEventMessage eventMsg = null;
 			QDataMessage dataMsg = null;
@@ -596,7 +604,7 @@ public class RulesLoader {
 						eventMsg.getData().setValue("NEW_SESSION");
 						kieSession.signalEvent("newSession",eventMsg);
 					} else {
-						log.error("NO EXISTING SESSION AND NOT AUTHH_INIT");;
+						log.error("NO EXISTING SESSION AND NOT AUTH_INIT");;
 					}
 				}
 			}
@@ -608,9 +616,13 @@ public class RulesLoader {
 			log.error(t.getLocalizedMessage());;
 		} finally {
 			log.info("finished rules");
+			// commit
+		//	tx.commit(); 
+		//	em.close();
 			kieSession.dispose();
 		}
 	}
+
 
 	public static void executeStateful2(final String realm, final EventBusInterface bus,
 			final List<Tuple2<String, Object>> globals, final List<Object> facts, final GennyToken gennyToken) {
