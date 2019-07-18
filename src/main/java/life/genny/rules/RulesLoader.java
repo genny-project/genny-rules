@@ -523,14 +523,14 @@ public class RulesLoader {
 		StatefulKnowledgeSession kieSession = null;
 
 
-	//	EntityManagerFactory emf2 =  (EntityManagerFactory)env.get(EnvironmentName.ENTITY_MANAGER_FACTORY);
-	//	EntityManager em = emf2.createEntityManager();
+		EntityManagerFactory emf2 =  (EntityManagerFactory)env.get(EnvironmentName.ENTITY_MANAGER_FACTORY);
+		EntityManager em = emf2.createEntityManager();
 		
-	//	EntityTransaction tx = em.getTransaction();
+		EntityTransaction tx = em.getTransaction();
 		
 		try {
 //
-//		tx.begin();
+		tx.begin();
 		
 
 			if (getKieBaseCache().get(realm) == null) {
@@ -541,8 +541,8 @@ public class RulesLoader {
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 			// ksconf.setOption(TimedRuleExecutionOption.YES);
 
-			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
-//			kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(realm), ksconf, env); // This
+//			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
+			kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(realm), ksconf, env); // This
 			// is
 			// stateful
 
@@ -573,11 +573,11 @@ public class RulesLoader {
 
 			}
 
-			try {
-				kieSession.setGlobal("log", log);
-			} catch (RuntimeException e) {
-				log.error("kieSession.setGlobal(\"log\", log); has an error "+e.getLocalizedMessage());
-			}
+//			try {
+//				kieSession.setGlobal("log", log);
+//			} catch (RuntimeException e) {
+//				log.error("kieSession.setGlobal(\"log\", log); has an error "+e.getLocalizedMessage());
+//			}
 
 			log.info("******** Launching rules from executeStateless");
 			
@@ -618,9 +618,9 @@ public class RulesLoader {
 		} finally {
 			log.info("finished rules");
 			// commit
-		//	tx.commit(); 
-		//	em.close();
-			kieSession.dispose();
+			tx.commit(); 
+			em.close();
+		//	kieSession.dispose();
 		}
 	}
 
@@ -754,7 +754,7 @@ public class RulesLoader {
 		List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();
 
 		List<Object> facts = new ArrayList<Object>();
-		facts.add(qRules);
+	//	facts.add(qRules);
 		facts.add(msg);
 		facts.add(gennyServiceToken);
 
@@ -788,7 +788,7 @@ public class RulesLoader {
 		// RulesLoader.getStandardGlobals();
 
 		List<Object> facts = new ArrayList<Object>();
-		facts.add(qRules);
+	//	facts.add(qRules);
 		facts.add(msg);
 		facts.add(userToken);
 		facts.add(serviceToken);
