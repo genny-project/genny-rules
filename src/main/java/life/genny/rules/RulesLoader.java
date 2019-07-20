@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -73,6 +74,22 @@ import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
+ 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.ServiceLoader;
+import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
+import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
+import org.jbpm.services.api.model.ProcessInstanceDesc;
+import org.jbpm.services.api.query.QueryService;
+import org.jbpm.services.api.query.model.QueryParam;
+import org.jbpm.services.api.utils.KieServiceConfigurator;
+import org.kie.api.runtime.KieSession;
+import org.kie.internal.identity.IdentityProvider;
+import org.kie.internal.query.QueryContext;
+import org.kie.internal.task.api.UserGroupCallback;
+
 
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -506,15 +523,20 @@ public class RulesLoader {
 			
 				
 				// Check if an existing userSession is there
-				JsonObject processIdJson = VertxUtils.readCachedJson(serviceToken.getRealm(), session_state, serviceToken.getToken());
-				if (processIdJson.getString("status").equals("ok")) {
-					processIdStr = processIdJson.getString("value");
-					Long processId = Long.decode(processIdStr);
+				Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
+				//JsonObject processIdJson = VertxUtils.readCachedJson(serviceToken.getRealm(), session_state, serviceToken.getToken());
+				boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
+				if (hasProcessIdBySessionId) {
+			//	if (processIdJson.getString("status").equals("ok")) {
+				//	processIdStr = processIdJson.getString("value");
+				//	Long processId = Long.decode(processIdStr);
+					Long processId =  processIdBysessionId.get();
 					log.info("incoming "+msg_type+" message from "+bridgeSourceAddress+": "+userToken.getRealm()+":"+userToken.getSessionCode()+":"+userToken.getUserCode()+"   "+msg_code+" to pid "+processId);
 
 					// So send the event through to the userSession
 					if (eventMsg != null) {
-						kieSession.signalEvent("event",eventMsg , processId);
+					//	kieSession.signalEvent("event",eventMsg , processId);
+						kieSession.signalEvent("event",eventMsg ); // send to all of them now to try and get something past the event catch
 					} else 
 					if (dataMsg != null) {
 						kieSession.signalEvent("data",dataMsg , processId);
@@ -703,4 +725,75 @@ public class RulesLoader {
 
 	}
 	
+
+	
+	private static QueryService queryService;
+	  private static KieServiceConfigurator serviceConfigurator;
+
+	  protected static void configureServices() {
+	    serviceConfigurator = ServiceLoader.load(KieServiceConfigurator.class).iterator().next();
+
+	    IdentityProvider identityProvider = new IdentityProvider(){
+
+	      @Override
+	      public String getName() {
+	        // TODO Auto-generated method stub
+	        return "";
+	      }
+
+	      @Override
+	      public List<String> getRoles() {
+	        // TODO Auto-generated method stub
+	        return new ArrayList<String>();
+	      }
+
+	      @Override
+	      public boolean hasRole(String role) {
+	        // TODO Auto-generated method stub
+	        return false;
+	      }};
+	      
+	      UserGroupCallback userGroupCallback = new UserGroupCallback(){
+
+	        @Override
+	        public boolean existsUser(String userId) {
+	          // TODO Auto-generated method stub
+	          return false;
+	        }
+
+	        @Override
+	        public boolean existsGroup(String groupId) {
+	          // TODO Auto-generated method stub
+	          return false;
+	        }
+
+	        @Override
+	        public List<String> getGroupsForUser(String userId) {
+	          // TODO Auto-generated method stub
+	          return new ArrayList<String>();
+	        }};
+	    serviceConfigurator.configureServices("org.jbpm.domain", identityProvider, userGroupCallback);
+	    queryService = serviceConfigurator.getQueryService();
+
+	  }
+	  
+	  public static Optional<Long> getProcessIdBysessionId(String sessionId) {
+		    // Do pagination here 
+		    QueryContext ctx = new QueryContext(0, 100);
+		    Collection<ProcessInstanceDesc> instances = queryService.query(
+		        "getAllProcessInstances",
+		        ProcessInstanceQueryMapper.get(), 
+		        ctx,
+		        QueryParam.equalsTo("value", sessionId));
+		    
+		    return instances.stream().map(d -> d.getId()).findFirst();
+
+		  }
+	  
+		static{
+		    configureServices();
+		    SqlQueryDefinition query = new SqlQueryDefinition("getAllProcessInstances", "java:jboss/datasources/gennyDS");
+		    query.setExpression("select * from VariableInstanceLog");
+		    queryService.registerQuery(query);
+		  }
 }
