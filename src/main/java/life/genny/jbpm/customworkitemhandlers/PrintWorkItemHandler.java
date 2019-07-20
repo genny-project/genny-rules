@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.logging.log4j.Logger;
+import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
@@ -29,14 +31,23 @@ public class PrintWorkItemHandler implements WorkItemHandler {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
+	KieSession kieSession = null;
+	
+	public PrintWorkItemHandler(KieSession kieSession)
+	{
+		this.kieSession = kieSession;
+	}
+	
+	
   public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
     // extract parameters
     String message = (String) workItem.getParameter("message");
     
+	ProcessInstance p = this.kieSession.getProcessInstance(workItem.getProcessInstanceId());
 
     	long  pid = workItem.getProcessInstanceId();
     	
-    	log.info("pid="+pid+": "+message);
+    	log.info(p.getProcessId()+": pid="+pid+": "+message);
     	
     // notify manager that work item has been completed
     manager.completeWorkItem(workItem.getId(), null);

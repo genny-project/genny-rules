@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.logging.log4j.Logger;
+import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
@@ -30,6 +32,14 @@ public class ShowFrameWIthContextList implements WorkItemHandler {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
+	
+	KieSession kieSession = null;
+	
+	public ShowFrameWIthContextList(KieSession kieSession)
+	{
+		this.kieSession = kieSession;
+	}	
+	
   public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
     // extract parameters
     GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
@@ -41,12 +51,14 @@ public class ShowFrameWIthContextList implements WorkItemHandler {
     
     } else {
     
+		ProcessInstance p = this.kieSession.getProcessInstance(workItem.getProcessInstanceId());
+
     	log.info("userToken = "+userToken.getCode());
     	
     	if (rootFrameCode == null) {
     		log.error("Must supply a root Frame Code!");
     	} else {
-    		log.info("root Frame Code = "+rootFrameCode);
+    		log.info(p.getProcessName()+": root Frame Code = "+rootFrameCode);
     		
     		QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-MSG",
     				QDataBaseEntityMessage.class, userToken.getToken());	
@@ -63,7 +75,7 @@ public class ShowFrameWIthContextList implements WorkItemHandler {
 
     		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 
-    		System.out.println("Sending Asks");
+    		System.out.println(p.getProcessId()+": Sending Asks");
     		for (QDataAskMessage askMsg : askMsgs2) {
 				if ((contextListMap != null) && (!contextListMap.isEmpty())) {
 					for (Ask anAsk : askMsg.getItems()) {

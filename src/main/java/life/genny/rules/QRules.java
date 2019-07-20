@@ -51,6 +51,7 @@ import io.vavr.Tuple2;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import life.genny.eventbus.EventBusInterface;
+import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
@@ -193,17 +194,17 @@ public class QRules implements Serializable {
 	public PaymentUtils paymentUtils;
 
 	public QRules(final EventBusInterface eventBus, final String token) {
-		this(eventBus, token, RulesLoader.getDecodedTokenMap(token), DEFAULT_STATE);
+		this(eventBus, token, DEFAULT_STATE);
 	}
 
-	public QRules(final EventBusInterface eventBus, final String token, final Map<String, Object> decodedTokenMap,
+	public QRules(final EventBusInterface eventBus, final String token,
 			String state) {
 		super();
-
+		GennyToken gennyToken = new GennyToken(token);
 		this.eventBus = eventBus;
 		this.token = token;
-		this.decodedTokenMap = decodedTokenMap; // yes. I know.
-		this.set("realm", (String) this.decodedTokenMap.get("aud"));
+		this.decodedTokenMap = gennyToken.getAdecodedTokenMap(); 
+		this.set("realm", gennyToken.getRealm());
 		this.stateMap = new HashMap<String, Boolean>();
 		stateMap.put(state, true);
 		setStarted(false);
@@ -211,9 +212,6 @@ public class QRules implements Serializable {
 		this.initUtils();
 	}
 
-	public QRules(final EventBusInterface eventBus, final String token, final Map<String, Object> decodedTokenMap) {
-		this(eventBus, token, decodedTokenMap, DEFAULT_STATE);
-	}
 
 	public void initUtils() {
 
