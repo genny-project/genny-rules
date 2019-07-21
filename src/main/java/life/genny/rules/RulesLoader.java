@@ -74,6 +74,21 @@ import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.ServiceLoader;
+import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
+import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
+import org.jbpm.services.api.model.ProcessInstanceDesc;
+import org.jbpm.services.api.query.QueryService;
+import org.jbpm.services.api.query.model.QueryParam;
+import org.jbpm.services.api.utils.KieServiceConfigurator;
+import org.kie.api.runtime.KieSession;
+import org.kie.internal.identity.IdentityProvider;
+import org.kie.internal.query.QueryContext;
+import org.kie.internal.task.api.UserGroupCallback;
+
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
