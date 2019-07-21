@@ -215,12 +215,6 @@
 			<groupId>org.jbpm</groupId>
 			<artifactId>jbpm-kie-services</artifactId>
 			<version>${kie.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>antlr</groupId>
-					<artifactId>antlr</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 
 		<dependency>

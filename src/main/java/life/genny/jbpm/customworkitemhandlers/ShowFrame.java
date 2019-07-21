@@ -27,11 +27,10 @@ import life.genny.utils.FrameUtils2;
 import life.genny.utils.VertxUtils;
 
 public class ShowFrame implements WorkItemHandler {
-	
+
 	KieSession kieSession = null;
-	
-	public ShowFrame(KieSession kieSession)
-	{
+
+	public ShowFrame(KieSession kieSession) {
 		this.kieSession = kieSession;
 	}
 
@@ -43,7 +42,7 @@ public class ShowFrame implements WorkItemHandler {
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
 		String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
-		
+
 		ProcessInstance p = this.kieSession.getProcessInstance(workItem.getProcessInstanceId());
 
 		if (userToken == null) {
@@ -51,48 +50,53 @@ public class ShowFrame implements WorkItemHandler {
 
 		} else {
 
-			//log.info("userToken = " + userToken.getCode());
+			// log.info("userToken = " + userToken.getCode());
 
 			if (rootFrameCode == null) {
 				log.error("Must supply a root Frame Code!");
 			} else {
-				log.info(p.getProcessName()+": root Frame Code sent to display  = " + rootFrameCode);
+				log.info(p.getProcessName() + ": root Frame Code sent to display  = " + rootFrameCode);
 
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "-MSG",
 						QDataBaseEntityMessage.class, userToken.getToken());
-				FRM_MSG.setToken(userToken.getToken());
-				String frmStr = JsonUtils.toJson(FRM_MSG);
-				if (targetFrameCode == null) {
-					targetFrameCode = "FRM_ROOT";
-				}
-				frmStr = frmStr.replaceAll(rootFrameCode, targetFrameCode);
-				QDataBaseEntityMessage FRM_MSG_ROOT = JsonUtils.fromJson(frmStr, QDataBaseEntityMessage.class);
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(FRM_MSG_ROOT));
-				Type setType = new TypeToken<Set<QDataAskMessage>>() {
-				}.getType();
-
-				String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "-ASKS",
-						String.class, userToken.getToken());
-
-				Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
-
-			//	System.out.println("Sending Asks");
-				if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
-					for (QDataAskMessage askMsg : askMsgs2) { //TODO, not needed
-						for (Ask aask : askMsg.getItems()) {
-							for (Validation val : aask.getQuestion().getAttribute().getDataType().getValidationList()) {
-								if (val.getRegex() == null) {
-									log.error("Regex for " + aask.getQuestion().getCode() + " == null");
-								}
-
-							}
-						}
-						askMsg.setToken(userToken.getToken());
-						String json = JsonUtils.toJson(askMsg);
-						String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the user
-
-						VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
+				if (FRM_MSG != null) {
+					FRM_MSG.setToken(userToken.getToken());
+					String frmStr = JsonUtils.toJson(FRM_MSG);
+					if (targetFrameCode == null) {
+						targetFrameCode = "FRM_ROOT";
 					}
+					frmStr = frmStr.replaceAll(rootFrameCode, targetFrameCode);
+					QDataBaseEntityMessage FRM_MSG_ROOT = JsonUtils.fromJson(frmStr, QDataBaseEntityMessage.class);
+					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(FRM_MSG_ROOT));
+					Type setType = new TypeToken<Set<QDataAskMessage>>() {
+					}.getType();
+
+					String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "-ASKS",
+							String.class, userToken.getToken());
+
+					Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+
+					// System.out.println("Sending Asks");
+					if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
+						for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
+							for (Ask aask : askMsg.getItems()) {
+								for (Validation val : aask.getQuestion().getAttribute().getDataType()
+										.getValidationList()) {
+									if (val.getRegex() == null) {
+										log.error("Regex for " + aask.getQuestion().getCode() + " == null");
+									}
+
+								}
+							}
+							askMsg.setToken(userToken.getToken());
+							String json = JsonUtils.toJson(askMsg);
+							String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the user
+
+							VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
+						}
+					}
+				} else {
+					log.error(rootFrameCode + "-MSG" + " DOES NOT EXIST IN CACHE - cannot display frame");
 				}
 
 			}
