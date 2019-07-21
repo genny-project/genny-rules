@@ -531,7 +531,7 @@ public class RulesLoader {
 				//	processIdStr = processIdJson.getString("value");
 				//	Long processId = Long.decode(processIdStr);
 					Long processId =  processIdBysessionId.get();
-					log.info("incoming "+msg_type+" message from "+bridgeSourceAddress+": "+userToken.getRealm()+":"+userToken.getSessionCode()+":"+userToken.getUserCode()+"   "+msg_code+" to pid "+processId);
+					log.info("incoming "+msg_type+" message from "+bridgeSourceAddress+": "+userToken.getRealm()+":"+userToken.getSessionCode()+":"+userToken.getUserCode()+"   "+msg_code+" to lookup pid "+processId);
 
 					// So send the event through to the userSession
 					if (eventMsg != null) {
@@ -641,8 +641,7 @@ public class RulesLoader {
 
 	}
 
-	public static void processMsg(final String msgType, String ruleGroup, final Object msg,
-			final EventBusInterface eventBus, final String token) {
+	public static void processMsg( final Object msg,final String token) {
 
 		GennyToken userToken = new GennyToken("userToken", token);
 
