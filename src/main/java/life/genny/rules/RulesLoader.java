@@ -29,6 +29,7 @@ import org.drools.core.impl.EnvironmentFactory;
 import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
+import org.jbpm.process.audit.JPAWorkingMemoryDbLogger;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
 import org.jbpm.services.api.query.QueryService;
@@ -99,6 +100,7 @@ public class RulesLoader {
 	public static Map<String, User> usersSession = new HashMap<String, User>();
 
 	public static Environment env; // drools persistence
+	public static EntityManagerFactory emf = null;
 
 	static KieSessionConfiguration ksconf = null;
 
@@ -430,8 +432,8 @@ public class RulesLoader {
 		GennyToken gToken = serviceToken;
 		String bridgeSourceAddress = "";
 
-		EntityManagerFactory emf2 = (EntityManagerFactory) env.get(EnvironmentName.ENTITY_MANAGER_FACTORY);
-		EntityManager em = emf2.createEntityManager();
+//		EntityManagerFactory emf2 = (EntityManagerFactory) env.get(EnvironmentName.ENTITY_MANAGER_FACTORY);
+		EntityManager em = emf.createEntityManager();
 
 		EntityTransaction tx = em.getTransaction();
 
@@ -451,10 +453,14 @@ public class RulesLoader {
 			// is
 			// stateful
 
+			JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+			
 			addHandlers(kieSession);
 
 			kieSession.addEventListener(new GennyAgendaEventListener());
 			kieSession.addEventListener(new JbpmInitListener(serviceToken));
+			
+
 
 			for (final Object fact : facts) {
 				kieSession.insert(fact);
@@ -493,15 +499,15 @@ public class RulesLoader {
 				Long processId  = null;
 				// Check if an existing userSession is there
 
-//				Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
-//				boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
-//				if (hasProcessIdBySessionId) {
-//					processId = processIdBysessionId.get();
+				Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
+				boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
+				if (hasProcessIdBySessionId) {
+					processId = processIdBysessionId.get();
 				
-				JsonObject processIdJson = VertxUtils.readCachedJson(serviceToken.getRealm(), session_state, serviceToken.getToken());
-				if (processIdJson.getString("status").equals("ok")) {
-					processIdStr = processIdJson.getString("value");
-					 processId = Long.decode(processIdStr);
+//				JsonObject processIdJson = VertxUtils.readCachedJson(serviceToken.getRealm(), session_state, serviceToken.getToken());
+//				if (processIdJson.getString("status").equals("ok")) {
+//					processIdStr = processIdJson.getString("value");
+//					 processId = Long.decode(processIdStr);
 					log.info("incoming " + msg_type + " message from " + bridgeSourceAddress + ": "
 							+ userToken.getRealm() + ":" + userToken.getSessionCode() + ":" + userToken.getUserCode()
 							+ "   " + msg_code + " to pid " + processId);
@@ -754,7 +760,7 @@ public class RulesLoader {
 
 	public static void init() {
 		log.info("Setting up Persistence");
-		EntityManagerFactory emf = null;
+		
 
 		try {
 			emf = Persistence.createEntityManagerFactory("genny-persistence-jbpm-jpa");

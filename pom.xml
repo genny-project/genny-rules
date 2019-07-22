@@ -38,6 +38,9 @@
 		<dropwizard.version>3.5.1</dropwizard.version>
 		<vertx-concurrent.version>1.0.0</vertx-concurrent.version>
 		<junit-version>4.12</junit-version>
+				<version.hibernate>5.2.16.Final</version.hibernate>
+		<version.hibernate-validator>6.0.7.Final</version.hibernate-validator>
+		
 	</properties>
 
 	<distributionManagement>
@@ -216,11 +219,24 @@
 			<artifactId>jbpm-kie-services</artifactId>
 			<version>${kie.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-case-mgmt</artifactId>
+			<version>${kie.version}</version>
+			<type>pom</type>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-executor</artifactId>
+			<version>${kie.version}</version>
+		</dependency>
+
 
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-validator</artifactId>
-			<version>4.3.0.Final</version>
+			<version>${version.hibernate-validator}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>antlr</groupId>
@@ -246,16 +262,16 @@
 			<version>3.23.1-GA</version>
 		</dependency>
 		<dependency>
-    <groupId>org.hibernate</groupId>
-    <artifactId>hibernate-core</artifactId>
-			<version>4.3.0.Final</version>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+			<version>${version.hibernate}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>antlr</groupId>
 					<artifactId>antlr</artifactId>
 				</exclusion>
 			</exclusions>
-</dependency>
+		</dependency>
 	</dependencies>
 
 	<build>
