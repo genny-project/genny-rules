@@ -622,6 +622,9 @@ public class RulesLoader {
 
 		// Service Token
 		String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
+		if (serviceTokenStr == null) {
+			log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
+		} else {
 		GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
 
 		List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
@@ -637,6 +640,7 @@ public class RulesLoader {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
 		}
 
 	}
