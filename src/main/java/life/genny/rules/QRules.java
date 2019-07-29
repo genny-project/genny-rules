@@ -1247,9 +1247,9 @@ public class QRules implements Serializable {
 	}
 
 	public void publishCmd(final BaseEntity be, final String aliasCode, final String[] recipientsCode) {
-
+		final BaseEntity filteredBe = EventBusInterface.privacyFilter(getUser(), be);  // Quick and Dirty security 
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be, aliasCode);
-		msg.setToken(getToken());
+		msg.setToken(getToken());		
 		if (recipientsCode != null) {
 			msg.setRecipientCodeArray(recipientsCode);
 		}
@@ -1335,6 +1335,18 @@ public class QRules implements Serializable {
 		msg.setToken(getToken());
 		String json = JsonUtils.toJson(msg);
     	String jsonStr = json.replaceAll(targetStr, replaceStr); // set the user
+
+		publish("cmds", jsonStr);
+		return msg;
+	}
+	
+	public QMessage publishCmd(final QDataAskMessage msg, final List<Tuple2<String,String>> sourceTargetCodes) {
+		msg.setToken(getToken());
+		String json = JsonUtils.toJson(msg);
+		String jsonStr = json;
+		for (Tuple2<String,String> sourceTarget : sourceTargetCodes) {
+			jsonStr = jsonStr.replaceAll(sourceTarget._1, sourceTarget._2); // set the user
+		}
 
 		publish("cmds", jsonStr);
 		return msg;
