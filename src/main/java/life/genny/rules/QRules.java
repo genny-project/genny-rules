@@ -1248,7 +1248,7 @@ public class QRules implements Serializable {
 
 	public void publishCmd(final BaseEntity be, final String aliasCode, final String[] recipientsCode) {
 		final BaseEntity filteredBe = EventBusInterface.privacyFilter(getUser(), be);  // Quick and Dirty security 
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be, aliasCode);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(filteredBe, aliasCode);
 		msg.setToken(getToken());		
 		if (recipientsCode != null) {
 			msg.setRecipientCodeArray(recipientsCode);
