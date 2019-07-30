@@ -1,6 +1,7 @@
 package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Map;
 
 import org.apache.logging.log4j.Logger;
 import org.kie.api.KieBase;
@@ -38,8 +39,10 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
   public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
     // extract parameters
-    GennyToken serviceToken = (GennyToken) workItem.getParameter("serviceToken");
-    String ruleFlowGroup= (String) workItem.getParameter("ruleFlowGroup");
+	  
+	Map<String,Object> items = workItem.getParameters();
+    GennyToken serviceToken = (GennyToken) items.get("serviceToken");
+    String ruleFlowGroup= (String) items.get("ruleFlowGroup");
 
     if (serviceToken == null) {
     	log.error("Must supply serviceToken!");
@@ -56,20 +59,41 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		// ksconf.setOption(TimedRuleExecutionOption.YES);
 
 		KieSession newKieSession = null;
+		
 		if (this.runtimeEngine!=null) {
+			
 			newKieSession = this.runtimeEngine.getKieSession();
-	    	newKieSession.insert(serviceToken);
+			
+			for(String key : items.keySet()) {
+				newKieSession.insert(items.get(key));
+			}
+	    	
 	    	newKieSession.getAgenda().getAgendaGroup( ruleFlowGroup ).setFocus();
 	    	newKieSession.fireAllRules();
 	    	// don't dispose
 
 		} else {
+			
 			KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
 			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
-	    	newKieSession.insert(serviceToken);
+			
+			for(String key : items.keySet()) {
+				newKieSession.insert(items.get(key));
+			}
+			
+			/*ExecutionResults results = kieSession.execute(CommandFactory.newBatchExecution(cmds));
+
+			results.getValue("msg"); // returns the inserted fact Msg
+			QRules rules  = (QRules) results.getValue("qRules"); // returns the inserted fact QRules
+			System.out.println(results.getValue("msg"));
+			System.out.println(rules);
+*/
+			
+	    	/*newKieSession.insert(serviceToken);*/
 	    	newKieSession.getAgenda().getAgendaGroup( ruleFlowGroup ).setFocus();
 	    	newKieSession.fireAllRules();
 	    	newKieSession.dispose();
+	    	
 
 		}
 	
