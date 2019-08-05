@@ -45,7 +45,7 @@ public class V7Test {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 	public static final String SKIP_NEWQA_TEST = "TRUE";
 
-	@Test
+	//@Test
 	public void testOnlyIfSkipIsDisabled() {
 		assumeTrue("FALSE".equals(SKIP_NEWQA_TEST));
 		sendInitialFrame();
