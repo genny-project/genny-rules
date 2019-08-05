@@ -1,6 +1,7 @@
 package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.logging.log4j.Logger;
@@ -16,6 +17,7 @@ import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.models.GennyToken;
 import life.genny.rules.RulesLoader;
+import life.genny.utils.OutputParam;
 
 public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
@@ -35,12 +37,17 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		this.runtimeEngine = rteng;
 	}
 	
-	
+ 
 
   public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-    // extract parameters
-	  
+
+	    
+	/* resultMap is used to map the result Value to the output parameters */
+	final Map<String,Object> resultMap = new HashMap<String,Object>();
+	
+	/* items used to save the extracted input parameters from the custom task  */
 	Map<String,Object> items = workItem.getParameters();
+	
     GennyToken serviceToken = (GennyToken) items.get("serviceToken");
     String ruleFlowGroup= (String) items.get("ruleFlowGroup");
 
@@ -53,23 +60,35 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
     //	log.info("serviceToken = "+serviceToken.getCode());
     //	log.info("Running rule flow group "+ruleFlowGroup);
     	System.out.println("Running rule flow group "+ruleFlowGroup);
-    	
+    	 
     //	System.out.println("ProcessInstanceId = "+workItem.getProcessInstanceId());
 		KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 		// ksconf.setOption(TimedRuleExecutionOption.YES);
 
 		KieSession newKieSession = null;
 		
+		OutputParam output =  new OutputParam();
+		
 		if (this.runtimeEngine!=null) {
 			
-			newKieSession = this.runtimeEngine.getKieSession();
-			
+			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
+						
+			/* Inserting all the parameters in the working memory ad a facts */
 			for(String key : items.keySet()) {
 				newKieSession.insert(items.get(key));
 			}
-	    	
+			
+			/* INserting facts to save the output result*/
+			newKieSession.insert(output);
+			
+			/* Setting focus to rule-flow group */ 
 	    	newKieSession.getAgenda().getAgendaGroup( ruleFlowGroup ).setFocus();
-	    	newKieSession.fireAllRules();
+	    	
+	    	newKieSession.fireAllRules();	
+	    	
+	    	/* saving result from rule-task in map*/
+	    	resultMap.put("output", output.getResult());
+	    	
 	    	// don't dispose
 
 		} else {
@@ -77,32 +96,27 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
 			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
 			
+			/* Inserting all the parameters in the working memory ad a facts */
 			for(String key : items.keySet()) {
 				newKieSession.insert(items.get(key));
 			}
 			
-			/*ExecutionResults results = kieSession.execute(CommandFactory.newBatchExecution(cmds));
-
-			results.getValue("msg"); // returns the inserted fact Msg
-			QRules rules  = (QRules) results.getValue("qRules"); // returns the inserted fact QRules
-			System.out.println(results.getValue("msg"));
-			System.out.println(rules);
-*/
+			/* INserting facts to save the output result*/
+			newKieSession.insert(output);
 			
-	    	/*newKieSession.insert(serviceToken);*/
+			/* Setting focus to rule-flow group */
 	    	newKieSession.getAgenda().getAgendaGroup( ruleFlowGroup ).setFocus();
-	    	newKieSession.fireAllRules();
-	    	newKieSession.dispose();
 	    	
-
-		}
-	
-    	
+	    	newKieSession.fireAllRules();
+	    	
+	    	/* saving result from rule-task in map*/
+	    	resultMap.put("output", output.getResult());
+	    	newKieSession.dispose();
+		}    	
     }
      
     // notify manager that work item has been completed
-    manager.completeWorkItem(workItem.getId(), null);
-
+    manager.completeWorkItem(workItem.getId(), resultMap);
 
   }
 
@@ -110,4 +124,6 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
     // Do nothing, notifications cannot be aborted
   }
 
+ 
+ 
 }
