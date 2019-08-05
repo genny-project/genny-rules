@@ -23,7 +23,7 @@ import life.genny.qwanda.exception.BadDataException;
 import life.genny.rules.QRules;
 
 public class QRulesTest {
-	@Test
+	//@Test
 	public void scoringTest()
 	{
 		System.out.println("This is a scoring TEst");
