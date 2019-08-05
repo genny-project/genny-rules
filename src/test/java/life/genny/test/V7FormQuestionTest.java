@@ -38,7 +38,7 @@ public class V7FormQuestionTest {
 	
 	private static String ENV_GENNY_BRIDGE_URL = "http://bridge.genny.life";
 	
-	@Test
+	//@Test
 	public void testOnlyIfSkipIsDisabled() {
 		assumeTrue("FALSE".equals(SKIP_NEWQA_TEST));
 		sendQuestionContentFrame();
