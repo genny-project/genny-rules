@@ -92,7 +92,7 @@ public class ShowFrame implements WorkItemHandler {
 									
 									/* Adding Frame to Targeted Frame BaseEntity Message*/ 
 									FRM_MSG.add(targetFrame);
-									
+									FRM_MSG.setReplace(true);	
 									break;
 								}
 								
