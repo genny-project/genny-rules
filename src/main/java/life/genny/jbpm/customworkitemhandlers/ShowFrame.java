@@ -42,7 +42,7 @@ public class ShowFrame implements WorkItemHandler {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-		
+
 		// extract parameters
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
 		String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
@@ -59,56 +59,55 @@ public class ShowFrame implements WorkItemHandler {
 			if (rootFrameCode == null) {
 				log.error("Must supply a root Frame Code!");
 			} else {
-				log.info(p.getProcessName() + ": root Frame Code sent to display  = " + rootFrameCode );
-				
+				log.info(p.getProcessName() + ": root Frame Code sent to display  = " + rootFrameCode);
+
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "-MSG",
 						QDataBaseEntityMessage.class, userToken.getToken());
-				
+
 				if (FRM_MSG != null) {
-					
+
 					if (targetFrameCode == null) {
 						targetFrameCode = "FRM_ROOT";
 					}
-					
-					QDataBaseEntityMessage TARGET_FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", targetFrameCode + "-MSG", QDataBaseEntityMessage.class, userToken.getToken());
-					
-					for(BaseEntity targetFrame : TARGET_FRM_MSG.getItems()) {
-						if(targetFrame.getCode().equals(targetFrameCode)) {
-							
+
+					QDataBaseEntityMessage TARGET_FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "",
+							targetFrameCode + "-MSG", QDataBaseEntityMessage.class, userToken.getToken());
+
+					for (BaseEntity targetFrame : TARGET_FRM_MSG.getItems()) {
+						if (targetFrame.getCode().equals(targetFrameCode)) {
+
 							System.out.println("ShowFrame : Found Targeted Frame BaseEntity : " + targetFrame);
-							
+
 							/* Adding the links in the targeted BaseEntity */
 							Attribute attribute = new Attribute("LNK_FRAME", "LNK_FRAME", new DataType(String.class));
 
-							for(BaseEntity sourceFrame : FRM_MSG.getItems()) {
-								if(sourceFrame.getCode().equals(rootFrameCode)) {
-									
+							for (BaseEntity sourceFrame : FRM_MSG.getItems()) {
+								if (sourceFrame.getCode().equals(rootFrameCode)) {
+
 									System.out.println("ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
-						
-									EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute, 1.0, "CENTRE");
+
+									EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute,
+											1.0, "CENTRE");
 									Set<EntityEntity> entEntList = targetFrame.getLinks();
 									entEntList.add(entityEntity);
 									targetFrame.setLinks(entEntList);
-									
-									/* Adding Frame to Targeted Frame BaseEntity Message*/ 
+
+									/* Adding Frame to Targeted Frame BaseEntity Message */
 									FRM_MSG.add(targetFrame);
-									FRM_MSG.setReplace(true);	
+									FRM_MSG.setReplace(true);
 									break;
 								}
-								
 							}
 							break;
 						}
 					}
-					
-					
-					
+
 					FRM_MSG.setToken(userToken.getToken());
-					
+
 					FRM_MSG.setReplace(true);
-					
+
 					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(FRM_MSG));
-					
+
 					Type setType = new TypeToken<Set<QDataAskMessage>>() {
 					}.getType();
 
@@ -132,7 +131,6 @@ public class ShowFrame implements WorkItemHandler {
 							askMsg.setToken(userToken.getToken());
 							String json = JsonUtils.toJson(askMsg);
 							String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the user
-
 							VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 						}
 					}
