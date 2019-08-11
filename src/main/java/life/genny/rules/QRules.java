@@ -193,6 +193,18 @@ public class QRules implements Serializable {
 	public CacheUtils cacheUtils;
 	public PaymentUtils paymentUtils;
 
+	public QRules(final GennyToken serviceToken, final GennyToken userToken) {
+		super();
+		this.eventBus = null;
+		this.token = userToken.getToken();
+		this.decodedTokenMap = userToken.getAdecodedTokenMap(); 
+		this.set("realm", userToken.getRealm());
+		this.stateMap = new HashMap<String, Boolean>();
+		stateMap.put(DEFAULT_STATE, true);
+		setStarted(false);
+		this.setServiceToken(serviceToken.getToken());
+		this.initUtils();	}
+	
 	public QRules(final EventBusInterface eventBus, final String token) {
 		this(eventBus, token, DEFAULT_STATE);
 	}

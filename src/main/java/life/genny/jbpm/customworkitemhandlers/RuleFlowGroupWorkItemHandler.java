@@ -16,6 +16,7 @@ import org.kie.api.runtime.process.WorkItemManager;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.models.GennyToken;
+import life.genny.rules.QRules;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.OutputParam;
 
@@ -49,6 +50,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	Map<String,Object> items = workItem.getParameters();
 	
     GennyToken serviceToken = (GennyToken) items.get("serviceToken");
+    
     String ruleFlowGroup= (String) items.get("ruleFlowGroup");
 
     if (serviceToken == null) {
@@ -76,10 +78,22 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			/* Inserting all the parameters in the working memory ad a facts */
 			for(String key : items.keySet()) {
 				newKieSession.insert(items.get(key));
+				if (items.get(key) instanceof GennyToken) {
+					GennyToken gToken = (GennyToken)items.get(key);
+					if (!gToken.getCode().equals("PER_SERVICE")) {
+						/* Generate a QRules */
+						log.info("Adding rules to facts");
+					    QRules rules = new QRules(serviceToken, gToken); 
+					    newKieSession.insert(rules);
+					}
+				}
 			}
 			
 			/* INserting facts to save the output result*/
 			newKieSession.insert(output);
+			
+			
+
 			
 			/* Setting focus to rule-flow group */ 
 	    	newKieSession.getAgenda().getAgendaGroup( ruleFlowGroup ).setFocus();
@@ -99,6 +113,16 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			/* Inserting all the parameters in the working memory ad a facts */
 			for(String key : items.keySet()) {
 				newKieSession.insert(items.get(key));
+				if (items.get(key) instanceof GennyToken) {
+					GennyToken gToken = (GennyToken)items.get(key);
+					if (!gToken.getCode().equals("PER_SERVICE")) {
+						/* Generate a QRules */
+						log.info("Adding rules to facts");
+					    QRules rules = new QRules(serviceToken, gToken); 
+					    newKieSession.insert(rules);
+					}
+				}
+
 			}
 			
 			/* INserting facts to save the output result*/
