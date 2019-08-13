@@ -74,6 +74,8 @@ import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.message.QDataMessage;
+import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
+import life.genny.qwanda.message.QEventLinkChangeMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
@@ -553,6 +555,69 @@ public class RulesLoader {
 			// kieSession.dispose();
 		}
 	}
+	
+	public static void executeStateless(final List<Tuple2<String, Object>> globals, final List<Object> facts,
+			final GennyToken serviceToken, final GennyToken userToken) {
+		StatefulKnowledgeSession kieSession = null;
+		int rulesFired = 0;
+		QEventMessage eventMsg = null;
+		QDataMessage dataMsg = null;
+		String msg_code = "";
+		String msg_type = "";
+		GennyToken gToken = serviceToken;
+		String bridgeSourceAddress = "";
+
+		try {
+
+			if (getKieBaseCache().get(serviceToken.getRealm()) == null) {
+				log.error("The realm  kieBaseCache is null, not loaded " + serviceToken.getRealm());
+				return;
+			}
+
+			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+
+			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(serviceToken.getRealm()).newKieSession(ksconf, env);
+			
+			addHandlers(kieSession);
+
+			kieSession.addEventListener(new GennyAgendaEventListener());
+			kieSession.addEventListener(new JbpmInitListener(serviceToken));
+			
+
+
+			for (final Object fact : facts) {
+				kieSession.insert(fact);
+				if (fact instanceof QEventMessage) {
+					eventMsg = (QEventMessage) fact;
+					if (userToken != null) {
+						eventMsg.setToken(userToken.getToken());
+					} else {
+						eventMsg.setToken(serviceToken.getToken());
+					}
+					msg_code = eventMsg.getData().getCode();
+					msg_type = "EVENT";
+					bridgeSourceAddress = eventMsg.getSourceAddress();
+				}
+				if (fact instanceof QDataMessage) {
+					dataMsg = (QDataMessage) fact;
+					dataMsg.setToken(userToken.getToken());
+					msg_code = dataMsg.getData_type();
+					msg_type = "DATA";
+					bridgeSourceAddress = dataMsg.getSourceAddress();
+				}
+
+			}
+
+
+			rulesFired = kieSession.fireAllRules();
+
+		} catch (final Throwable t) {
+			log.error(t.getLocalizedMessage());
+		} finally {
+			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
+			kieSession.dispose();
+		}
+	}
 
 	public static Map<String, KieBase> getKieBaseCache() {
 		return kieBaseCache;
@@ -636,7 +701,12 @@ public class RulesLoader {
 		facts.add(serviceToken);
 
 		try {
-			RulesLoader.executeStateful(globals, facts, serviceToken, userToken);
+			if ((msg instanceof QEventAttributeValueChangeMessage)||(msg instanceof QEventLinkChangeMessage)) {
+				log.info("Executing Stateless ");
+				RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
+			} else {
+				RulesLoader.executeStateful(globals, facts, serviceToken, userToken);
+			}
 
 		} catch (Exception e) {
 			e.printStackTrace();
