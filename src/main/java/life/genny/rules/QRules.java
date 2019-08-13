@@ -1275,7 +1275,7 @@ public class QRules implements Serializable {
 		msg.setToken(getToken());
 		if (recipientsCode != null) {
 			msg.setRecipientCodeArray(recipientsCode);
-		}
+		} 
 		publish("cmds", msg);
 	}
 
