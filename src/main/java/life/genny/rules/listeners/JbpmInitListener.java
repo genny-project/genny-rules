@@ -15,6 +15,7 @@ import life.genny.models.GennyToken;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.rules.QRules;
+import life.genny.utils.CallingProcessToken;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 
@@ -62,6 +63,10 @@ public class JbpmInitListener implements ProcessEventListener {
 //				"Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
 		event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().forEach(obj -> {
 
+			if (obj instanceof Long) {
+				process.setVariable("callingProcessId", (Long) obj); // TODO, use a class!
+				System.out.println("FOUND LONG "+(Long) obj); 
+			} else
 			if (obj instanceof String) {
 				process.setVariable("name", (String) obj);
 				/* System.out.println("FOUND STRING"); */
@@ -73,6 +78,9 @@ public class JbpmInitListener implements ProcessEventListener {
 
 			} else if (obj instanceof QRules) {
 				process.setVariable("rules", (QRules) obj);
+			//	printProcessText(process, gennyToken, "FOUND QRULE ");
+			} else if (obj instanceof CallingProcessToken) {
+				process.setVariable("callingProcessToken", (CallingProcessToken) obj);
 			//	printProcessText(process, gennyToken, "FOUND QRULE ");
 
 			} else if (obj instanceof GennyToken) {
