@@ -134,7 +134,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	    	newKieSession.fireAllRules();
 	    	
 	    	/* saving result from rule-task in map*/
-	    	resultMap.put("output", output.getResult());
+	    	resultMap.put("output", output);
 	    	newKieSession.dispose();
 		}    	
     }

@@ -86,7 +86,6 @@ public class ShowFrame implements WorkItemHandler {
 								if (sourceFrame.getCode().equals(rootFrameCode)) {
 
 									System.out.println("ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
-
 									EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute,
 											1.0, "CENTRE");
 									Set<EntityEntity> entEntList = targetFrame.getLinks();
