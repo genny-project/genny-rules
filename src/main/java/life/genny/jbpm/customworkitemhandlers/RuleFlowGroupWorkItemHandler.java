@@ -1,6 +1,7 @@
 package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,10 +10,12 @@ import org.kie.api.KieBase;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
+import org.kie.api.runtime.ObjectFilter;
 import org.kie.api.runtime.manager.RuntimeEngine;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
+import org.kie.api.runtime.rule.FactHandle;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.models.GennyToken;
@@ -90,7 +93,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			}
 			
 			/* INserting facts to save the output result*/
-			newKieSession.insert(output);
+			FactHandle factHandle =  newKieSession.insert(output);
 			
 			
 
@@ -100,9 +103,18 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	    	
 	    	newKieSession.fireAllRules();	
 	    	
+//	    	ObjectFilter filter = new ObjectFilter() {
+//	    	    @Override
+//	    	        public boolean accept( Object object ) {
+//	    	            return object.getClass().getSimpleName().equals( "OutputParam" );
+//	    	        }
+//	    	    };
+//	    	Collection<? extends Object> results = newKieSession.getObjects( filter );
 	    	/* saving result from rule-task in map*/
-	    	resultMap.put("output", output.getResult());
-	    	
+	    	output = (OutputParam) newKieSession.getObject(factHandle);
+	    	resultMap.put("output", output);
+	    	newKieSession.retract(factHandle);
+
 	    	// don't dispose
 
 		} else {
