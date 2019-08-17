@@ -71,6 +71,7 @@ import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
+import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.message.QDataMessage;
@@ -730,6 +731,8 @@ public class RulesLoader {
 				new ShowFrameWIthContextList(kieSession));
 		kieSession.getWorkItemManager().registerWorkItemHandler("RuleFlowGroup",
 				new RuleFlowGroupWorkItemHandler(kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
+				new ThrowSignalProcessWorkItemHandler(kieSession));
 
 	}
 
