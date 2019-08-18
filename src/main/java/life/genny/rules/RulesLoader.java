@@ -64,6 +64,7 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.core.buffer.Buffer;
+import life.genny.jbpm.customworkitemhandlers.AskQuestionWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
@@ -733,6 +734,8 @@ public class RulesLoader {
 				new RuleFlowGroupWorkItemHandler(kieSession));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
 				new ThrowSignalProcessWorkItemHandler(kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
+				new AskQuestionWorkItemHandler(kieSession));
 
 	}
 
