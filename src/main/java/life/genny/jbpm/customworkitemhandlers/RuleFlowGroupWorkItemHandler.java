@@ -83,7 +83,11 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				newKieSession.insert(items.get(key));
 				if (items.get(key) instanceof GennyToken) {
 					GennyToken gToken = (GennyToken)items.get(key);
-					if (!gToken.getCode().equals("PER_SERVICE")) {
+					String code = gToken.getCode();
+					if (code==null) {
+						code = gToken.getUserCode();
+					}
+					if (!code.equals("PER_SERVICE")) {
 						/* Generate a QRules */
 						log.info("Adding rules to facts");
 					    QRules rules = new QRules(serviceToken, gToken); 
