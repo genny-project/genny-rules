@@ -52,8 +52,8 @@ public class ThrowSignalProcessWorkItemHandler implements WorkItemHandler {
 	/* items used to save the extracted input parameters from the custom task  */
 	Map<String,Object> items = workItem.getParameters();
 	
-    GennyToken serviceToken = (GennyToken) items.get("serviceToken");
-    Object payload = (Object) items.get("payload");
+    GennyToken gToken = (GennyToken) items.get("gennyToken");
+    Object payload = (Object) items.get("payloadObject");
     String signalCode = (String) items.get("signalCode");
     
     Long processId= (Long) items.get("processId");
@@ -63,9 +63,7 @@ public class ThrowSignalProcessWorkItemHandler implements WorkItemHandler {
 		KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 
 		KieSession newKieSession = null;
-		
-		OutputParam output =  new OutputParam();
-		
+				
 		if (this.runtimeEngine!=null) {
 			
 			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
@@ -74,7 +72,7 @@ public class ThrowSignalProcessWorkItemHandler implements WorkItemHandler {
 
 		} else {
 			
-			KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
+			KieBase kieBase = RulesLoader.getKieBaseCache().get(gToken.getRealm());
 			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
 			
 			newKieSession.signalEvent(signalCode, payload, processId);
