@@ -40,77 +40,76 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
-	
+
 	KieSession kieSession;
 	RuntimeEngine runtimeEngine;
 
-	
 	public AskQuestionWorkItemHandler(KieSession kieSession) {
 		this.kieSession = kieSession;
 	}
-	
-	public AskQuestionWorkItemHandler(KieSession kieSession,RuntimeEngine rteng) {
+
+	public AskQuestionWorkItemHandler(KieSession kieSession, RuntimeEngine rteng) {
 		this.kieSession = kieSession;
 		this.runtimeEngine = rteng;
 	}
-	
- 
 
-  public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
+	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 
-	    
-	/* resultMap is used to map the result Value to the output parameters */
-	final Map<String,Object> resultMap = new HashMap<String,Object>();
-	
-	/* items used to save the extracted input parameters from the custom task  */
-	Map<String,Object> items = workItem.getParameters();
-	
-    GennyToken userToken = (GennyToken) items.get("userToken");
-    String questionCode = (String) items.get("questionCode");
-    
-	QEventMessage questionMsg = new QEventMessage("EVT_MSG", "ASK");
-	questionMsg.getData().setCode(questionCode);
-	questionMsg.setToken(userToken.getToken());
-	
-	Long processId=null;
-	
-	Optional<Long> processIdBysessionId = getProcessIdBysessionId(userToken.getSessionCode());
-	boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
-	if (hasProcessIdBySessionId) {
-		processId = processIdBysessionId.get();
+		/* resultMap is used to map the result Value to the output parameters */
+		final Map<String, Object> resultMap = new HashMap<String, Object>();
+
+		/* items used to save the extracted input parameters from the custom task */
+		Map<String, Object> items = workItem.getParameters();
+
+		GennyToken userToken = (GennyToken) items.get("userToken");
+		String questionCode = (String) items.get("questionCode");
+		Long processId = (Long) items.get("processId");
+
+		QEventMessage questionMsg = new QEventMessage("EVT_MSG", "ASK");
+		questionMsg.getData().setCode(questionCode);
+		questionMsg.setToken(userToken.getToken());
+
+		if (processId == null) {
+			Optional<Long> processIdBysessionId = getProcessIdBysessionId(userToken.getSessionCode());
+			boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
+			if (hasProcessIdBySessionId) {
+				processId = processIdBysessionId.get();
+			}
+		}
+
+		if (processId != null) {
+			System.out.println("Sending Question Code  " + questionCode + " to processId " + processId
+					+ " for target user " + userToken.getUserCode());
+
+			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+
+			KieSession newKieSession = null;
+
+			if (this.runtimeEngine != null) {
+
+				newKieSession = (StatefulKnowledgeSession) this.runtimeEngine.getKieSession();
+
+				newKieSession.signalEvent("internalSignal", questionMsg, processId);
+
+			} else {
+
+				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
+				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
+
+				newKieSession.signalEvent("internalSignal", questionMsg, processId);
+
+				newKieSession.dispose();
+
+			}
+		}
+		// notify manager that work item has been completed
+		manager.completeWorkItem(workItem.getId(), resultMap);
+
 	}
 
-    	System.out.println("Sending Question Code  "+questionCode+ " to processId "+processId+" for target user "+userToken.getUserCode());
-    	 
-		KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-
-		KieSession newKieSession = null;
-				
-		if (this.runtimeEngine!=null) {
-			
-			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
-						
-			newKieSession.signalEvent("signal", questionMsg, processId);
-
-		} else {
-			
-			KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
-			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
-			
-			newKieSession.signalEvent("signal", questionMsg, processId);
-
-	    	newKieSession.dispose();
- 	
-    }
-     
-    // notify manager that work item has been completed
-    manager.completeWorkItem(workItem.getId(), resultMap);
-
-  }
-
-  public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
-    // Do nothing, notifications cannot be aborted
-  }
+	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
+		// Do nothing, notifications cannot be aborted
+	}
 
 	private static QueryService queryService;
 	private static KieServiceConfigurator serviceConfigurator;
@@ -162,9 +161,9 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 
 		serviceConfigurator.configureServices("org.jbpm.persistence.jpa", identityProvider, userGroupCallback);
 		queryService = serviceConfigurator.getQueryService();
-  
+
 	}
-	
+
 	public static Optional<Long> getProcessIdBysessionId(String sessionId) {
 		// Do pagination here
 		QueryContext ctx = new QueryContext(0, 100);
@@ -174,5 +173,5 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 		return instances.stream().map(d -> d.getId()).findFirst();
 
 	}
- 
+
 }
