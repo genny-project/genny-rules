@@ -31,29 +31,34 @@ public class JbpmInitListener implements ProcessEventListener {
 	public JbpmInitListener(final GennyToken serviceToken, final GennyToken userToken) {
 		this.serviceToken = serviceToken;
 		this.userToken = userToken;
-		
+
 	}
-	
+
 	public JbpmInitListener(final GennyToken serviceToken) {
 		this.serviceToken = serviceToken;
 	}
-	
+
 	public JbpmInitListener(VertxUtils vertxUtils) {
 		this.vertxUtils = vertxUtils;
 	}
-
 
 	@Override
 	public void beforeProcessStarted(ProcessStartedEvent event) {
 		processStartTime = System.nanoTime();
 		WorkflowProcessInstance process = (WorkflowProcessInstance) event.getProcessInstance();
-		
-		process.setVariable("serviceToken",serviceToken);
-		
+
+		process.setVariable("serviceToken", serviceToken);
+
 		if (this.userToken != null) {
-			process.setVariable("userToken", userToken);
+			GennyToken existing = (GennyToken) process.getVariable("userToken");
+			if ((existing == null) || ((!existing.getSessionCode().equals(userToken.getSessionCode())))) { // save
+																											// adding a
+																											// duplicate
+
+				process.setVariable("userToken", userToken);
+			}
 		}
-	
+
 ////		log.info("jBPM event 'beforeProcessStarted'. Process ID: " + process.getId()
 ////				+ ", Process definition ID: " + process.getProcessId() + ", Process name: "
 ////				+ process.getProcessName() + ", Process state: " + process.getState() + ", Parent process ID: "
@@ -65,9 +70,8 @@ public class JbpmInitListener implements ProcessEventListener {
 
 			if (obj instanceof Long) {
 				process.setVariable("callingProcessId", (Long) obj); // TODO, use a class!
-				System.out.println("FOUND LONG "+(Long) obj); 
-			} else
-			if (obj instanceof String) {
+				System.out.println("FOUND LONG " + (Long) obj);
+			} else if (obj instanceof String) {
 				process.setVariable("name", (String) obj);
 				/* System.out.println("FOUND STRING"); */
 			} else if (obj instanceof QEventMessage) {
@@ -78,25 +82,38 @@ public class JbpmInitListener implements ProcessEventListener {
 
 			} else if (obj instanceof QRules) {
 				process.setVariable("rules", (QRules) obj);
-			//	printProcessText(process, gennyToken, "FOUND QRULE ");
+				// printProcessText(process, gennyToken, "FOUND QRULE ");
 			} else if (obj instanceof CallingProcessToken) {
 				process.setVariable("callingProcessToken", (CallingProcessToken) obj);
-			//	printProcessText(process, gennyToken, "FOUND QRULE ");
+				// printProcessText(process, gennyToken, "FOUND QRULE ");
 
 			} else if (obj instanceof GennyToken) {
 				GennyToken gennyToken = (GennyToken) obj;
-				if (("PER_SERVICE".equals(gennyToken.getCode()))||("serviceToken".equals(gennyToken.getCode()))) {
-			//		System.out.println("JbpmListener: serviceToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode());
-					process.setVariable("serviceToken",gennyToken);
+				if (("PER_SERVICE".equals(gennyToken.getCode())) || ("serviceToken".equals(gennyToken.getCode()))) {
+					// System.out.println("JbpmListener: serviceToken "+gennyToken.getUserCode()+"
+					// processId="+process.getProcessId()+" -> session_state:
+					// "+gennyToken.getSessionCode());
+					process.setVariable("serviceToken", gennyToken);
 				} else {
-					process.setVariable("userToken", gennyToken);
-					String processId = process.getProcessId();
-					if (processId.contains("ession")) { // only bother with session type workflows
-						System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+":"+process.getId()+" -> session_state: "+gennyToken.getSessionCode());
-						VertxUtils.writeCachedJson(gennyToken.getRealm(), gennyToken.getSessionCode(), process.getId()+"", gennyToken.getToken());
-				//		System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+" processId="+process.getProcessId()+" -> session_state: "+gennyToken.getSessionCode()+" written to Cache");
+					GennyToken existing = (GennyToken) process.getVariable("userToken");
+					if ((existing == null) || ((!existing.getSessionCode().equals(gennyToken.getSessionCode())))) { // save
+																													// adding
+																													// a
+																													// duplicate
+						process.setVariable("userToken", gennyToken);
+						String processId = process.getProcessId();
+						if (processId.contains("ession")) { // only bother with session type workflows
+							System.out.println("JbpmListener: userToken " + gennyToken.getUserCode() + " processId="
+									+ process.getProcessId() + ":" + process.getId() + " -> session_state: "
+									+ gennyToken.getSessionCode());
+							VertxUtils.writeCachedJson(gennyToken.getRealm(), gennyToken.getSessionCode(),
+									process.getId() + "", gennyToken.getToken());
+							// System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+"
+							// processId="+process.getProcessId()+" -> session_state:
+							// "+gennyToken.getSessionCode()+" written to Cache");
 
-					} 
+						}
+					}
 				}
 //				printProcessText(process, gennyToken, "FOUND GennyToken  " + gennyToken.getCode());
 
@@ -110,12 +127,12 @@ public class JbpmInitListener implements ProcessEventListener {
 			}
 		});
 
-		//event.getKieRuntime().insert(process);
-		//System.out.println("Number of passed objs =" + event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
+		// event.getKieRuntime().insert(process);
+		// System.out.println("Number of passed objs =" +
+		// event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
 
-		//Now save this session_state to the Cache associated with the processId
-		
-		
+		// Now save this session_state to the Cache associated with the processId
+
 	}
 
 	@Override
@@ -184,10 +201,12 @@ public class JbpmInitListener implements ProcessEventListener {
 	private void processStart(WorkflowProcessInstance process, GennyToken gennyToken) {
 
 		try {
-			// Check if parent process exists , if so then indent .. (To indicate it is a sub process)
-			String indent= process.getParentProcessInstanceId()<0?"":(process.getParentProcessInstanceId()+">>>>>>>>>>");
-			
-			String starttext = RulesUtils.executeRuleLogger(indent+">>>>>>>>>> START PROCESS ",
+			// Check if parent process exists , if so then indent .. (To indicate it is a
+			// sub process)
+			String indent = process.getParentProcessInstanceId() < 0 ? ""
+					: (process.getParentProcessInstanceId() + ">>>>>>>>>>");
+
+			String starttext = RulesUtils.executeRuleLogger(indent + ">>>>>>>>>> START PROCESS ",
 					processDetails(process, gennyToken), RulesUtils.ANSI_RED, RulesUtils.ANSI_YELLOW)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
@@ -203,15 +222,16 @@ public class JbpmInitListener implements ProcessEventListener {
 	private void processEnd(WorkflowProcessInstance process, GennyToken gennyToken, double differenceMs) {
 
 		try {
-			String indent= process.getParentProcessInstanceId()<0?"":(process.getParentProcessInstanceId()+">>>>>>>>>>");
+			String indent = process.getParentProcessInstanceId() < 0 ? ""
+					: (process.getParentProcessInstanceId() + ">>>>>>>>>>");
 
 			String text = processDetails(process, gennyToken) + "  time=" + differenceMs + " ms"; // This is
 																									// faster
 																									// than
 																									// calling
 																									// getUser()
-			String starttext = RulesUtils.executeRuleLogger(indent+">>>>>>>>>> END PROCESS", text, RulesUtils.ANSI_RED,
-					RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
+			String starttext = RulesUtils.executeRuleLogger(indent + ">>>>>>>>>> END PROCESS", text,
+					RulesUtils.ANSI_RED, RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
 
 			RulesUtils.println(starttext);
@@ -226,10 +246,12 @@ public class JbpmInitListener implements ProcessEventListener {
 	private void printProcessText(WorkflowProcessInstance process, GennyToken gennyToken, final String text) {
 
 		try {
-			String indent= process.getParentProcessInstanceId()<0?"":(process.getParentProcessInstanceId()+">>>>>>>>>>");
+			String indent = process.getParentProcessInstanceId() < 0 ? ""
+					: (process.getParentProcessInstanceId() + ">>>>>>>>>>");
 
-			String starttext = RulesUtils.executeRuleLogger(indent+">>>>>>>>>>     PROCESS:" + processDetails(process, gennyToken), text,
-					RulesUtils.ANSI_RED, RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
+			String starttext = RulesUtils.executeRuleLogger(
+					indent + ">>>>>>>>>>     PROCESS:" + processDetails(process, gennyToken), text, RulesUtils.ANSI_RED,
+					RulesUtils.ANSI_YELLOW) + (GennySettings.devMode ? "" : RulesUtils.ANSI_RED)
 					+ (GennySettings.devMode ? "" : RulesUtils.ANSI_RESET);
 
 			RulesUtils.println(starttext);
