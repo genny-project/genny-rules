@@ -70,7 +70,7 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 		questionMsg.setToken(userToken.getToken());
 
 		if (processId == null) {
-			Optional<Long> processIdBysessionId = getProcessIdBysessionId(userToken.getSessionCode());
+			Optional<Long> processIdBysessionId = RulesLoader.getProcessIdBysessionId(userToken.getSessionCode());
 			boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
 			if (hasProcessIdBySessionId) {
 				processId = processIdBysessionId.get();
@@ -111,67 +111,6 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	private static QueryService queryService;
-	private static KieServiceConfigurator serviceConfigurator;
 
-	protected static void configureServices() {
-		serviceConfigurator = ServiceLoader.load(KieServiceConfigurator.class).iterator().next();
-
-		IdentityProvider identityProvider = new IdentityProvider() {
-
-			@Override
-			public String getName() {
-				// TODO Auto-generated method stub
-				return "";
-			}
-
-			@Override
-			public List<String> getRoles() {
-				// TODO Auto-generated method stub
-				return new ArrayList<String>();
-			}
-
-			@Override
-			public boolean hasRole(String role) {
-				// TODO Auto-generated method stub
-				return true;
-			}
-		};
-
-		UserGroupCallback userGroupCallback = new UserGroupCallback() {
-
-			@Override
-			public boolean existsUser(String userId) {
-				// TODO Auto-generated method stub
-				return true;
-			}
-
-			@Override
-			public boolean existsGroup(String groupId) {
-				// TODO Auto-generated method stub
-				return true;
-			}
-
-			@Override
-			public List<String> getGroupsForUser(String userId) {
-				// TODO Auto-generated method stub
-				return new ArrayList<String>();
-			}
-		};
-
-		serviceConfigurator.configureServices("org.jbpm.persistence.jpa", identityProvider, userGroupCallback);
-		queryService = serviceConfigurator.getQueryService();
-
-	}
-
-	public static Optional<Long> getProcessIdBysessionId(String sessionId) {
-		// Do pagination here
-		QueryContext ctx = new QueryContext(0, 100);
-		Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstances",
-				ProcessInstanceQueryMapper.get(), ctx, QueryParam.equalsTo("value", sessionId));
-
-		return instances.stream().map(d -> d.getId()).findFirst();
-
-	}
 
 }
