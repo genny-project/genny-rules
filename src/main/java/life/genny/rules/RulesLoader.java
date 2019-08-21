@@ -85,8 +85,9 @@ import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.utils.VertxUtils;
+import life.genny.utils.WorkflowQueryInterface;
 
-public class RulesLoader {
+public class RulesLoader  {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
@@ -735,7 +736,7 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
 				new ThrowSignalProcessWorkItemHandler(kieSession));
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(kieSession));
+				new AskQuestionWorkItemHandler(RulesLoader.class,kieSession));
 
 	}
 
@@ -860,5 +861,11 @@ public class RulesLoader {
 			log.warn(query.getName()+" is already registered");
 		}
 		System.out.println("Finished init");
+	}
+
+
+	public static Optional<Long> getProcessIdBySessionId(String sessionId) {
+		// TODO Auto-generated method stub
+		return RulesLoader.getProcessIdBysessionId(sessionId);
 	}
 }

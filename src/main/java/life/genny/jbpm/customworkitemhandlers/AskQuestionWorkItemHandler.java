@@ -1,6 +1,8 @@
 package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,6 +37,8 @@ import life.genny.qwanda.message.QEventMessage;
 import life.genny.rules.QRules;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.OutputParam;
+import life.genny.utils.VertxUtils;
+import life.genny.utils.WorkflowQueryInterface;
 
 public class AskQuestionWorkItemHandler implements WorkItemHandler {
 
@@ -43,14 +47,18 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 
 	KieSession kieSession;
 	RuntimeEngine runtimeEngine;
+	String wClass;
+	
 
-	public AskQuestionWorkItemHandler(KieSession kieSession) {
+	public <R> AskQuestionWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession) {
 		this.kieSession = kieSession;
+		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
-	public AskQuestionWorkItemHandler(KieSession kieSession, RuntimeEngine rteng) {
+	public <R> AskQuestionWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession, RuntimeEngine rteng) {
 		this.kieSession = kieSession;
 		this.runtimeEngine = rteng;
+		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
@@ -63,14 +71,38 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 
 		GennyToken userToken = (GennyToken) items.get("userToken");
 		String questionCode = (String) items.get("questionCode");
-		Long processId = (Long) items.get("processId");
+		Long processId = null;
 
 		QEventMessage questionMsg = new QEventMessage("EVT_MSG", "ASK");
 		questionMsg.getData().setCode(questionCode);
 		questionMsg.setToken(userToken.getToken());
 
 		if (processId == null) {
-			Optional<Long> processIdBysessionId = RulesLoader.getProcessIdBysessionId(userToken.getSessionCode());
+			Method m;
+			Optional<Long> processIdBysessionId = Optional.empty();
+			try {
+				Class<?> cls = Class.forName(this.wClass); // needs filtering.
+				m = cls.getDeclaredMethod("getProcessIdBySessionId", String.class);
+				String param = userToken.getSessionCode(); 
+				processIdBysessionId =  (Optional<Long>) m.invoke(null, (Object) param);
+
+			} catch (NoSuchMethodException | SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvocationTargetException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			//Optional<Long> processIdBysessionId = w.getProcessIdBysessionId(userToken.getSessionCode());
 			boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
 			if (hasProcessIdBySessionId) {
 				processId = processIdBysessionId.get();
