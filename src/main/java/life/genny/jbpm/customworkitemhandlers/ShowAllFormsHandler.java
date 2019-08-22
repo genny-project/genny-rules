@@ -52,7 +52,7 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 			QDataBaseEntityMessage rootMsg = new QDataBaseEntityMessage(rootGrp);
 			rules.publishCmd(rootMsg);
 						
-			
+
 			/* get the theme */
 			BaseEntity expandable = rules.baseEntity.getBaseEntityByCode("THM_EXPANDABLE");
 
