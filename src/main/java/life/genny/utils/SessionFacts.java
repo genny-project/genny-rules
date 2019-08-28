@@ -1,8 +1,10 @@
 package life.genny.utils;
+import java.io.Serializable;
+
 import life.genny.models.GennyToken;
 
 
-public class SessionFacts {
+public class SessionFacts implements Serializable {
 	GennyToken serviceToken;
 	GennyToken userToken;
 	Object message;

@@ -46,21 +46,13 @@ import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
 import org.kie.api.runtime.KieContainer;
-import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
 import org.kie.api.runtime.conf.TimedRuleExecutionOption;
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.query.QueryContext;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
-import org.kie.internal.runtime.manager.context.EmptyContext;
 import org.kie.internal.task.api.UserGroupCallback;
-
-import org.kie.api.runtime.manager.RuntimeEngine;
-import org.kie.api.runtime.manager.RuntimeEnvironment;
-import org.kie.api.runtime.manager.RuntimeEnvironmentBuilder;
-import org.kie.api.runtime.manager.RuntimeManager;
-import org.kie.api.runtime.manager.RuntimeManagerFactory;
 
 import com.google.common.io.Files;
 import com.google.gson.reflect.TypeToken;
@@ -82,7 +74,6 @@ import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
 import life.genny.models.GennyToken;
-import life.genny.utils.SessionFacts;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
@@ -93,6 +84,7 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.JbpmInitListener;
+import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
 import life.genny.utils.WorkflowQueryInterface;
 
@@ -112,11 +104,6 @@ public class RulesLoader  {
 	public static Set<String> realms = new HashSet<String>();
 	public static Set<String> userRoles = null;
 	public static Map<String, User> usersSession = new HashMap<String, User>();
-	
-
-	public static RuntimeEnvironment runtimeEnvironment;
-	public static RuntimeEnvironmentBuilder runtimeEnvironmentBuilder;
-	public static RuntimeManager runtimeManager; 
 
 	public static Environment env; // drools persistence
 	public static EntityManagerFactory emf = null;
@@ -375,13 +362,7 @@ public class RulesLoader  {
 			final KieContainer kContainer = ks.newKieContainer(releaseId);
 			final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
 			final KieBase kbase = kContainer.newKieBase(kbconf);
-			
-			
-			/*Using Runtime Environment*/
-			runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
-			runtimeEnvironment = runtimeEnvironmentBuilder.entityManagerFactory(emf).knowledgeBase(kbase).get();
-			runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment);
-			
+
 			log.info("Put rules KieBase into Custom Cache");
 			if (getKieBaseCache().containsKey(realm)) {
 				getKieBaseCache().remove(realm);
@@ -421,6 +402,7 @@ public class RulesLoader  {
 							return false; // do not save this genny rule as there is a proper realm rule with same name
 						}
 					}
+
 				}
 			}
 			if (rule._2.endsWith(".drl")) {
@@ -445,49 +427,45 @@ public class RulesLoader  {
 		return ret;
 	}
 
-	public static void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
-		 
-		KieSession kieSession = null;
+	public static void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) { 
+		StatefulKnowledgeSession kieSession = null;
 		int rulesFired = 0;
+		QEventMessage eventMsg = null;
+		QDataMessage dataMsg = null;
 		String msg_code = "";
 		String msg_type = "";
 		GennyToken gToken = facts.getServiceToken();
 		String bridgeSourceAddress = "";
 
-		/* Getting entity Manager and Entity Transaction for persistence*/
+//		EntityManagerFactory emf2 = (EntityManagerFactory) env.get(EnvironmentName.ENTITY_MANAGER_FACTORY);
 		EntityManager em = emf.createEntityManager();
-		
+
 		EntityTransaction tx = em.getTransaction();
-		
-		log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful");
-		
-		/* getting Runtime Engine from RuntimeManager
-		 * each instance of Engine handles one KieSession
-		 */
-		
-		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
 
 		try {
-			
 			tx.begin();
 
-			if (getKieBaseCache().get(gToken.getRealm()) == null) {
-				log.error("The realm  kieBaseCache is null, not loaded " + gToken.getRealm());
+			if (getKieBaseCache().get(facts.getServiceToken().getRealm()) == null) {
+				log.error("The realm  kieBaseCache is null, not loaded " + facts.getServiceToken().getRealm());
 				return;
 			}
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 
-			/* Getting KieSession */
-			kieSession = runtimeEngine.getKieSession();
-			
+//			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
+			kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(facts.getServiceToken().getRealm()),
+					ksconf, env); // This
+			// is
+			// stateful
+
 			JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 			
 			addHandlers(kieSession);
 
 			kieSession.addEventListener(new GennyAgendaEventListener());
-			kieSession.addEventListener(new JbpmInitListener(gToken));
+			kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
 			
+
 			/* If userToken is not null then send the event through user Session */
 			if (facts.getUserToken() != null) {
 
@@ -573,19 +551,18 @@ public class RulesLoader  {
 			}else{
 				log.info("Invalid Events coming in");
 			}
-
 			rulesFired = kieSession.fireAllRules();
 
 		} catch (final Throwable t) {
 			log.error(t.getLocalizedMessage());
-		
+			;
 		} finally {
 			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
-			
 			// commit
+			
 			tx.commit();
 			em.close();
-			kieSession.dispose();
+			// kieSession.dispose();
 		}
 	}
 	
@@ -608,8 +585,6 @@ public class RulesLoader  {
 			}
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-			
-			log.info("Using KieSesion ::::::: Stateless");
 
 			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(serviceToken.getRealm()).newKieSession(ksconf, env);
 			
@@ -618,6 +593,7 @@ public class RulesLoader  {
 			kieSession.addEventListener(new GennyAgendaEventListener());
 			kieSession.addEventListener(new JbpmInitListener(serviceToken));
 			
+
 
 			for (final Object fact : facts) {
 				kieSession.insert(fact);
@@ -641,6 +617,7 @@ public class RulesLoader  {
 				}
 
 			}
+
 
 			rulesFired = kieSession.fireAllRules();
 
@@ -752,25 +729,7 @@ public class RulesLoader  {
 		return new HashMap<File, ResourceType>(); // TODO
 	}
 
-	/*public static void addHandlers(StatefulKnowledgeSession kieSession) {
-		// Register handlers
-		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame(kieSession));
-		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler(kieSession));
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
-				new ShowFrameWIthContextList(kieSession));
-		kieSession.getWorkItemManager().registerWorkItemHandler("RuleFlowGroup",
-				new RuleFlowGroupWorkItemHandler(kieSession));
-		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
-				new ThrowSignalProcessWorkItemHandler(kieSession));
-		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(RulesLoader.class,kieSession));
-
-	}*/
-	
-	public static void addHandlers(KieSession kieSession) {
+	public static void addHandlers(StatefulKnowledgeSession kieSession) {
 		// Register handlers
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
