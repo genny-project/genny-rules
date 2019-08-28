@@ -445,8 +445,7 @@ public class RulesLoader  {
 		return ret;
 	}
 
-	public static void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts,
-			final GennyToken serviceToken) {
+	public static void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
 		 
 		KieSession kieSession = null;
 		int rulesFired = 0;
@@ -472,8 +471,8 @@ public class RulesLoader  {
 			
 			tx.begin();
 
-			if (getKieBaseCache().get(serviceToken.getRealm()) == null) {
-				log.error("The realm  kieBaseCache is null, not loaded " + serviceToken.getRealm());
+			if (getKieBaseCache().get(gToken.getRealm()) == null) {
+				log.error("The realm  kieBaseCache is null, not loaded " + gToken.getRealm());
 				return;
 			}
 
@@ -487,7 +486,7 @@ public class RulesLoader  {
 			addHandlers(kieSession);
 
 			kieSession.addEventListener(new GennyAgendaEventListener());
-			kieSession.addEventListener(new JbpmInitListener(serviceToken));
+			kieSession.addEventListener(new JbpmInitListener(gToken));
 			
 			/* If userToken is not null then send the event through user Session */
 			if (facts.getUserToken() != null) {
@@ -706,7 +705,7 @@ public class RulesLoader  {
 		SessionFacts facts = new SessionFacts(gennyServiceToken,null,msg);
 
 		try {
-			executeStateful(globals, facts, gennyServiceToken);
+			executeStateful(globals, facts);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -739,7 +738,7 @@ public class RulesLoader  {
 			} else {
 				
 				SessionFacts facts = new SessionFacts(serviceToken,userToken,msg);
-				RulesLoader.executeStateful(globals, facts, serviceToken);
+				RulesLoader.executeStateful(globals, facts);
 			}
 
 		} catch (Exception e) {
