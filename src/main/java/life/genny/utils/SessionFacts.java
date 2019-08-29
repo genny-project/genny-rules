@@ -5,13 +5,17 @@ import life.genny.models.GennyToken;
 
 
 public class SessionFacts implements Serializable {
+
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
+
 	GennyToken serviceToken;
 	GennyToken userToken;
 	Object message;
+	
+	private SessionFacts() {}
+	
 	/**
 	 * @param gennyToken
 	 * @param userToken

@@ -1,19 +1,28 @@
 package life.genny.model;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import javax.persistence.Cacheable;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Index;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Immutable;
+import org.jbpm.process.audit.event.AuditEvent;
+
+import com.google.gson.annotations.Expose;
 
 /**
 * @author Adam Crow
@@ -23,38 +32,45 @@ import org.hibernate.annotations.Immutable;
 @XmlRootElement
 @XmlAccessorType(value = XmlAccessType.FIELD)
 
-@Table(name = "nodestatus", 
-indexes = {
-        @Index(columnList = "nodeId", name =  "code_idx"),
-        @Index(columnList = "processId", name =  "code_idx"),
-        @Index(columnList = "realm", name = "code_idx")
-    }
-)
+@Table(name = "nodestatus", indexes = {@Index(name = "IDX_NStat_nodeId", columnList = "nodeId"),
+        @Index(name = "IDX_NStat_realm", columnList = "realm"),
+        @Index(name = "IDX_NStat_pId", columnList = "processId")})
+@SequenceGenerator(name="nodeStatusIdSeq", sequenceName="NODE_STATUS_LOG_ID_SEQ", allocationSize=1)
+
 
 @Entity
-@Cacheable
-@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-public class NodeStatus implements Serializable {
+public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime.manager.audit.NodeInstanceLog {
 	
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
-	/**
-	 * 
-	 */
+	
+	private static final long serialVersionUID = 910l;
 	
     @Id
-    @GeneratedValue
-    private int id;
+    @GeneratedValue(strategy = GenerationType.AUTO, generator="nodeStatusIdSeq")
+	private long id;
+    
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "log_date")
+    private Date date;
 	
+    @Expose
 	private String userCode;
+    @Expose
 	private String nodeName;
+    @Expose
 	private String nodeId;
+    @Expose
 	private String status;
+    @Expose
 	private String realm;
+    @Expose
 	private Long processInstanceId;
+    @Expose
 	private String processId;
+    @Expose
+    @Column(nullable=true)
 	private String workflowCode;
 	
 	private NodeStatus()
@@ -157,6 +173,24 @@ public class NodeStatus implements Serializable {
 				+ "]";
 	}
 
+	
+	
+
+
+	/**
+	 * @return the id
+	 */
+	public long getId() {
+		return id;
+	}
+
+	/**
+	 * @return the date
+	 */
+	public Date getDate() {
+		return date;
+	}
+
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */
@@ -222,6 +256,42 @@ public class NodeStatus implements Serializable {
 		} else if (!workflowCode.equals(other.workflowCode))
 			return false;
 		return true;
+	}
+
+	@Override
+	public String getNodeInstanceId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Long getWorkItemId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getConnection() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getNodeType() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Integer getType() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getExternalId() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }
