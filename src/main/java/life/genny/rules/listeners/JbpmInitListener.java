@@ -17,6 +17,8 @@ import org.drools.core.audit.event.LogEvent;
 import org.drools.core.audit.event.RuleFlowLogEvent;
 import org.drools.core.audit.event.RuleFlowNodeLogEvent;
 import org.drools.core.audit.event.RuleFlowVariableLogEvent;
+import org.drools.core.impl.StatelessKnowledgeSessionImpl;
+import org.kie.api.event.KieRuntimeEventManager;
 import org.kie.api.event.process.ProcessCompletedEvent;
 import org.kie.api.event.process.ProcessEventListener;
 import org.kie.api.event.process.ProcessNodeLeftEvent;
@@ -39,7 +41,7 @@ import life.genny.utils.CallingProcessToken;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 
-public class JbpmInitListener  /*extends WorkingMemoryLogger*/ implements ProcessEventListener {
+public class JbpmInitListener /* extends WorkingMemoryLogger*/ implements ProcessEventListener {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 	
@@ -63,8 +65,25 @@ public class JbpmInitListener  /*extends WorkingMemoryLogger*/ implements Proces
 	}
 
 	public JbpmInitListener(final GennyToken serviceToken) {
-		this.serviceToken = serviceToken;
+ 		this.serviceToken = serviceToken;
 	}
+	
+//	public JbpmInitListener(final GennyToken serviceToken,KieRuntimeEventManager session) {
+//	      super(session);
+//	      if (session instanceof KieRuntime) {
+//	          env = ((KieRuntime) session).getEnvironment();
+//	      } else if (session instanceof StatelessKnowledgeSessionImpl) {
+//	         // env = ((StatelessKnowledgeSessionImpl) session).getEnvironment();
+//	      } else {
+//	          throw new IllegalArgumentException(
+//	              "Not supported session in logger: " + session.getClass());
+//	      }
+//	      Boolean bool = (Boolean) env.get("IS_JTA_TRANSACTION");
+//	      if (bool != null) {
+//	          isJTA = bool.booleanValue();
+//	      }
+//			this.serviceToken = serviceToken;
+//		}
 
 	public JbpmInitListener(VertxUtils vertxUtils) {
 		this.vertxUtils = vertxUtils;
@@ -447,25 +466,25 @@ public class JbpmInitListener  /*extends WorkingMemoryLogger*/ implements Proces
         }
     }
 
-//	@Override
-//	public void logEventCreated(LogEvent logEvent) {
-//        switch (logEvent.getType()) {
-//        case LogEvent.BEFORE_RULEFLOW_CREATED:
-//        case LogEvent.AFTER_RULEFLOW_COMPLETED:
-//              break;
-//        case LogEvent.BEFORE_RULEFLOW_NODE_TRIGGERED:
-//        	// nodeEvent = (RuleFlowNodeLogEvent) logEvent;
-//        	log.info("triggering on before ruleflow node");
-//             break;
-//        case LogEvent.BEFORE_RULEFLOW_NODE_EXITED:
-//            break;
-//        case LogEvent.AFTER_VARIABLE_INSTANCE_CHANGED:
-//            RuleFlowVariableLogEvent variableEvent = (RuleFlowVariableLogEvent) logEvent;
-//        //    addVariableLog(variableEvent.getProcessInstanceId(), variableEvent.getProcessId(), variableEvent.getVariableInstanceId(), variableEvent.getVariableId(), variableEvent.getObjectToString());
-//            break;
-//        default:
-//            // ignore all other events
-//    }
-//		
-//	}
+	//@Override
+	public void logEventCreated(LogEvent logEvent) {
+        switch (logEvent.getType()) {
+        case LogEvent.BEFORE_RULEFLOW_CREATED:
+        case LogEvent.AFTER_RULEFLOW_COMPLETED:
+              break;
+        case LogEvent.BEFORE_RULEFLOW_NODE_TRIGGERED:
+        	// nodeEvent = (RuleFlowNodeLogEvent) logEvent;
+        	log.info("triggering on before ruleflow node");
+             break;
+        case LogEvent.BEFORE_RULEFLOW_NODE_EXITED:
+            break;
+        case LogEvent.AFTER_VARIABLE_INSTANCE_CHANGED:
+            RuleFlowVariableLogEvent variableEvent = (RuleFlowVariableLogEvent) logEvent;
+        //    addVariableLog(variableEvent.getProcessInstanceId(), variableEvent.getProcessId(), variableEvent.getVariableInstanceId(), variableEvent.getVariableId(), variableEvent.getObjectToString());
+            break;
+        default:
+            // ignore all other events
+    }
+		
+	}
 }
