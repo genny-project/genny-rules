@@ -46,12 +46,20 @@ import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
 import org.kie.api.runtime.KieContainer;
+import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
 import org.kie.api.runtime.conf.TimedRuleExecutionOption;
+import org.kie.api.runtime.manager.RuntimeEngine;
+import org.kie.api.runtime.manager.RuntimeEnvironment;
+import org.kie.api.runtime.manager.RuntimeEnvironmentBuilder;
+import org.kie.api.runtime.manager.RuntimeManager;
+import org.kie.api.runtime.manager.RuntimeManagerFactory;
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.query.QueryContext;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
+import org.kie.internal.runtime.manager.context.EmptyContext;
+import org.kie.internal.runtime.manager.context.ProcessInstanceIdContext;
 import org.kie.internal.task.api.UserGroupCallback;
 
 import com.google.common.io.Files;
@@ -104,7 +112,10 @@ public class RulesLoader  {
 	public static Set<String> realms = new HashSet<String>();
 	public static Set<String> userRoles = null;
 	public static Map<String, User> usersSession = new HashMap<String, User>();
-
+	public static boolean RUNTIME_MANAGER_ON =  true;
+	public static RuntimeEnvironment runtimeEnvironment;
+	public static RuntimeEnvironmentBuilder runtimeEnvironmentBuilder;
+	public static RuntimeManager runtimeManager; 
 	public static Environment env; // drools persistence
 	public static EntityManagerFactory emf = null;
 
@@ -363,6 +374,17 @@ public class RulesLoader  {
 			final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
 			final KieBase kbase = kContainer.newKieBase(kbconf);
 
+			if(RUNTIME_MANAGER_ON) {
+				
+				/*Using Runtime Environment*/
+				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
+				runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf)
+									 .get();
+				
+				runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment);
+				//runtimeManager = RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment);
+			}
+			
 			log.info("Put rules KieBase into Custom Cache");
 			if (getKieBaseCache().containsKey(realm)) {
 				getKieBaseCache().remove(realm);
@@ -428,7 +450,7 @@ public class RulesLoader  {
 	}
 
 	public static void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) { 
-		StatefulKnowledgeSession kieSession = null;
+		
 		int rulesFired = 0;
 		QEventMessage eventMsg = null;
 		QDataMessage dataMsg = null;
@@ -437,132 +459,268 @@ public class RulesLoader  {
 		GennyToken gToken = facts.getServiceToken();
 		String bridgeSourceAddress = "";
 
-//		EntityManagerFactory emf2 = (EntityManagerFactory) env.get(EnvironmentName.ENTITY_MANAGER_FACTORY);
 		EntityManager em = emf.createEntityManager();
-
 		EntityTransaction tx = em.getTransaction();
-
-		try {
-			tx.begin();
-
-			if (getKieBaseCache().get(facts.getServiceToken().getRealm()) == null) {
-				log.error("The realm  kieBaseCache is null, not loaded " + facts.getServiceToken().getRealm());
-				return;
-			}
-
-			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-
-//			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(realm).newKieSession(ksconf, env);
-			kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(facts.getServiceToken().getRealm()),
-					ksconf, env); // This
-			// is
-			// stateful
-
-			JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+		
+		if(RUNTIME_MANAGER_ON){
 			
-			addHandlers(kieSession);
-
-			kieSession.addEventListener(new GennyAgendaEventListener());
-			kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
 			
+			/* getting Runtime Engine from RuntimeManager
+			* each instance of Engine handles one KieSession
+			*/
+			
+			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+			
+			/*For using ProcessInstanceIdContext */
+			//RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
 
-			/* If userToken is not null then send the event through user Session */
-			if (facts.getUserToken() != null) {
-
-				gToken = facts.getUserToken();
-				String session_state = gToken.getSessionCode();
-				Long processId  = null;
+			/* Getting KieSession */
+			KieSession kieSession = runtimeEngine.getKieSession();		
+			
+			log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful");
+			
+			try {
 				
-				Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
+				tx.begin();
+
+				if (getKieBaseCache().get(gToken.getRealm()) == null) {
+					log.error("The realm  kieBaseCache is null, not loaded " + gToken.getRealm());
+					return;
+				}
+
+				KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 				
-				/* Check if the process already exist or not is there */
-				boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
+				JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+				
+				addHandlers(kieSession);
 
-				if (hasProcessIdBySessionId) {
+				kieSession.addEventListener(new GennyAgendaEventListener());
+				kieSession.addEventListener(new JbpmInitListener(gToken));
+				
+				/* If userToken is not null then send the event through user Session */
+				if (facts.getUserToken() != null) {
 
-					processId = processIdBysessionId.get();
-
-					/* If the message is QEventMessage then send in to event channel*/
-					if(facts.getMessage() instanceof QEventMessage) {
-						
-						((QEventMessage) facts.getMessage()).setToken( gToken.getToken());
-						
-						msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
-						bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
-
-						log.info("incoming EVENT"
-							+ " message from " + bridgeSourceAddress 
-							+ ": " + facts.getUserToken().getRealm() 
-							+ ":" + facts.getUserToken().getSessionCode() 
-							+ ":" + facts.getUserToken().getUserCode() 
-							+ "   " + msg_code + " to pid " + processId);
-
-						kieSession.signalEvent("event", facts, processId);
-					}
-	
-					/* If the message is data message then send in to data channel*/
-					else if(facts.getMessage() instanceof QDataMessage){
-						
-						((QDataMessage) facts.getMessage()).setToken(gToken.getToken());
-
-						msg_code = ((QDataMessage) facts.getMessage()).getData_type();
-						bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
-
-						log.info("incoming DATA"  
-							+ " message from " + bridgeSourceAddress 
-							+ ": " + facts.getUserToken().getRealm() 
-							+ ":" + facts.getUserToken().getSessionCode() 
-							+ ":" + facts.getUserToken().getUserCode() 
-							+ "   " + msg_code + " to pid " + processId);
-
-						kieSession.signalEvent("data", facts, processId);
-					}
-
-				} else {
+					gToken = facts.getUserToken();
+					String session_state = gToken.getSessionCode();
+					Long processId  = null;
 					
-					/* If the message is QeventMessage and the Event Message is AuthInit */
-					if(facts.getMessage() instanceof QEventMessage && 
-					( (QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
-							
-						((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
-						bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
+					Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
+					
+					/* Check if the process already exist or not */
+					boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
 
-						log.info("incoming  message from " + bridgeSourceAddress 
+					if (hasProcessIdBySessionId) {
+
+						processId = processIdBysessionId.get();
+
+						/* If the message is QEventMessage then send in to event channel*/
+						if(facts.getMessage() instanceof QEventMessage) {
+							
+							((QEventMessage) facts.getMessage()).setToken( gToken.getToken());
+							
+							msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
+							bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
+
+							log.info("incoming EVENT"
+								+ " message from " + bridgeSourceAddress 
+								+ ": " + facts.getUserToken().getRealm() 
+								+ ": " + facts.getUserToken().getSessionCode() 
+								+ ": " + facts.getUserToken().getUserCode() 
+								+ "   " + msg_code + " to pid " + processId);
+
+							log.info("Getting user clicking Events");
+							kieSession.signalEvent("event", facts, processId);
+						}
+		
+						/* If the message is data message then send in to data channel*/
+						else if(facts.getMessage() instanceof QDataMessage){
+							
+							((QDataMessage) facts.getMessage()).setToken(gToken.getToken());
+
+							msg_code = ((QDataMessage) facts.getMessage()).getData_type();
+							bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
+
+							log.info("incoming DATA"  
+								+ " message from " + bridgeSourceAddress 
 								+ ": " + facts.getUserToken().getRealm() 
 								+ ":" + facts.getUserToken().getSessionCode() 
 								+ ":" + facts.getUserToken().getUserCode() 
-								+ "   " + msg_code + " to NEW SESSION");
-						
-						/* sending New Session Signal */
-						log.info("Message is event Authinit");
-						kieSession.signalEvent("newSession", facts);
-						
+								+ "   " + msg_code + " to pid " + processId);
+
+							kieSession.signalEvent("data", facts, processId);
+						}
+
 					} else {
-						log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
+						
+						/* If the message is QeventMessage and the Event Message is AuthInit */
+						if(facts.getMessage() instanceof QEventMessage && 
+						( (QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
+								
+							((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
+							bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
+
+							log.info("incoming  message from " + bridgeSourceAddress 
+									+ ": " + facts.getUserToken().getRealm() 
+									+ ":" + facts.getUserToken().getSessionCode() 
+									+ ":" + facts.getUserToken().getUserCode() 
+									+ "   " + msg_code + " to NEW SESSION");
+							
+							/* sending New Session Signal */
+							log.info("Message is event Authinit");
+							kieSession.signalEvent("newSession", facts);
+							
+						} else {
+							log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
+							
+						}
 						
 					}
-					
+				}	/* When usertoken is null */
+				 else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
+						
+					/* Running init_project workflow */
+						kieSession.startProcess("init_project");				
+				}else{
+					log.info("Invalid Events coming in");
 				}
-			}	/* When usertoken is null */
-			 else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
-					
-				/* Running init_project workflow */
-					kieSession.startProcess("init_project");				
-			}else{
-				log.info("Invalid Events coming in");
-			}
-			rulesFired = kieSession.fireAllRules();
 
-		} catch (final Throwable t) {
-			log.error(t.getLocalizedMessage());
-			;
-		} finally {
-			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
-			// commit
+				rulesFired = kieSession.fireAllRules();
+
+			} catch (final Throwable t) {
+				log.error(t.getLocalizedMessage());
 			
-			tx.commit();
-			em.close();
-			// kieSession.dispose();
+			} finally {
+				log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
+				
+				// commit
+				tx.commit();
+				em.close();
+				
+			}
+
+		}else {
+			
+			StatefulKnowledgeSession kieSession = null;
+			
+			try {
+				tx.begin();
+	
+				if (getKieBaseCache().get(facts.getServiceToken().getRealm()) == null) {
+					log.error("The realm  kieBaseCache is null, not loaded " + facts.getServiceToken().getRealm());
+					return;
+				}
+	
+				KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+	
+				kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(facts.getServiceToken().getRealm()),
+						ksconf, env); 
+	
+				JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+				
+				addHandlers(kieSession);
+	
+				kieSession.addEventListener(new GennyAgendaEventListener());
+				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+				
+	
+				/* If userToken is not null then send the event through user Session */
+				if (facts.getUserToken() != null) {
+	
+					gToken = facts.getUserToken();
+					String session_state = gToken.getSessionCode();
+					Long processId  = null;
+					
+					Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
+					
+					/* Check if the process already exist or not is there */
+					boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
+	
+					if (hasProcessIdBySessionId) {
+	
+						processId = processIdBysessionId.get();
+	
+						/* If the message is QEventMessage then send in to event channel*/
+						if(facts.getMessage() instanceof QEventMessage) {
+							
+							((QEventMessage) facts.getMessage()).setToken( gToken.getToken());
+							
+							msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
+							bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
+	
+							log.info("incoming EVENT"
+								+ " message from " + bridgeSourceAddress 
+								+ ": " + facts.getUserToken().getRealm() 
+								+ ":" + facts.getUserToken().getSessionCode() 
+								+ ":" + facts.getUserToken().getUserCode() 
+								+ "   " + msg_code + " to pid " + processId);
+	
+							kieSession.signalEvent("event", facts, processId);
+						}
+		
+						/* If the message is data message then send in to data channel*/
+						else if(facts.getMessage() instanceof QDataMessage){
+							
+							((QDataMessage) facts.getMessage()).setToken(gToken.getToken());
+	
+							msg_code = ((QDataMessage) facts.getMessage()).getData_type();
+							bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
+	
+							log.info("incoming DATA"  
+								+ " message from " + bridgeSourceAddress 
+								+ ": " + facts.getUserToken().getRealm() 
+								+ ":" + facts.getUserToken().getSessionCode() 
+								+ ":" + facts.getUserToken().getUserCode() 
+								+ "   " + msg_code + " to pid " + processId);
+	
+							kieSession.signalEvent("data", facts, processId);
+						}
+	
+					} else {
+						
+						/* If the message is QeventMessage and the Event Message is AuthInit */
+						if(facts.getMessage() instanceof QEventMessage && 
+						( (QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
+								
+							((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
+							bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
+	
+							log.info("incoming  message from " + bridgeSourceAddress 
+									+ ": " + facts.getUserToken().getRealm() 
+									+ ":" + facts.getUserToken().getSessionCode() 
+									+ ":" + facts.getUserToken().getUserCode() 
+									+ "   " + msg_code + " to NEW SESSION");
+							
+							/* sending New Session Signal */
+							log.info("Message is event Authinit");
+							kieSession.signalEvent("newSession", facts);
+							
+						} else {
+							log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
+							
+						}
+						
+					}
+				}	/* When usertoken is null */
+				 else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
+						
+					/* Running init_project workflow */
+						kieSession.startProcess("init_project");				
+				}else{
+					log.info("Invalid Events coming in");
+				}
+				rulesFired = kieSession.fireAllRules();
+			} catch (final Throwable t) {
+				log.error(t.getLocalizedMessage());
+				;
+			} finally {
+				log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
+				// commit
+				
+				tx.commit();
+				em.close();
+				// kieSession.dispose();
+			}
+			
 		}
 	}
 	
@@ -591,9 +749,7 @@ public class RulesLoader  {
 			addHandlers(kieSession);
 
 			kieSession.addEventListener(new GennyAgendaEventListener());
-			kieSession.addEventListener(new JbpmInitListener(serviceToken));
-			
-
+			kieSession.addEventListener(new JbpmInitListener(serviceToken));			
 
 			for (final Object fact : facts) {
 				kieSession.insert(fact);
@@ -728,7 +884,8 @@ public class RulesLoader  {
 	public static Map<File, ResourceType> getKieResources() {
 		return new HashMap<File, ResourceType>(); // TODO
 	}
-
+	
+	/* For old implementation */
 	public static void addHandlers(StatefulKnowledgeSession kieSession) {
 		// Register handlers
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
@@ -747,6 +904,24 @@ public class RulesLoader  {
 
 	}
 
+	/* For new implementation */
+	public static void addHandlers(KieSession kieSession) {
+		// Register handlers
+		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
+		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
+		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
+		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame(kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler(kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
+				new ShowFrameWIthContextList(kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("RuleFlowGroup",
+				new RuleFlowGroupWorkItemHandler(kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
+				new ThrowSignalProcessWorkItemHandler(kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
+				new AskQuestionWorkItemHandler(RulesLoader.class,kieSession));
+
+	}
 	/**
 	 * @param rulesDir
 	 */
