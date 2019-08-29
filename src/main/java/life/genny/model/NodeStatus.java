@@ -2,6 +2,7 @@ package life.genny.model;
 
 import java.io.Serializable;
 
+import javax.persistence.Cacheable;
 import javax.persistence.Entity;
 import javax.persistence.Index;
 import javax.persistence.Table;
@@ -9,6 +10,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Immutable;
 
 /**
@@ -28,8 +30,8 @@ indexes = {
 )
 
 @Entity
-@Immutable
-
+@Cacheable
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class NodeStatus implements Serializable {
 	
 	/**
@@ -47,6 +49,11 @@ public class NodeStatus implements Serializable {
 	private Long processInstanceId;
 	private String processId;
 	private String workflowCode;
+	
+	private NodeStatus()
+	{
+		// used by hibernate
+	}
 	
 	/**
 	 * @param userCode
