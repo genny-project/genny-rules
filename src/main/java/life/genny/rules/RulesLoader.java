@@ -29,6 +29,7 @@ import org.drools.core.impl.EnvironmentFactory;
 import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
+import org.jbpm.process.audit.AbstractAuditLogger;
 import org.jbpm.process.audit.JPAWorkingMemoryDbLogger;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
@@ -92,6 +93,7 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.JbpmInitListener;
+import life.genny.rules.listeners.NodeStatusLog;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
 import life.genny.utils.WorkflowQueryInterface;
@@ -490,7 +492,8 @@ public class RulesLoader  {
 
 				KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 				
-				JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+				//JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 				
 				addHandlers(kieSession);
 
