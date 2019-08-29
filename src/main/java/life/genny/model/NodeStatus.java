@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -41,6 +43,11 @@ public class NodeStatus implements Serializable {
 	/**
 	 * 
 	 */
+	
+    @Id
+    @GeneratedValue
+    private int id;
+	
 	private String userCode;
 	private String nodeName;
 	private String nodeId;
@@ -65,7 +72,7 @@ public class NodeStatus implements Serializable {
 	 */
 	public NodeStatus(String userCode, String nodeName, String nodeId, String realm, Long processInstanceId,
 			String processId, String workflowCode) {
-		super();
+
 		this.userCode = userCode;
 		this.nodeName = nodeName;
 		this.nodeId = nodeId;
