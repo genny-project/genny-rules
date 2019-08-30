@@ -597,11 +597,12 @@ public class RulesLoader  {
 			
 			} finally {
 				log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
-				runtimeManager.disposeRuntimeEngine(runtimeEngine);
+				
 				// commit
 				tx.commit();
 				em.close();
 				
+				runtimeManager.disposeRuntimeEngine(runtimeEngine);
 			}
 
 		}else {
