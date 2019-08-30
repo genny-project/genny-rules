@@ -383,6 +383,10 @@ public class RulesLoader  {
 				runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf)
 									 .get();
 				
+				if(runtimeManager != null){
+					log.info("Closing active runtime Manager Id = " + runtimeManager.getIdentifier());
+					runtimeManager.close();
+				}
 				runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment);
 				//runtimeManager = RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment);
 			}
@@ -470,7 +474,6 @@ public class RulesLoader  {
 			/* getting Runtime Engine from RuntimeManager
 			* each instance of Engine handles one KieSession
 			*/
-			
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
 			
 			/*For using ProcessInstanceIdContext */
@@ -594,7 +597,7 @@ public class RulesLoader  {
 			
 			} finally {
 				log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
-				
+				runtimeManager.disposeRuntimeEngine(runtimeEngine);
 				// commit
 				tx.commit();
 				em.close();
