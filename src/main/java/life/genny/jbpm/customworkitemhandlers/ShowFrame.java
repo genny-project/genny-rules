@@ -62,7 +62,7 @@ public class ShowFrame implements WorkItemHandler {
 			} else {
 				log.info(p.getProcessName() + ": root Frame Code sent to display  = " + rootFrameCode);
 
-				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "-MSG",
+				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
 						QDataBaseEntityMessage.class, userToken.getToken());
 
 				if (FRM_MSG != null) {
@@ -72,7 +72,7 @@ public class ShowFrame implements WorkItemHandler {
 					}
 
 					QDataBaseEntityMessage TARGET_FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "",
-							targetFrameCode + "-MSG", QDataBaseEntityMessage.class, userToken.getToken());
+							targetFrameCode + "_MSG", QDataBaseEntityMessage.class, userToken.getToken());
 
 					for (BaseEntity targetFrame : TARGET_FRM_MSG.getItems()) {
 						if (targetFrame.getCode().equals(targetFrameCode)) {
@@ -111,7 +111,7 @@ public class ShowFrame implements WorkItemHandler {
 					Type setType = new TypeToken<Set<QDataAskMessage>>() {
 					}.getType();
 
-					String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "-ASKS",
+					String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
 							String.class, userToken.getToken());
 
 					Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
@@ -135,7 +135,7 @@ public class ShowFrame implements WorkItemHandler {
 						}
 					}
 				} else {
-					log.error(rootFrameCode + "-MSG" + " DOES NOT EXIST IN CACHE - cannot display frame");
+					log.error(rootFrameCode + "_MSG" + " DOES NOT EXIST IN CACHE - cannot display frame");
 				}
 
 			}

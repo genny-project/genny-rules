@@ -44,7 +44,7 @@ public class ShowFrame implements WorkItemHandler {
     	} else {
     		log.info("root Frame Code = "+rootFrameCode);
     		
-    		QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-MSG",
+    		QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"_MSG",
     				QDataBaseEntityMessage.class, userToken.getToken());	
     		FRM_MSG.setToken(userToken.getToken());
     		String frmStr = JsonUtils.toJson(FRM_MSG);
@@ -54,7 +54,7 @@ public class ShowFrame implements WorkItemHandler {
        		Type setType = new TypeToken<Set<QDataAskMessage>>() {
     		}.getType();
 
-    		String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"-ASKS", String.class,
+    		String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"_ASKS", String.class,
     				userToken.getToken());
 
     		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);

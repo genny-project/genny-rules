@@ -25,6 +25,10 @@ import javax.persistence.Persistence;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
+import org.drools.compiler.compiler.DrlParser;
+import org.drools.compiler.compiler.DroolsParserException;
+import org.drools.compiler.lang.descr.AttributeDescr;
+import org.drools.compiler.lang.descr.RuleDescr;
 import org.drools.core.impl.EnvironmentFactory;
 import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
@@ -43,6 +47,7 @@ import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
 import org.kie.api.builder.Message;
 import org.kie.api.builder.ReleaseId;
+import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
@@ -82,8 +87,12 @@ import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
+import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
+import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.User;
+import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
 import life.genny.qwanda.message.QEventLinkChangeMessage;
@@ -94,11 +103,13 @@ import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
+import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
 import life.genny.utils.WorkflowQueryInterface;
 
-public class RulesLoader  {
+public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
@@ -114,10 +125,10 @@ public class RulesLoader  {
 	public static Set<String> realms = new HashSet<String>();
 	public static Set<String> userRoles = null;
 	public static Map<String, User> usersSession = new HashMap<String, User>();
-	public static boolean RUNTIME_MANAGER_ON =  true;
+	public static boolean RUNTIME_MANAGER_ON = true;
 	public static RuntimeEnvironment runtimeEnvironment;
 	public static RuntimeEnvironmentBuilder runtimeEnvironmentBuilder;
-	public static RuntimeManager runtimeManager; 
+	public static RuntimeManager runtimeManager;
 	public static Environment env; // drools persistence
 	public static EntityManagerFactory emf = null;
 
@@ -376,21 +387,21 @@ public class RulesLoader  {
 			final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
 			final KieBase kbase = kContainer.newKieBase(kbconf);
 
-			if(RUNTIME_MANAGER_ON) {
-				
-				/*Using Runtime Environment*/
+			if (RUNTIME_MANAGER_ON) {
+
+				/* Using Runtime Environment */
 				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
-				runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf)
-									 .get();
-				
-				if(runtimeManager != null){
+				runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf).get();
+
+				if (runtimeManager != null) {
 					log.info("Closing active runtime Manager Id = " + runtimeManager.getIdentifier());
 					runtimeManager.close();
 				}
 				runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment);
-				//runtimeManager = RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment);
+				// runtimeManager =
+				// RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment);
 			}
-			
+
 			log.info("Put rules KieBase into Custom Cache");
 			if (getKieBaseCache().containsKey(realm)) {
 				getKieBaseCache().remove(realm);
@@ -435,8 +446,18 @@ public class RulesLoader  {
 			}
 			if (rule._2.endsWith(".drl")) {
 				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
-				kfs.write(inMemoryDrlFileName, ks.getResources().newReaderResource(new StringReader(rule._3))
-						.setResourceType(ResourceType.DRL));
+				Resource rs = ks.getResources().newReaderResource(new StringReader(rule._3));
+				kfs.write(inMemoryDrlFileName, rs.setResourceType(ResourceType.DRL));
+				DrlParser parser = new DrlParser();
+				try {
+					RuleDescr ruleObj = parser.parse(rs).getRules().get(0);
+					processRule(realm, ruleObj, rule);
+				} catch (DroolsParserException e) {
+					log.error("BAD RULE : " + rule._2 + " -> " + e.getLocalizedMessage());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			} else if (rule._2.endsWith(".bpmn")) {
 				// final String inMemoryDrlFileName = "src/main/resources/" + rule._2;
 				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
@@ -455,8 +476,8 @@ public class RulesLoader  {
 		return ret;
 	}
 
-	public static void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) { 
-		
+	public static void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
+
 		int rulesFired = 0;
 		QEventMessage eventMsg = null;
 		QDataMessage dataMsg = null;
@@ -467,25 +488,26 @@ public class RulesLoader  {
 
 		EntityManager em = emf.createEntityManager();
 		EntityTransaction tx = em.getTransaction();
-		
-		if(RUNTIME_MANAGER_ON){
-			
-			
-			/* getting Runtime Engine from RuntimeManager
-			* each instance of Engine handles one KieSession
-			*/
+
+		if (RUNTIME_MANAGER_ON) {
+
+			/*
+			 * getting Runtime Engine from RuntimeManager each instance of Engine handles
+			 * one KieSession
+			 */
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-			
-			/*For using ProcessInstanceIdContext */
-			//RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
+
+			/* For using ProcessInstanceIdContext */
+			// RuntimeEngine runtimeEngine =
+			// runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
 
 			/* Getting KieSession */
-			KieSession kieSession = runtimeEngine.getKieSession();		
-			
+			KieSession kieSession = runtimeEngine.getKieSession();
+
 			log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful");
-			
+
 			try {
-				
+
 				tx.begin();
 
 				if (getKieBaseCache().get(gToken.getRealm()) == null) {
@@ -494,24 +516,24 @@ public class RulesLoader  {
 				}
 
 				KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-				
-				//JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+
+				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
-				
+
 				addHandlers(kieSession);
 
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(gToken));
-				
+
 				/* If userToken is not null then send the event through user Session */
 				if (facts.getUserToken() != null) {
 
 					gToken = facts.getUserToken();
 					String session_state = gToken.getSessionCode();
-					Long processId  = null;
-					
+					Long processId = null;
+
 					Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
-					
+
 					/* Check if the process already exist or not */
 					boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
 
@@ -519,74 +541,68 @@ public class RulesLoader  {
 
 						processId = processIdBysessionId.get();
 
-						/* If the message is QEventMessage then send in to event channel*/
-						if(facts.getMessage() instanceof QEventMessage) {
-							
-							((QEventMessage) facts.getMessage()).setToken( gToken.getToken());
-							
+						/* If the message is QEventMessage then send in to event channel */
+						if (facts.getMessage() instanceof QEventMessage) {
+
+							((QEventMessage) facts.getMessage()).setToken(gToken.getToken());
+
 							msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
 							bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
-							log.info("incoming EVENT"
-								+ " message from " + bridgeSourceAddress 
-								+ ": " + facts.getUserToken().getRealm() 
-								+ ": " + facts.getUserToken().getSessionCode() 
-								+ ": " + facts.getUserToken().getUserCode() 
-								+ "   " + msg_code + " to pid " + processId);
+							log.info("incoming EVENT" + " message from " + bridgeSourceAddress + ": "
+									+ facts.getUserToken().getRealm() + ": " + facts.getUserToken().getSessionCode()
+									+ ": " + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
+									+ processId);
 
 							log.info("Getting user clicking Events");
 							kieSession.signalEvent("event", facts, processId);
 						}
-		
-						/* If the message is data message then send in to data channel*/
-						else if(facts.getMessage() instanceof QDataMessage){
-							
+
+						/* If the message is data message then send in to data channel */
+						else if (facts.getMessage() instanceof QDataMessage) {
+
 							((QDataMessage) facts.getMessage()).setToken(gToken.getToken());
 
 							msg_code = ((QDataMessage) facts.getMessage()).getData_type();
 							bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
 
-							log.info("incoming DATA"  
-								+ " message from " + bridgeSourceAddress 
-								+ ": " + facts.getUserToken().getRealm() 
-								+ ":" + facts.getUserToken().getSessionCode() 
-								+ ":" + facts.getUserToken().getUserCode() 
-								+ "   " + msg_code + " to pid " + processId);
+							log.info("incoming DATA" + " message from " + bridgeSourceAddress + ": "
+									+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
+									+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
+									+ processId);
 
 							kieSession.signalEvent("data", facts, processId);
 						}
 
 					} else {
-						
+
 						/* If the message is QeventMessage and the Event Message is AuthInit */
-						if(facts.getMessage() instanceof QEventMessage && 
-						( (QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
-								
+						if (facts.getMessage() instanceof QEventMessage
+								&& ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
+
 							((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
 							bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
-							log.info("incoming  message from " + bridgeSourceAddress 
-									+ ": " + facts.getUserToken().getRealm() 
-									+ ":" + facts.getUserToken().getSessionCode() 
-									+ ":" + facts.getUserToken().getUserCode() 
-									+ "   " + msg_code + " to NEW SESSION");
-							
+							log.info("incoming  message from " + bridgeSourceAddress + ": "
+									+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
+									+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to NEW SESSION");
+
 							/* sending New Session Signal */
 							log.info("Message is event Authinit");
 							kieSession.signalEvent("newSession", facts);
-							
+
 						} else {
 							log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
-							
+
 						}
-						
+
 					}
-				}	/* When usertoken is null */
-				 else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
-						
+				} /* When usertoken is null */
+				else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
+
 					/* Running init_project workflow */
-						kieSession.startProcess("init_project");				
-				}else{
+					kieSession.startProcess("init_project");
+				} else {
 					log.info("Invalid Events coming in");
 				}
 
@@ -594,125 +610,118 @@ public class RulesLoader  {
 
 			} catch (final Throwable t) {
 				log.error(t.getLocalizedMessage());
-			
+
 			} finally {
 				log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
-				
+
 				// commit
 				tx.commit();
 				em.close();
-				
+
 				runtimeManager.disposeRuntimeEngine(runtimeEngine);
 			}
 
-		}else {
-			
+		} else {
+
 			StatefulKnowledgeSession kieSession = null;
-			
+
 			try {
 				tx.begin();
-	
+
 				if (getKieBaseCache().get(facts.getServiceToken().getRealm()) == null) {
 					log.error("The realm  kieBaseCache is null, not loaded " + facts.getServiceToken().getRealm());
 					return;
 				}
-	
+
 				KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-	
-				kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(getKieBaseCache().get(facts.getServiceToken().getRealm()),
-						ksconf, env); 
-	
+
+				kieSession = JPAKnowledgeService.newStatefulKnowledgeSession(
+						getKieBaseCache().get(facts.getServiceToken().getRealm()), ksconf, env);
+
 				JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
-				
+
 				addHandlers(kieSession);
-	
+
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
-				
-	
+
 				/* If userToken is not null then send the event through user Session */
 				if (facts.getUserToken() != null) {
-	
+
 					gToken = facts.getUserToken();
 					String session_state = gToken.getSessionCode();
-					Long processId  = null;
-					
+					Long processId = null;
+
 					Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
-					
+
 					/* Check if the process already exist or not is there */
 					boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
-	
+
 					if (hasProcessIdBySessionId) {
-	
+
 						processId = processIdBysessionId.get();
-	
-						/* If the message is QEventMessage then send in to event channel*/
-						if(facts.getMessage() instanceof QEventMessage) {
-							
-							((QEventMessage) facts.getMessage()).setToken( gToken.getToken());
-							
+
+						/* If the message is QEventMessage then send in to event channel */
+						if (facts.getMessage() instanceof QEventMessage) {
+
+							((QEventMessage) facts.getMessage()).setToken(gToken.getToken());
+
 							msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
 							bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
-	
-							log.info("incoming EVENT"
-								+ " message from " + bridgeSourceAddress 
-								+ ": " + facts.getUserToken().getRealm() 
-								+ ":" + facts.getUserToken().getSessionCode() 
-								+ ":" + facts.getUserToken().getUserCode() 
-								+ "   " + msg_code + " to pid " + processId);
-	
+
+							log.info("incoming EVENT" + " message from " + bridgeSourceAddress + ": "
+									+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
+									+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
+									+ processId);
+
 							kieSession.signalEvent("event", facts, processId);
 						}
-		
-						/* If the message is data message then send in to data channel*/
-						else if(facts.getMessage() instanceof QDataMessage){
-							
+
+						/* If the message is data message then send in to data channel */
+						else if (facts.getMessage() instanceof QDataMessage) {
+
 							((QDataMessage) facts.getMessage()).setToken(gToken.getToken());
-	
+
 							msg_code = ((QDataMessage) facts.getMessage()).getData_type();
 							bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
-	
-							log.info("incoming DATA"  
-								+ " message from " + bridgeSourceAddress 
-								+ ": " + facts.getUserToken().getRealm() 
-								+ ":" + facts.getUserToken().getSessionCode() 
-								+ ":" + facts.getUserToken().getUserCode() 
-								+ "   " + msg_code + " to pid " + processId);
-	
+
+							log.info("incoming DATA" + " message from " + bridgeSourceAddress + ": "
+									+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
+									+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
+									+ processId);
+
 							kieSession.signalEvent("data", facts, processId);
 						}
-	
+
 					} else {
-						
+
 						/* If the message is QeventMessage and the Event Message is AuthInit */
-						if(facts.getMessage() instanceof QEventMessage && 
-						( (QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
-								
+						if (facts.getMessage() instanceof QEventMessage
+								&& ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
+
 							((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
 							bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
-	
-							log.info("incoming  message from " + bridgeSourceAddress 
-									+ ": " + facts.getUserToken().getRealm() 
-									+ ":" + facts.getUserToken().getSessionCode() 
-									+ ":" + facts.getUserToken().getUserCode() 
-									+ "   " + msg_code + " to NEW SESSION");
-							
+
+							log.info("incoming  message from " + bridgeSourceAddress + ": "
+									+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
+									+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to NEW SESSION");
+
 							/* sending New Session Signal */
 							log.info("Message is event Authinit");
 							kieSession.signalEvent("newSession", facts);
-							
+
 						} else {
 							log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
-							
+
 						}
-						
+
 					}
-				}	/* When usertoken is null */
-				 else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
-						
+				} /* When usertoken is null */
+				else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
+
 					/* Running init_project workflow */
-						kieSession.startProcess("init_project");				
-				}else{
+					kieSession.startProcess("init_project");
+				} else {
 					log.info("Invalid Events coming in");
 				}
 				rulesFired = kieSession.fireAllRules();
@@ -722,15 +731,15 @@ public class RulesLoader  {
 			} finally {
 				log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
 				// commit
-				
+
 				tx.commit();
 				em.close();
 				// kieSession.dispose();
 			}
-			
+
 		}
 	}
-	
+
 	public static void executeStateless(final List<Tuple2<String, Object>> globals, final List<Object> facts,
 			final GennyToken serviceToken, final GennyToken userToken) {
 		StatefulKnowledgeSession kieSession = null;
@@ -751,12 +760,13 @@ public class RulesLoader  {
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 
-			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(serviceToken.getRealm()).newKieSession(ksconf, env);
-			
+			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(serviceToken.getRealm()).newKieSession(ksconf,
+					env);
+
 			addHandlers(kieSession);
 
 			kieSession.addEventListener(new GennyAgendaEventListener());
-			kieSession.addEventListener(new JbpmInitListener(serviceToken));			
+			kieSession.addEventListener(new JbpmInitListener(serviceToken));
 
 			for (final Object fact : facts) {
 				kieSession.insert(fact);
@@ -780,7 +790,6 @@ public class RulesLoader  {
 				}
 
 			}
-
 
 			rulesFired = kieSession.fireAllRules();
 
@@ -842,7 +851,7 @@ public class RulesLoader  {
 
 		List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();
 
-		SessionFacts facts = new SessionFacts(gennyServiceToken,null,msg);
+		SessionFacts facts = new SessionFacts(gennyServiceToken, null, msg);
 
 		try {
 			executeStateful(globals, facts);
@@ -861,29 +870,29 @@ public class RulesLoader  {
 		if (serviceTokenStr == null) {
 			log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
 		} else {
-		GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
+			GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
 
-		List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
+			List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
 
-		try {
-			if ((msg instanceof QEventAttributeValueChangeMessage)||(msg instanceof QEventLinkChangeMessage)) {
-				log.info("Executing Stateless ");
+			try {
+				if ((msg instanceof QEventAttributeValueChangeMessage) || (msg instanceof QEventLinkChangeMessage)) {
+					log.info("Executing Stateless ");
 
-				List<Object> facts = new ArrayList<Object>();
-				facts.add(msg);
-				facts.add(userToken);
-				facts.add(serviceToken);
-				
-				RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
-			} else {
-				
-				SessionFacts facts = new SessionFacts(serviceToken,userToken,msg);
-				RulesLoader.executeStateful(globals, facts);
+					List<Object> facts = new ArrayList<Object>();
+					facts.add(msg);
+					facts.add(userToken);
+					facts.add(serviceToken);
+
+					RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
+				} else {
+
+					SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
+					RulesLoader.executeStateful(globals, facts);
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		}
 
 	}
@@ -891,7 +900,7 @@ public class RulesLoader  {
 	public static Map<File, ResourceType> getKieResources() {
 		return new HashMap<File, ResourceType>(); // TODO
 	}
-	
+
 	/* For old implementation */
 	public static void addHandlers(StatefulKnowledgeSession kieSession) {
 		// Register handlers
@@ -907,7 +916,7 @@ public class RulesLoader  {
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
 				new ThrowSignalProcessWorkItemHandler(kieSession));
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(RulesLoader.class,kieSession));
+				new AskQuestionWorkItemHandler(RulesLoader.class, kieSession));
 
 	}
 
@@ -926,9 +935,10 @@ public class RulesLoader  {
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
 				new ThrowSignalProcessWorkItemHandler(kieSession));
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(RulesLoader.class,kieSession));
+				new AskQuestionWorkItemHandler(RulesLoader.class, kieSession));
 
 	}
+
 	/**
 	 * @param rulesDir
 	 */
@@ -1030,7 +1040,6 @@ public class RulesLoader  {
 
 	public static void init() {
 		log.info("Setting up Persistence");
-		
 
 		try {
 			emf = Persistence.createEntityManagerFactory("genny-persistence-jbpm-jpa");
@@ -1047,14 +1056,102 @@ public class RulesLoader  {
 		try {
 			queryService.registerQuery(query);
 		} catch (QueryAlreadyRegisteredException e) {
-			log.warn(query.getName()+" is already registered");
+			log.warn(query.getName() + " is already registered");
 		}
 		System.out.println("Finished init");
 	}
-
 
 	public static Optional<Long> getProcessIdBySessionId(String sessionId) {
 		// TODO Auto-generated method stub
 		return RulesLoader.getProcessIdBysessionId(sessionId);
 	}
+
+	private static Boolean processRule(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {
+		Boolean ret = false;
+		// Determine what rules have changed via their hash .... and if so then clear
+		// their cache and db entries
+		Map<String, String> realmTokenMap = new HashMap<String, String>();
+		Map<String, BaseEntityUtils> realmBeUtilsMap = new HashMap<String, BaseEntityUtils>();
+		String filename = ruleTuple._2;
+		String ruleText = ruleTuple._3;
+		Integer hashcode = ruleText.hashCode();
+		if (realmTokenMap.get(realm) == null) {
+			JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+			String token = tokenObj.getString("value");
+			realmTokenMap.put(realm, token);
+		}
+		// get kie type
+		String ext = filename.substring(filename.lastIndexOf(".") + 1);
+		String kieType = ext.toUpperCase();
+
+		// Get rule filename
+		String ruleCode = "RUL_" + filename.replaceAll("\\.[^.]*$", "");
+
+		// get existing rule from cache
+
+		BaseEntity existingRuleBe = VertxUtils.readFromDDT(realm, ruleCode, true,
+				realmTokenMap.get(realm));
+		Integer existingHashCode = 0;
+		if (existingRuleBe != null) {
+			existingHashCode = existingRuleBe.getValue("PRI_HASHCODE", -1);
+		}
+
+		if (!hashcode.equals(existingHashCode)) {
+			log.info("Hashcode for rule " + realm + ":" + filename + " = " + hashcode + " existing hashcode="
+					+ existingHashCode + "  match = " + (hashcode.equals(existingHashCode) ? "TRUE" : "FALSE ****"));
+			// create the rule Baseentity
+			BaseEntityUtils beUtils = null;
+			if (realmBeUtilsMap.get(realm) == null) {
+				beUtils = new BaseEntityUtils(new GennyToken(realmTokenMap.get(realm)));
+				realmBeUtilsMap.put(realm, beUtils);
+			} else {
+				beUtils = realmBeUtilsMap.get(realm);
+			}
+			if (existingRuleBe == null) {
+				existingRuleBe = beUtils.create(ruleCode, ruleCode);
+			}
+			try {
+				Attribute hashcodeAttribute = RulesUtils.getAttribute("PRI_HASHCODE", realmTokenMap.get(realm));
+				existingRuleBe.setValue(hashcodeAttribute, hashcode);
+				Attribute filenameAttribute = RulesUtils.getAttribute("PRI_FILENAME", realmTokenMap.get(realm));
+				existingRuleBe.setValue(filenameAttribute, filename);
+				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_TYPE", realmTokenMap.get(realm)), kieType);
+				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_TEXT", realmTokenMap.get(realm)), ruleText);
+				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_NAME", realmTokenMap.get(realm)),
+						rule.getName());
+				if (rule.getAttributes().get("ruleflow-group") != null) {
+					AttributeDescr attD = rule.getAttributes().get("ruleflow-group");
+					String ruleflowgroup = attD.getValue();
+					existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_RULE_GROUP", realmTokenMap.get(realm)),
+							ruleflowgroup);
+				}
+				if (rule.getAttributes().get("no-loop") != null) {
+					AttributeDescr attD = rule.getAttributes().get("no-loop");
+					String noloop = attD.getValue();
+					existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_RULE_NOLOOP", realmTokenMap.get(realm)),
+							noloop);
+				}
+				if (rule.getAttributes().get("salience") != null) {
+					AttributeDescr attD = rule.getAttributes().get("salience");
+					String salience = attD.getValue();
+					existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_RULE_SALIENCE", realmTokenMap.get(realm)),
+							salience);
+				}
+
+			} catch (BadDataException e) {
+				log.error("Bad data");
+			}
+
+			beUtils.saveBaseEntityAttributes(existingRuleBe);
+			// now if the rule is a theme or frame rule then clear the cache of the output of those rules, the MSG and ASK
+			// the logic is that a rule can skip loading and generating the cached item if it already has a cached item
+//			if (existingRuleBe.getCode().startsWith("RUL_THM_")||existingRuleBe.getCode().startsWith("RUL_FRM_")||existingRuleBe.getCode().startsWith("SBE_")) {
+//				VertxUtils.writeCachedJson(realm, existingRuleBe.getCode(),null,realmTokenMap.get(realm));
+//				
+//			}
+			ret = true;
+		}
+		return ret;
+	}
+
 }
