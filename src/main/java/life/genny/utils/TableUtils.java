@@ -245,6 +245,7 @@ public class TableUtils {
 
 		Ask tableHeaderAsk = new Ask(tableHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 		tableHeaderAsk.setChildAsks(asksArray);
+		tableHeaderAsk.setName(searchBe.getName());
 
 		return tableHeaderAsk;
 	}
@@ -438,8 +439,7 @@ public class TableUtils {
   	     
   	     TableData tableData = tableUtils.generateTableAsks(searchBE,beUtils.getGennyToken(),  msg);
   	     VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-  	     
-      		  		
+  	          		  		
          Ask headerAsk = tableData.getAsk();
       	 Ask[] askArray = new Ask[1];
       	 askArray[0] = headerAsk;
@@ -456,7 +456,7 @@ public class TableUtils {
   			    	VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
   			    }
                 
-      	                
+      	  msg.setToken(beUtils.getGennyToken().getToken());   
       	 VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
       	 
       	 /* Now to display the rows */
