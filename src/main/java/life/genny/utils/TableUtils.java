@@ -498,14 +498,20 @@ public class TableUtils {
 						.getBaseEntityByCode("THM_TABLE_CELL_UNINHERITABLE");
 				BaseEntity noFlexTheme = ContextUtils.getNoFlexTheme();
 
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((visualBaseEntity)));
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(viewIconBe));
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((editIconBe)));
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((deleteIconBe)));
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((selectableTheme)));
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((tableCellUnInheritableTheme)));
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((noFlexTheme)));
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((moreVerticalIconBe)));
+				List<BaseEntity> bes2 = new ArrayList<BaseEntity>();
+				bes2.add(visualBaseEntity);
+				bes2.add(viewIconBe);
+				bes2.add(editIconBe);
+				bes2.add(deleteIconBe);
+				bes2.add(selectableTheme);
+				bes2.add(tableCellUnInheritableTheme);
+				bes2.add(noFlexTheme);
+				bes2.add(moreVerticalIconBe);
+				
+				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(bes2);
+				msg.setToken(beUtils.getGennyToken().getToken());
+				
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((msg)));
 
 				log.info(visualBaseEntity.getCode());
 				log.info(viewIconBe.getCode());
