@@ -2,6 +2,7 @@ package life.genny.utils;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -13,6 +14,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Logger;
+
+import com.google.gson.reflect.TypeToken;
 
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
@@ -41,14 +44,14 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.utils.ContextUtils;
 
-public class TableUtils {
+public class TableUtilsTest {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	BaseEntityUtils beUtils = null;
 
-	public TableUtils(BaseEntityUtils beUtils) {
+	public TableUtilsTest(BaseEntityUtils beUtils) {
 		this.beUtils = beUtils;
 	}
 
@@ -462,7 +465,7 @@ public class TableUtils {
 	}
 
 	public static void performSearch(GennyToken serviceToken, BaseEntityUtils beUtils, SearchEntity searchBE) {
-		TableUtils tableUtils = new TableUtils(beUtils);
+		TableUtilsTest tableUtils = new TableUtilsTest(beUtils);
 
 		// Send out Search Results
 
@@ -487,7 +490,7 @@ public class TableUtils {
 		String headerAskCode = headerAsk.getQuestionCode();
 		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
 		QDataBaseEntityMessage msg2 = null;
-		msg2 = TableUtils.changeQuestion(searchBE,"FRM_TABLE_HEADER", headerAskCode, serviceToken, beUtils.getGennyToken(),
+		msg2 = TableUtilsTest.changeQuestion(searchBE,"FRM_TABLE_HEADER", headerAskCode, serviceToken, beUtils.getGennyToken(),
 				askMsgs);
 		msg2.setToken(beUtils.getGennyToken().getToken());
 		msg2.setReplace(true);
@@ -502,6 +505,17 @@ public class TableUtils {
 		askMsgs.clear();
 
 		/* Now to display the rows */
+		
+		Type setType = new TypeToken<Set<QDataAskMessage>>() {
+		}.getType();
+
+		String askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "FRM_TABLE_CONTENT_ASKS",
+				String.class, beUtils.getGennyToken().getToken());
+
+		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+		QDataAskMessage[] askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
+		ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
+		
 		List<BaseEntity> rowList = Arrays.asList(msg.getItems());
 		List<Ask> rowAsks = generateQuestions(beUtils.getGennyToken(), beUtils, rowList, columns,
 				beUtils.getGennyToken().getUserCode());
@@ -518,25 +532,30 @@ public class TableUtils {
 		Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
 				beUtils.getGennyToken().getUserCode());
 		tableResultAsk.setChildAsks(rowAsksArr);
+		tableResultAsk.setContextList(rowsContextList);
+		
 		askMsgs.add(new QDataAskMessage(tableResultAsk));
+		
+		/* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
+		String tableResultAskCode = tableResultAsk.getQuestionCode();
+		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
+		
+		QDataBaseEntityMessage msg3 = null;
+		msg3 = TableUtilsTest.changeQuestion(searchBE,"FRM_TABLE_CONTENT", tableResultAskCode, serviceToken, beUtils.getGennyToken(),
+				tableResultAskMsgs);
+		msg3.setToken(beUtils.getGennyToken().getToken());
+		msg3.setReplace(true);
 
-		for (QDataAskMessage askMsg : askMsgs) {
+
+		for (QDataAskMessage askMsg : tableResultAskMsgs) {
 			askMsg.setToken(beUtils.getGennyToken().getToken());
 			//askMsg.getItems()[0] = headerAsk;
 			askMsg.setReplace(true);
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
 		}
 
-		/* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
-		String tableResultAskCode = tableResultAsk.getQuestionCode();
-		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
-		
-		QDataBaseEntityMessage msg3 = null;
-		msg3 = TableUtils.changeQuestion(searchBE,"FRM_TABLE_CONTENT", tableResultAskCode, serviceToken, beUtils.getGennyToken(),
-				tableResultAskMsgs);
-		msg3.setToken(beUtils.getGennyToken().getToken());
-		msg3.setReplace(true);
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
+
 
 	}
 
@@ -549,7 +568,7 @@ public class TableUtils {
 		/* initialize an empty ask list */
 		List<Ask> askList = new ArrayList<>();
 		List<QDataBaseEntityMessage> themeMsgList = new ArrayList<QDataBaseEntityMessage>();
-		TableUtils tableUtils = new TableUtils(beUtils);
+		TableUtilsTest tableUtils = new TableUtilsTest(beUtils);
 
 		if (columns != null) {
 			if (bes != null && bes.isEmpty() == false) {
