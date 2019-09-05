@@ -28,7 +28,8 @@ public class ShowFrame implements WorkItemHandler {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
   public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-    // extract parameters
+	  
+	 // extract parameters
     GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
     String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
     
