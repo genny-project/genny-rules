@@ -44,14 +44,14 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.utils.ContextUtils;
 
-public class TableUtilsTest {
+public class TableUtils {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	BaseEntityUtils beUtils = null;
 
-	public TableUtilsTest(BaseEntityUtils beUtils) {
+	public TableUtils(BaseEntityUtils beUtils) {
 		this.beUtils = beUtils;
 	}
 
@@ -465,7 +465,7 @@ public class TableUtilsTest {
 	}
 
 	public static void performSearch(GennyToken serviceToken, BaseEntityUtils beUtils, SearchEntity searchBE) {
-		TableUtilsTest tableUtils = new TableUtilsTest(beUtils);
+		TableUtils tableUtils = new TableUtils(beUtils);
 
 		// Send out Search Results
 
@@ -490,7 +490,7 @@ public class TableUtilsTest {
 		String headerAskCode = headerAsk.getQuestionCode();
 		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
 		QDataBaseEntityMessage msg2 = null;
-		msg2 = TableUtilsTest.changeQuestion(searchBE,"FRM_TABLE_HEADER", headerAskCode, serviceToken, beUtils.getGennyToken(),
+		msg2 = TableUtils.changeQuestion(searchBE,"FRM_TABLE_HEADER", headerAskCode, serviceToken, beUtils.getGennyToken(),
 				askMsgs);
 		msg2.setToken(beUtils.getGennyToken().getToken());
 		msg2.setReplace(true);
@@ -541,7 +541,7 @@ public class TableUtilsTest {
 		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
 		
 		QDataBaseEntityMessage msg3 = null;
-		msg3 = TableUtilsTest.changeQuestion(searchBE,"FRM_TABLE_CONTENT", tableResultAskCode, serviceToken, beUtils.getGennyToken(),
+		msg3 = TableUtils.changeQuestion(searchBE,"FRM_TABLE_CONTENT", tableResultAskCode, serviceToken, beUtils.getGennyToken(),
 				tableResultAskMsgs);
 		msg3.setToken(beUtils.getGennyToken().getToken());
 		msg3.setReplace(true);
@@ -568,7 +568,7 @@ public class TableUtilsTest {
 		/* initialize an empty ask list */
 		List<Ask> askList = new ArrayList<>();
 		List<QDataBaseEntityMessage> themeMsgList = new ArrayList<QDataBaseEntityMessage>();
-		TableUtilsTest tableUtils = new TableUtilsTest(beUtils);
+		TableUtils tableUtils = new TableUtils(beUtils);
 
 		if (columns != null) {
 			if (bes != null && bes.isEmpty() == false) {
