@@ -44,14 +44,14 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.utils.ContextUtils;
 
-public class TableUtils {
+public class TableUtilsTest {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	BaseEntityUtils beUtils = null;
 
-	public TableUtils(BaseEntityUtils beUtils) {
+	public TableUtilsTest(BaseEntityUtils beUtils) {
 		this.beUtils = beUtils;
 	}
 
@@ -465,7 +465,7 @@ public class TableUtils {
 	}
 
 	public static void performSearch(GennyToken serviceToken, BaseEntityUtils beUtils, SearchEntity searchBE) {
-		TableUtils tableUtils = new TableUtils(beUtils);
+		TableUtilsTest tableUtils = new TableUtilsTest(beUtils);
 
 		// Send out Search Results
 
@@ -490,7 +490,7 @@ public class TableUtils {
 		String headerAskCode = headerAsk.getQuestionCode();
 		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
 		QDataBaseEntityMessage msg2 = null;
-		msg2 = TableUtils.changeQuestion(searchBE,"FRM_TABLE_HEADER", headerAskCode, serviceToken, beUtils.getGennyToken(),
+		msg2 = TableUtilsTest.changeQuestion(searchBE,"FRM_TABLE_HEADER", headerAskCode, serviceToken, beUtils.getGennyToken(),
 				askMsgs);
 		msg2.setToken(beUtils.getGennyToken().getToken());
 		msg2.setReplace(true);
@@ -533,15 +533,15 @@ public class TableUtils {
 				beUtils.getGennyToken().getUserCode());
 		tableResultAsk.setChildAsks(rowAsksArr);
 		tableResultAsk.setContextList(rowsContextList);
+		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
 		
-		askMsgs.add(new QDataAskMessage(tableResultAsk));
+		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
 		
 		/* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
 		String tableResultAskCode = tableResultAsk.getQuestionCode();
-		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
 		
 		QDataBaseEntityMessage msg3 = null;
-		msg3 = TableUtils.changeQuestion(searchBE,"FRM_TABLE_CONTENT", tableResultAskCode, serviceToken, beUtils.getGennyToken(),
+		msg3 = TableUtilsTest.changeQuestion(searchBE,"FRM_TABLE_CONTENT", tableResultAskCode, serviceToken, beUtils.getGennyToken(),
 				tableResultAskMsgs);
 		msg3.setToken(beUtils.getGennyToken().getToken());
 		msg3.setReplace(true);
@@ -568,7 +568,7 @@ public class TableUtils {
 		/* initialize an empty ask list */
 		List<Ask> askList = new ArrayList<>();
 		List<QDataBaseEntityMessage> themeMsgList = new ArrayList<QDataBaseEntityMessage>();
-		TableUtils tableUtils = new TableUtils(beUtils);
+		TableUtilsTest tableUtils = new TableUtilsTest(beUtils);
 
 		if (columns != null) {
 			if (bes != null && bes.isEmpty() == false) {
