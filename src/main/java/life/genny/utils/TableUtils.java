@@ -1,5 +1,6 @@
 package life.genny.utils;
 
+
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -61,15 +62,15 @@ public class TableUtils {
 	public static void performSearch(GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode,
 			Answer answer) {
 		TableUtils tableUtils = new TableUtils(beUtils);
-		String sourceCode = beUtils.getGennyToken().getUserCode();
-		String targetCode = answer.getTargetCode();
 
 		/* Perform a search bar search */
-		String searchBarString = answer.getValue();
-		searchBarString = searchBarString.trim();
-		searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
-		log.info("Search text = [" + searchBarString + "]");
-
+		String searchBarString = null;
+		if (answer != null) {
+			searchBarString = answer.getValue();
+			searchBarString = searchBarString.trim();
+			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
+			log.info("Search text = [" + searchBarString + "]");
+		}
 		/* fetch Session SearchBar List from User */
 		BaseEntity user = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
 				beUtils.getGennyToken().getUserCode(), BaseEntity.class, beUtils.getGennyToken().getToken());
@@ -109,8 +110,9 @@ public class TableUtils {
 			VertxUtils.putObject(serviceToken.getRealm(), "", sessionSearchCode, searchBE, serviceToken.getToken());
 		}
 
-		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
-
+		if (answer != null) {
+			searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
+		}
 		// Send out Search Results
 
 		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
