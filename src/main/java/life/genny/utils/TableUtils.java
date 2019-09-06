@@ -45,40 +45,41 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.utils.ContextUtils;
 
-public class TableUtils {
+public class TableUtilsTest {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	static Integer MAX_SEARCH_HISTORY_SIZE = 10;
-	
+
 	BaseEntityUtils beUtils = null;
 
-	public TableUtils(BaseEntityUtils beUtils) {
+	public TableUtilsTest(BaseEntityUtils beUtils) {
 		this.beUtils = beUtils;
 	}
 
-	
-	public static void performSearch(GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode, Answer answer) {
-		TableUtils tableUtils = new TableUtils(beUtils);
+	public static void performSearch(GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode,
+			Answer answer) {
+		TableUtilsTest tableUtils = new TableUtilsTest(beUtils);
 		String sourceCode = beUtils.getGennyToken().getUserCode();
 		String targetCode = answer.getTargetCode();
-		
+
 		/* Perform a search bar search */
 		String searchBarString = answer.getValue();
 		searchBarString = searchBarString.trim();
 		searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
-		log.info("Search text = ["+searchBarString+"]");
-		
+		log.info("Search text = [" + searchBarString + "]");
+
 		/* fetch Session SearchBar List from User */
-		BaseEntity user = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", beUtils.getGennyToken().getUserCode(),
-				BaseEntity.class, beUtils.getGennyToken().getToken());
-		Type type = new TypeToken<List<String>>() {}.getType();
+		BaseEntity user = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
+				beUtils.getGennyToken().getUserCode(), BaseEntity.class, beUtils.getGennyToken().getToken());
+		Type type = new TypeToken<List<String>>() {
+		}.getType();
 		List<String> defaultList = new ArrayList<String>();
 		String defaultListString = JsonUtils.toJson(defaultList);
-		String historyStr = user.getValue("PRI_SEARCH_HISTORY",defaultListString);
+		String historyStr = user.getValue("PRI_SEARCH_HISTORY", defaultListString);
 		List<String> searchHistory = JsonUtils.fromJson(historyStr, type);
-		
+
 		/* Add new SearchBarString to Session SearchBar List */
 		/* look for existing search term and bring to front - slow */
 		int index = searchHistory.indexOf(searchBarString);
@@ -86,27 +87,30 @@ public class TableUtils {
 			searchHistory.remove(index);
 		}
 		searchHistory.add(0, searchBarString);
-		if (searchHistory.size()>MAX_SEARCH_HISTORY_SIZE) {
+		if (searchHistory.size() > MAX_SEARCH_HISTORY_SIZE) {
 			searchHistory.remove(MAX_SEARCH_HISTORY_SIZE);
 		}
 		String newHistoryString = JsonUtils.toJson(searchHistory);
-		Answer history = new Answer(beUtils.getGennyToken().getUserCode(),beUtils.getGennyToken().getUserCode(),"PRI_SEARCH_HISTORY",newHistoryString);
+		Answer history = new Answer(beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode(),
+				"PRI_SEARCH_HISTORY", newHistoryString);
 		beUtils.saveAnswer(history);
-		
-		
-		String sessionSearchCode = searchBarCode+"_"+beUtils.getGennyToken().getSessionCode();
-		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,serviceToken.getToken());
-		
+
+		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
+		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
+				serviceToken.getToken());
+
 		if (searchBE == null) {
-			searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", searchBarCode, SearchEntity.class,serviceToken.getToken());
-			/* Save Session Search in cache , ideally this should be in OutputParam and saved to workflow */
+			searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", searchBarCode, SearchEntity.class,
+					serviceToken.getToken());
+			/*
+			 * Save Session Search in cache , ideally this should be in OutputParam and
+			 * saved to workflow
+			 */
 			VertxUtils.putObject(serviceToken.getRealm(), "", sessionSearchCode, searchBE, serviceToken.getToken());
 		}
-		
-		
-		searchBE.addFilter("PRI_NAME",SearchEntity.StringFilter.LIKE,"%"+searchBarString+"%");
-		
- 
+
+		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
+
 		// Send out Search Results
 
 		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
@@ -122,79 +126,81 @@ public class TableUtils {
 		QDataAskMessage headerAskMsg = new QDataAskMessage(askArray);
 		headerAskMsg.setToken(beUtils.getGennyToken().getToken());
 		headerAskMsg.setReplace(true);
-		//VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
-		
+		// VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
+
 		// create virtual context
 
 		// Now link the FRM_TABLE_HEADER to that new Question
 		String headerAskCode = headerAsk.getQuestionCode();
 		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
 		QDataBaseEntityMessage msg2 = null;
-		msg2 = TableUtils.changeQuestion(searchBE,"FRM_TABLE_HEADER", headerAskCode, serviceToken, beUtils.getGennyToken(),
-				askMsgs);
+		msg2 = TableUtilsTest.changeQuestion(searchBE, "FRM_TABLE_HEADER", headerAskCode, serviceToken,
+				beUtils.getGennyToken(), askMsgs);
 		msg2.setToken(beUtils.getGennyToken().getToken());
 		msg2.setReplace(true);
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg2));
-		
+
 		QDataAskMessage[] askMsgArr = askMsgs.toArray(new QDataAskMessage[0]);
-		ContextList contextList = askMsgArr[0].getItems()[0].getContextList();
-		headerAskMsg.getItems()[0].setContextList(contextList);
+		if (askMsgArr.length > 0) {
+			if (askMsgArr[0].getItems().length > 0) {
+				ContextList contextList = askMsgArr[0].getItems()[0].getContextList();
+				headerAskMsg.getItems()[0].setContextList(contextList);
 
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
-		
-		askMsgs.clear();
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
 
-		/* Now to display the rows */
-		
-		Type setType = new TypeToken<Set<QDataAskMessage>>() {
-		}.getType();
+				askMsgs.clear();
 
-		String askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "FRM_TABLE_CONTENT_ASKS",
-				String.class, beUtils.getGennyToken().getToken());
+				/* Now to display the rows */
 
-		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
-		QDataAskMessage[] askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
-		ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
-		
-		List<BaseEntity> rowList = Arrays.asList(msg.getItems());
-		List<Ask> rowAsks = generateQuestions(beUtils.getGennyToken(), beUtils, rowList, columns,
-				beUtils.getGennyToken().getUserCode());
+				Type setType = new TypeToken<Set<QDataAskMessage>>() {
+				}.getType();
 
-		/* converting rowAsks list to array */
-		Ask[] rowAsksArr = rowAsks.stream().toArray(Ask[]::new);
+				String askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
+						"FRM_TABLE_CONTENT_ASKS", String.class, beUtils.getGennyToken().getToken());
 
-		/* Now send out the question rows and themes etc */
+				Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+				QDataAskMessage[] askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
+				ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
 
-		/* Link row asks to a single ask: QUE_TEST_TABLE_RESULTS_GRP */
-		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
-		Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group",
-				questionAttribute, true);
-		Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
-				beUtils.getGennyToken().getUserCode());
-		tableResultAsk.setChildAsks(rowAsksArr);
-		tableResultAsk.setContextList(rowsContextList);
-		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
-		
-		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
-		
-		/* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
-		String tableResultAskCode = tableResultAsk.getQuestionCode();
-		
-		QDataBaseEntityMessage msg3 = null;
-		msg3 = TableUtils.changeQuestion(searchBE,"FRM_TABLE_CONTENT", tableResultAskCode, serviceToken, beUtils.getGennyToken(),
-				tableResultAskMsgs);
-		msg3.setToken(beUtils.getGennyToken().getToken());
-		msg3.setReplace(true);
+				List<BaseEntity> rowList = Arrays.asList(msg.getItems());
+				List<Ask> rowAsks = generateQuestions(beUtils.getGennyToken(), beUtils, rowList, columns,
+						beUtils.getGennyToken().getUserCode());
 
+				/* converting rowAsks list to array */
+				Ask[] rowAsksArr = rowAsks.stream().toArray(Ask[]::new);
 
-		for (QDataAskMessage askMsg : tableResultAskMsgs) {
-			askMsg.setToken(beUtils.getGennyToken().getToken());
-			//askMsg.getItems()[0] = headerAsk;
-			askMsg.setReplace(true);
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
+				/* Now send out the question rows and themes etc */
+
+				/* Link row asks to a single ask: QUE_TEST_TABLE_RESULTS_GRP */
+				Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+				Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group",
+						questionAttribute, true);
+				Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
+						beUtils.getGennyToken().getUserCode());
+				tableResultAsk.setChildAsks(rowAsksArr);
+				tableResultAsk.setContextList(rowsContextList);
+				Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
+
+				tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
+
+				/* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
+				String tableResultAskCode = tableResultAsk.getQuestionCode();
+
+				QDataBaseEntityMessage msg3 = null;
+				msg3 = TableUtilsTest.changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAskCode, serviceToken,
+						beUtils.getGennyToken(), tableResultAskMsgs);
+				msg3.setToken(beUtils.getGennyToken().getToken());
+				msg3.setReplace(true);
+
+				for (QDataAskMessage askMsg : tableResultAskMsgs) {
+					askMsg.setToken(beUtils.getGennyToken().getToken());
+					// askMsg.getItems()[0] = headerAsk;
+					askMsg.setReplace(true);
+					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
+				}
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
+			}
 		}
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
-
 
 	}
 
@@ -385,13 +391,13 @@ public class TableUtils {
 		/*
 		 * we create a table-header ask grp and set all the column asks as it's childAsk
 		 */
-		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", searchBe.getName(),
-				questionAttribute, true);
+		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", searchBe.getName(), questionAttribute,
+				true);
 
 		Ask tableHeaderAsk = new Ask(tableHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 		tableHeaderAsk.setChildAsks(asksArray);
 		tableHeaderAsk.setName(searchBe.getName());
-		
+
 		return tableHeaderAsk;
 	}
 
@@ -506,38 +512,36 @@ public class TableUtils {
 	 * @param serviceToken
 	 * @return
 	 */
-	public static QDataBaseEntityMessage changeQuestion( SearchEntity searchBE, final String frameCode, final String questionCode,
-			GennyToken serviceToken, GennyToken userToken, Set<QDataAskMessage> askMsgs) {
+	public static QDataBaseEntityMessage changeQuestion(SearchEntity searchBE, final String frameCode,
+			final String questionCode, GennyToken serviceToken, GennyToken userToken, Set<QDataAskMessage> askMsgs) {
 		Frame3 frame = null;
 		try {
 
+			if (frameCode.equals("FRM_TABLE_CONTENT")) {
 
-			if(frameCode.equals("FRM_TABLE_CONTENT")){
-				
 				Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
 
-        List<Validation> tableRowValidations = new ArrayList<>();
-        tableRowValidations.add(tableRowValidation);
+				List<Validation> tableRowValidations = new ArrayList<>();
+				tableRowValidations.add(tableRowValidation);
 
-        ValidationList tableRowValidationList = new ValidationList();
-        tableRowValidationList.setValidationList(tableRowValidations);
+				ValidationList tableRowValidationList = new ValidationList();
+				tableRowValidationList.setValidationList(tableRowValidations);
 
-				DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
+				DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group",
+						"");
 
-				frame = Frame3.builder(frameCode)
-								.addTheme("THM_TABLE_BORDER", serviceToken).end()
-								.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
-								.question(questionCode)
-									.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType).weight(1.0).end()
-									.addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableRowDataType).vcl(VisualControlType.GROUP).weight(1.0).end()
-									.addTheme("THM_TABLE_ROW", serviceToken).dataType(tableRowDataType).weight(1.0).end()
-									.addTheme("THM_TABLE_CONTENT", serviceToken).vcl(VisualControlType.GROUP).end()			
-									.addTheme("THM_TABLE_ROW_CELL", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()			
-								.end()
-								.build();
-				
-			}else{
-				
+				frame = Frame3.builder(frameCode).addTheme("THM_TABLE_BORDER", serviceToken).end()
+						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
+						.question(questionCode).addTheme("THM_DISPLAY_HORIZONTAL", serviceToken)
+						.dataType(tableRowDataType).weight(1.0).end()
+						.addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableRowDataType)
+						.vcl(VisualControlType.GROUP).weight(1.0).end().addTheme("THM_TABLE_ROW", serviceToken)
+						.dataType(tableRowDataType).weight(1.0).end().addTheme("THM_TABLE_CONTENT", serviceToken)
+						.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
+						.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
+
+			} else {
+
 				System.out.println("it's a FRM_TABLE_HEADER");
 
 				Validation tableCellValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
@@ -548,30 +552,28 @@ public class TableUtils {
 				ValidationList tableCellValidationList = new ValidationList();
 				tableCellValidationList.setValidationList(tableCellValidations);
 
-				DataType tableCellDataType = new DataType("DTT_TABLE_CELL_GRP", tableCellValidationList, "Table Cell Group",
-						"");
+				DataType tableCellDataType = new DataType("DTT_TABLE_CELL_GRP", tableCellValidationList,
+						"Table Cell Group", "");
 
-				frame = Frame3.builder(frameCode)
-								.addTheme("THM_TABLE_BORDER", serviceToken).end()
-								.question(questionCode) // QUE_TEST_TABLE_HEADER_GRP
-									.addTheme("THM_QUESTION_GRP_LABEL",serviceToken).vcl(VisualControlType.GROUP).dataType(tableCellDataType).end()
-									.addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT",serviceToken).vcl(VisualControlType.GROUP).end()
-									.addTheme("THM_TABLE_ROW_CELL",serviceToken).dataType(tableCellDataType).vcl(VisualControlType.GROUP_WRAPPER).end()			
-									.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).weight(2.0).end()
-									.addTheme("THM_TABLE_HEADER_CELL_WRAPPER",serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
-									.addTheme("THM_TABLE_HEADER_CELL_GROUP_LABEL",serviceToken).vcl(VisualControlType.GROUP_LABEL).end()
-									.addTheme("THM_DISPLAY_VERTICAL",serviceToken).dataType(tableCellDataType).weight(1.0).end()			
-								.end()
-								.build();			
+				frame = Frame3.builder(frameCode).addTheme("THM_TABLE_BORDER", serviceToken).end()
+						.question(questionCode) // QUE_TEST_TABLE_HEADER_GRP
+						.addTheme("THM_QUESTION_GRP_LABEL", serviceToken).vcl(VisualControlType.GROUP)
+						.dataType(tableCellDataType).end().addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken)
+						.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
+						.dataType(tableCellDataType).vcl(VisualControlType.GROUP_WRAPPER).end()
+						.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).weight(2.0).end()
+						.addTheme("THM_TABLE_HEADER_CELL_WRAPPER", serviceToken).vcl(VisualControlType.VCL_WRAPPER)
+						.end().addTheme("THM_TABLE_HEADER_CELL_GROUP_LABEL", serviceToken)
+						.vcl(VisualControlType.GROUP_LABEL).end().addTheme("THM_DISPLAY_VERTICAL", serviceToken)
+						.dataType(tableCellDataType).weight(1.0).end().end().build();
 
 			}
-			
+
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
-		
+
 		QDataBaseEntityMessage msg = FrameUtils2.toMessage(frame, serviceToken, askMsgs);
 		msg.setReplace(true);
 
@@ -596,7 +598,7 @@ public class TableUtils {
 						sourceFrame.getLinks().add(entityEntity);
 						sourceFrame.setName(searchBE.getName());
 						/* Adding Frame to Targeted Frame BaseEntity Message */
-					//	msg.add(targetFrame);
+						// msg.add(targetFrame);
 						break;
 					}
 				}
@@ -607,7 +609,6 @@ public class TableUtils {
 		return msg;
 	}
 
-
 	/*
 	 * Generate List of asks from a SearchEntity
 	 */
@@ -617,7 +618,7 @@ public class TableUtils {
 		/* initialize an empty ask list */
 		List<Ask> askList = new ArrayList<>();
 		List<QDataBaseEntityMessage> themeMsgList = new ArrayList<QDataBaseEntityMessage>();
-		TableUtils tableUtils = new TableUtils(beUtils);
+		TableUtilsTest tableUtils = new TableUtilsTest(beUtils);
 
 		if (columns != null) {
 			if (bes != null && bes.isEmpty() == false) {
