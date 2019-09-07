@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Logger;
@@ -36,6 +37,7 @@ import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
+import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
@@ -45,6 +47,8 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.utils.ContextUtils;
+
+
 
 public class TableUtils {
 
@@ -67,6 +71,7 @@ public class TableUtils {
 		String searchBarString = null;
 		if (answer != null) {
 			searchBarString = answer.getValue();
+			// Clean up search Text
 			searchBarString = searchBarString.trim();
 			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
 			log.info("Search text = [" + searchBarString + "]");
@@ -83,6 +88,7 @@ public class TableUtils {
 
 		/* Add new SearchBarString to Session SearchBar List */
 		/* look for existing search term and bring to front - slow */
+		if (answer != null) { // no need to set history if no data sent
 		int index = searchHistory.indexOf(searchBarString);
 		if (index >= 0) {
 			searchHistory.remove(index);
@@ -95,6 +101,14 @@ public class TableUtils {
 		Answer history = new Answer(beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode(),
 				"PRI_SEARCH_HISTORY", newHistoryString);
 		beUtils.saveAnswer(history);
+		} else {
+			// so grab the latest search history
+			if (!searchHistory.isEmpty()) {
+			searchBarString = searchHistory.get(0);
+			} else {
+				searchBarString = ""; // fetch everything
+			}
+		}
 
 		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
 		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
@@ -272,10 +286,44 @@ public class TableUtils {
 
 		if (VertxUtils.cachedEnabled) {
 			List<BaseEntity> results = new ArrayList<BaseEntity>();
-			results.add(createTestPerson(gennyToken, "The Phantom", "kit.walker@phantom.bg"));
-			results.add(createTestPerson(gennyToken, "Phantom Menace", "menace43r@starwars.net"));
-			results.add(createTestPerson(gennyToken, "The Phantom Ranger", "phantom@rangers.com"));
+//			tests.add(createTestPerson(gennyToken, "The Phantom", "kit.walker@phantom.bg"));
+//			tests.add(createTestPerson(gennyToken, "Phantom Menace", "menace43r@starwars.net"));
+//			tests.add(createTestPerson(gennyToken, "The Phantom Ranger", "phantom@rangers.com"));
+			Integer pageStart = searchBE.getValue("SCH_PAGE_START", 0);
+			Integer pageSize = searchBE.getValue("SCH_PAGE_SIZE", 10);
+			
+			List<BaseEntity> tests = new ArrayList<>();
+			
+			
+			
+			tests.add(createTestCompany(gennyToken, "Melbourne University", "0398745321","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Monash University", "0398744421","support@melbuni.edu.au","CLAYTON","Victoria","3142"));
+			tests.add(createTestCompany(gennyToken, "Latrobe University", "0398733321","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "University Of Warracknabeal", "0392225321","support@melbuni.edu.au","WARRACKNABEAL","Victoria","3993"));
+			tests.add(createTestCompany(gennyToken, "Ashburton University", "0398741111","support@melbuni.edu.au","ASHBURTON","Victoria","3147"));
+			tests.add(createTestCompany(gennyToken, "Outcome Academy", "0398745777","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Holland University", "0298555521","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "University of Greenvale", "0899995321","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Crow University", "0398749999","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "RMIT University", "0398748787","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Mt Buller University", "0398836421","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Australian National University", "0198876541","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Dodgy University", "0390000001","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Australian Catholic University", "0398711121","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Australian Jedi University", "0798788881","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Brisbane Lions University", "0401020319","support@melbuni.edu.au","BRISBANE","Queensland","4000"));
+			tests.add(createTestCompany(gennyToken, "AFL University", "0390000001","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Uluru University", "0398711441","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "University Of Hard Knocks", "0798744881","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
+			tests.add(createTestCompany(gennyToken, "Scam University", "0705020319","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
 
+			for (Integer pageIndex = pageStart;pageIndex < (pageStart+pageSize);pageIndex++) {
+				if (pageIndex < tests.size()) {
+					results.add(tests.get(pageIndex));
+				}
+			}
+			
+			
 			msg = new QDataBaseEntityMessage(results);
 			return msg;
 		}
@@ -326,6 +374,32 @@ public class TableUtils {
 		return result1;
 	}
 
+	static BaseEntity createTestCompany(GennyToken gennyToken, String name, String phone,String email,String city, String state, String postcode) {
+		String usercode = "CPY_" + UUID.randomUUID().toString().substring(0, 15).toUpperCase().replaceAll("-", "");
+		
+		BaseEntity result1 = new BaseEntity(usercode, name);
+		result1.setRealm(gennyToken.getRealm());
+		try {
+			result1.addAnswer(new Answer(result1,result1,attribute("PRI_EMAIL",gennyToken),email));
+			result1.addAnswer(new Answer(result1,result1,attribute("PRI_ADDRESS_STATE",gennyToken),state));
+			result1.addAnswer(new Answer(result1,result1,attribute("PRI_ADDRESS_CITY",gennyToken),city));
+			result1.addAnswer(new Answer(result1,result1,attribute("PRI_ADDRESS_POSTCODE",gennyToken),postcode));
+			result1.addAnswer(new Answer(result1,result1,attribute("PRI_LANDLINE",gennyToken),phone));
+		} catch (BadDataException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return result1;
+	}
+	
+	
+	private static Attribute attribute(final String attributeCode,GennyToken gToken)
+	{
+		Attribute attribute = RulesUtils.getAttribute(attributeCode, gToken.getToken());
+		return attribute;
+	}
+	
 	public Ask generateTableHeaderAsk(SearchEntity searchBe, List<QDataBaseEntityMessage> themeMsgList) {
 
 		List<Ask> asks = new ArrayList<>();
