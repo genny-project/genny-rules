@@ -56,6 +56,7 @@ public class TableUtils {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	static Integer MAX_SEARCH_HISTORY_SIZE = 10;
+	static Integer MAX_SEARCH_BAR_TEXT_SIZE = 20;
 
 	BaseEntityUtils beUtils = null;
 
@@ -74,8 +75,25 @@ public class TableUtils {
 			// Clean up search Text
 			searchBarString = searchBarString.trim();
 			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
+			searchBarString.substring(0,  MAX_SEARCH_BAR_TEXT_SIZE); 
 			log.info("Search text = [" + searchBarString + "]");
 		}
+		
+		/* Get the SearchBE */
+		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
+		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
+				serviceToken.getToken());
+
+		if (searchBE == null) {
+			searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", searchBarCode, SearchEntity.class,
+					serviceToken.getToken());
+			/*
+			 * Save Session Search in cache , ideally this should be in OutputParam and
+			 * saved to workflow
+			 */
+			VertxUtils.putObject(serviceToken.getRealm(), "", sessionSearchCode, searchBE, serviceToken.getToken());
+		}
+
 		/* fetch Session SearchBar List from User */
 		BaseEntity user = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
 				beUtils.getGennyToken().getUserCode(), BaseEntity.class, beUtils.getGennyToken().getToken());
@@ -101,6 +119,7 @@ public class TableUtils {
 		Answer history = new Answer(beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode(),
 				"PRI_SEARCH_HISTORY", newHistoryString);
 		beUtils.saveAnswer(history);
+		log.info("Search History for "+beUtils.getGennyToken().getUserCode()+" = "+searchHistory.toString());
 		} else {
 			// so grab the latest search history
 			if (!searchHistory.isEmpty()) {
@@ -110,19 +129,6 @@ public class TableUtils {
 			}
 		}
 
-		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
-		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
-				serviceToken.getToken());
-
-		if (searchBE == null) {
-			searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", searchBarCode, SearchEntity.class,
-					serviceToken.getToken());
-			/*
-			 * Save Session Search in cache , ideally this should be in OutputParam and
-			 * saved to workflow
-			 */
-			VertxUtils.putObject(serviceToken.getRealm(), "", sessionSearchCode, searchBE, serviceToken.getToken());
-		}
 
 		if (answer != null) {
 			searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
