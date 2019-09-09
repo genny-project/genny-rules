@@ -1031,4 +1031,138 @@ public class TableUtils {
 		return askList;
 	}
 
+	public static void paginateTable( GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode, Answer answer) {
+  
+		TableUtils tableUtils = new TableUtils(beUtils);
+	
+		/* Get the SearchBE object */
+		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
+		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
+				serviceToken.getToken());
+	
+		if (searchBE == null) {
+			searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", searchBarCode, SearchEntity.class,
+					serviceToken.getToken());
+			VertxUtils.putObject(serviceToken.getRealm(), "", sessionSearchCode, searchBE, serviceToken.getToken());
+		}
+	
+		/*  do the search */
+		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
+	
+		/* send the baseentity from the search */
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+	
+		/* get the table header columns*/
+		Map<String, String> columns = tableUtils.getTableColumns(searchBE);
+		
+		/* generatethe row asks */
+		List<BaseEntity> rowList = Arrays.asList(msg.getItems());
+		
+		List<Ask> rowAsks = generateQuestions2(beUtils.getGennyToken(), beUtils, rowList, columns,
+		beUtils.getGennyToken().getUserCode());
+	
+		/* converting rowAsks list to array */
+		Ask[] rowAsksArr = rowAsks.stream().toArray(Ask[]::new);
+	
+		/* Link row asks to a single ask: QUE_TABLE_RESULTS_GRP */
+		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+		Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group", questionAttribute, true);
+		
+		Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode());
+		tableResultAsk.setChildAsks(rowAsksArr);
+		//tableResultAsk.setContextList(rowsContextList);
+		
+		/* sending the row asks */
+		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
+		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(tableResultAskMsgs));
+	
+		
+		
+		/* sending individual asks */
+		for (QDataAskMessage askMsg : tableResultAskMsgs) {
+			
+			askMsg.setToken(beUtils.getGennyToken().getToken());
+			// askMsg.getItems()[0] = headerAsk;
+			askMsg.setReplace(true);
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
+	
+		}
+		
+		/* change the question from frame */
+		QDataBaseEntityMessage msg3 = null;
+		msg3 = TableUtils.changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk.getQuestionCode(), serviceToken,
+				beUtils.getGennyToken(), tableResultAskMsgs);
+		msg3.setToken(beUtils.getGennyToken().getToken());
+		msg3.setReplace(true);
+	
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
+	
+	}
+
+	public static List<Ask> generateQuestions2(GennyToken userToken, BaseEntityUtils beUtils, List<BaseEntity> bes,
+	Map<String, String> columns, String targetCode) {
+
+/* initialize an empty ask list */
+List<Ask> askList = new ArrayList<>();
+TableUtils tableUtils = new TableUtils(beUtils);
+
+if (columns != null) {
+	if (bes != null && bes.isEmpty() == false) {
+
+		/* loop through baseentities to generate row ask */
+		for (BaseEntity be : bes) {
+
+			/* we add attributes for each be */
+			// ? why
+			beUtils.addAttributes(be);
+
+			/* initialize child ask list */
+			List<Ask> childAskList = new ArrayList<>();
+
+			for (Map.Entry<String, String> column : columns.entrySet()) {
+
+				String attributeCode = column.getKey();
+				String attributeName = column.getValue();
+				Attribute attr = RulesUtils.attributeMap.get(attributeCode);
+
+				Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
+						true);
+				Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
+
+				/* add the entityAttribute ask to list */
+				childAskList.add(childAsk);
+
+			}
+
+			/* converting childAsks list to array */
+			Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
+
+			/* Get the on-the-fly question attribute */
+			Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+
+			Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
+					new DataType(String.class));
+
+			/* Generate ask for the baseentity */
+			Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
+					questionTableRowAttribute, true);
+			Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
+
+			/* setting weight to parent ask */
+			parentAsk.setWeight(be.getIndex().doubleValue());
+
+			/* set all the childAsks to parentAsk */
+			parentAsk.setChildAsks(childAsArr);
+
+			/* add the baseentity asks to a list */
+			askList.add(parentAsk);
+		}
+	}
+}
+
+/* return list of asks */
+return askList;
+}
+
 }
