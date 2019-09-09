@@ -135,6 +135,8 @@ public class RulesLoader {
 	static KieSessionConfiguration ksconf = null;
 
 	public static List<String> activeRealms = new ArrayList<String>();
+	
+	public static Boolean rulesChanged = true;
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
@@ -601,7 +603,8 @@ public class RulesLoader {
 				else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
 
 					/* Running init_project workflow */
-					kieSession.startProcess("init_project");
+					
+					kieSession.signalEvent("initProject",facts);
 				} else {
 					log.info("Invalid Events coming in");
 				}
@@ -971,8 +974,10 @@ public class RulesLoader {
 	 */
 	public static void triggerStartupRules(final String realm, final String rulesDir) {
 		log.info("Triggering Startup Rules for all " + realm);
-		initMsg("Event:INIT_STARTUP", realm, new QEventMessage("EVT_MSG", "INIT_STARTUP"));
-
+		QEventMessage msg = new QEventMessage("EVT_MSG", "INIT_STARTUP");
+		msg.getData().setValue(rulesChanged?"RULES_CHANGED":"NO_RULES_CHANGED");
+		initMsg("Event:INIT_STARTUP", realm, msg);
+		rulesChanged = false;
 	}
 
 	public static Optional<Long> getProcessIdBysessionId(String sessionId) {
@@ -1099,6 +1104,15 @@ public class RulesLoader {
 		if (!hashcode.equals(existingHashCode)) {
 			log.info("Hashcode for rule " + realm + ":" + filename + " = " + hashcode + " existing hashcode="
 					+ existingHashCode + "  match = " + (hashcode.equals(existingHashCode) ? "TRUE" : "FALSE ****"));
+			
+			// If any rules do not match then set the rulesChanged flag
+			// but only for theme and frame rules
+			if (filename.startsWith("THM_")||filename.startsWith("FRM_")) {
+				rulesChanged = true;
+			}
+			
+			
+			
 			// create the rule Baseentity
 			BaseEntityUtils beUtils = null;
 			if (realmBeUtilsMap.get(realm) == null) {
