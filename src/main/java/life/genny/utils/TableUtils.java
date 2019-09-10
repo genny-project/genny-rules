@@ -1034,19 +1034,75 @@ public class TableUtils {
 	public static void paginateTable( GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode, Answer answer) {
   
 		TableUtils tableUtils = new TableUtils(beUtils);
-	
-		/* Get the SearchBE object */
+
+		/* Perform a search bar search */
+		String searchBarString = null;
+		if (answer != null) {
+			searchBarString = answer.getValue();
+			// Clean up search Text
+			searchBarString = searchBarString.trim();
+			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
+			Integer max = searchBarString.length();
+			Integer realMax = (max > MAX_SEARCH_BAR_TEXT_SIZE)?MAX_SEARCH_BAR_TEXT_SIZE:max;
+			searchBarString.substring(0,  realMax); 
+			log.info("Search text = [" + searchBarString + "]");
+		}
+		
+		/* Get the SearchBE */
 		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
 		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
 				serviceToken.getToken());
-	
+
 		if (searchBE == null) {
 			searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", searchBarCode, SearchEntity.class,
 					serviceToken.getToken());
+			/*
+			 * Save Session Search in cache , ideally this should be in OutputParam and
+			 * saved to workflow
+			 */
 			VertxUtils.putObject(serviceToken.getRealm(), "", sessionSearchCode, searchBE, serviceToken.getToken());
 		}
-	
-		/*  do the search */
+
+		/* fetch Session SearchBar List from User */
+		BaseEntity user = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
+				beUtils.getGennyToken().getUserCode(), BaseEntity.class, beUtils.getGennyToken().getToken());
+		Type type = new TypeToken<List<String>>() {
+		}.getType();
+		List<String> defaultList = new ArrayList<String>();
+		String defaultListString = JsonUtils.toJson(defaultList);
+		String historyStr = user.getValue("PRI_SEARCH_HISTORY", defaultListString);
+		List<String> searchHistory = JsonUtils.fromJson(historyStr, type);
+
+		/* Add new SearchBarString to Session SearchBar List */
+		/* look for existing search term and bring to front - slow */
+		if (answer != null) { // no need to set history if no data sent
+		int index = searchHistory.indexOf(searchBarString);
+		if (index >= 0) {
+			searchHistory.remove(index);
+		}
+		searchHistory.add(0, searchBarString);
+		if (searchHistory.size() > MAX_SEARCH_HISTORY_SIZE) {
+			searchHistory.remove(MAX_SEARCH_HISTORY_SIZE);
+		}
+		String newHistoryString = JsonUtils.toJson(searchHistory);
+		Answer history = new Answer(beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode(),
+				"PRI_SEARCH_HISTORY", newHistoryString);
+		beUtils.saveAnswer(history);
+		log.info("Search History for "+beUtils.getGennyToken().getUserCode()+" = "+searchHistory.toString());
+		} else {
+			// so grab the latest search history
+			if (!searchHistory.isEmpty()) {
+			searchBarString = searchHistory.get(0);
+			} else {
+				searchBarString = ""; // fetch everything
+			}
+		}
+
+
+			searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
+
+		// Send out Search Results
+
 		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
 	
 		/* send the baseentity from the search */

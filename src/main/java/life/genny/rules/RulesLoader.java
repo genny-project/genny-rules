@@ -1100,6 +1100,21 @@ public class RulesLoader {
 		if (existingRuleBe != null) {
 			existingHashCode = existingRuleBe.getValue("PRI_HASHCODE", -1);
 		}
+		
+		BaseEntityUtils beUtils = null;
+		if (realmBeUtilsMap.get(realm) == null) {
+			beUtils = new BaseEntityUtils(new GennyToken(realmTokenMap.get(realm)));
+			realmBeUtilsMap.put(realm, beUtils);
+		} else {
+			beUtils = realmBeUtilsMap.get(realm);
+		}
+		if (existingRuleBe == null) {
+			if ("FRM_QUE_GRP_PLACED_GRP".contentEquals(ruleCode)) {
+				log.info("got to here:");
+			}
+			existingRuleBe = beUtils.create(ruleCode, rule.getName());
+		}
+
 
 		if (!hashcode.equals(existingHashCode)) {
 			log.info("Hashcode for rule " + realm + ":" + filename + " = " + hashcode + " existing hashcode="
@@ -1114,16 +1129,6 @@ public class RulesLoader {
 			
 			
 			// create the rule Baseentity
-			BaseEntityUtils beUtils = null;
-			if (realmBeUtilsMap.get(realm) == null) {
-				beUtils = new BaseEntityUtils(new GennyToken(realmTokenMap.get(realm)));
-				realmBeUtilsMap.put(realm, beUtils);
-			} else {
-				beUtils = realmBeUtilsMap.get(realm);
-			}
-			if (existingRuleBe == null) {
-				existingRuleBe = beUtils.create(ruleCode, ruleCode);
-			}
 			try {
 				Attribute hashcodeAttribute = RulesUtils.getAttribute("PRI_HASHCODE", realmTokenMap.get(realm));
 				existingRuleBe.setValue(hashcodeAttribute, hashcode);
