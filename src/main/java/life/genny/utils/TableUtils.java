@@ -1063,6 +1063,17 @@ public class TableUtils {
 	
 		/* converting rowAsks list to array */
 		Ask[] rowAsksArr = rowAsks.stream().toArray(Ask[]::new);
+
+		/* get the row themes for table */
+		Type setType = new TypeToken<Set<QDataAskMessage>>() {
+		}.getType();
+
+		String askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
+				"FRM_TABLE_CONTENT_ASKS", String.class, beUtils.getGennyToken().getToken());
+
+		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+		QDataAskMessage[] askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
+		ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
 	
 		/* Link row asks to a single ask: QUE_TABLE_RESULTS_GRP */
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
@@ -1070,12 +1081,12 @@ public class TableUtils {
 		
 		Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode());
 		tableResultAsk.setChildAsks(rowAsksArr);
-		//tableResultAsk.setContextList(rowsContextList);
+		tableResultAsk.setContextList(rowsContextList);
 		
 		/* sending the row asks */
 		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
 		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(tableResultAskMsgs));
+		/* VertxUtils.writeMsg("webcmds", JsonUtils.toJson(tableResultAskMsgs)); */
 	
 		
 		
