@@ -137,6 +137,17 @@ public class TableUtils {
 		// Send out Search Results
 
 		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
+
+		/* get the total count of the results */
+		long totalResults = msg.getTotal();
+
+		/* print the total  */
+		log.info("total count is  :: " + totalResults + "");
+		Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(),searchBE.getCode(),
+				"PRI_DURATION", totalResults+"");
+		beUtils.addAnswer(totalAnswer);
+
+
 		Map<String, String> columns = tableUtils.getTableColumns(searchBE);
 
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
@@ -197,24 +208,24 @@ public class TableUtils {
 				/* Link row asks to a single ask: QUE_TEST_TABLE_RESULTS_GRP */
 				Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 				Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group",
-						questionAttribute, true);
+				questionAttribute, true);
 				Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
-						beUtils.getGennyToken().getUserCode());
+				beUtils.getGennyToken().getUserCode());
 				tableResultAsk.setChildAsks(rowAsksArr);
 				tableResultAsk.setContextList(rowsContextList);
 				Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
-
+				
 				tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
-
+				
 				/* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
 				String tableResultAskCode = tableResultAsk.getQuestionCode();
-
+				
 				QDataBaseEntityMessage msg3 = null;
 				msg3 = TableUtils.changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAskCode, serviceToken,
-						beUtils.getGennyToken(), tableResultAskMsgs);
+				beUtils.getGennyToken(), tableResultAskMsgs);
 				msg3.setToken(beUtils.getGennyToken().getToken());
 				msg3.setReplace(true);
-
+				
 				for (QDataAskMessage askMsg : tableResultAskMsgs) {
 					askMsg.setToken(beUtils.getGennyToken().getToken());
 					// askMsg.getItems()[0] = headerAsk;
@@ -222,6 +233,38 @@ public class TableUtils {
 					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
 				}
 				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
+
+				
+				/* need to send the footer question again here  */
+				Attribute totalAttribute = new Attribute("PRI_TOTAL", "link", new DataType(String.class));
+				Attribute indexAttribute = new Attribute("PRI_INDEX", "link", new DataType(String.class));
+
+				/* create total count ask */
+				Question totalQuestion = new Question("QUE_TABLE_TOTAL_RESULT_COUNT", "of",
+				totalAttribute, true);
+
+				Ask totalAsk = new Ask(totalQuestion, beUtils.getGennyToken().getUserCode(),
+				searchBE.getCode());
+			
+				/* create index ask */
+				Question indexQuestion = new Question("QUE_TABLE_INDEX_RESULT_COUNT", "of",
+				indexAttribute, true);
+
+				Ask indexAsk = new Ask(indexQuestion, beUtils.getGennyToken().getUserCode(),
+				searchBE.getCode());
+
+				/* collect the asks to bbe sent ouy */
+				Set<QDataAskMessage> footerAskMsgs = new HashSet<QDataAskMessage>();
+				footerAskMsgs.add(new QDataAskMessage(totalAsk));
+				footerAskMsgs.add(new QDataAskMessage(indexAsk));
+
+				/* publish the new asks with searchBe set as targetCode */
+				for (QDataAskMessage footerAskMsg : footerAskMsgs) {
+					footerAskMsg.setToken(beUtils.getGennyToken().getToken());
+					footerAskMsg.setReplace(true);
+					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(footerAskMsg));
+				}
+
 			}
 		}
 
