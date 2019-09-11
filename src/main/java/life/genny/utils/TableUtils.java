@@ -265,6 +265,11 @@ public class TableUtils {
 					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(footerAskMsg));
 				}
 
+				/* publishing the searchBE to frontEnd */
+				QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
+				searchBeMsg.setToken(beUtils.getGennyToken().getToken());
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
+
 			}
 		}
 
