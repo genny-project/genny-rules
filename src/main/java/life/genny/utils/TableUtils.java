@@ -85,16 +85,24 @@ public class TableUtils {
 		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
 		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
 				serviceToken.getToken());
-
+				
+				
 		if (searchBE == null) {
 			searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", searchBarCode, SearchEntity.class,
-					serviceToken.getToken());
+			serviceToken.getToken());
+			
+			
+			/* we need to set the searchBe's  code to session Search Code */
+			searchBE.setCode(sessionSearchCode);
+			
 			/*
-			 * Save Session Search in cache , ideally this should be in OutputParam and
-			 * saved to workflow
-			 */
+			* Save Session Search in cache , ideally this should be in OutputParam and
+			* saved to workflow
+			*/
 			VertxUtils.putObject(serviceToken.getRealm(), "", sessionSearchCode, searchBE, serviceToken.getToken());
 		}
+				
+		log.info("search code coming from searchBE getCode  :: " + searchBE.getCode());
 
 		/* fetch Session SearchBar List from User */
 		BaseEntity user = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
@@ -144,8 +152,9 @@ public class TableUtils {
 		/* print the total  */
 		log.info("total count is  :: " + totalResults + "");
 		Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(),searchBE.getCode(),
-				"PRI_DURATION", totalResults+"");
+				"PRI_TOTAL_RESULTS", totalResults+"");
 		beUtils.addAnswer(totalAnswer);
+		beUtils.updateBaseEntity(searchBE, totalAnswer);
 
 
 		Map<String, String> columns = tableUtils.getTableColumns(searchBE);
@@ -234,44 +243,44 @@ public class TableUtils {
 				}
 				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
 
-				
-				/* need to send the footer question again here  */
-				Attribute totalAttribute = new Attribute("PRI_TOTAL", "link", new DataType(String.class));
-				Attribute indexAttribute = new Attribute("PRI_INDEX", "link", new DataType(String.class));
-
-				/* create total count ask */
-				Question totalQuestion = new Question("QUE_TABLE_TOTAL_RESULT_COUNT", "of",
-				totalAttribute, true);
-
-				Ask totalAsk = new Ask(totalQuestion, beUtils.getGennyToken().getUserCode(),
-				searchBE.getCode());
-			
-				/* create index ask */
-				Question indexQuestion = new Question("QUE_TABLE_INDEX_RESULT_COUNT", "of",
-				indexAttribute, true);
-
-				Ask indexAsk = new Ask(indexQuestion, beUtils.getGennyToken().getUserCode(),
-				searchBE.getCode());
-
-				/* collect the asks to bbe sent ouy */
-				Set<QDataAskMessage> footerAskMsgs = new HashSet<QDataAskMessage>();
-				footerAskMsgs.add(new QDataAskMessage(totalAsk));
-				footerAskMsgs.add(new QDataAskMessage(indexAsk));
-
-				/* publish the new asks with searchBe set as targetCode */
-				for (QDataAskMessage footerAskMsg : footerAskMsgs) {
-					footerAskMsg.setToken(beUtils.getGennyToken().getToken());
-					footerAskMsg.setReplace(true);
-					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(footerAskMsg));
-				}
-
-				/* publishing the searchBE to frontEnd */
-				QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
-				searchBeMsg.setToken(beUtils.getGennyToken().getToken());
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
-
 			}
 		}
+
+		/* need to send the footer question again here  */
+		Attribute totalAttribute = new Attribute("PRI_TOTAL_RESULTS", "link", new DataType(String.class));
+		Attribute indexAttribute = new Attribute("PRI_INDEX", "link", new DataType(String.class));
+
+		/* create total count ask */
+		Question totalQuestion = new Question("QUE_TABLE_TOTAL_RESULT_COUNT", "Total Results",
+		totalAttribute, true);
+
+		Ask totalAsk = new Ask(totalQuestion, beUtils.getGennyToken().getUserCode(),
+		searchBE.getCode());
+	
+		/* create index ask */
+		Question indexQuestion = new Question("QUE_TABLE_PAGE_INDEX", "Page Number",
+		indexAttribute, true);
+
+		Ask indexAsk = new Ask(indexQuestion, beUtils.getGennyToken().getUserCode(),
+		searchBE.getCode());
+
+		/* collect the asks to bbe sent ouy */
+		Set<QDataAskMessage> footerAskMsgs = new HashSet<QDataAskMessage>();
+		footerAskMsgs.add(new QDataAskMessage(totalAsk));
+		footerAskMsgs.add(new QDataAskMessage(indexAsk));
+
+		/* publish the new asks with searchBe set as targetCode */
+		for (QDataAskMessage footerAskMsg : footerAskMsgs) {
+			footerAskMsg.setToken(beUtils.getGennyToken().getToken());
+			footerAskMsg.setReplace(true);
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(footerAskMsg));
+		}
+
+		/* publishing the searchBE to frontEnd */
+		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
+		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
+
 
 	}
 
