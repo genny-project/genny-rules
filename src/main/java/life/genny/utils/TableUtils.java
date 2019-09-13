@@ -148,13 +148,24 @@ public class TableUtils {
 
 		/* get the total count of the results */
 		long totalResults = msg.getTotal();
+		
+		int pageNumber = 1;
 
 		/* print the total  */
 		log.info("total count is  :: " + totalResults + "");
+		log.info("page number is  :: " + pageNumber + "");
+
 		Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(),searchBE.getCode(),
 				"PRI_TOTAL_RESULTS", totalResults+"");
+		
+		Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(),searchBE.getCode(),
+				"PRI_INDEX", pageNumber+"");
+
 		beUtils.addAnswer(totalAnswer);
+		beUtils.addAnswer(pageNumberAnswer);
+
 		beUtils.updateBaseEntity(searchBE, totalAnswer);
+		beUtils.updateBaseEntity(searchBE, pageNumberAnswer);
 
 
 		Map<String, String> columns = tableUtils.getTableColumns(searchBE);

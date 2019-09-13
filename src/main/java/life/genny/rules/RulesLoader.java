@@ -454,7 +454,12 @@ public class RulesLoader {
 				try {
 					RuleDescr ruleObj = parser.parse(rs).getRules().get(0);
 					processRule(realm, ruleObj, rule);
-				} catch (DroolsParserException e) {
+				}catch(NullPointerException e) {
+					log.error("Error with the rules:: " + rule._2 + " -> " + e.getLocalizedMessage());
+					
+				}
+				
+				catch (DroolsParserException e) {
 					log.error("BAD RULE : " + rule._2 + " -> " + e.getLocalizedMessage());
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
