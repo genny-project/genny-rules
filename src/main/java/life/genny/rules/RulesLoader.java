@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.persistence.EntityManager;
@@ -89,10 +90,12 @@ import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
+import life.genny.models.Theme;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.exception.BadDataException;
+import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
 import life.genny.qwanda.message.QEventLinkChangeMessage;
@@ -131,6 +134,9 @@ public class RulesLoader {
 	public static RuntimeManager runtimeManager;
 	public static Environment env; // drools persistence
 	public static EntityManagerFactory emf = null;
+	
+	public static Set<String> frameCodes = new TreeSet<String>();
+	public static Set<String> themeCodes = new TreeSet<String>();
 
 	static KieSessionConfiguration ksconf = null;
 
@@ -978,6 +984,33 @@ public class RulesLoader {
 		msg.getData().setValue(rulesChanged?"RULES_CHANGED":"NO_RULES_CHANGED");
 		initMsg("Event:INIT_STARTUP", realm, msg);
 		rulesChanged = false;
+		
+		// Now check if all Themes and Frames got created and display errors if missing...
+		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+		String serviceToken = tokenObj.getString("value");
+
+		if ("DUMMY".equalsIgnoreCase(serviceToken)) {
+			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+			return;
+		}
+
+
+		for (String themeCode : themeCodes) {
+			Theme theme = VertxUtils.getObject(realm, "", themeCode,
+					Theme.class, serviceToken);			
+			if (theme==null) {
+				log.error(themeCode+" NOT IN CACHE -> NOT CREATED");
+			}
+		}
+		for (String frameCode : frameCodes) {
+			QDataBaseEntityMessage TARGET_FRM_MSG = VertxUtils.getObject(realm, "",
+					frameCode + "_MSG", QDataBaseEntityMessage.class, serviceToken);
+			if (TARGET_FRM_MSG==null) {
+				log.error(frameCode+" NOT IN CACHE -> NOT CREATED");
+			}
+		}
+		
+		
 	}
 
 	public static Optional<Long> getProcessIdBysessionId(String sessionId) {
@@ -1091,6 +1124,13 @@ public class RulesLoader {
 
 		// Get rule filename
 		String ruleCode = "RUL_" + filename.replaceAll("\\.[^.]*$", "");
+		
+		if (ruleCode.startsWith("RUL_FRM_") ) {
+			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+		}
+		if (ruleCode.startsWith("RUL_THM_") ) {
+			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+		}
 
 		// get existing rule from cache
 
@@ -1112,7 +1152,7 @@ public class RulesLoader {
 			if ("FRM_QUE_GRP_PLACED_GRP".contentEquals(ruleCode)) {
 				log.info("got to here:");
 			}
-			existingRuleBe = beUtils.create(ruleCode, rule.getName());
+			//existingRuleBe = beUtils.create(ruleCode, rule.getName());
 		}
 
 
@@ -1123,7 +1163,7 @@ public class RulesLoader {
 			// If any rules do not match then set the rulesChanged flag
 			// but only for theme and frame rules
 			if (filename.startsWith("THM_")||filename.startsWith("FRM_")) {
-				rulesChanged = true;
+				//rulesChanged = true;
 			}
 			
 			
@@ -1161,7 +1201,7 @@ public class RulesLoader {
 				log.error("Bad data");
 			}
 
-			beUtils.saveBaseEntityAttributes(existingRuleBe);
+		//	beUtils.saveBaseEntityAttributes(existingRuleBe);
 			// now if the rule is a theme or frame rule then clear the cache of the output of those rules, the MSG and ASK
 			// the logic is that a rule can skip loading and generating the cached item if it already has a cached item
 //			if (existingRuleBe.getCode().startsWith("RUL_THM_")||existingRuleBe.getCode().startsWith("RUL_FRM_")||existingRuleBe.getCode().startsWith("SBE_")) {

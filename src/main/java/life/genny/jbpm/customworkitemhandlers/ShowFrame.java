@@ -62,9 +62,21 @@ public class ShowFrame implements WorkItemHandler {
 			} else {
 				log.info(p.getProcessName() + ": root Frame Code sent to display  = " + rootFrameCode);
 
+				
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
 						QDataBaseEntityMessage.class, userToken.getToken());
 
+				if (FRM_MSG == null)  {
+					// Construct it on the fly
+					Frame3 frame = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode,
+							Frame3.class, userToken.getToken());
+					
+					FrameUtils2.toMessage2(frame, userToken);
+					FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
+							QDataBaseEntityMessage.class, userToken.getToken());
+				}
+				
+				
 				if (FRM_MSG != null) {
 
 					if (targetFrameCode == null) {
@@ -73,6 +85,16 @@ public class ShowFrame implements WorkItemHandler {
 
 					QDataBaseEntityMessage TARGET_FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "",
 							targetFrameCode + "_MSG", QDataBaseEntityMessage.class, userToken.getToken());
+
+					if (TARGET_FRM_MSG == null)  {
+						// Construct it on the fly
+						Frame3 frame = VertxUtils.getObject(userToken.getRealm(), "", targetFrameCode,
+								Frame3.class, userToken.getToken());
+						
+						FrameUtils2.toMessage2(frame, userToken);
+						TARGET_FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", targetFrameCode + "_MSG",
+								QDataBaseEntityMessage.class, userToken.getToken());
+					}
 
 					for (BaseEntity targetFrame : TARGET_FRM_MSG.getItems()) {
 						if (targetFrame.getCode().equals(targetFrameCode)) {
