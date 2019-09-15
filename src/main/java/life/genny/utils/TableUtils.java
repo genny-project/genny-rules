@@ -201,6 +201,13 @@ public class TableUtils {
 				String askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
 						"FRM_TABLE_CONTENT_ASKS", String.class, beUtils.getGennyToken().getToken());
 
+				if (askMsgs2Str == null) {
+					Frame3 frame = VertxUtils.getObject(serviceToken.getRealm(), "", "FRM_TABLE_CONTENT",
+							Frame3.class, serviceToken.getToken());
+					
+					FrameUtils2.toMessage2(frame, serviceToken);
+				}
+				
 				Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 				QDataAskMessage[] askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
 				ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
