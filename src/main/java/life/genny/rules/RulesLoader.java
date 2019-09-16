@@ -1000,20 +1000,20 @@ public class RulesLoader {
 		}
 
 
-		for (String themeCode : themeCodes) {
-			Theme theme = VertxUtils.getObject(realm, "", themeCode,
-					Theme.class, serviceToken);			
-			if (theme==null) {
-				log.error(themeCode+" NOT IN CACHE -> NOT CREATED");
-			}
-		}
-		for (String frameCode : frameCodes) {
-			QDataBaseEntityMessage TARGET_FRM_MSG = VertxUtils.getObject(realm, "",
-					frameCode + "_MSG", QDataBaseEntityMessage.class, serviceToken);
-			if (TARGET_FRM_MSG==null) {
-				log.error(frameCode+" NOT IN CACHE -> NOT CREATED");
-			}
-		}
+//		for (String themeCode : themeCodes) {
+//			Theme theme = VertxUtils.getObject(realm, "", themeCode,
+//					Theme.class, serviceToken);			
+//			if (theme==null) {
+//				log.error(themeCode+" NOT IN CACHE -> NOT CREATED");
+//			}
+//		}
+//		for (String frameCode : frameCodes) {
+//			QDataBaseEntityMessage TARGET_FRM_MSG = VertxUtils.getObject(realm, "",
+//					frameCode + "_MSG", QDataBaseEntityMessage.class, serviceToken);
+//			if (TARGET_FRM_MSG==null) {
+//				log.error(frameCode+" NOT IN CACHE -> NOT CREATED");
+//			}
+//		}
 		
 		
 	}
