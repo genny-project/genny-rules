@@ -147,7 +147,7 @@ public class ShowFrame implements WorkItemHandler {
 									if (val.getRegex() == null) {
 										log.error("Regex for " + aask.getQuestion().getCode() + " == null");
 									}
-
+  
 								}
 							}
 							askMsg.setToken(userToken.getToken());
