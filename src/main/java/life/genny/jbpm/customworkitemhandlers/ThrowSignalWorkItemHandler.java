@@ -41,7 +41,7 @@ import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
 import life.genny.utils.WorkflowQueryInterface;
 
-public class AskQuestionWorkItemHandler implements WorkItemHandler {
+public class ThrowSignalWorkItemHandler implements WorkItemHandler {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
@@ -51,12 +51,12 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 	String wClass;
 	
 
-	public <R> AskQuestionWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession) {
+	public <R> ThrowSignalWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession) {
 		this.kieSession = kieSession;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
-	public <R> AskQuestionWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession, RuntimeEngine rteng) {
+	public <R> ThrowSignalWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession, RuntimeEngine rteng) {
 		this.kieSession = kieSession;
 		this.runtimeEngine = rteng;
 		this.wClass = workflowQueryInterface.getCanonicalName();
@@ -71,14 +71,16 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 		Map<String, Object> items = workItem.getParameters();
 
 		GennyToken userToken = (GennyToken) items.get("userToken");
-		String questionCode = (String) items.get("questionCode");
+		String signalCode = (String) items.get("signalCode");
+		String eventCode = (String) items.get("eventCode");
+		String eventValue = (String) items.get("eventValue");
 		Long processId = null;
 
-		QEventMessage questionMsg = new QEventMessage("EVT_MSG", "ASK");
-		questionMsg.getData().setValue(questionCode);
-		questionMsg.setToken(userToken.getToken());
+		QEventMessage signalMsg = new QEventMessage("EVT_MSG", eventCode);
+		signalMsg.getData().setValue(eventValue);
+		signalMsg.setToken(userToken.getToken());
 		
-		SessionFacts sessionFacts = new SessionFacts(userToken,userToken,questionMsg);
+		SessionFacts sessionFacts = new SessionFacts(userToken,userToken,signalMsg);
 
 		if (processId == null) {
 			Method m;
@@ -113,7 +115,7 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 		}
 
 		if (processId != null) {
-			System.out.println("Sending Question Code  " + questionCode + " to processId " + processId
+			System.out.println("Sending Signal Code  " + signalCode + " : eventCode: "+eventCode +" eventValue: "+eventValue+" to processId " + processId
 					+ " for target user " + userToken.getUserCode());
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
@@ -124,15 +126,13 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 
 				newKieSession = (StatefulKnowledgeSession) this.runtimeEngine.getKieSession();
 
-				newKieSession.signalEvent("internalSignal", sessionFacts, processId);
-//				newKieSession.signalEvent("internalSignal", questionMsg, processId);
+				newKieSession.signalEvent(signalCode, sessionFacts, processId);
 			} else {
 
 				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
 
-				newKieSession.signalEvent("internalSignal", sessionFacts, processId);
-//				newKieSession.signalEvent("internalSignal", questionMsg, processId);
+				newKieSession.signalEvent(signalCode, sessionFacts, processId);
 
 				newKieSession.dispose();
 
