@@ -408,7 +408,12 @@ public class RulesLoader {
 				/* Using Runtime Environment */
 				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
 
-				if (System.getenv("USE_JMS") != null) {
+				if ("TRUE".contentEquals(System.getenv("USE_EXECUTOR"))) {
+					if ("TRUE".contentEquals(System.getenv("USE_JMS"))) {
+						System.setProperty("org.kie.executor.jms", "true");
+					} else {
+						System.setProperty("org.kie.executor.jms", "false");
+					}
 					String executorQueueName = "KIE.SERVER.EXECUTOR";
 					// String executorQueueName = "queue/KIE.SERVER.EXECUTOR";
 					// build executor service
