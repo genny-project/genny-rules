@@ -408,8 +408,8 @@ public class RulesLoader {
 				/* Using Runtime Environment */
 				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
 
-				if ("TRUE".contentEquals(System.getenv("USE_EXECUTOR"))) {
-					if ("TRUE".contentEquals(System.getenv("USE_JMS"))) {
+				if ("TRUE".equals(System.getenv("USE_EXECUTOR"))) {
+					if ("TRUE".equals(System.getenv("USE_JMS"))) {
 						System.setProperty("org.kie.executor.jms", "true");
 					} else {
 						System.setProperty("org.kie.executor.jms", "false");
