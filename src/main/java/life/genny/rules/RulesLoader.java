@@ -18,6 +18,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -31,6 +32,9 @@ import org.drools.compiler.compiler.DroolsParserException;
 import org.drools.compiler.lang.descr.AttributeDescr;
 import org.drools.compiler.lang.descr.RuleDescr;
 import org.drools.core.impl.EnvironmentFactory;
+import org.jbpm.executor.ExecutorServiceFactory;
+import org.jbpm.executor.impl.ExecutorImpl;
+import org.jbpm.executor.impl.ExecutorServiceImpl;
 import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
@@ -48,6 +52,7 @@ import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
 import org.kie.api.builder.Message;
 import org.kie.api.builder.ReleaseId;
+import org.kie.api.executor.ExecutorService;
 import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceType;
 import org.kie.api.runtime.Environment;
@@ -136,6 +141,9 @@ public class RulesLoader {
 	public static RuntimeManager runtimeManager;
 	public static Environment env; // drools persistence
 	public static EntityManagerFactory emf = null;
+	
+	private static ExecutorService executorService;
+
 	
 	public static Set<String> frameCodes = new TreeSet<String>();
 	public static Set<String> themeCodes = new TreeSet<String>();
@@ -398,10 +406,30 @@ public class RulesLoader {
 			final KieBase kbase = kContainer.newKieBase(kbconf);
 
 			if (RUNTIME_MANAGER_ON) {
+				String executorQueueName = "queue/KIE.SERVER.EXECUTOR";
+				//String executorQueueName = "queue/KIE.SERVER.EXECUTOR";
+				// build executor service
+	            executorService = ExecutorServiceFactory.newExecutorService(emf);
+	            executorService.setInterval(3);
+	            executorService.setRetries(3);
+	            executorService.setThreadPoolSize(10);
+	            executorService.setTimeunit(TimeUnit.valueOf( "SECONDS"));
+
+	            ((ExecutorImpl) ((ExecutorServiceImpl) executorService).getExecutor()).setQueueName(executorQueueName);
+
+	            executorService.init();
+
 
 				/* Using Runtime Environment */
 				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
-				runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf).get();
+				//((KModuleDeploymentService) deploymentService).setExecutorService(executorService);
+				runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf).addEnvironmentEntry("ExecutorService", executorService).get();
+			
+
+	            
+	            
+	          // <property name="org.kie.executor.jms.queue" value="queue/KIE.SERVER.EXECUTOR"/>
+
 
 				if (runtimeManager != null) {
 					log.info("Closing active runtime Manager Id = " + runtimeManager.getIdentifier());
@@ -503,6 +531,8 @@ public class RulesLoader {
 
 		EntityManager em = emf.createEntityManager();
 		EntityTransaction tx = em.getTransaction();
+		
+
 
 		if (RUNTIME_MANAGER_ON) {
 
@@ -512,6 +542,9 @@ public class RulesLoader {
 			 */
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
 
+			
+
+			
 			/* For using ProcessInstanceIdContext */
 			// RuntimeEngine runtimeEngine =
 			// runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
