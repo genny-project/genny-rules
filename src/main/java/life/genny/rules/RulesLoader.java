@@ -954,6 +954,10 @@ public class RulesLoader {
 	/* For old implementation */
 	public static void addHandlers(StatefulKnowledgeSession kieSession) {
 		// Register handlers
+		log.info("Register SendSignal");
+		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
+				new SendSignalWorkItemHandler(RulesLoader.class, kieSession));
+
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
@@ -969,14 +973,17 @@ public class RulesLoader {
 				new AskQuestionWorkItemHandler(RulesLoader.class, kieSession));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
 				new ThrowSignalWorkItemHandler(RulesLoader.class, kieSession));
-		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(RulesLoader.class, kieSession));
 
 	}
 
 	/* For new implementation */
 	public static void addHandlers(KieSession kieSession) {
 		// Register handlers
+		log.info("Register SendSignal");
+		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
+				new SendSignalWorkItemHandler(RulesLoader.class, kieSession));
+
+		
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
@@ -992,8 +999,6 @@ public class RulesLoader {
 				new AskQuestionWorkItemHandler(RulesLoader.class, kieSession));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
 				new ThrowSignalWorkItemHandler(RulesLoader.class, kieSession));
-		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(RulesLoader.class, kieSession));
 
 	}
 
