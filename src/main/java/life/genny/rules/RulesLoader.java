@@ -406,7 +406,7 @@ public class RulesLoader {
 			final KieBase kbase = kContainer.newKieBase(kbconf);
 
 			if (RUNTIME_MANAGER_ON) {
-				String executorQueueName = "queue/KIE.SERVER.EXECUTOR";
+				String executorQueueName = "KIE.SERVER.EXECUTOR";
 				//String executorQueueName = "queue/KIE.SERVER.EXECUTOR";
 				// build executor service
 	            executorService = ExecutorServiceFactory.newExecutorService(emf);
