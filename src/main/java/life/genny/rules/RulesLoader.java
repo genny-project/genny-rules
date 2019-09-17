@@ -84,6 +84,7 @@ import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
+import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
@@ -934,6 +935,8 @@ public class RulesLoader {
 				new AskQuestionWorkItemHandler(RulesLoader.class, kieSession));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
 				new ThrowSignalWorkItemHandler(RulesLoader.class, kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
+				new SendSignalWorkItemHandler(RulesLoader.class, kieSession));
 
 	}
 
@@ -955,6 +958,8 @@ public class RulesLoader {
 				new AskQuestionWorkItemHandler(RulesLoader.class, kieSession));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
 				new ThrowSignalWorkItemHandler(RulesLoader.class, kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
+				new SendSignalWorkItemHandler(RulesLoader.class, kieSession));
 
 	}
 
