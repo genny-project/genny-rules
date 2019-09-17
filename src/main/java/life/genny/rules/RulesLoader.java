@@ -405,6 +405,9 @@ public class RulesLoader {
 			final KieBase kbase = kContainer.newKieBase(kbconf);
 
 			if (RUNTIME_MANAGER_ON) {
+				/* Using Runtime Environment */
+				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
+
 				if (System.getenv("USE_JMS") != null) {
 					String executorQueueName = "KIE.SERVER.EXECUTOR";
 					// String executorQueueName = "queue/KIE.SERVER.EXECUTOR";
@@ -420,8 +423,6 @@ public class RulesLoader {
 
 					executorService.init();
 
-					/* Using Runtime Environment */
-					runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
 					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf)
 							.addEnvironmentEntry("ExecutorService", executorService).get();
 				} else {
