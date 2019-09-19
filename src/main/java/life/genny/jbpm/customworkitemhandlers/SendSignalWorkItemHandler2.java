@@ -110,7 +110,7 @@ public class SendSignalWorkItemHandler2 implements WorkItemHandler {
 		}
 
 		if (processId != null) {
-			System.out.println("Sending Payload Object  to processId " + processId
+			log.info("Sending Payload Object  to processId " + processId
 					+ " for target user " + userToken.getUserCode()+" for sessionCode: "+userToken.getSessionCode());
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
