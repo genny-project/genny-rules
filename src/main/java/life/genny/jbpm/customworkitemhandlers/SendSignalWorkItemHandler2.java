@@ -75,8 +75,6 @@ public class SendSignalWorkItemHandler2 implements WorkItemHandler {
 		Long processId = null;
 
 		
-		SessionFacts sessionFacts = new SessionFacts(userToken,userToken,payload);
-
          if (processId == null) {
 			Method m;
 			Optional<Long> processIdBysessionId = Optional.empty();
@@ -121,13 +119,13 @@ public class SendSignalWorkItemHandler2 implements WorkItemHandler {
 
 				newKieSession = (StatefulKnowledgeSession) this.runtimeEngine.getKieSession();
 
-				newKieSession.signalEvent(signalCode, sessionFacts, processId);
+				newKieSession.signalEvent(signalCode, payload, processId);
 			} else {
 
 				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
 
-				newKieSession.signalEvent(signalCode, sessionFacts, processId);
+				newKieSession.signalEvent(signalCode, payload, processId);
 
 				newKieSession.dispose();
 

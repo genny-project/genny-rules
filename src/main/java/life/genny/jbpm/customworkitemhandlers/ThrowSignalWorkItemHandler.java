@@ -112,7 +112,7 @@ public class ThrowSignalWorkItemHandler implements WorkItemHandler {
 		}
 
 		if (processId != null) {
-			System.out.println("Sending Signal Code  " + signalCode + " : eventCode: "+eventCode +" eventValue: "+eventValue+" to processId " + processId
+			log.info("Sending Signal Code  " + signalCode + " : eventCode: "+eventCode +" eventValue: "+eventValue+" to processId " + processId
 					+ " for target user " + userToken.getUserCode());
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();

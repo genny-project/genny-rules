@@ -602,7 +602,7 @@ public class RulesLoader {
 				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 
-				addHandlers(kieSession);
+				//addHandlers(kieSession);
 
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(gToken));
@@ -723,7 +723,7 @@ public class RulesLoader {
 
 				JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 
-				addHandlers(kieSession);
+			//	addHandlers(kieSession);
 
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
@@ -1251,7 +1251,7 @@ public class RulesLoader {
 
 		// get existing rule from cache
 
-		BaseEntity existingRuleBe = VertxUtils.readFromDDT(realm, ruleCode, true, realmTokenMap.get(realm));
+		BaseEntity existingRuleBe = null; //VertxUtils.readFromDDT(realm, ruleCode, true, realmTokenMap.get(realm));
 		Integer existingHashCode = 0;
 		if (existingRuleBe != null) {
 			existingHashCode = existingRuleBe.getValue("PRI_HASHCODE", -1);
@@ -1268,10 +1268,10 @@ public class RulesLoader {
 			if ("FRM_QUE_GRP_PLACED_GRP".contentEquals(ruleCode)) {
 				log.info("got to here:");
 			}
-			// existingRuleBe = beUtils.create(ruleCode, rule.getName());
+			//existingRuleBe = beUtils.create(ruleCode, rule.getName());
 		}
 
-		if (!hashcode.equals(existingHashCode)) {
+		if ((!hashcode.equals(existingHashCode))&&(existingRuleBe != null)) {
 			log.info("Hashcode for rule " + realm + ":" + filename + " = " + hashcode + " existing hashcode="
 					+ existingHashCode + "  match = " + (hashcode.equals(existingHashCode) ? "TRUE" : "FALSE ****"));
 

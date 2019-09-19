@@ -3,8 +3,10 @@ package life.genny.jbpm.customworkitemhandlers;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
@@ -42,22 +44,31 @@ public class ShowFrame implements WorkItemHandler {
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 
+		/* items used to save the extracted input parameters from the custom task */
+		Map<String, Object> items = workItem.getParameters();
+
 		// extract parameters
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
 		String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
+		
+		String callingWorkflow = (String)items.get("callingWorkflow");
+		if (StringUtils.isBlank(callingWorkflow)) {
+			callingWorkflow = "";
+		}
+
 
 
 		if (userToken == null) {
-			log.error("Must supply userToken!");
+			log.error(callingWorkflow+": Must supply userToken!");
 
 		} else {
 			// log.info("userToken = " + userToken.getCode());
 
 			if (rootFrameCode == null) {
-				log.error("Must supply a root Frame Code!");
+				log.error(callingWorkflow+": Must supply a root Frame Code!");
 			} else {
-				log.info(": root Frame Code sent to display  = " + rootFrameCode);
+				log.info(callingWorkflow+": root Frame Code sent to display  = " + rootFrameCode);
 
 				
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
@@ -96,7 +107,7 @@ public class ShowFrame implements WorkItemHandler {
 					for (BaseEntity targetFrame : TARGET_FRM_MSG.getItems()) {
 						if (targetFrame.getCode().equals(targetFrameCode)) {
 
-							System.out.println("ShowFrame : Found Targeted Frame BaseEntity : " + targetFrame);
+							log.info(callingWorkflow+": ShowFrame : Found Targeted Frame BaseEntity : " + targetFrame);
 
 							/* Adding the links in the targeted BaseEntity */
 							Attribute attribute = new Attribute("LNK_FRAME", "LNK_FRAME", new DataType(String.class));
@@ -104,7 +115,7 @@ public class ShowFrame implements WorkItemHandler {
 							for (BaseEntity sourceFrame : FRM_MSG.getItems()) {
 								if (sourceFrame.getCode().equals(rootFrameCode)) {
 
-									System.out.println("ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
+									log.info(callingWorkflow+": ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
 									EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute,
 											1.0, "CENTRE");
 									Set<EntityEntity> entEntList = targetFrame.getLinks();
@@ -142,7 +153,7 @@ public class ShowFrame implements WorkItemHandler {
 								for (Validation val : aask.getQuestion().getAttribute().getDataType()
 										.getValidationList()) {
 									if (val.getRegex() == null) {
-										log.error("Regex for " + aask.getQuestion().getCode() + " == null");
+										log.error(callingWorkflow+": Regex for " + aask.getQuestion().getCode() + " == null");
 									}
   
 								}
@@ -154,7 +165,7 @@ public class ShowFrame implements WorkItemHandler {
 						}
 					}
 				} else {
-					log.error(rootFrameCode + "_MSG" + " DOES NOT EXIST IN CACHE - cannot display frame");
+					log.error(callingWorkflow+": "+rootFrameCode + "_MSG" + " DOES NOT EXIST IN CACHE - cannot display frame");
 				}
 
 			}
@@ -162,6 +173,9 @@ public class ShowFrame implements WorkItemHandler {
 		}
 
 		// notify manager that work item has been completed
+		if (workItem == null) {
+			log.error(callingWorkflow+": workItem is null");
+		}
 		manager.completeWorkItem(workItem.getId(), null);
 
 	}

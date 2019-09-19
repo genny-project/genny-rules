@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
@@ -108,7 +109,12 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 		}
 
 		if (processId != null) {
-			System.out.println("Sending Payload Object  to processId " + processId
+			String callingWorkflow = (String)items.get("callingWorkflow");
+			if (StringUtils.isBlank(callingWorkflow)) {
+				callingWorkflow = "";
+			}
+			
+			log.info(callingWorkflow+": Sending Payload Object  to processId " + processId
 					+ " for target user " + userToken.getUserCode()+" for sessionCode: "+userToken.getSessionCode());
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();

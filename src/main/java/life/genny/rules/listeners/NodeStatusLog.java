@@ -29,6 +29,7 @@ import javax.persistence.TransactionRequiredException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
+import javax.transaction.Transactional;
 import javax.transaction.UserTransaction;
 
 import org.drools.core.WorkingMemory;
@@ -122,8 +123,9 @@ public class NodeStatusLog extends AbstractAuditLogger {
 			isJTA = bool.booleanValue();
 		}
 	}
-
+ 
 	@Override
+	@Transactional(dontRollbackOn = { org.hibernate.AssertionFailure.class })
 	public void beforeNodeTriggered(ProcessNodeTriggeredEvent event) {
 		NodeInstanceLog log = (NodeInstanceLog) builder.buildEvent(event);
 		persist(log, event);
@@ -146,7 +148,12 @@ public class NodeStatusLog extends AbstractAuditLogger {
 			EntityManager em = getEntityManager(event);
 			Object tx = joinTransaction(em);
 
-			em.persist(nodeStatus);
+			try {
+				em.persist(nodeStatus);
+			} catch (Exception e) {
+
+				logger.error("Error in persisting nodeStatus:"+nodeStatus);
+			}
 			leaveTransaction(em, tx);
 		}
 	}
