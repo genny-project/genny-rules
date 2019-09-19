@@ -33,11 +33,8 @@ public class ShowFrameWIthContextList implements WorkItemHandler {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	
-	KieSession kieSession = null;
-	
-	public ShowFrameWIthContextList(KieSession kieSession)
+	public ShowFrameWIthContextList()
 	{
-		this.kieSession = kieSession;
 	}	
 	
   public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
@@ -51,14 +48,13 @@ public class ShowFrameWIthContextList implements WorkItemHandler {
     
     } else {
     
-		ProcessInstance p = this.kieSession.getProcessInstance(workItem.getProcessInstanceId());
 
     	log.info("userToken = "+userToken.getCode());
     	
     	if (rootFrameCode == null) {
     		log.error("Must supply a root Frame Code!");
     	} else {
-    		log.info(p.getProcessName()+": root Frame Code = "+rootFrameCode);
+    		log.info(": root Frame Code = "+rootFrameCode);
     		
     		QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"_MSG",
     				QDataBaseEntityMessage.class, userToken.getToken());	
@@ -75,7 +71,7 @@ public class ShowFrameWIthContextList implements WorkItemHandler {
 
     		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 
-    		System.out.println(p.getProcessId()+": Sending Asks");
+    		System.out.println(": Sending Asks");
     		for (QDataAskMessage askMsg : askMsgs2) {
 				if ((contextListMap != null) && (!contextListMap.isEmpty())) {
 					for (Ask anAsk : askMsg.getItems()) {

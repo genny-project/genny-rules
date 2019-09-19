@@ -31,11 +31,9 @@ public class PrintWorkItemHandler implements WorkItemHandler {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
-	KieSession kieSession = null;
 	
-	public PrintWorkItemHandler(KieSession kieSession)
+	public PrintWorkItemHandler()
 	{
-		this.kieSession = kieSession;
 	}
 	
 	
@@ -43,11 +41,10 @@ public class PrintWorkItemHandler implements WorkItemHandler {
     // extract parameters
     String message = (String) workItem.getParameter("message");
     
-	ProcessInstance p = this.kieSession.getProcessInstance(workItem.getProcessInstanceId());
 
     	long  pid = workItem.getProcessInstanceId();
     	
-    	log.info(p.getProcessId()+": pid="+pid+": "+message);
+    	log.info(": pid="+pid+": "+message);
     	
     // notify manager that work item has been completed
     manager.completeWorkItem(workItem.getId(), null);

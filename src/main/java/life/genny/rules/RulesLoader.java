@@ -35,11 +35,13 @@ import org.drools.core.impl.EnvironmentFactory;
 import org.jbpm.executor.ExecutorServiceFactory;
 import org.jbpm.executor.impl.ExecutorImpl;
 import org.jbpm.executor.impl.ExecutorServiceImpl;
+import org.jbpm.executor.impl.wih.AsyncWorkItemHandler;
 import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
 import org.jbpm.process.audit.AbstractAuditLogger;
 import org.jbpm.process.audit.JPAWorkingMemoryDbLogger;
+import org.jbpm.runtime.manager.impl.DefaultRegisterableItemsFactory;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
 import org.jbpm.services.api.query.QueryService;
@@ -52,6 +54,7 @@ import org.kie.api.builder.KieBuilder;
 import org.kie.api.builder.KieFileSystem;
 import org.kie.api.builder.Message;
 import org.kie.api.builder.ReleaseId;
+import org.kie.api.event.process.ProcessEventListener;
 import org.kie.api.executor.ExecutorService;
 import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceType;
@@ -66,6 +69,7 @@ import org.kie.api.runtime.manager.RuntimeEnvironment;
 import org.kie.api.runtime.manager.RuntimeEnvironmentBuilder;
 import org.kie.api.runtime.manager.RuntimeManager;
 import org.kie.api.runtime.manager.RuntimeManagerFactory;
+import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.query.QueryContext;
@@ -90,6 +94,7 @@ import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
+import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler2;
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
@@ -428,8 +433,32 @@ public class RulesLoader {
 
 					executorService.init();
 
-					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf)
-							.addEnvironmentEntry("ExecutorService", executorService).get();
+					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase)
+							.entityManagerFactory(emf)
+							.addEnvironmentEntry("ExecutorService", executorService)
+							.registerableItemsFactory(new DefaultRegisterableItemsFactory() {
+			                    @Override
+			                    public Map<String, WorkItemHandler> getWorkItemHandlers(RuntimeEngine runtime) {
+
+			                        Map<String, WorkItemHandler> handlers = super.getWorkItemHandlers(runtime);
+			                   //     handlers.put("async", new AsyncWorkItemHandler(executorService, "org.jbpm.executor.commands.PrintOutCommand"));
+			                        Map<String,WorkItemHandler> gennyHandlers = getHandlers(runtime);
+			                        for (String handlerKey : gennyHandlers.keySet()) {
+			                		handlers.put(handlerKey,
+			                				gennyHandlers.get(handlerKey));
+			                        }
+			                        return handlers;
+			                    }
+			                    @Override
+			                    public List<ProcessEventListener> getProcessEventListeners( RuntimeEngine runtime) {
+			                        List<ProcessEventListener> listeners = super.getProcessEventListeners(runtime);
+			                  //      listeners.add(countDownListener);
+			                        return listeners;
+			                    }
+			                })							
+							
+							
+							.get();
 				} else {
 					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf).get();
 				}
@@ -954,53 +983,84 @@ public class RulesLoader {
 	/* For old implementation */
 	public static void addHandlers(StatefulKnowledgeSession kieSession) {
 		// Register handlers
-		log.info("Register SendSignal");
+		log.info("Register SendSignal stateful version");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(RulesLoader.class, kieSession));
+				new SendSignalWorkItemHandler(RulesLoader.class));
+		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
+				new SendSignalWorkItemHandler2(RulesLoader.class));
 
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame(kieSession));
-		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler(kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame());
+		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
-				new ShowFrameWIthContextList(kieSession));
+				new ShowFrameWIthContextList());
 		kieSession.getWorkItemManager().registerWorkItemHandler("RuleFlowGroup",
-				new RuleFlowGroupWorkItemHandler(kieSession));
+				new RuleFlowGroupWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
-				new ThrowSignalProcessWorkItemHandler(kieSession));
+				new ThrowSignalProcessWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(RulesLoader.class, kieSession));
+				new AskQuestionWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
-				new ThrowSignalWorkItemHandler(RulesLoader.class, kieSession));
+				new ThrowSignalWorkItemHandler(RulesLoader.class));
 
 	}
 
 	/* For new implementation */
 	public static void addHandlers(KieSession kieSession) {
 		// Register handlers
-		log.info("Register SendSignal");
+		log.info("Register SendSignal  kiesession");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(RulesLoader.class, kieSession));
+				new SendSignalWorkItemHandler(RulesLoader.class));
+		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
+				new SendSignalWorkItemHandler2(RulesLoader.class));
 
 		
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame(kieSession));
-		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler(kieSession));
+		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame());
+		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
-				new ShowFrameWIthContextList(kieSession));
+				new ShowFrameWIthContextList());
 		kieSession.getWorkItemManager().registerWorkItemHandler("RuleFlowGroup",
-				new RuleFlowGroupWorkItemHandler(kieSession));
+				new RuleFlowGroupWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
-				new ThrowSignalProcessWorkItemHandler(kieSession));
+				new ThrowSignalProcessWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(RulesLoader.class, kieSession));
+				new AskQuestionWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
-				new ThrowSignalWorkItemHandler(RulesLoader.class, kieSession));
+				new ThrowSignalWorkItemHandler(RulesLoader.class));
 
 	}
+	
+	private static  Map<String, WorkItemHandler> getHandlers(RuntimeEngine runtime)
+	 {
+		 Map<String, WorkItemHandler> handlers = new HashMap<String, WorkItemHandler>();
+			log.info("Register SendSignal  kiesession");
+			handlers.put("SendSignal",new SendSignalWorkItemHandler(RulesLoader.class));
+			handlers.put("SendSignal2",
+					new SendSignalWorkItemHandler2(RulesLoader.class));
+
+			
+			handlers.put("Awesome", new AwesomeHandler());
+			handlers.put("Notification", new NotificationWorkItemHandler());
+			handlers.put("ShowAllForms", new ShowAllFormsHandler());
+			handlers.put("ShowFrame", new ShowFrame());
+			handlers.put("Print", new PrintWorkItemHandler());
+			handlers.put("ShowFrameWithContextList",
+					new ShowFrameWIthContextList());
+			handlers.put("RuleFlowGroup",
+					new RuleFlowGroupWorkItemHandler());
+			handlers.put("ThrowSignalProcess",
+					new ThrowSignalProcessWorkItemHandler());
+			handlers.put("AskQuestion",
+					new AskQuestionWorkItemHandler(RulesLoader.class));
+			handlers.put("ThrowSignal",
+					new ThrowSignalWorkItemHandler(RulesLoader.class));
+			return handlers;
+	 }
 
 	/**
 	 * @param rulesDir

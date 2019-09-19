@@ -33,10 +33,8 @@ import life.genny.models.FramePosition;
 
 public class ShowFrame implements WorkItemHandler {
 
-	KieSession kieSession = null;
 
-	public ShowFrame(KieSession kieSession) {
-		this.kieSession = kieSession;
+	public ShowFrame() {
 	}
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -49,7 +47,6 @@ public class ShowFrame implements WorkItemHandler {
 		String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
 
-		ProcessInstance p = this.kieSession.getProcessInstance(workItem.getProcessInstanceId());
 
 		if (userToken == null) {
 			log.error("Must supply userToken!");
@@ -60,7 +57,7 @@ public class ShowFrame implements WorkItemHandler {
 			if (rootFrameCode == null) {
 				log.error("Must supply a root Frame Code!");
 			} else {
-				log.info(p.getProcessName() + ": root Frame Code sent to display  = " + rootFrameCode);
+				log.info(": root Frame Code sent to display  = " + rootFrameCode);
 
 				
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",

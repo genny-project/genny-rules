@@ -28,16 +28,13 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 	
-	KieSession kieSession;
 	RuntimeEngine runtimeEngine;
 
 	
-	public RuleFlowGroupWorkItemHandler(KieSession kieSession) {
-		this.kieSession = kieSession;
+	public RuleFlowGroupWorkItemHandler() {
 	}
 	
-	public RuleFlowGroupWorkItemHandler(KieSession kieSession,RuntimeEngine rteng) {
-		this.kieSession = kieSession;
+	public RuleFlowGroupWorkItemHandler(RuntimeEngine rteng) {
 		this.runtimeEngine = rteng;
 	}
 	

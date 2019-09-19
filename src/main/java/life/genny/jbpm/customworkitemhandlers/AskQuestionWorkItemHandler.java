@@ -46,18 +46,15 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
-	KieSession kieSession;
 	RuntimeEngine runtimeEngine;
 	String wClass;
 	
 
-	public <R> AskQuestionWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession) {
-		this.kieSession = kieSession;
+	public <R> AskQuestionWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
-	public <R> AskQuestionWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession, RuntimeEngine rteng) {
-		this.kieSession = kieSession;
+	public <R> AskQuestionWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng) {
 		this.runtimeEngine = rteng;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}

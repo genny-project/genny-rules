@@ -46,18 +46,15 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
-	KieSession kieSession;
 	RuntimeEngine runtimeEngine;
 	String wClass;
 	
 
-	public <R> SendSignalWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession) {
-		this.kieSession = kieSession;
+	public <R> SendSignalWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
-	public <R> SendSignalWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession, RuntimeEngine rteng) {
-		this.kieSession = kieSession;
+	public <R> SendSignalWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng) {
 		this.runtimeEngine = rteng;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}

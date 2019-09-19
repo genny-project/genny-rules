@@ -1,4 +1,4 @@
-package life.genny.jbpm.customworkitemhandlers;
+
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
@@ -41,20 +41,23 @@ import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
 import life.genny.utils.WorkflowQueryInterface;
 
-public class ThrowSignalWorkItemHandler implements WorkItemHandler {
+public class SendSignalWorkItemHandler implements WorkItemHandler {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
+	KieSession kieSession;
 	RuntimeEngine runtimeEngine;
 	String wClass;
 	
 
-	public <R> ThrowSignalWorkItemHandler(Class<R> workflowQueryInterface) {
+	public <R> SendSignalWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession) {
+		this.kieSession = kieSession;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
-	public <R> ThrowSignalWorkItemHandler(Class<R> workflowQueryInterface,RuntimeEngine rteng) {
+	public <R> SendSignalWorkItemHandler(Class<R> workflowQueryInterface,KieSession kieSession, RuntimeEngine rteng) {
+		this.kieSession = kieSession;
 		this.runtimeEngine = rteng;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
@@ -67,17 +70,13 @@ public class ThrowSignalWorkItemHandler implements WorkItemHandler {
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
 
+		Object payload = (Object) items.get("payloadObject");
 		GennyToken userToken = (GennyToken) items.get("userToken");
 		String signalCode = (String) items.get("signalCode");
-		String eventCode = (String) items.get("eventCode");
-		String eventValue = (String) items.get("eventValue");
 		Long processId = null;
 
-		QEventMessage signalMsg = new QEventMessage("EVT_MSG", eventCode);
-		signalMsg.getData().setValue(eventValue);
-		signalMsg.setToken(userToken.getToken());
 		
-		SessionFacts sessionFacts = new SessionFacts(userToken,userToken,signalMsg);
+		SessionFacts sessionFacts = new SessionFacts(userToken,userToken,payload);
 
 		if (processId == null) {
 			Method m;
@@ -112,8 +111,8 @@ public class ThrowSignalWorkItemHandler implements WorkItemHandler {
 		}
 
 		if (processId != null) {
-			System.out.println("Sending Signal Code  " + signalCode + " : eventCode: "+eventCode +" eventValue: "+eventValue+" to processId " + processId
-					+ " for target user " + userToken.getUserCode());
+			System.out.println("Sending Payload Object  to processId " + processId
+					+ " for target user " + userToken.getUserCode()+" for sessionCode: "+userToken.getSessionCode());
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 

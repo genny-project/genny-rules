@@ -28,16 +28,14 @@ public class ThrowSignalProcessWorkItemHandler implements WorkItemHandler {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 	
-	KieSession kieSession;
+
 	RuntimeEngine runtimeEngine;
 
 	
-	public ThrowSignalProcessWorkItemHandler(KieSession kieSession) {
-		this.kieSession = kieSession;
+	public ThrowSignalProcessWorkItemHandler() {
 	}
 	
-	public ThrowSignalProcessWorkItemHandler(KieSession kieSession,RuntimeEngine rteng) {
-		this.kieSession = kieSession;
+	public ThrowSignalProcessWorkItemHandler(RuntimeEngine rteng) {
 		this.runtimeEngine = rteng;
 	}
 	
