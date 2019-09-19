@@ -77,7 +77,7 @@ public class SendSignalWorkItemHandler2 implements WorkItemHandler {
 		
 		SessionFacts sessionFacts = new SessionFacts(userToken,userToken,payload);
 
-		if (processId == null) {
+         if (processId == null) {
 			Method m;
 			Optional<Long> processIdBysessionId = Optional.empty();
 			try {

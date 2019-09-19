@@ -1043,9 +1043,9 @@ public class RulesLoader {
 	 {
 		 Map<String, WorkItemHandler> handlers = new HashMap<String, WorkItemHandler>();
 			log.info("Register SendSignal  kiesession");
-			handlers.put("SendSignal",new SendSignalWorkItemHandler(RulesLoader.class));
+			handlers.put("SendSignal",new SendSignalWorkItemHandler(RulesLoader.class,runtime));
 			handlers.put("SendSignal2",
-					new SendSignalWorkItemHandler2(RulesLoader.class));
+					new SendSignalWorkItemHandler2(RulesLoader.class,runtime));
 
 			
 			handlers.put("Awesome", new AwesomeHandler());
@@ -1058,11 +1058,11 @@ public class RulesLoader {
 			handlers.put("RuleFlowGroup",
 					new RuleFlowGroupWorkItemHandler());
 			handlers.put("ThrowSignalProcess",
-					new ThrowSignalProcessWorkItemHandler());
+					new ThrowSignalProcessWorkItemHandler(runtime));
 			handlers.put("AskQuestion",
-					new AskQuestionWorkItemHandler(RulesLoader.class));
+					new AskQuestionWorkItemHandler(RulesLoader.class,runtime));
 			handlers.put("ThrowSignal",
-					new ThrowSignalWorkItemHandler(RulesLoader.class));
+					new ThrowSignalWorkItemHandler(RulesLoader.class,runtime));
 			return handlers;
 	 }
 
