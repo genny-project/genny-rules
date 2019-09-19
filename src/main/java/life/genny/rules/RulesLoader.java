@@ -470,9 +470,13 @@ public class RulesLoader {
 					log.info("Closing active runtime Manager Id = " + runtimeManager.getIdentifier());
 					runtimeManager.close();
 				}
-				runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment);
-				// runtimeManager =
-				// RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment);
+				
+				if ("TRUE".equals(System.getenv("USE_SINGLETON"))) {
+					runtimeManager = RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment);
+				} else {
+					
+					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment);
+				}
 			}
 
 			log.info("Put rules KieBase into Custom Cache");
