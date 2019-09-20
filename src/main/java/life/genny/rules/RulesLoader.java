@@ -35,7 +35,6 @@ import org.drools.core.impl.EnvironmentFactory;
 import org.jbpm.executor.ExecutorServiceFactory;
 import org.jbpm.executor.impl.ExecutorImpl;
 import org.jbpm.executor.impl.ExecutorServiceImpl;
-import org.jbpm.executor.impl.wih.AsyncWorkItemHandler;
 import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
@@ -75,7 +74,6 @@ import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.query.QueryContext;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.runtime.manager.context.EmptyContext;
-import org.kie.internal.runtime.manager.context.ProcessInstanceIdContext;
 import org.kie.internal.task.api.UserGroupCallback;
 
 import com.google.common.io.Files;
@@ -100,14 +98,11 @@ import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalWorkItemHandler;
-import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
-import life.genny.models.Theme;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.exception.BadDataException;
-import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
 import life.genny.qwanda.message.QEventLinkChangeMessage;
@@ -122,7 +117,6 @@ import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
-import life.genny.utils.WorkflowQueryInterface;
 
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -561,10 +555,7 @@ public class RulesLoader {
 	public static void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
 
 		int rulesFired = 0;
-		QEventMessage eventMsg = null;
-		QDataMessage dataMsg = null;
 		String msg_code = "";
-		String msg_type = "";
 		GennyToken gToken = facts.getServiceToken();
 		String bridgeSourceAddress = "";
 
@@ -586,7 +577,7 @@ public class RulesLoader {
 			/* Getting KieSession */
 			KieSession kieSession = runtimeEngine.getKieSession();
 
-			log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful");
+			log.debug("Using Runtime engine in Per Request Strategy ::::::: Stateful");
 
 			try {
 
@@ -636,7 +627,6 @@ public class RulesLoader {
 									+ ": " + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
 									+ processId);
 
-							log.info("Getting user clicking Events");
 							kieSession.signalEvent("event", facts, processId);
 						}
 
@@ -665,12 +655,11 @@ public class RulesLoader {
 							((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
 							bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
-							log.info("incoming  message from " + bridgeSourceAddress + ": "
+							log.info("incoming  AUTH_INIT message from " + bridgeSourceAddress + ": "
 									+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
 									+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to NEW SESSION");
 
 							/* sending New Session Signal */
-							log.info("Message is event Authinit");
 							kieSession.signalEvent("newSession", facts);
 
 						} else {

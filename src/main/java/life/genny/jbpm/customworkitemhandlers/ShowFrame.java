@@ -56,7 +56,7 @@ public class ShowFrame implements WorkItemHandler {
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
-
+		callingWorkflow += ":"+workItem.getProcessInstanceId()+": "; 
 
 
 		if (userToken == null) {
@@ -68,7 +68,7 @@ public class ShowFrame implements WorkItemHandler {
 			if (rootFrameCode == null) {
 				log.error(callingWorkflow+": Must supply a root Frame Code!");
 			} else {
-				log.info(callingWorkflow+": root Frame Code sent to display  = " + rootFrameCode);
+			//	log.info(callingWorkflow+": root Frame Code sent to display  = " + rootFrameCode);
 
 				
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
@@ -106,8 +106,8 @@ public class ShowFrame implements WorkItemHandler {
 
 					for (BaseEntity targetFrame : TARGET_FRM_MSG.getItems()) {
 						if (targetFrame.getCode().equals(targetFrameCode)) {
-
-							log.info(callingWorkflow+": ShowFrame : Found Targeted Frame BaseEntity : " + targetFrame);
+//
+//							log.info(callingWorkflow+": ShowFrame : Found Targeted Frame BaseEntity : " + targetFrame);
 
 							/* Adding the links in the targeted BaseEntity */
 							Attribute attribute = new Attribute("LNK_FRAME", "LNK_FRAME", new DataType(String.class));
@@ -115,7 +115,7 @@ public class ShowFrame implements WorkItemHandler {
 							for (BaseEntity sourceFrame : FRM_MSG.getItems()) {
 								if (sourceFrame.getCode().equals(rootFrameCode)) {
 
-									log.info(callingWorkflow+": ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
+								//	log.info(callingWorkflow+": ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
 									EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute,
 											1.0, "CENTRE");
 									Set<EntityEntity> entEntList = targetFrame.getLinks();
@@ -131,6 +131,8 @@ public class ShowFrame implements WorkItemHandler {
 							break;
 						}
 					}
+
+					log.info(callingWorkflow+": ShowFrame : " + rootFrameCode+":"+targetFrameCode);
 
 					FRM_MSG.setToken(userToken.getToken());
 
