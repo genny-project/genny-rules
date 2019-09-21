@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
@@ -69,6 +70,11 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 
 		GennyToken userToken = (GennyToken) items.get("userToken");
 		String questionCode = (String) items.get("questionCode");
+		String callingWorkflow = (String)items.get("callingWorkflow");
+		if (StringUtils.isBlank(callingWorkflow)) {
+			callingWorkflow = "";
+		}
+
 		Long processId = null;
 
 		QEventMessage questionMsg = new QEventMessage("EVT_MSG", "ASK");
@@ -102,7 +108,6 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			//Optional<Long> processIdBysessionId = w.getProcessIdBysessionId(userToken.getSessionCode());
 			boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
 			if (hasProcessIdBySessionId) {
 				processId = processIdBysessionId.get();
@@ -110,7 +115,7 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 		}
 
 		if (processId != null) {
-			System.out.println("Sending Question Code  " + questionCode + " to processId " + processId
+			System.out.println(callingWorkflow+" Sending Question Code  " + questionCode + " to processId " + processId
 					+ " for target user " + userToken.getUserCode());
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
@@ -122,14 +127,12 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 				newKieSession = (StatefulKnowledgeSession) this.runtimeEngine.getKieSession();
 
 				newKieSession.signalEvent("internalSignal", sessionFacts, processId);
-//				newKieSession.signalEvent("internalSignal", questionMsg, processId);
 			} else {
 
 				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
 
 				newKieSession.signalEvent("internalSignal", sessionFacts, processId);
-//				newKieSession.signalEvent("internalSignal", questionMsg, processId);
 
 				newKieSession.dispose();
 
