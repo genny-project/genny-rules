@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
@@ -71,6 +72,11 @@ public class ThrowSignalWorkItemHandler implements WorkItemHandler {
 		String signalCode = (String) items.get("signalCode");
 		String eventCode = (String) items.get("eventCode");
 		String eventValue = (String) items.get("eventValue");
+		String callingWorkflow = (String)items.get("callingWorkflow");
+		if (StringUtils.isBlank(callingWorkflow)) {
+			callingWorkflow = "";
+		}
+
 		Long processId = null;
 
 		QEventMessage signalMsg = new QEventMessage("EVT_MSG", eventCode);
@@ -112,7 +118,7 @@ public class ThrowSignalWorkItemHandler implements WorkItemHandler {
 		}
 
 		if (processId != null) {
-			log.info("Sending Signal Code  " + signalCode + " : eventCode: "+eventCode +" eventValue: "+eventValue+" to processId " + processId
+			log.info(callingWorkflow+" Sending Signal Code  " + signalCode + " : eventCode: "+eventCode +" eventValue: "+eventValue+" to processId " + processId
 					+ " for target user " + userToken.getUserCode());
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
