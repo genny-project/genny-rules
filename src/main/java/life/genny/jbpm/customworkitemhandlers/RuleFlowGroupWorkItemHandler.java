@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.kie.api.KieBase;
 import org.kie.api.KieServices;
@@ -52,6 +53,12 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
     GennyToken serviceToken = (GennyToken) items.get("serviceToken");
     
     String ruleFlowGroup= (String) items.get("ruleFlowGroup");
+    
+	String callingWorkflow = (String)items.get("callingWorkflow");
+	if (StringUtils.isBlank(callingWorkflow)) {
+		callingWorkflow = "";
+	}
+
 
     if (serviceToken == null) {
     	log.error("Must supply serviceToken!");
@@ -61,7 +68,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
     
     //	log.info("serviceToken = "+serviceToken.getCode());
     //	log.info("Running rule flow group "+ruleFlowGroup);
-    	System.out.println("Running rule flow group "+ruleFlowGroup);
+    	System.out.println(callingWorkflow+":pid"+workItem.getProcessInstanceId()+" Running rule flow group "+ruleFlowGroup);
     	 
     //	System.out.println("ProcessInstanceId = "+workItem.getProcessInstanceId());
 		KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
