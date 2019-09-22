@@ -796,12 +796,12 @@ public class RulesLoader {
 				} else {
 					log.info("Invalid Events coming in");
 				}
-				rulesFired = kieSession.fireAllRules();
+			//	rulesFired = kieSession.fireAllRules();
 			} catch (final Throwable t) {
 				log.error(t.getLocalizedMessage());
 				;
 			} finally {
-				log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
+				log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken+":"+gToken.getSessionCode());
 				// commit
 
 				tx.commit();
@@ -976,7 +976,7 @@ public class RulesLoader {
 	/* For old implementation */
 	public static void addHandlers(StatefulKnowledgeSession kieSession) {
 		// Register handlers
-		log.info("Register SendSignal stateful version");
+	//	log.info("Register SendSignal stateful version");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
 				new SendSignalWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
@@ -1003,7 +1003,7 @@ public class RulesLoader {
 	/* For new implementation */
 	public static void addHandlers(KieSession kieSession) {
 		// Register handlers
-		log.info("Register SendSignal  kiesession");
+	//	log.info("Register SendSignal  kiesession");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
 				new SendSignalWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
@@ -1031,7 +1031,7 @@ public class RulesLoader {
 	private static  Map<String, WorkItemHandler> getHandlers(RuntimeEngine runtime)
 	 {
 		 Map<String, WorkItemHandler> handlers = new HashMap<String, WorkItemHandler>();
-			log.info("Register SendSignal  kiesession");
+		//	log.info("Register SendSignal  kiesession");
 			handlers.put("SendSignal",new SendSignalWorkItemHandler(RulesLoader.class,runtime));
 			handlers.put("SendSignal2",
 					new SendSignalWorkItemHandler2(RulesLoader.class,runtime));
