@@ -12,31 +12,29 @@ public class OutputParamTreeSet implements Serializable {
 	private static final long serialVersionUID = 1L;
 	TreeSet<OutputParam> tree;
 	OutputParam last = null;
-	
-	public OutputParamTreeSet()
-	{
+
+	public OutputParamTreeSet() {
 		tree = new TreeSet<OutputParam>();
-		OutputParam root = new OutputParam("FRM_ROOT",null);
+		OutputParam root = new OutputParam();
+		root.setFormCode("FRM_APP", "FRM_ROOT");
 		root.setLevel(0);
 		tree.add(root);
 	}
 
-	public OutputParamTreeSet(final String rootFrameCode)
-	{
+	public OutputParamTreeSet(final String rootFrameCode) {
 		tree = new TreeSet<OutputParam>();
-		OutputParam root = new OutputParam(rootFrameCode,"FRM_ROOT");
+		OutputParam root = new OutputParam();
+		root.setFormCode(rootFrameCode, "FRM_ROOT");
 		root.setLevel(0);
 		tree.add(root);
 	}
-	
+
 	/**
 	 * @return the tree
 	 */
 	public TreeSet<OutputParam> getTree() {
 		return tree;
 	}
-
-
 
 	/**
 	 * @param tree the tree to set
@@ -45,8 +43,6 @@ public class OutputParamTreeSet implements Serializable {
 		this.tree = tree;
 	}
 
-
-
 	/**
 	 * @return the last
 	 */
@@ -54,16 +50,17 @@ public class OutputParamTreeSet implements Serializable {
 		return last;
 	}
 
-
-
-	public void add(OutputParam outputParam)
-	{
+	public void add(OutputParam outputParam) {
 		// Consolidate output Params so that redundant replaced frames are replaced
 		// find the targetCode
-		OutputParam target = tree.ceiling(outputParam);
-		Integer level = target.getLevel();
-		outputParam.setLevel(level+1); 
-		this.tree.add(outputParam);
-		last = outputParam;
+		if (outputParam != null) {
+			if (outputParam.getResultCode().equals(outputParam.getTargetCode())) {
+				OutputParam target = tree.ceiling(outputParam);
+				Integer level = target.getLevel();
+				outputParam.setLevel(level + 1);
+				this.tree.add(outputParam);
+				last = outputParam;
+			}
+		}
 	}
 }

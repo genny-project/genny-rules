@@ -118,7 +118,7 @@ public class OutputParam implements Serializable,Comparable {
 
 	@Override
 	public String toString() {
-		return "OutputParam [typeOfResult=" + typeOfResult + ", resultCode=" + resultCode + ":"+level+"]";
+		return "OutputParam [typeOfResult=" + typeOfResult + ", resultCode=" + resultCode + ":target="+this.getTargetCode()+": lvl="+level+"]";
 	}
 
 	@Override
