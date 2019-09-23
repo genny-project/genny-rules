@@ -96,6 +96,7 @@ import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler2;
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
+import life.genny.jbpm.customworkitemhandlers.ShowFrames;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalWorkItemHandler;
 import life.genny.models.GennyToken;
@@ -986,6 +987,7 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame());
+		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrames", new ShowFrames());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
 				new ShowFrameWIthContextList());
@@ -1014,6 +1016,7 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame());
+		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrames", new ShowFrames());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
 				new ShowFrameWIthContextList());
@@ -1041,6 +1044,7 @@ public class RulesLoader {
 			handlers.put("Notification", new NotificationWorkItemHandler());
 			handlers.put("ShowAllForms", new ShowAllFormsHandler());
 			handlers.put("ShowFrame", new ShowFrame());
+			handlers.put("ShowFrames", new ShowFrames());
 			handlers.put("Print", new PrintWorkItemHandler());
 			handlers.put("ShowFrameWithContextList",
 					new ShowFrameWIthContextList());
