@@ -54,7 +54,7 @@ public class OutputParamTreeSet implements Serializable {
 		// Consolidate output Params so that redundant replaced frames are replaced
 		// find the targetCode
 		if (outputParam != null) {
-			if (outputParam.getResultCode().equals(outputParam.getTargetCode())) {
+			if (!outputParam.getResultCode().equals(outputParam.getTargetCode())) {
 				OutputParam target = tree.ceiling(outputParam);
 				Integer level = target.getLevel();
 				outputParam.setLevel(level + 1);
