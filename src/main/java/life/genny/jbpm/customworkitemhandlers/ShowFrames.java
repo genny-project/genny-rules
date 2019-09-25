@@ -71,7 +71,7 @@ public class ShowFrames implements WorkItemHandler {
 			} else {
 			//	log.info(callingWorkflow+": root Frame Code sent to display  = " + rootFrameCode);
 
-				for (OutputParam outputParam : dom.getTree()) {
+				for (OutputParam outputParam : dom.getTree2()) {
 				
 				String rootFrameCode = outputParam.getResultCode();
 				String targetFrameCode = outputParam.getTargetCode();

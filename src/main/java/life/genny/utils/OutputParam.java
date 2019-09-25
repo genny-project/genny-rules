@@ -121,10 +121,18 @@ public class OutputParam implements Serializable,Comparable {
 		return "OutputParam [typeOfResult=" + typeOfResult + ", resultCode=" + resultCode + ":target="+this.getTargetCode()+": lvl="+level+"]";
 	}
 
+
+
+
+
+
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + ((level == null) ? 0 : level.hashCode());
+		result = prime * result + ((resultCode == null) ? 0 : resultCode.hashCode());
 		result = prime * result + ((targetCode == null) ? 0 : targetCode.hashCode());
 		result = prime * result + ((typeOfResult == null) ? 0 : typeOfResult.hashCode());
 		return result;
@@ -139,6 +147,16 @@ public class OutputParam implements Serializable,Comparable {
 		if (getClass() != obj.getClass())
 			return false;
 		OutputParam other = (OutputParam) obj;
+		if (level == null) {
+			if (other.level != null)
+				return false;
+		} else if (!level.equals(other.level))
+			return false;
+		if (resultCode == null) {
+			if (other.resultCode != null)
+				return false;
+		} else if (!resultCode.equals(other.resultCode))
+			return false;
 		if (targetCode == null) {
 			if (other.targetCode != null)
 				return false;
@@ -154,15 +172,30 @@ public class OutputParam implements Serializable,Comparable {
 
 	@Override
 	public int compareTo(Object o) {
-		if (o == null) {
+		if (this == o)
 			return 0;
-		}
-		if (o instanceof OutputParam) {
-		return (this.level.compareTo(((OutputParam)o).getLevel()));
+		if (o == null)
+			return -1;
+		if (getClass() != o.getClass())
+			return -1;
+		OutputParam other = (OutputParam) o;
+		// TODO Auto-generated method stub
+		if (this.resultCode.compareTo(other.getResultCode())==0) {
+			if (this.targetCode.compareTo(other.getTargetCode())==0) {
+				if (this.level.compareTo(other.getLevel())==0) {
+					return 0;
+				} else {
+					return this.level.compareTo(other.getLevel());
+				}
+			} else {
+				return this.targetCode.compareTo(other.getTargetCode());
+			}
 		} else {
-			return 0;
+			return this.resultCode.compareTo(other.getResultCode());
 		}
 	}
+
+
 	 
 	
 }

@@ -217,10 +217,20 @@ public class TableUtils {
 							Frame3.class, serviceToken.getToken());
 					
 					FrameUtils2.toMessage2(frame, serviceToken);
+					askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
+							"FRM_TABLE_CONTENT_ASKS", String.class, beUtils.getGennyToken().getToken());
 				}
 				
 				Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
-				QDataAskMessage[] askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
+				QDataAskMessage[] askMsg2Array = null;
+				
+				
+				try {
+					askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
 
 				List<BaseEntity> rowList = Arrays.asList(msg.getItems());
