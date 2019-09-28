@@ -84,6 +84,11 @@ public class ShowFrames implements WorkItemHandler {
 					Frame3 frame = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode,
 							Frame3.class, userToken.getToken());
 					
+					if (frame == null) {
+						log.error("FRAME IS NOT IN CACHE  - "+rootFrameCode);
+						continue;
+					}
+					
 					FrameUtils2.toMessage2(frame, userToken);
 					FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
 							QDataBaseEntityMessage.class, userToken.getToken());
