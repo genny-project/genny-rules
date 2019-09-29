@@ -416,7 +416,7 @@ public class RulesLoader {
 
 				if (!"FALSE".equalsIgnoreCase(System.getenv("USE_EXECUTOR"))) {  // default to true if no system env set
 					log.info("USING EXECUTOR!");
-					if ("TRUE".equalsIgnoreCase(System.getenv("USE_JMS"))) {
+					if (!"FALSE".equalsIgnoreCase(System.getenv("USE_JMS"))) {
 						log.info("USING JMS!");
 						System.setProperty("org.kie.executor.jms", "true");
 					} else {
