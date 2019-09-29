@@ -393,6 +393,12 @@ public class RulesLoader {
 				}
 			}
 
+			if (rulesChanged) {
+				log.info("Theme and Frame Rules CHANGED. RUNNING init frames...");
+			} else {
+				log.info("Theme and Frame Rules DID NOT CHANGE. NOT RUNNING init frames...");
+			}
+			
 			final KieBuilder kieBuilder = ks.newKieBuilder(kfs).buildAll();
 			if (kieBuilder.getResults().hasMessages(Message.Level.ERROR)) {
 				log.info(kieBuilder.getResults().toString());
@@ -409,13 +415,16 @@ public class RulesLoader {
 				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
 
 				if (!"FALSE".equalsIgnoreCase(System.getenv("USE_EXECUTOR"))) {  // default to true if no system env set
+					log.info("USING EXECUTOR!");
 					if ("TRUE".equalsIgnoreCase(System.getenv("USE_JMS"))) {
+						log.info("USING JMS!");
 						System.setProperty("org.kie.executor.jms", "true");
 					} else {
+						log.info("NOT USING JMS!");
 						System.setProperty("org.kie.executor.jms", "false");
 					}
-					String executorQueueName = "KIE.SERVER.EXECUTOR";
-					// String executorQueueName = "queue/KIE.SERVER.EXECUTOR";
+					//String executorQueueName = "KIE.SERVER.EXECUTOR";
+					 String executorQueueName = "queue/KIE.SERVER.EXECUTOR";
 					// build executor service
 					executorService = ExecutorServiceFactory.newExecutorService(emf);
 					executorService.setInterval(3);
@@ -455,6 +464,7 @@ public class RulesLoader {
 							
 							.get();
 				} else {
+					log.info("NOT USING EXECUTOR!");
 					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf).get();
 				}
 
@@ -1244,7 +1254,7 @@ public class RulesLoader {
 
 		// get existing rule from cache
 
-		BaseEntity existingRuleBe = null; //VertxUtils.readFromDDT(realm, ruleCode, true, realmTokenMap.get(realm));
+		BaseEntity existingRuleBe = VertxUtils.readFromDDT(realm, ruleCode, true, realmTokenMap.get(realm));
 		Integer existingHashCode = 0;
 		if (existingRuleBe != null) {
 			existingHashCode = existingRuleBe.getValue("PRI_HASHCODE", -1);
@@ -1261,7 +1271,7 @@ public class RulesLoader {
 			if ("FRM_QUE_GRP_PLACED_GRP".contentEquals(ruleCode)) {
 				log.info("got to here:");
 			}
-			//existingRuleBe = beUtils.create(ruleCode, rule.getName());
+			existingRuleBe = beUtils.create(ruleCode, rule.getName());
 		}
 
 		if ((!hashcode.equals(existingHashCode))&&(existingRuleBe != null)) {
@@ -1271,7 +1281,7 @@ public class RulesLoader {
 			// If any rules do not match then set the rulesChanged flag
 			// but only for theme and frame rules
 			if (filename.startsWith("THM_") || filename.startsWith("FRM_")) {
-				// rulesChanged = true;
+				 rulesChanged = true;
 			}
 
 			// create the rule Baseentity
@@ -1307,15 +1317,15 @@ public class RulesLoader {
 				log.error("Bad data");
 			}
 
-			// beUtils.saveBaseEntityAttributes(existingRuleBe);
+			beUtils.saveBaseEntityAttributes(existingRuleBe);
 			// now if the rule is a theme or frame rule then clear the cache of the output
 			// of those rules, the MSG and ASK
 			// the logic is that a rule can skip loading and generating the cached item if
 			// it already has a cached item
-//			if (existingRuleBe.getCode().startsWith("RUL_THM_")||existingRuleBe.getCode().startsWith("RUL_FRM_")||existingRuleBe.getCode().startsWith("SBE_")) {
-//				VertxUtils.writeCachedJson(realm, existingRuleBe.getCode(),null,realmTokenMap.get(realm));
-//				
-//			}
+			if (existingRuleBe.getCode().startsWith("RUL_THM_")||existingRuleBe.getCode().startsWith("RUL_FRM_")||existingRuleBe.getCode().startsWith("SBE_")) {
+				VertxUtils.writeCachedJson(realm, existingRuleBe.getCode(),null,realmTokenMap.get(realm));
+				
+			}
 			ret = true;
 		}
 		return ret;
