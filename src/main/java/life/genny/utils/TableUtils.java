@@ -1,6 +1,5 @@
 package life.genny.utils;
 
-
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -48,8 +47,6 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.utils.ContextUtils;
 
-
-
 public class TableUtils {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -64,10 +61,41 @@ public class TableUtils {
 		this.beUtils = beUtils;
 	}
 
-	public static void performSearch(GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode,
+	public static void performSearch2(GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode,
 			Answer answer) {
 		TableUtils tableUtils = new TableUtils(beUtils);
 
+		SearchEntity searchBE = processSearchString(answer, searchBarCode, serviceToken, beUtils);
+		
+		// Send out Search Results
+		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
+
+
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+
+		Map<String, String> columns = tableUtils.getTableColumns(searchBE);
+
+		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
+
+		/*
+		 * Display the table header
+		 */
+
+		QDataAskMessage headerAskMsg = showTableHeader(tableUtils, searchBE, columns, beUtils, askMsgs, msg);
+
+		showTableContent(serviceToken, beUtils, searchBE, msg, columns, askMsgs, headerAskMsg);
+
+		showTableFooter(beUtils, searchBE);
+
+		/* publishing the searchBE to frontEnd */
+		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
+		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
+
+	}
+
+	private static SearchEntity processSearchString(Answer answer, final String searchBarCode, GennyToken serviceToken, BaseEntityUtils beUtils)
+	{
 		/* Perform a search bar search */
 		String searchBarString = null;
 		if (answer != null) {
@@ -76,32 +104,30 @@ public class TableUtils {
 			searchBarString = searchBarString.trim();
 			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
 			Integer max = searchBarString.length();
-			Integer realMax = (max > MAX_SEARCH_BAR_TEXT_SIZE)?MAX_SEARCH_BAR_TEXT_SIZE:max;
-			searchBarString.substring(0,  realMax); 
+			Integer realMax = (max > MAX_SEARCH_BAR_TEXT_SIZE) ? MAX_SEARCH_BAR_TEXT_SIZE : max;
+			searchBarString.substring(0, realMax);
 			log.info("Search text = [" + searchBarString + "]");
 		}
-		
+
 		/* Get the SearchBE */
 		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
 		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
 				serviceToken.getToken());
-				
-				
+
 		if (searchBE == null) {
 			searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", searchBarCode, SearchEntity.class,
-			serviceToken.getToken());
-			
-			
-			/* we need to set the searchBe's  code to session Search Code */
+					serviceToken.getToken());
+
+			/* we need to set the searchBe's code to session Search Code */
 			searchBE.setCode(sessionSearchCode);
-			
+
 			/*
-			* Save Session Search in cache , ideally this should be in OutputParam and
-			* saved to workflow
-			*/
+			 * Save Session Search in cache , ideally this should be in OutputParam and
+			 * saved to workflow
+			 */
 			VertxUtils.putObject(serviceToken.getRealm(), "", sessionSearchCode, searchBE, serviceToken.getToken());
 		}
-				
+
 		log.info("search code coming from searchBE getCode  :: " + searchBE.getCode());
 
 		/* fetch Session SearchBar List from User */
@@ -117,83 +143,76 @@ public class TableUtils {
 		/* Add new SearchBarString to Session SearchBar List */
 		/* look for existing search term and bring to front - slow */
 		if (answer != null) { // no need to set history if no data sent
-		int index = searchHistory.indexOf(searchBarString);
-		if (index >= 0) {
-			searchHistory.remove(index);
-		}
-		searchHistory.add(0, searchBarString);
-		if (searchHistory.size() > MAX_SEARCH_HISTORY_SIZE) {
-			searchHistory.remove(MAX_SEARCH_HISTORY_SIZE);
-		}
-		String newHistoryString = JsonUtils.toJson(searchHistory);
-		Answer history = new Answer(beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode(),
-				"PRI_SEARCH_HISTORY", newHistoryString);
-		beUtils.saveAnswer(history);
-		log.info("Search History for "+beUtils.getGennyToken().getUserCode()+" = "+searchHistory.toString());
+			int index = searchHistory.indexOf(searchBarString);
+			if (index >= 0) {
+				searchHistory.remove(index);
+			}
+			searchHistory.add(0, searchBarString);
+			if (searchHistory.size() > MAX_SEARCH_HISTORY_SIZE) {
+				searchHistory.remove(MAX_SEARCH_HISTORY_SIZE);
+			}
+			String newHistoryString = JsonUtils.toJson(searchHistory);
+			Answer history = new Answer(beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode(),
+					"PRI_SEARCH_HISTORY", newHistoryString);
+			beUtils.saveAnswer(history);
+			log.info("Search History for " + beUtils.getGennyToken().getUserCode() + " = " + searchHistory.toString());
 		} else {
 			// so grab the latest search history
 			if (!searchHistory.isEmpty()) {
-			searchBarString = searchHistory.get(0);
+				searchBarString = searchHistory.get(0);
 			} else {
 				searchBarString = ""; // fetch everything
 			}
 		}
-
-
-			searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
-
-		// Send out Search Results
-
-		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
-
-		/* get the total count of the results */
-		long totalResults = msg.getTotal();
+		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
 		
-		int pageNumber = 1;
+		return searchBE;
+	}
+	
+	/**
+	 * @param beUtils
+	 * @param searchBE
+	 */
+	private static void showTableFooter(BaseEntityUtils beUtils, SearchEntity searchBE) {
+		/* need to send the footer question again here */
+		Attribute totalAttribute = new Attribute("PRI_TOTAL_RESULTS", "link", new DataType(String.class));
+		Attribute indexAttribute = new Attribute("PRI_INDEX", "link", new DataType(String.class));
 
-		/* print the total  */
-		log.info("total count is  :: " + totalResults + "");
-		log.info("page number is  :: " + pageNumber + "");
+		/* create total count ask */
+		Question totalQuestion = new Question("QUE_TABLE_TOTAL_RESULT_COUNT", "Total Results", totalAttribute, true);
 
-		Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(),searchBE.getCode(),
-				"PRI_TOTAL_RESULTS", totalResults+"");
-		
-		Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(),searchBE.getCode(),
-				"PRI_INDEX", pageNumber+"");
+		Ask totalAsk = new Ask(totalQuestion, beUtils.getGennyToken().getUserCode(), searchBE.getCode());
 
-		beUtils.addAnswer(totalAnswer);
-		beUtils.addAnswer(pageNumberAnswer);
+		/* create index ask */
+		Question indexQuestion = new Question("QUE_TABLE_PAGE_INDEX", "Page Number", indexAttribute, true);
 
-		beUtils.updateBaseEntity(searchBE, totalAnswer);
-		beUtils.updateBaseEntity(searchBE, pageNumberAnswer);
+		Ask indexAsk = new Ask(indexQuestion, beUtils.getGennyToken().getUserCode(), searchBE.getCode());
 
+		/* collect the asks to bbe sent ouy */
+		Set<QDataAskMessage> footerAskMsgs = new HashSet<QDataAskMessage>();
+		footerAskMsgs.add(new QDataAskMessage(totalAsk));
+		footerAskMsgs.add(new QDataAskMessage(indexAsk));
 
-		Map<String, String> columns = tableUtils.getTableColumns(searchBE);
+		/* publish the new asks with searchBe set as targetCode */
+		for (QDataAskMessage footerAskMsg : footerAskMsgs) {
+			footerAskMsg.setToken(beUtils.getGennyToken().getToken());
+			footerAskMsg.setReplace(true);
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(footerAskMsg));
+		}
+	}
 
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-
-		// Now Send out Table Header Ask and Question
-		TableData tableData = tableUtils.generateTableAsks(searchBE, beUtils.getGennyToken(), msg);
-		Ask headerAsk = tableData.getAsk();
-		Ask[] askArray = new Ask[1];
-		askArray[0] = headerAsk;
-		QDataAskMessage headerAskMsg = new QDataAskMessage(askArray);
-		headerAskMsg.setToken(beUtils.getGennyToken().getToken());
-		headerAskMsg.setReplace(true);
-		// VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
-
-		// create virtual context
-
-		// Now link the FRM_TABLE_HEADER to that new Question
-		String headerAskCode = headerAsk.getQuestionCode();
-		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
-		QDataBaseEntityMessage msg2 = null;
-		msg2 = TableUtils.changeQuestion(searchBE, "FRM_TABLE_HEADER", headerAskCode, serviceToken,
-				beUtils.getGennyToken(), askMsgs);
-		msg2.setToken(beUtils.getGennyToken().getToken());
-		msg2.setReplace(true);
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg2));
-
+	/**
+	 * @param serviceToken
+	 * @param beUtils
+	 * @param searchBE
+	 * @param msg
+	 * @param columns
+	 * @param askMsgs
+	 * @param headerAskMsg
+	 */
+	private static void showTableContent(GennyToken serviceToken, BaseEntityUtils beUtils, SearchEntity searchBE,
+			QDataBaseEntityMessage msg, Map<String, String> columns, Set<QDataAskMessage> askMsgs,
+			QDataAskMessage headerAskMsg) {
 		QDataAskMessage[] askMsgArr = askMsgs.toArray(new QDataAskMessage[0]);
 		if (askMsgArr.length > 0) {
 			if (askMsgArr[0].getItems().length > 0) {
@@ -213,18 +232,17 @@ public class TableUtils {
 						"FRM_TABLE_CONTENT_ASKS", String.class, beUtils.getGennyToken().getToken());
 
 				if (askMsgs2Str == null) {
-					Frame3 frame = VertxUtils.getObject(serviceToken.getRealm(), "", "FRM_TABLE_CONTENT",
-							Frame3.class, serviceToken.getToken());
-					
+					Frame3 frame = VertxUtils.getObject(serviceToken.getRealm(), "", "FRM_TABLE_CONTENT", Frame3.class,
+							serviceToken.getToken());
+
 					FrameUtils2.toMessage2(frame, serviceToken);
-					askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
-							"FRM_TABLE_CONTENT_ASKS", String.class, beUtils.getGennyToken().getToken());
+					askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "FRM_TABLE_CONTENT_ASKS",
+							String.class, beUtils.getGennyToken().getToken());
 				}
-				
+
 				Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 				QDataAskMessage[] askMsg2Array = null;
-				
-				
+
 				try {
 					askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
 				} catch (Exception e) {
@@ -245,24 +263,24 @@ public class TableUtils {
 				/* Link row asks to a single ask: QUE_TEST_TABLE_RESULTS_GRP */
 				Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 				Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group",
-				questionAttribute, true);
+						questionAttribute, true);
 				Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
-				beUtils.getGennyToken().getUserCode());
+						beUtils.getGennyToken().getUserCode());
 				tableResultAsk.setChildAsks(rowAsksArr);
 				tableResultAsk.setContextList(rowsContextList);
 				Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
-				
+
 				tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
-				
+
 				/* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
 				String tableResultAskCode = tableResultAsk.getQuestionCode();
-				
+
 				QDataBaseEntityMessage msg3 = null;
 				msg3 = TableUtils.changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAskCode, serviceToken,
-				beUtils.getGennyToken(), tableResultAskMsgs);
+						beUtils.getGennyToken(), tableResultAskMsgs);
 				msg3.setToken(beUtils.getGennyToken().getToken());
 				msg3.setReplace(true);
-				
+
 				for (QDataAskMessage askMsg : tableResultAskMsgs) {
 					askMsg.setToken(beUtils.getGennyToken().getToken());
 					// askMsg.getItems()[0] = headerAsk;
@@ -273,43 +291,37 @@ public class TableUtils {
 
 			}
 		}
+	}
 
-		/* need to send the footer question again here  */
-		Attribute totalAttribute = new Attribute("PRI_TOTAL_RESULTS", "link", new DataType(String.class));
-		Attribute indexAttribute = new Attribute("PRI_INDEX", "link", new DataType(String.class));
+	private static QDataAskMessage showTableHeader(TableUtils tableUtils, SearchEntity searchBE,
+			Map<String, String> columns, BaseEntityUtils beUtils, Set<QDataAskMessage> askMsgs,
+			QDataBaseEntityMessage msg) {
 
-		/* create total count ask */
-		Question totalQuestion = new Question("QUE_TABLE_TOTAL_RESULT_COUNT", "Total Results",
-		totalAttribute, true);
+		// Now Send out Table Header Ask and Question
+		TableData tableData = tableUtils.generateTableAsks(searchBE, beUtils.getGennyToken(), msg);
+		Ask headerAsk = tableData.getAsk();
+		Ask[] askArray = new Ask[1];
+		askArray[0] = headerAsk;
+		QDataAskMessage headerAskMsg = new QDataAskMessage(askArray);
+		headerAskMsg.setToken(beUtils.getGennyToken().getToken());
+		headerAskMsg.setReplace(true);
+		// VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
 
-		Ask totalAsk = new Ask(totalQuestion, beUtils.getGennyToken().getUserCode(),
-		searchBE.getCode());
-	
-		/* create index ask */
-		Question indexQuestion = new Question("QUE_TABLE_PAGE_INDEX", "Page Number",
-		indexAttribute, true);
+		// create virtual context
 
-		Ask indexAsk = new Ask(indexQuestion, beUtils.getGennyToken().getUserCode(),
-		searchBE.getCode());
+		// Now link the FRM_TABLE_HEADER to that new Question
+		String headerAskCode = headerAsk.getQuestionCode();
 
-		/* collect the asks to bbe sent ouy */
-		Set<QDataAskMessage> footerAskMsgs = new HashSet<QDataAskMessage>();
-		footerAskMsgs.add(new QDataAskMessage(totalAsk));
-		footerAskMsgs.add(new QDataAskMessage(indexAsk));
+		QDataBaseEntityMessage msg2 = null;
+		msg2 = TableUtils.changeQuestion(searchBE, "FRM_TABLE_HEADER", headerAskCode, beUtils.getGennyToken(), // could
+																												// use
+																												// serviceToken
+				beUtils.getGennyToken(), askMsgs);
+		msg2.setToken(beUtils.getGennyToken().getToken());
+		msg2.setReplace(true);
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg2));
 
-		/* publish the new asks with searchBe set as targetCode */
-		for (QDataAskMessage footerAskMsg : footerAskMsgs) {
-			footerAskMsg.setToken(beUtils.getGennyToken().getToken());
-			footerAskMsg.setReplace(true);
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(footerAskMsg));
-		}
-
-		/* publishing the searchBE to frontEnd */
-		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
-		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
-
-
+		return headerAskMsg;
 	}
 
 	public TableData generateTableAsks(SearchEntity searchBe, GennyToken gennyToken, QDataBaseEntityMessage msg) {
@@ -383,39 +395,56 @@ public class TableUtils {
 //			tests.add(createTestPerson(gennyToken, "The Phantom Ranger", "phantom@rangers.com"));
 			Integer pageStart = searchBE.getValue("SCH_PAGE_START", 0);
 			Integer pageSize = searchBE.getValue("SCH_PAGE_SIZE", 10);
-			
-			List<BaseEntity> tests = new ArrayList<>();
-			
-			
-			
-			tests.add(createTestCompany(gennyToken, "Melbourne University", "0398745321","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Monash University", "0398744421","support@melbuni.edu.au","CLAYTON","Victoria","3142"));
-			tests.add(createTestCompany(gennyToken, "Latrobe University", "0398733321","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "University Of Warracknabeal", "0392225321","support@melbuni.edu.au","WARRACKNABEAL","Victoria","3993"));
-			tests.add(createTestCompany(gennyToken, "Ashburton University", "0398741111","support@melbuni.edu.au","ASHBURTON","Victoria","3147"));
-			tests.add(createTestCompany(gennyToken, "Outcome Academy", "0398745777","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Holland University", "0298555521","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "University of Greenvale", "0899995321","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Crow University", "0398749999","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "RMIT University", "0398748787","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Mt Buller University", "0398836421","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Australian National University", "0198876541","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Dodgy University", "0390000001","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Australian Catholic University", "0398711121","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Australian Jedi University", "0798788881","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Brisbane Lions University", "0401020319","support@melbuni.edu.au","BRISBANE","Queensland","4000"));
-			tests.add(createTestCompany(gennyToken, "AFL University", "0390000001","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Uluru University", "0398711441","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "University Of Hard Knocks", "0798744881","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
-			tests.add(createTestCompany(gennyToken, "Scam University", "0705020319","support@melbuni.edu.au","MELBOURNE","Victoria","3001"));
 
-			for (Integer pageIndex = pageStart;pageIndex < (pageStart+pageSize);pageIndex++) {
+			List<BaseEntity> tests = new ArrayList<>();
+
+			tests.add(createTestCompany(gennyToken, "Melbourne University", "0398745321", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Monash University", "0398744421", "support@melbuni.edu.au",
+					"CLAYTON", "Victoria", "3142"));
+			tests.add(createTestCompany(gennyToken, "Latrobe University", "0398733321", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "University Of Warracknabeal", "0392225321",
+					"support@melbuni.edu.au", "WARRACKNABEAL", "Victoria", "3993"));
+			tests.add(createTestCompany(gennyToken, "Ashburton University", "0398741111", "support@melbuni.edu.au",
+					"ASHBURTON", "Victoria", "3147"));
+			tests.add(createTestCompany(gennyToken, "Outcome Academy", "0398745777", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Holland University", "0298555521", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "University of Greenvale", "0899995321", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Crow University", "0398749999", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "RMIT University", "0398748787", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Mt Buller University", "0398836421", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Australian National University", "0198876541",
+					"support@melbuni.edu.au", "MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Dodgy University", "0390000001", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Australian Catholic University", "0398711121",
+					"support@melbuni.edu.au", "MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Australian Jedi University", "0798788881",
+					"support@melbuni.edu.au", "MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Brisbane Lions University", "0401020319", "support@melbuni.edu.au",
+					"BRISBANE", "Queensland", "4000"));
+			tests.add(createTestCompany(gennyToken, "AFL University", "0390000001", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Uluru University", "0398711441", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "University Of Hard Knocks", "0798744881", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany(gennyToken, "Scam University", "0705020319", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+
+			for (Integer pageIndex = pageStart; pageIndex < (pageStart + pageSize); pageIndex++) {
 				if (pageIndex < tests.size()) {
 					results.add(tests.get(pageIndex));
 				}
 			}
-			
-			
+
 			msg = new QDataBaseEntityMessage(results);
 			return msg;
 		}
@@ -454,6 +483,26 @@ public class TableUtils {
 			e1.printStackTrace();
 		}
 		msg.setToken(gennyToken.getToken());
+		/* get the total count of the results */
+		long totalResults = msg.getTotal();
+
+		int pageNumber = 1;
+
+		/* print the total */
+		log.info("total count is  :: " + totalResults + "");
+		log.info("page number is  :: " + pageNumber + "");
+
+		Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_TOTAL_RESULTS",
+				totalResults + "");
+
+		Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX",
+				pageNumber + "");
+
+		beUtils.addAnswer(totalAnswer);
+		beUtils.addAnswer(pageNumberAnswer);
+
+		beUtils.updateBaseEntity(searchBE, totalAnswer);
+		beUtils.updateBaseEntity(searchBE, pageNumberAnswer);
 		return msg;
 
 	}
@@ -466,17 +515,18 @@ public class TableUtils {
 		return result1;
 	}
 
-	static BaseEntity createTestCompany(GennyToken gennyToken, String name, String phone,String email,String city, String state, String postcode) {
+	static BaseEntity createTestCompany(GennyToken gennyToken, String name, String phone, String email, String city,
+			String state, String postcode) {
 		String usercode = "CPY_" + UUID.randomUUID().toString().substring(0, 15).toUpperCase().replaceAll("-", "");
-		
+
 		BaseEntity result1 = new BaseEntity(usercode, name);
 		result1.setRealm(gennyToken.getRealm());
 		try {
-			result1.addAnswer(new Answer(result1,result1,attribute("PRI_EMAIL",gennyToken),email));
-			result1.addAnswer(new Answer(result1,result1,attribute("PRI_ADDRESS_STATE",gennyToken),state));
-			result1.addAnswer(new Answer(result1,result1,attribute("PRI_ADDRESS_CITY",gennyToken),city));
-			result1.addAnswer(new Answer(result1,result1,attribute("PRI_ADDRESS_POSTCODE",gennyToken),postcode));
-			result1.addAnswer(new Answer(result1,result1,attribute("PRI_LANDLINE",gennyToken),phone));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_EMAIL", gennyToken), email));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_STATE", gennyToken), state));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_CITY", gennyToken), city));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_POSTCODE", gennyToken), postcode));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_LANDLINE", gennyToken), phone));
 		} catch (BadDataException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -484,14 +534,12 @@ public class TableUtils {
 
 		return result1;
 	}
-	
-	
-	private static Attribute attribute(final String attributeCode,GennyToken gToken)
-	{
+
+	private static Attribute attribute(final String attributeCode, GennyToken gToken) {
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, gToken.getToken());
 		return attribute;
 	}
-	
+
 	public Ask generateTableHeaderAsk(SearchEntity searchBe, List<QDataBaseEntityMessage> themeMsgList) {
 
 		List<Ask> asks = new ArrayList<>();
@@ -1116,8 +1164,9 @@ public class TableUtils {
 		return askList;
 	}
 
-	public static void paginateTable( GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode, Answer answer) {
-  
+	public static void paginateTable(GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode,
+			Answer answer) {
+
 		TableUtils tableUtils = new TableUtils(beUtils);
 
 		/* Perform a search bar search */
@@ -1128,11 +1177,11 @@ public class TableUtils {
 			searchBarString = searchBarString.trim();
 			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
 			Integer max = searchBarString.length();
-			Integer realMax = (max > MAX_SEARCH_BAR_TEXT_SIZE)?MAX_SEARCH_BAR_TEXT_SIZE:max;
-			searchBarString.substring(0,  realMax); 
+			Integer realMax = (max > MAX_SEARCH_BAR_TEXT_SIZE) ? MAX_SEARCH_BAR_TEXT_SIZE : max;
+			searchBarString.substring(0, realMax);
 			log.info("Search text = [" + searchBarString + "]");
 		}
-		
+
 		/* Get the SearchBE */
 		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
 		SearchEntity searchBE = VertxUtils.getObject(serviceToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
@@ -1161,47 +1210,46 @@ public class TableUtils {
 		/* Add new SearchBarString to Session SearchBar List */
 		/* look for existing search term and bring to front - slow */
 		if (answer != null) { // no need to set history if no data sent
-		int index = searchHistory.indexOf(searchBarString);
-		if (index >= 0) {
-			searchHistory.remove(index);
-		}
-		searchHistory.add(0, searchBarString);
-		if (searchHistory.size() > MAX_SEARCH_HISTORY_SIZE) {
-			searchHistory.remove(MAX_SEARCH_HISTORY_SIZE);
-		}
-		String newHistoryString = JsonUtils.toJson(searchHistory);
-		Answer history = new Answer(beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode(),
-				"PRI_SEARCH_HISTORY", newHistoryString);
-		beUtils.saveAnswer(history);
-		log.info("Search History for "+beUtils.getGennyToken().getUserCode()+" = "+searchHistory.toString());
+			int index = searchHistory.indexOf(searchBarString);
+			if (index >= 0) {
+				searchHistory.remove(index);
+			}
+			searchHistory.add(0, searchBarString);
+			if (searchHistory.size() > MAX_SEARCH_HISTORY_SIZE) {
+				searchHistory.remove(MAX_SEARCH_HISTORY_SIZE);
+			}
+			String newHistoryString = JsonUtils.toJson(searchHistory);
+			Answer history = new Answer(beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode(),
+					"PRI_SEARCH_HISTORY", newHistoryString);
+			beUtils.saveAnswer(history);
+			log.info("Search History for " + beUtils.getGennyToken().getUserCode() + " = " + searchHistory.toString());
 		} else {
 			// so grab the latest search history
 			if (!searchHistory.isEmpty()) {
-			searchBarString = searchHistory.get(0);
+				searchBarString = searchHistory.get(0);
 			} else {
 				searchBarString = ""; // fetch everything
 			}
 		}
 
-
-			searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
+		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
 
 		// Send out Search Results
 
 		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
-	
+
 		/* send the baseentity from the search */
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-	
-		/* get the table header columns*/
+
+		/* get the table header columns */
 		Map<String, String> columns = tableUtils.getTableColumns(searchBE);
-		
+
 		/* generatethe row asks */
 		List<BaseEntity> rowList = Arrays.asList(msg.getItems());
-		
+
 		List<Ask> rowAsks = generateQuestions2(beUtils.getGennyToken(), beUtils, rowList, columns,
-		beUtils.getGennyToken().getUserCode());
-	
+				beUtils.getGennyToken().getUserCode());
+
 		/* converting rowAsks list to array */
 		Ask[] rowAsksArr = rowAsks.stream().toArray(Ask[]::new);
 
@@ -1209,112 +1257,113 @@ public class TableUtils {
 		Type setType = new TypeToken<Set<QDataAskMessage>>() {
 		}.getType();
 
-		String askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
-				"FRM_TABLE_CONTENT_ASKS", String.class, beUtils.getGennyToken().getToken());
+		String askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "FRM_TABLE_CONTENT_ASKS",
+				String.class, beUtils.getGennyToken().getToken());
 
 		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 		QDataAskMessage[] askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
 		ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
-	
+
 		/* Link row asks to a single ask: QUE_TABLE_RESULTS_GRP */
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
-		Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group", questionAttribute, true);
-		
-		Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(), beUtils.getGennyToken().getUserCode());
+		Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group",
+				questionAttribute, true);
+
+		Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
+				beUtils.getGennyToken().getUserCode());
 		tableResultAsk.setChildAsks(rowAsksArr);
 		tableResultAsk.setContextList(rowsContextList);
-		
+
 		/* sending the row asks */
 		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
 		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
 		/* VertxUtils.writeMsg("webcmds", JsonUtils.toJson(tableResultAskMsgs)); */
-	
-		
-		
+
 		/* sending individual asks */
 		for (QDataAskMessage askMsg : tableResultAskMsgs) {
-			
+
 			askMsg.setToken(beUtils.getGennyToken().getToken());
 			// askMsg.getItems()[0] = headerAsk;
 			askMsg.setReplace(true);
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
-	
+
 		}
-		
+
 		/* change the question from frame */
 		QDataBaseEntityMessage msg3 = null;
 		msg3 = TableUtils.changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk.getQuestionCode(), serviceToken,
 				beUtils.getGennyToken(), tableResultAskMsgs);
 		msg3.setToken(beUtils.getGennyToken().getToken());
 		msg3.setReplace(true);
-	
+
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
-	
+
 	}
 
 	public static List<Ask> generateQuestions2(GennyToken userToken, BaseEntityUtils beUtils, List<BaseEntity> bes,
-	Map<String, String> columns, String targetCode) {
+			Map<String, String> columns, String targetCode) {
 
-/* initialize an empty ask list */
-List<Ask> askList = new ArrayList<>();
-TableUtils tableUtils = new TableUtils(beUtils);
+		/* initialize an empty ask list */
+		List<Ask> askList = new ArrayList<>();
+		TableUtils tableUtils = new TableUtils(beUtils);
 
-if (columns != null) {
-	if (bes != null && bes.isEmpty() == false) {
+		if (columns != null) {
+			if (bes != null && bes.isEmpty() == false) {
 
-		/* loop through baseentities to generate row ask */
-		for (BaseEntity be : bes) {
+				/* loop through baseentities to generate row ask */
+				for (BaseEntity be : bes) {
 
-			/* we add attributes for each be */
-			// ? why
-			beUtils.addAttributes(be);
+					/* we add attributes for each be */
+					// ? why
+					beUtils.addAttributes(be);
 
-			/* initialize child ask list */
-			List<Ask> childAskList = new ArrayList<>();
+					/* initialize child ask list */
+					List<Ask> childAskList = new ArrayList<>();
 
-			for (Map.Entry<String, String> column : columns.entrySet()) {
+					for (Map.Entry<String, String> column : columns.entrySet()) {
 
-				String attributeCode = column.getKey();
-				String attributeName = column.getValue();
-				Attribute attr = RulesUtils.attributeMap.get(attributeCode);
+						String attributeCode = column.getKey();
+						String attributeName = column.getValue();
+						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
 
-				Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
-						true);
-				Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
+						Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(),
+								attributeName, attr, true);
+						Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 
-				/* add the entityAttribute ask to list */
-				childAskList.add(childAsk);
+						/* add the entityAttribute ask to list */
+						childAskList.add(childAsk);
 
+					}
+
+					/* converting childAsks list to array */
+					Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
+
+					/* Get the on-the-fly question attribute */
+					Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
+							new DataType(String.class));
+
+					Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
+							new DataType(String.class));
+
+					/* Generate ask for the baseentity */
+					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
+							questionTableRowAttribute, true);
+					Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
+
+					/* setting weight to parent ask */
+					parentAsk.setWeight(be.getIndex().doubleValue());
+
+					/* set all the childAsks to parentAsk */
+					parentAsk.setChildAsks(childAsArr);
+
+					/* add the baseentity asks to a list */
+					askList.add(parentAsk);
+				}
 			}
-
-			/* converting childAsks list to array */
-			Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
-
-			/* Get the on-the-fly question attribute */
-			Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
-
-			Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
-					new DataType(String.class));
-
-			/* Generate ask for the baseentity */
-			Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
-					questionTableRowAttribute, true);
-			Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
-
-			/* setting weight to parent ask */
-			parentAsk.setWeight(be.getIndex().doubleValue());
-
-			/* set all the childAsks to parentAsk */
-			parentAsk.setChildAsks(childAsArr);
-
-			/* add the baseentity asks to a list */
-			askList.add(parentAsk);
 		}
-	}
-}
 
-/* return list of asks */
-return askList;
-}
+		/* return list of asks */
+		return askList;
+	}
 
 }
