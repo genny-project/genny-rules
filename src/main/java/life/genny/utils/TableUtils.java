@@ -61,7 +61,7 @@ public class TableUtils {
 		this.beUtils = beUtils;
 	}
 
-	public static void performSearch2(GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode,
+	public static void performSearch(GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode,
 			Answer answer) {
 		TableUtils tableUtils = new TableUtils(beUtils);
 
@@ -305,7 +305,7 @@ public class TableUtils {
 		QDataAskMessage headerAskMsg = new QDataAskMessage(askArray);
 		headerAskMsg.setToken(beUtils.getGennyToken().getToken());
 		headerAskMsg.setReplace(true);
-		// VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
+	    VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
 
 		// create virtual context
 
