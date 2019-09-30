@@ -153,7 +153,7 @@ public class RulesLoader {
 
 	public static List<String> activeRealms = new ArrayList<String>();
 
-	public static Boolean rulesChanged = false;
+	public static Boolean rulesChanged = true;
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
@@ -1011,7 +1011,7 @@ public class RulesLoader {
 				new AskQuestionWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
 				new ThrowSignalWorkItemHandler(RulesLoader.class));
-		kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
+	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
 
 	}
 
@@ -1041,7 +1041,7 @@ public class RulesLoader {
 				new AskQuestionWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
 				new ThrowSignalWorkItemHandler(RulesLoader.class));
-		kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
+	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
 
 
 	}
@@ -1071,7 +1071,7 @@ public class RulesLoader {
 					new AskQuestionWorkItemHandler(RulesLoader.class,runtime));
 			handlers.put("ThrowSignal",
 					new ThrowSignalWorkItemHandler(RulesLoader.class,runtime));
-			handlers.put("JMSSendTask", new JMSSendTaskWorkItemHandler());
+	//	handlers.put("JMSSendTask", new JMSSendTaskWorkItemHandler());
 
 			return handlers;
 	 }
