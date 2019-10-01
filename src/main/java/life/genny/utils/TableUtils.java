@@ -828,15 +828,8 @@ public class TableUtils {
 
 		QDataBaseEntityMessage msg = FrameUtils2.toMessage(frame, serviceToken, askMsgs);
 		msg.setReplace(true);
-<<<<<<< HEAD
 
-		String rootFrameCode = frameCode;
-		
-		// HACK TODO
-		
-=======
 		msg.setToken(userToken.getToken());
->>>>>>> 3fbc632077b492e859008c07b4fb8efbf713ac32
 
 		for (BaseEntity targetFrame : msg.getItems()) {
 			if (targetFrame.getCode().equals(ask.getQuestionCode())) {
@@ -870,23 +863,7 @@ public class TableUtils {
 				break;
 			}
 		}
-<<<<<<< HEAD
-		// UGLY
-		if (msg.getItems().length>0) {
-		BaseEntity[] questionFreeArray = new BaseEntity[msg.getItems().length-1];
-		int i=0;
-		for (BaseEntity targetFrame : msg.getItems()) {
-			if (!targetFrame.getCode().equals(questionCode)) {
-				questionFreeArray[i] = targetFrame;
-				i++;
-			}
-		}
-		msg.setItems(questionFreeArray);
-		}
 
-		msg.setToken(userToken.getToken());
-=======
->>>>>>> 3fbc632077b492e859008c07b4fb8efbf713ac32
 		return msg;
 	}
 
