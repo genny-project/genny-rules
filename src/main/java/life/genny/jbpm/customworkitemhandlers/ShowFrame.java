@@ -75,7 +75,7 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param targetFrameCode
 	 * @param callingWorkflow
 	 */
-	public void display(GennyToken userToken, String rootFrameCode, String targetFrameCode, String callingWorkflow) {
+	public static void display(GennyToken userToken, String rootFrameCode, String targetFrameCode, String callingWorkflow) {
 		if (userToken == null) {
 			log.error(callingWorkflow+": Must supply userToken!");
 
