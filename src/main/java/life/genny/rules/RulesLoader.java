@@ -153,7 +153,7 @@ public class RulesLoader {
 
 	public static List<String> activeRealms = new ArrayList<String>();
 
-	public static Boolean rulesChanged = true;
+	public static Boolean rulesChanged = false;
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
