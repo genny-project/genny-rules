@@ -68,6 +68,11 @@ public class TableUtils {
 
 		SearchEntity searchBE = processSearchString(answer, searchBarCode, beUtils);
 
+		/* publishing the searchBE to frontEnd */
+		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
+		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
+
 		// Send out Search Results
 		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
 
@@ -81,14 +86,10 @@ public class TableUtils {
 
 		QDataAskMessage headerAskMsg = showTableHeader(tableUtils, searchBE, columns, msg);
 
-		showTableContent(serviceToken, beUtils, searchBE, msg, columns );
+//		showTableContent(serviceToken, beUtils, searchBE, msg, columns );
 
-		/* publishing the searchBE to frontEnd */
-		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
-		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
 
-		 showTableFooter(beUtils, searchBE);
+	//	 showTableFooter(beUtils, searchBE);
 
 
 	}
@@ -127,14 +128,25 @@ public class TableUtils {
 			 * Save Session Search in cache , ideally this should be in OutputParam and
 			 * saved to workflow
 			 */
-			VertxUtils.putObject(beUtils.getServiceToken().getRealm(), "", sessionSearchCode, searchBE, beUtils.getServiceToken().getToken());
 		}
+		
+		// Set the search PRI_TITLE
+		Attribute titleAttribute = RulesUtils.getAttribute("PRI_TITLE", beUtils.getServiceToken().getToken());
+		BaseEntity user = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", beUtils.getGennyToken().getUserCode(), BaseEntity.class,
+				beUtils.getServiceToken().getToken());
+		try {
+			searchBE.addAnswer(new Answer(user,searchBE,titleAttribute,searchBE.getName()));
+			VertxUtils.putObject(beUtils.getServiceToken().getRealm(), "", sessionSearchCode, searchBE, beUtils.getServiceToken().getToken());
+
+		} catch (BadDataException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 
 		log.info("search code coming from searchBE getCode  :: " + searchBE.getCode());
 
 		/* fetch Session SearchBar List from User */
-		BaseEntity user = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
-				beUtils.getGennyToken().getUserCode(), BaseEntity.class, beUtils.getGennyToken().getToken());
 		Type type = new TypeToken<List<String>>() {
 		}.getType();
 		List<String> defaultList = new ArrayList<String>();
@@ -339,7 +351,7 @@ public class TableUtils {
 		
 		// Set the table title
 		String titleQuestionCode = "QUE_TABLE_TITLE_TEST";
-		Attribute nameAttribute = RulesUtils.getAttribute("PRI_NAME", tableUtils.beUtils.getGennyToken().getToken()) ;
+		Attribute nameAttribute = RulesUtils.getAttribute("PRI_TITLE", tableUtils.beUtils.getGennyToken().getToken()) ;
 		Question titleQuestion = new Question(titleQuestionCode, searchBE.getName(),
 				nameAttribute, true);
 
