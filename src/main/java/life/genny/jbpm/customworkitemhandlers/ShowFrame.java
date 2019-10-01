@@ -59,6 +59,23 @@ public class ShowFrame implements WorkItemHandler {
 		callingWorkflow += ":"+workItem.getProcessInstanceId()+": "; 
 
 
+		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow);
+
+		// notify manager that work item has been completed
+		if (workItem == null) {
+			log.error(callingWorkflow+": workItem is null");
+		}
+		manager.completeWorkItem(workItem.getId(), null);
+
+	}
+
+	/**
+	 * @param userToken
+	 * @param rootFrameCode
+	 * @param targetFrameCode
+	 * @param callingWorkflow
+	 */
+	public void display(GennyToken userToken, String rootFrameCode, String targetFrameCode, String callingWorkflow) {
 		if (userToken == null) {
 			log.error(callingWorkflow+": Must supply userToken!");
 
@@ -179,13 +196,6 @@ public class ShowFrame implements WorkItemHandler {
 			}
 
 		}
-
-		// notify manager that work item has been completed
-		if (workItem == null) {
-			log.error(callingWorkflow+": workItem is null");
-		}
-		manager.completeWorkItem(workItem.getId(), null);
-
 	}
 
 	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
