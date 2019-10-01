@@ -54,6 +54,19 @@
 		</snapshotRepository>
 	</distributionManagement>
 
+	<repositories>
+		<repository>
+			<id>repository.jboss.org-public</id>
+			<name>JBoss.org Maven repository</name>
+			<url>https://repository.jboss.org/nexus/content/groups/public</url>
+		</repository>
+				<repository>
+			<id>life.genny</id>
+			<url>https://nexus.outcome-hub.com/nexus/content/repositories/life.genny</url>
+		</repository>
+		
+	</repositories>
+
 	<dependencies>
 		<!-- <dependency> <groupId>org.jboss.weld.vertx</groupId> <artifactId>weld-vertx-core</artifactId> 
 			<version>${weld-vertx.version}</version> </dependency> -->

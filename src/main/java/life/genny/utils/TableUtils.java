@@ -319,7 +319,6 @@ public class TableUtils {
 		// create virtual context
 
 		// Now link the FRM_TABLE_HEADER to that new Question
-		String headerAskCode = headerAsk.getQuestionCode();
 
 		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
 
@@ -337,6 +336,25 @@ public class TableUtils {
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
 
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg2));
+		
+		// Set the table title
+		String titleQuestionCode = "QUE_TABLE_TITLE_TEST";
+		Attribute nameAttribute = RulesUtils.getAttribute("PRI_NAME", tableUtils.beUtils.getGennyToken().getToken()) ;
+		Question titleQuestion = new Question(titleQuestionCode, searchBE.getName(),
+				nameAttribute, true);
+
+		Ask titleAsk = new Ask(titleQuestion, tableUtils.beUtils.getGennyToken().getUserCode(),
+				searchBE.getCode());
+		titleAsk.setRealm(tableUtils.beUtils.getGennyToken().getRealm());
+		titleAsk.setReadonly(true);
+		Ask[] askArray1 = new Ask[1];
+		askArray1[0] = titleAsk;
+		QDataAskMessage titleAskMsg = new QDataAskMessage(askArray1);
+		titleAskMsg.setToken(tableUtils.beUtils.getGennyToken().getToken());
+		titleAskMsg.setReplace(true);
+		
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(titleAskMsg));
+
 
 		return headerAskMsg;
 	}
@@ -824,10 +842,20 @@ public class TableUtils {
 					if (sourceFrame.getCode().equals(ask.getQuestionCode())) {
 
 						log.info("ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
-						EntityEntity entityEntity = new EntityEntity(sourceFrame, targetFrame, attribute, 1.0,
-								"CENTRE");
-						sourceFrame.getLinks().add(entityEntity);
-						sourceFrame.setName(searchBE.getName());
+//						EntityEntity entityEntity = new EntityEntity(sourceFrame, targetFrame, attribute, 1.0,
+//								"CENTRE");
+//						sourceFrame.getLinks().add(entityEntity);
+//						sourceFrame.setName(searchBE.getName());
+						EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute,
+								1.0, "CENTRE");
+						Set<EntityEntity> entEntList = targetFrame.getLinks();
+						entEntList.add(entityEntity);
+						targetFrame.setLinks(entEntList);
+
+						/* Adding Frame to Targeted Frame BaseEntity Message */
+						msg.add(targetFrame);
+						msg.setReplace(true);
+
 						break;
 					}
 				}
