@@ -77,7 +77,7 @@ public class TableUtils {
 			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
 			Integer max = searchBarString.length();
 			Integer realMax = (max > MAX_SEARCH_BAR_TEXT_SIZE)?MAX_SEARCH_BAR_TEXT_SIZE:max;
-			searchBarString.substring(0,  realMax); 
+			searchBarString = searchBarString.substring(0,  realMax); 
 			log.info("Search text = [" + searchBarString + "]");
 		}
 		
@@ -374,7 +374,7 @@ public class TableUtils {
 			return msg;
 		}
 		searchBE.setRealm(gennyToken.getRealm());
-		log.info("The search BE is :: " + JsonUtils.toJson(searchBE));
+		log.debug("The search BE is :: " + JsonUtils.toJson(searchBE));
 
 		if (VertxUtils.cachedEnabled) {
 			List<BaseEntity> results = new ArrayList<BaseEntity>();
@@ -746,6 +746,9 @@ public class TableUtils {
 		msg.setReplace(true);
 
 		String rootFrameCode = frameCode;
+		
+		// HACK TODO
+		
 
 		for (BaseEntity targetFrame : msg.getItems()) {
 			if (targetFrame.getCode().equals(questionCode)) {
@@ -773,6 +776,19 @@ public class TableUtils {
 				break;
 			}
 		}
+		// UGLY
+		if (msg.getItems().length>0) {
+		BaseEntity[] questionFreeArray = new BaseEntity[msg.getItems().length-1];
+		int i=0;
+		for (BaseEntity targetFrame : msg.getItems()) {
+			if (!targetFrame.getCode().equals(questionCode)) {
+				questionFreeArray[i] = targetFrame;
+				i++;
+			}
+		}
+		msg.setItems(questionFreeArray);
+		}
+
 		msg.setToken(userToken.getToken());
 		return msg;
 	}
