@@ -5,6 +5,8 @@ import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -170,7 +172,8 @@ public class ShowFrame implements WorkItemHandler {
 					if (askMsgs2Str == null) {
 						log.error(rootFrameCode + "_ASKS is NOT IN CACHE!");
 					} else {
-
+						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
+								Matcher.quoteReplacement("\n"));
 						//
 //					String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
 //							String.class, userToken.getToken());
