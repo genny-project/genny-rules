@@ -35,7 +35,6 @@ import life.genny.models.FramePosition;
 
 public class ShowFrame implements WorkItemHandler {
 
-
 	public ShowFrame() {
 	}
 
@@ -51,19 +50,18 @@ public class ShowFrame implements WorkItemHandler {
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
 		String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
-		
-		String callingWorkflow = (String)items.get("callingWorkflow");
+
+		String callingWorkflow = (String) items.get("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
-		callingWorkflow += ":"+workItem.getProcessInstanceId()+": "; 
-
+		callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
 		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow);
 
 		// notify manager that work item has been completed
 		if (workItem == null) {
-			log.error(callingWorkflow+": workItem is null");
+			log.error(callingWorkflow + ": workItem is null");
 		}
 		manager.completeWorkItem(workItem.getId(), null);
 
@@ -75,39 +73,39 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param targetFrameCode
 	 * @param callingWorkflow
 	 */
-	public static void display(GennyToken userToken, String rootFrameCode, String targetFrameCode, String callingWorkflow) {
+	public static void display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+			String callingWorkflow) {
 		if (userToken == null) {
-			log.error(callingWorkflow+": Must supply userToken!");
+			log.error(callingWorkflow + ": Must supply userToken!");
 
 		} else {
 			// log.info("userToken = " + userToken.getCode());
 
 			if (rootFrameCode == null) {
-				log.error(callingWorkflow+": Must supply a root Frame Code!");
+				log.error(callingWorkflow + ": Must supply a root Frame Code!");
 			} else {
-			//	log.info(callingWorkflow+": root Frame Code sent to display  = " + rootFrameCode);
+				// log.info(callingWorkflow+": root Frame Code sent to display = " +
+				// rootFrameCode);
 
-				
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
 						QDataBaseEntityMessage.class, userToken.getToken());
 
-				if (FRM_MSG == null)  {
+				if (FRM_MSG == null) {
 					// Construct it on the fly
-					Frame3 frame = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode,
-							Frame3.class, userToken.getToken());
-					
+					Frame3 frame = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode, Frame3.class,
+							userToken.getToken());
+
 					if (frame == null) {
-						log.error("FRAME IS NOT IN CACHE  - "+rootFrameCode);
+						log.error("FRAME IS NOT IN CACHE  - " + rootFrameCode);
 
 					}
 
 					FrameUtils2.toMessage2(frame, userToken);
 					FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
 							QDataBaseEntityMessage.class, userToken.getToken());
-					
+
 				}
-				
-				
+
 				if (FRM_MSG != null) {
 
 					if (targetFrameCode == null) {
@@ -117,11 +115,11 @@ public class ShowFrame implements WorkItemHandler {
 					QDataBaseEntityMessage TARGET_FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "",
 							targetFrameCode + "_MSG", QDataBaseEntityMessage.class, userToken.getToken());
 
-					if (TARGET_FRM_MSG == null)  {
+					if (TARGET_FRM_MSG == null) {
 						// Construct it on the fly
-						Frame3 frame = VertxUtils.getObject(userToken.getRealm(), "", targetFrameCode,
-								Frame3.class, userToken.getToken());
-						
+						Frame3 frame = VertxUtils.getObject(userToken.getRealm(), "", targetFrameCode, Frame3.class,
+								userToken.getToken());
+
 						FrameUtils2.toMessage2(frame, userToken);
 						TARGET_FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", targetFrameCode + "_MSG",
 								QDataBaseEntityMessage.class, userToken.getToken());
@@ -138,7 +136,8 @@ public class ShowFrame implements WorkItemHandler {
 							for (BaseEntity sourceFrame : FRM_MSG.getItems()) {
 								if (sourceFrame.getCode().equals(rootFrameCode)) {
 
-								//	log.info(callingWorkflow+": ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
+									// log.info(callingWorkflow+": ShowFrame : Found Source Frame BaseEntity : " +
+									// sourceFrame);
 									EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute,
 											1.0, "CENTRE");
 									Set<EntityEntity> entEntList = targetFrame.getLinks();
@@ -155,7 +154,7 @@ public class ShowFrame implements WorkItemHandler {
 						}
 					}
 
-					log.info(callingWorkflow+": ShowFrame : " + rootFrameCode+":"+targetFrameCode);
+					log.info(callingWorkflow + ": ShowFrame : " + rootFrameCode + ":" + targetFrameCode);
 
 					FRM_MSG.setToken(userToken.getToken());
 
@@ -166,31 +165,42 @@ public class ShowFrame implements WorkItemHandler {
 					Type setType = new TypeToken<Set<QDataAskMessage>>() {
 					}.getType();
 
-					String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
-							String.class, userToken.getToken());
+					String askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
+							rootFrameCode + "_ASKS", userToken.getToken());
+					if (askMsgs2Str == null) {
+						log.error(rootFrameCode + "_ASKS is NOT IN CACHE!");
+					} else {
 
-					Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+						//
+//					String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
+//							String.class, userToken.getToken());
 
-					// System.out.println("Sending Asks");
-					if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
-						for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
-							for (Ask aask : askMsg.getItems()) {
-								for (Validation val : aask.getQuestion().getAttribute().getDataType()
-										.getValidationList()) {
-									if (val.getRegex() == null) {
-										log.error(callingWorkflow+": Regex for " + aask.getQuestion().getCode() + " == null");
+						Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+
+						// System.out.println("Sending Asks");
+						if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
+							for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
+								for (Ask aask : askMsg.getItems()) {
+									for (Validation val : aask.getQuestion().getAttribute().getDataType()
+											.getValidationList()) {
+										if (val.getRegex() == null) {
+											log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode()
+													+ " == null");
+										}
+
 									}
-  
 								}
+								askMsg.setToken(userToken.getToken());
+								String json = JsonUtils.toJson(askMsg);
+								String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
+																											// user
+								VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 							}
-							askMsg.setToken(userToken.getToken());
-							String json = JsonUtils.toJson(askMsg);
-							String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the user
-							VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 						}
 					}
 				} else {
-					log.error(callingWorkflow+": "+rootFrameCode + "_MSG" + " DOES NOT EXIST IN CACHE - cannot display frame");
+					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
+							+ " DOES NOT EXIST IN CACHE - cannot display frame");
 				}
 
 			}
