@@ -152,10 +152,14 @@ public class ShowFrames implements WorkItemHandler {
 
 					Type setType = new TypeToken<Set<QDataAskMessage>>() {
 					}.getType();
+					String askMsgs2Str  = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS", userToken.getToken());
+//					String askMsgs2Str2 = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
+//							String.class, userToken.getToken());
 
-					String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
-							String.class, userToken.getToken());
-
+					if (askMsgs2Str == null) {
+						log.error(rootFrameCode + "_ASKS is NOT IN CACHE!");
+					} else {
+					
 					Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 
 					// System.out.println("Sending Asks");
@@ -175,6 +179,7 @@ public class ShowFrames implements WorkItemHandler {
 							String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the user
 							VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 						}
+					}
 					}
 				} else {
 					log.error(callingWorkflow+": "+rootFrameCode + "_MSG" + " DOES NOT EXIST IN CACHE - cannot display frame");
