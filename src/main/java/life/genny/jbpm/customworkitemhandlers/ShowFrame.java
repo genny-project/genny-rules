@@ -160,7 +160,7 @@ public class ShowFrame implements WorkItemHandler {
 						}
 					}
 
-					log.info(callingWorkflow + ": ShowFrame! : " + rootFrameCode + ":" + targetFrameCode);
+					log.info(callingWorkflow + ": ShowFrame!! : " + rootFrameCode + ":" + targetFrameCode);
 
 					FRM_MSG.setToken(userToken.getToken());
 
@@ -202,6 +202,7 @@ public class ShowFrame implements WorkItemHandler {
 						Set<QDataAskMessage> askMsgs2 = null;
 						
 						try {
+							log.info("About to do deserialization!");
 							askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 						} catch (Exception e) {
 							log.error("Bad Json deserialization ..."+askMsgs2Str);
