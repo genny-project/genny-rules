@@ -12,12 +12,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
 
 import com.google.gson.reflect.TypeToken;
 
+import io.vertx.core.json.JsonObject;
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
 import life.genny.models.TableData;
@@ -86,10 +90,10 @@ public class TableUtils {
 
 		QDataAskMessage headerAskMsg = showTableHeader(tableUtils, searchBE, columns, msg);
 
-//		showTableContent(serviceToken, beUtils, searchBE, msg, columns );
+		showTableContent(serviceToken, beUtils, searchBE, msg, columns );
 
 
-	//	 showTableFooter(beUtils, searchBE);
+		 showTableFooter(beUtils, searchBE);
 
 
 	}
@@ -247,8 +251,32 @@ public class TableUtils {
 		Type setType = new TypeToken<Set<QDataAskMessage>>() {
 		}.getType();
 
-		String askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "FRM_TABLE_CONTENT_ASKS",
-				String.class, beUtils.getGennyToken().getToken());
+		String askMsgs2Str = null;
+		if ("TRUE".equalsIgnoreCase(System.getenv("FORCE_CACHE_USE_API"))) {  // if in junit then use the bridge to fetch cache data
+//			askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
+//			String.class, userToken.getToken());
+			try {
+				askMsgs2Str  = QwandaUtils.apiGet(GennySettings.ddtUrl + "/read/" + beUtils.getGennyToken().getRealm() + "/" + "FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
+				JsonObject json = new JsonObject(askMsgs2Str);
+				askMsgs2Str = json.getString("value"); // TODO - assumes always works.....
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		} else {
+		
+		askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(beUtils.getGennyToken().getRealm(),
+				"FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
+		}
+		if (askMsgs2Str == null) {
+			log.error("FRM_TABLE_CONTENT_ASKS is NOT IN CACHE!");
+		} else {
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
+					Matcher.quoteReplacement("\n"));
 
 		if (askMsgs2Str == null) {
 			Frame3 frame = VertxUtils.getObject(serviceToken.getRealm(), "", "FRM_TABLE_CONTENT", Frame3.class,
@@ -309,7 +337,7 @@ public class TableUtils {
 		}
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
 
-		// }
+		 }
 		// }
 	}
 

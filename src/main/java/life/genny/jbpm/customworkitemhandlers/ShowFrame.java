@@ -173,12 +173,13 @@ public class ShowFrame implements WorkItemHandler {
 
 					String askMsgs2Str = null;
 					if ("TRUE".equalsIgnoreCase(System.getenv("FORCE_CACHE_USE_API"))) {  // if in junit then use the bridge to fetch cache data
+						log.info("Forcing ASKS to be read from api call to cache");
 //						askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
 //						String.class, userToken.getToken());
 						try {
 							askMsgs2Str  = QwandaUtils.apiGet(GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS", userToken.getToken());
 							JsonObject json = new JsonObject(askMsgs2Str);
-							askMsgs2Str = json.getString("value"); // TODO - assumes always works.....
+							askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
 						} catch (ClientProtocolException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -192,14 +193,19 @@ public class ShowFrame implements WorkItemHandler {
 					askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
 							rootFrameCode + "_ASKS", userToken.getToken());
 					}
-					if (askMsgs2Str == null) {
-						log.error(rootFrameCode + "_ASKS is NOT IN CACHE!");
-					} else {
+					
+
 						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
 								Matcher.quoteReplacement("\n"));
 						//
 
-						Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+						Set<QDataAskMessage> askMsgs2 = null;
+						
+						try {
+							askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+						} catch (Exception e) {
+							log.error("Bad Json deserialization ..."+askMsgs2Str);
+						}
 
 						// System.out.println("Sending Asks");
 						if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
@@ -221,7 +227,7 @@ public class ShowFrame implements WorkItemHandler {
 								VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 							}
 						}
-					}
+				
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
 							+ " DOES NOT EXIST IN CACHE - cannot display frame");
