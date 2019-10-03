@@ -194,7 +194,7 @@ public class ShowFrame implements WorkItemHandler {
 							rootFrameCode + "_ASKS", userToken.getToken());
 					}
 					
-
+ 
 						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
 								Matcher.quoteReplacement("\n"));
 						//
