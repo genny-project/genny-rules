@@ -1,5 +1,6 @@
 package life.genny.jbpm.customworkitemhandlers;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.HashSet;
@@ -9,6 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
@@ -29,7 +31,9 @@ import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
+import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
+import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.QRules;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.VertxUtils;
@@ -167,16 +171,33 @@ public class ShowFrame implements WorkItemHandler {
 					Type setType = new TypeToken<Set<QDataAskMessage>>() {
 					}.getType();
 
-					String askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
+					String askMsgs2Str = null;
+					if ("TRUE".equalsIgnoreCase(System.getenv("FORCE_CACHE_USE_API"))) {  // if in junit then use the bridge to fetch cache data
+//						askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
+//						String.class, userToken.getToken());
+						try {
+							askMsgs2Str  = QwandaUtils.apiGet(GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS", userToken.getToken());
+							JsonObject json = new JsonObject(askMsgs2Str);
+							askMsgs2Str = json.getString("value"); // TODO - assumes always works.....
+						} catch (ClientProtocolException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
+					} else {
+					
+					askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
 							rootFrameCode + "_ASKS", userToken.getToken());
+					}
 					if (askMsgs2Str == null) {
 						log.error(rootFrameCode + "_ASKS is NOT IN CACHE!");
 					} else {
 						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
 								Matcher.quoteReplacement("\n"));
 						//
-//					String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
-//							String.class, userToken.getToken());
 
 						Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 

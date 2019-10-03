@@ -16,7 +16,7 @@
 
 	<properties>
 
-		<genny-verticle.version>3.1.0</genny-verticle.version>
+		<genny-verticle.version>${project.version}</genny-verticle.version>
 		<kie.version>7.26.0.Final</kie.version>
 		<vertx.version>3.5.1</vertx.version>
 		<hazelcast.version>3.8.2</hazelcast.version>
@@ -33,14 +33,14 @@
 		<war-plugin-version>2.4</war-plugin-version>
 		<ear-plugin-version>2.9</ear-plugin-version>
 		<compiler-plugin-version>3.1</compiler-plugin-version>
-		<version.maven-jar-plugin>3.0.2</version.maven-jar-plugin>
-		<version.maven-source-plugin>3.0.1</version.maven-source-plugin>
+		<version.maven-jar-plugin>3.1.2</version.maven-jar-plugin>
+		<version.maven-source-plugin>3.1.0</version.maven-source-plugin>
 		<dropwizard.version>3.5.1</dropwizard.version>
 		<vertx-concurrent.version>1.0.0</vertx-concurrent.version>
 		<junit-version>4.12</junit-version>
-		<version.hibernate>5.2.16.Final</version.hibernate>
-		<version.hibernate-validator>6.0.7.Final</version.hibernate-validator>
-
+		<version.hibernate>5.4.5.Final</version.hibernate>
+		<version.hibernate-validator>6.0.17.Final</version.hibernate-validator>
+		<version.javaassist>3.25.0-GA</version.javaassist>
 	</properties>
 
 	<distributionManagement>
@@ -60,11 +60,11 @@
 			<name>JBoss.org Maven repository</name>
 			<url>https://repository.jboss.org/nexus/content/groups/public</url>
 		</repository>
-				<repository>
+		<repository>
 			<id>life.genny</id>
 			<url>https://nexus.outcome-hub.com/nexus/content/repositories/life.genny</url>
 		</repository>
-		
+
 	</repositories>
 
 	<dependencies>
@@ -247,7 +247,7 @@
 
 
 		<dependency>
-			<groupId>org.hibernate</groupId>
+			<groupId>org.hibernate.validator</groupId>
 			<artifactId>hibernate-validator</artifactId>
 			<version>${version.hibernate-validator}</version>
 			<exclusions>
@@ -269,10 +269,11 @@
 			<artifactId>vavr</artifactId>
 			<version>0.9.1</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.javassist</groupId>
 			<artifactId>javassist</artifactId>
-			<version>3.23.1-GA</version>
+			<version>${version.javaassist}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.hibernate</groupId>
