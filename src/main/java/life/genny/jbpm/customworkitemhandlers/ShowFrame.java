@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkItem;
@@ -166,7 +167,11 @@ public class ShowFrame implements WorkItemHandler {
 
 					FRM_MSG.setReplace(true);
 
-					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(FRM_MSG));
+					// Minify
+					String payload = JsonUtils.toJson(FRM_MSG);
+					JSONObject js = new JSONObject(payload);
+					String payload2 = js.toString();
+					VertxUtils.writeMsg("webcmds", payload2);
 
 					Type setType = new TypeToken<Set<QDataAskMessage>>() {
 					}.getType();

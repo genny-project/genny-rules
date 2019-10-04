@@ -693,6 +693,8 @@ public class RulesLoader {
 
 				rulesFired = kieSession.fireAllRules();
 
+			} catch (NullPointerException e) { 
+				log.error("Null pointer Exception thrown in workflow/rules");
 			} catch (final Throwable t) {
 				log.error(t.getLocalizedMessage());
 
