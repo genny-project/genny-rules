@@ -153,7 +153,8 @@ public class RulesLoader {
 
 	public static List<String> activeRealms = new ArrayList<String>();
 
-	public static Boolean rulesChanged = !GennySettings.detectRuleChanges;
+	//public static Boolean rulesChanged = !GennySettings.detectRuleChanges;
+	public static Boolean rulesChanged = true;
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
@@ -1113,7 +1114,7 @@ public class RulesLoader {
 		QEventMessage msg = new QEventMessage("EVT_MSG", "INIT_STARTUP");
 		msg.getData().setValue(rulesChanged ? "RULES_CHANGED" : "NO_RULES_CHANGED");
 		initMsg("Event:INIT_STARTUP", realm, msg);
-		rulesChanged = false;
+		//rulesChanged = false;
 
 		// Now check if all Themes and Frames got created and display errors if
 		// missing...
