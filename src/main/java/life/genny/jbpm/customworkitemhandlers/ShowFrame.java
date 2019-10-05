@@ -36,6 +36,7 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.QRules;
+import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.VertxUtils;
 import life.genny.models.FramePosition;
@@ -161,7 +162,7 @@ public class ShowFrame implements WorkItemHandler {
 						}
 					}
 
-					log.info(callingWorkflow + ": ShowFrame!! : " + rootFrameCode + ":" + targetFrameCode);
+					log.info(callingWorkflow + ": ShowFrame!!! : " + rootFrameCode + ":" + targetFrameCode);
 
 					FRM_MSG.setToken(userToken.getToken());
 
@@ -211,6 +212,12 @@ public class ShowFrame implements WorkItemHandler {
 							askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 						} catch (Exception e) {
 							log.error("Bad Json deserialization ..."+askMsgs2Str);
+							BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+							BaseEntity rule = beUtils.getBaseEntityByCode("RUL_"+rootFrameCode);
+							askMsgs2Str = (String) rule.getValue("PRI_ASKS").get(); // assume always
+							VertxUtils.cacheInterface.writeCache(userToken.getRealm(), rootFrameCode + "_ASKS", askMsgs2Str, userToken.getToken(), 0);
+							log.info("About to do deserialization2!");
+							askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 						}
 
 						// System.out.println("Sending Asks");
