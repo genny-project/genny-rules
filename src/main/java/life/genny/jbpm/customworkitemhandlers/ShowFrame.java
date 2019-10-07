@@ -184,88 +184,7 @@ public class ShowFrame implements WorkItemHandler {
 					String payload2 = js.toString();
 					VertxUtils.writeMsg("webcmds", payload2);
 
-					Type setType = new TypeToken<Set<QDataAskMessage>>() {
-					}.getType();
-
-					String askMsgs2Str = null;
-					if ("TRUE".equalsIgnoreCase(System.getenv("FORCE_CACHE_USE_API"))) {  // if in junit then use the bridge to fetch cache data
-						log.info("Forcing ASKS to be read from api call to cache");
-//						askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
-//						String.class, userToken.getToken());
-						try {
-							askMsgs2Str  = QwandaUtils.apiGet(GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS", userToken.getToken());
-							JsonObject json = new JsonObject(askMsgs2Str);
-							askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
-						} catch (ClientProtocolException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						
-					} else {
-					
-					askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
-							rootFrameCode + "_ASKS", userToken.getToken());
-					}
-					
- 
-						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
-								Matcher.quoteReplacement("\n"));
-						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""),
-								Matcher.quoteReplacement("\""));
-						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["),
-								Matcher.quoteReplacement("["));
-						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""),
-								Matcher.quoteReplacement("]"));
-						//
-
-						Set<QDataAskMessage> askMsgs2 = null;
-						
-						try {
-							log.info("About to do deserialization!");
-							askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
-						} catch (Exception e) {
-							log.error("Bad Json deserialization ..."+askMsgs2Str);
-							BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-							BaseEntity rule = beUtils.getBaseEntityByCode("RUL_"+rootFrameCode);
-							askMsgs2Str = (String) rule.getValue("PRI_ASKS").get(); // assume always
-							
-							if (askMsgs2Str == null) {
-								String fr  = (String) rule.getValue("PRI_FRM").get(); // assume always
-								Frame3 frame3 = JsonUtils.fromJson(fr, Frame3.class);
-								FrameUtils2.toMessage2(frame3,userToken);
-								askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
-										rootFrameCode + "_ASKS", userToken.getToken());
-							}
-							
-							
-							VertxUtils.cacheInterface.writeCache(userToken.getRealm(), rootFrameCode + "_ASKS", askMsgs2Str, userToken.getToken(), 0);
-							log.info("About to do deserialization2!");
-							askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
-						}
-
-						// System.out.println("Sending Asks");
-						if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
-							for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
-								for (Ask aask : askMsg.getItems()) {
-									for (Validation val : aask.getQuestion().getAttribute().getDataType()
-											.getValidationList()) {
-										if (val.getRegex() == null) {
-											log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode()
-													+ " == null");
-										}
-
-									}
-								}
-								askMsg.setToken(userToken.getToken());
-								String json = JsonUtils.toJson(askMsg);
-								String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
-																											// user
-								VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
-							}
-						}
+					sendAsks(rootFrameCode, userToken, callingWorkflow);
 				
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
@@ -275,6 +194,96 @@ public class ShowFrame implements WorkItemHandler {
 			}
 
 		}
+	}
+
+	/**
+	 * @param rootFrameCode
+	 * @param userToken
+	 * @param callingWorkflow
+	 */
+	private static void sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow) {
+		Type setType = new TypeToken<Set<QDataAskMessage>>() {
+		}.getType();
+
+		String askMsgs2Str = null;
+		if ("TRUE".equalsIgnoreCase(System.getenv("FORCE_CACHE_USE_API"))) {  // if in junit then use the bridge to fetch cache data
+			log.info("Forcing ASKS to be read from api call to cache");
+//						askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
+//						String.class, userToken.getToken());
+			try {
+				askMsgs2Str  = QwandaUtils.apiGet(GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS", userToken.getToken());
+				JsonObject json = new JsonObject(askMsgs2Str);
+				askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		} else {
+		
+		askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
+				rootFrameCode + "_ASKS", userToken.getToken());
+		}
+		
+ 
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
+					Matcher.quoteReplacement("\n"));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""),
+					Matcher.quoteReplacement("\""));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["),
+					Matcher.quoteReplacement("["));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""),
+					Matcher.quoteReplacement("]"));
+			//
+
+			Set<QDataAskMessage> askMsgs2 = null;
+			
+			try {
+				log.info("About to do deserialization!");
+				askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+			} catch (Exception e) {
+				log.error("Bad Json deserialization ..."+askMsgs2Str);
+				BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+				BaseEntity rule = beUtils.getBaseEntityByCode("RUL_"+rootFrameCode);
+				askMsgs2Str = (String) rule.getValue("PRI_ASKS").get(); // assume always
+				
+				if (askMsgs2Str == null) {
+					String fr  = (String) rule.getValue("PRI_FRM").get(); // assume always
+					Frame3 frame3 = JsonUtils.fromJson(fr, Frame3.class);
+					FrameUtils2.toMessage2(frame3,userToken);
+					askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
+							rootFrameCode + "_ASKS", userToken.getToken());
+				}
+				
+				
+				VertxUtils.cacheInterface.writeCache(userToken.getRealm(), rootFrameCode + "_ASKS", askMsgs2Str, userToken.getToken(), 0);
+				log.info("About to do deserialization2!");
+				askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+			}
+
+			// System.out.println("Sending Asks");
+			if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
+				for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
+					for (Ask aask : askMsg.getItems()) {
+						for (Validation val : aask.getQuestion().getAttribute().getDataType()
+								.getValidationList()) {
+							if (val.getRegex() == null) {
+								log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode()
+										+ " == null");
+							}
+
+						}
+					}
+					askMsg.setToken(userToken.getToken());
+					String json = JsonUtils.toJson(askMsg);
+					String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
+																								// user
+					VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
+				}
+			}
 	}
 
 	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {

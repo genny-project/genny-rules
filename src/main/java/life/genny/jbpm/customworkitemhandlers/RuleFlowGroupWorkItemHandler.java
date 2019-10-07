@@ -93,7 +93,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					}
 					if (!code.equals("PER_SERVICE")) {
 						/* Generate a QRules */
-						log.info("Adding rules to facts");
+						//log.info("Adding rules to facts");
 					    QRules rules = new QRules(serviceToken, gToken); 
 					    newKieSession.insert(rules);
 					}
@@ -137,7 +137,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					GennyToken gToken = (GennyToken)items.get(key);
 					if (!gToken.getCode().equals("PER_SERVICE")) {
 						/* Generate a QRules */
-						log.info("Adding rules to facts");
+						//log.info("Adding rules to facts");
 					    QRules rules = new QRules(serviceToken, gToken); 
 					    newKieSession.insert(rules);
 					}
