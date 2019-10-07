@@ -95,7 +95,7 @@ public class TableUtils {
 		showTableContent(serviceToken, beUtils, searchBE, msg, columns );
 
 
-	//	 showTableFooter(beUtils, searchBE);
+		 showTableFooter(beUtils, searchBE);
 
 
 	}
@@ -222,7 +222,7 @@ public class TableUtils {
 		/* publish the new asks with searchBe set as targetCode */
 		for (QDataAskMessage footerAskMsg : footerAskMsgs) {
 			footerAskMsg.setToken(beUtils.getGennyToken().getToken());
-			footerAskMsg.setReplace(true);
+			footerAskMsg.setReplace(false);
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(footerAskMsg));
 		}
 		
@@ -389,6 +389,7 @@ public class TableUtils {
 		
 		// Set the table title
 
+	
 		sendQuestion("QUE_TABLE_TITLE_TEST", tableUtils.beUtils.getGennyToken().getUserCode(), searchBE.getCode(),"PRI_TITLE", tableUtils.beUtils.getGennyToken());
 
 		return headerAskMsg;
@@ -1260,7 +1261,7 @@ public class TableUtils {
 		askArray1[0] = titleAsk;
 		QDataAskMessage titleAskMsg = new QDataAskMessage(askArray1);
 		titleAskMsg.setToken(userToken.getToken());
-		titleAskMsg.setReplace(true);
+		titleAskMsg.setReplace(false);
 		
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(titleAskMsg));
 
