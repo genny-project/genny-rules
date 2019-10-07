@@ -58,6 +58,10 @@ public class ShowFrame implements WorkItemHandler {
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
 		String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
+		
+		if (rootFrameCode.equals("NONE")) {  // Do not change anything
+			return;
+		}
 
 		String callingWorkflow = (String) items.get("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {

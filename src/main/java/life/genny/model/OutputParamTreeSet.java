@@ -56,7 +56,9 @@ public class OutputParamTreeSet implements Serializable {
 		// find the targetCode
 		if (outputParam != null) {
 			if (!outputParam.getResultCode().equals(outputParam.getTargetCode())) {
-				
+				if (outputParam.getResultCode().equals("NONE")) {
+					return; // ignore
+				}
 				if (!this.tree.contains(outputParam)) {
 				
 				// find the OutputParam in the tree that contains the targetframe as the result
