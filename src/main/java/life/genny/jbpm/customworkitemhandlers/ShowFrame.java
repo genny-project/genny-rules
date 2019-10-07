@@ -215,6 +215,10 @@ public class ShowFrame implements WorkItemHandler {
 								Matcher.quoteReplacement("\n"));
 						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""),
 								Matcher.quoteReplacement("\""));
+						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["),
+								Matcher.quoteReplacement("["));
+						askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""),
+								Matcher.quoteReplacement("]"));
 						//
 
 						Set<QDataAskMessage> askMsgs2 = null;
@@ -227,6 +231,16 @@ public class ShowFrame implements WorkItemHandler {
 							BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 							BaseEntity rule = beUtils.getBaseEntityByCode("RUL_"+rootFrameCode);
 							askMsgs2Str = (String) rule.getValue("PRI_ASKS").get(); // assume always
+							
+							if (askMsgs2Str == null) {
+								String fr  = (String) rule.getValue("PRI_FRM").get(); // assume always
+								Frame3 frame3 = JsonUtils.fromJson(fr, Frame3.class);
+								FrameUtils2.toMessage2(frame3,userToken);
+								askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
+										rootFrameCode + "_ASKS", userToken.getToken());
+							}
+							
+							
 							VertxUtils.cacheInterface.writeCache(userToken.getRealm(), rootFrameCode + "_ASKS", askMsgs2Str, userToken.getToken(), 0);
 							log.info("About to do deserialization2!");
 							askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
