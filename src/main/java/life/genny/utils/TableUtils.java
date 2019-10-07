@@ -512,7 +512,7 @@ public class TableUtils {
 						msg = new QDataBaseEntityMessage(items, parentCode, linkCode, total);
 						log.info("The result of getSearchResults was null Exception ::  " + msg);
 					} else {
-						log.info("The result of getSearchResults was " + msg.getItems().length + " items ");
+						log.info("The result of getSearchResults was " + msg.getItems().length + " items , with total="+msg.getTotal());
 					}
 				} catch (Exception e) {
 					log.info("The result of getSearchResults was null Exception ::  " + msg);
