@@ -266,7 +266,7 @@ public class TableUtils {
 			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(beUtils.getGennyToken().getRealm(),
 					"FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
 		}
-		
+		askMsgs2Str = null;
 		if (askMsgs2Str == null) {
 			log.error("FRM_TABLE_CONTENT_ASKS is NOT IN CACHE!");
 			Frame3 frame = VertxUtils.getObject(serviceToken.getRealm(), "", "FRM_TABLE_CONTENT", Frame3.class,
@@ -276,7 +276,7 @@ public class TableUtils {
 			askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "FRM_TABLE_CONTENT_ASKS",
 					String.class, beUtils.getGennyToken().getToken());
 
-		} else {
+		} 
 			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
 					Matcher.quoteReplacement("\n"));
 			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""),
@@ -316,26 +316,36 @@ public class TableUtils {
 			tableResultAsk.setReadonly(true);
 			tableResultAsk.setRealm(beUtils.getGennyToken().getRealm());
 			Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
-
 			tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
 
-			/* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
-			String tableResultAskCode = tableResultAsk.getQuestionCode();
-
+//			/* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
+//			String tableResultAskCode = tableResultAsk.getQuestionCode();
+//
 			QDataBaseEntityMessage msg3 = TableUtils.changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk,
 					serviceToken, beUtils.getGennyToken(), tableResultAskMsgs);
 			msg3.setToken(beUtils.getGennyToken().getToken());
 			msg3.setReplace(true);
-
-			for (QDataAskMessage askMsg : tableResultAskMsgs) {
-				askMsg.setToken(beUtils.getGennyToken().getToken());
-				askMsg.getItems()[0] = tableResultAsk;
-				askMsg.setReplace(true);
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
-			}
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
+//
+//			for (QDataAskMessage askMsg : tableResultAskMsgs) {
+//				askMsg.setToken(beUtils.getGennyToken().getToken());
+//				askMsg.getItems()[0] = tableResultAsk;
+//				askMsg.setReplace(true);
+//				String sendingMsg = JsonUtils.toJson(askMsg);
+//				Integer length = sendingMsg.length();
+//				VertxUtils.writeMsg("webcmds", sendingMsg);
+//		
+//			}
+			
+			QDataAskMessage askMsg = new QDataAskMessage(tableResultAsk);
+			askMsg.setToken(beUtils.getGennyToken().getToken());
+			askMsg.setReplace(true);
+			String sendingMsg = JsonUtils.toJson(askMsg);
+			Integer length = sendingMsg.length();
+			VertxUtils.writeMsg("webcmds", sendingMsg);
 
-		}
+
+		
 		// }
 	}
 
