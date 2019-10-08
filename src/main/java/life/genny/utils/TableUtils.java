@@ -295,6 +295,13 @@ public class TableUtils {
 				e.printStackTrace();
 			}
 			ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
+//            .question("QUE_TABLE_RESULTS_GRP")
+// *           .addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType).weight(1.0).end()
+// *           .addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableRowDataType).vcl(VisualControlType.GROUP).weight(1.0).end()
+// *           .addTheme("THM_TABLE_ROW", serviceToken).dataType(tableRowDataType).weight(1.0).end()
+// *           .addTheme("THM_TABLE_CONTENT", serviceToken).vcl(VisualControlType.GROUP).end()			
+// *           .addTheme("THM_TABLE_ROW_CELL", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()			
+
 
 			List<BaseEntity> rowList = Arrays.asList(msg.getItems());
 			List<Ask> rowAsks = generateQuestions(beUtils.getGennyToken(), beUtils, rowList, columns,
@@ -306,7 +313,7 @@ public class TableUtils {
 			/* Now send out the question rows and themes etc */
 
 			/* Link row asks to a single ask: QUE_TEST_TABLE_RESULTS_GRP */
-			Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+			Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_RESULTS", "link", new DataType(String.class));
 			Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group",
 					questionAttribute, true);
 			Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
@@ -816,7 +823,8 @@ public class TableUtils {
 						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
 						.question(ask.getQuestionCode()).addTheme("THM_DISPLAY_HORIZONTAL", serviceToken)
 						.dataType(tableRowDataType).weight(1.0).end()
-						.addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableRowDataType)
+						.addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken)
+						.dataType(tableRowDataType)
 						.vcl(VisualControlType.GROUP).weight(1.0).end().addTheme("THM_TABLE_ROW", serviceToken)
 						.dataType(tableRowDataType).weight(1.0).end().addTheme("THM_TABLE_CONTENT", serviceToken)
 						.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)

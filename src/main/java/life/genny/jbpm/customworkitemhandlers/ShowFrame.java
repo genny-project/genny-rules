@@ -230,6 +230,21 @@ public class ShowFrame implements WorkItemHandler {
 		
 		askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
 				rootFrameCode + "_ASKS", userToken.getToken());
+		
+		if (askMsgs2Str == null) {
+			try {
+				askMsgs2Str  = QwandaUtils.apiGet(GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS", userToken.getToken());
+				JsonObject json = new JsonObject(askMsgs2Str);
+				askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
 		}
 		
  
@@ -246,7 +261,7 @@ public class ShowFrame implements WorkItemHandler {
 			Set<QDataAskMessage> askMsgs2 = null;
 			
 			try {
-				log.info("About to do deserialization!");
+				log.debug("About to do deserialization!");
 				askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 			} catch (Exception e) {
 				log.error("Bad Json deserialization ..."+askMsgs2Str);
