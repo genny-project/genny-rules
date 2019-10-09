@@ -297,11 +297,11 @@ public class TableUtils {
 //		ContextList rowsContextList2 = askMsg2Array[0].getItems()[0].getContextList();
 			
  			List<Context> contexts = new ArrayList<Context>();
-			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER"), VisualControlType.GROUP, 1.0));
-			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL"), VisualControlType.VCL_DEFAULT, 1.0));
-			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW"), VisualControlType.VCL_DEFAULT, 1.0));
-			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL"), VisualControlType.VCL_WRAPPER, 1.0));
-			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT"), VisualControlType.GROUP, 1.0));
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER","THM_TABLE_ROW_CONTENT_WRAPPER"), VisualControlType.GROUP, 1.0));
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL","THM_DISPLAY_HORIZONTAL"), VisualControlType.VCL_DEFAULT, 1.0));
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW","THM_TABLE_ROW"), VisualControlType.VCL_DEFAULT, 1.0));
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL","THM_TABLE_ROW_CELL"), VisualControlType.VCL_WRAPPER, 1.0));
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT","THM_TABLE_CONTENT"), VisualControlType.GROUP, 1.0));
 			
 			for (Context x : contexts) 
 			{
