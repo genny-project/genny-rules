@@ -245,7 +245,7 @@ public class TableUtils {
 		}.getType();
 
 		String askMsgs2Str = null;
-		if ("TRUE".equalsIgnoreCase(System.getenv("FORCE_CACHE_USE_API"))) { // if in junit then use the bridge to fetch
+		if (GennySettings.forceCacheApi) { // if in junit then use the bridge to fetch
 																				// cache data
 //			askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
 //			String.class, userToken.getToken());
@@ -266,15 +266,15 @@ public class TableUtils {
 			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(beUtils.getGennyToken().getRealm(),
 					"FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
 		}
-		askMsgs2Str = null;
+		
 		if (askMsgs2Str == null) {
 			log.error("FRM_TABLE_CONTENT_ASKS is NOT IN CACHE!");
 			Frame3 frame = VertxUtils.getObject(serviceToken.getRealm(), "", "FRM_TABLE_CONTENT", Frame3.class,
 					serviceToken.getToken());
 
 			FrameUtils2.toMessage2(frame, serviceToken);
-			askMsgs2Str = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "FRM_TABLE_CONTENT_ASKS",
-					String.class, beUtils.getGennyToken().getToken());
+			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(beUtils.getGennyToken().getRealm(),
+					"FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
 
 		} 
 			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
@@ -294,7 +294,12 @@ public class TableUtils {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+			
+ 			
 			ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
+			
+			
+			
 //            .question("QUE_TABLE_RESULTS_GRP")
 // *           .addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType).weight(1.0).end()
 // *           .addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableRowDataType).vcl(VisualControlType.GROUP).weight(1.0).end()
