@@ -74,7 +74,7 @@ public class TableUtils {
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
-
+		
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 
 		/* publishing the searchBE to frontEnd */
@@ -241,64 +241,73 @@ public class TableUtils {
 
 		/* Now to display the rows */
 
-		Type setType = new TypeToken<Set<QDataAskMessage>>() {
-		}.getType();
-
-		String askMsgs2Str = null;
-		if (GennySettings.forceCacheApi) { // if in junit then use the bridge to fetch
-																				// cache data
-//			askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
-//			String.class, userToken.getToken());
-			try {
-				askMsgs2Str = QwandaUtils.apiGet(GennySettings.ddtUrl + "/read/" + beUtils.getGennyToken().getRealm()
-						+ "/" + "FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
-				JsonObject json = new JsonObject(askMsgs2Str);
-				askMsgs2Str = json.getString("value"); // TODO - assumes always works.....
-			} catch (ClientProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+//		Type setType = new TypeToken<Set<QDataAskMessage>>() {
+//		}.getType();
+//
+//		String askMsgs2Str = null;
+//		if (GennySettings.forceCacheApi) { // if in junit then use the bridge to fetch
+//																				// cache data
+////			askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
+////			String.class, userToken.getToken());
+//			try {
+//				askMsgs2Str = QwandaUtils.apiGet(GennySettings.ddtUrl + "/read/" + beUtils.getGennyToken().getRealm()
+//						+ "/" + "FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
+//				JsonObject json = new JsonObject(askMsgs2Str);
+//				askMsgs2Str = json.getString("value"); // TODO - assumes always works.....
+//			} catch (ClientProtocolException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//
+//		} else {
+//			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(beUtils.getGennyToken().getRealm(),
+//					"FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
+//		}
+//		
+//		if (askMsgs2Str == null) {
+//			log.error("FRM_TABLE_CONTENT_ASKS is NOT IN CACHE!");
+//			Frame3 frame = VertxUtils.getObject(serviceToken.getRealm(), "", "FRM_TABLE_CONTENT", Frame3.class,
+//					serviceToken.getToken());
+//
+//			FrameUtils2.toMessage2(frame, serviceToken);
+//			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(beUtils.getGennyToken().getRealm(),
+//					"FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
+//
+//		} 
+//			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
+//					Matcher.quoteReplacement("\n"));
+//			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""),
+//					Matcher.quoteReplacement("\""));
+//			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["),
+//					Matcher.quoteReplacement("["));
+//			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""),
+//					Matcher.quoteReplacement("]"));
+//
+//			Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+//			QDataAskMessage[] askMsg2Array = null;
+//
+//			try {
+//				askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		ContextList rowsContextList2 = askMsg2Array[0].getItems()[0].getContextList();
+			
+ 			List<Context> contexts = new ArrayList<Context>();
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER"), VisualControlType.GROUP, 1.0));
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL"), VisualControlType.VCL_DEFAULT, 1.0));
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW"), VisualControlType.VCL_DEFAULT, 1.0));
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL"), VisualControlType.VCL_WRAPPER, 1.0));
+			contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT"), VisualControlType.GROUP, 1.0));
+			
+			for (Context x : contexts) 
+			{
+				x.setDataType("Table Row Group");
 			}
-
-		} else {
-			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(beUtils.getGennyToken().getRealm(),
-					"FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
-		}
-		
-		if (askMsgs2Str == null) {
-			log.error("FRM_TABLE_CONTENT_ASKS is NOT IN CACHE!");
-			Frame3 frame = VertxUtils.getObject(serviceToken.getRealm(), "", "FRM_TABLE_CONTENT", Frame3.class,
-					serviceToken.getToken());
-
-			FrameUtils2.toMessage2(frame, serviceToken);
-			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(beUtils.getGennyToken().getRealm(),
-					"FRM_TABLE_CONTENT_ASKS", beUtils.getGennyToken().getToken());
-
-		} 
-			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"),
-					Matcher.quoteReplacement("\n"));
-			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""),
-					Matcher.quoteReplacement("\""));
-			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["),
-					Matcher.quoteReplacement("["));
-			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""),
-					Matcher.quoteReplacement("]"));
-
-			Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
-			QDataAskMessage[] askMsg2Array = null;
-
-			try {
-				askMsg2Array = askMsgs2.stream().toArray(QDataAskMessage[]::new);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-			
- 			
-			ContextList rowsContextList = askMsg2Array[0].getItems()[0].getContextList();
-			
-			
+			ContextList rowsContextList = new ContextList(contexts);
 			
 //            .question("QUE_TABLE_RESULTS_GRP")
 // *           .addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType).weight(1.0).end()
@@ -445,7 +454,7 @@ public class TableUtils {
 
 	public QDataBaseEntityMessage fetchSearchResults(SearchEntity searchBE, GennyToken gennyToken) {
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
-
+		msg.setReplace(true);
 		if (gennyToken == null) {
 			log.error("GENNY TOKEN IS NULL!!! in getSearchResults");
 			return msg;
@@ -548,6 +557,7 @@ public class TableUtils {
 			e1.printStackTrace();
 		}
 		msg.setToken(gennyToken.getToken());
+		msg.setReplace(true);
 		/* get the total count of the results */
 		long totalResults = msg.getTotal();
 
