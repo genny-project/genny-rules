@@ -103,6 +103,33 @@ public class TableUtils {
 
 	}
 
+	public static SearchEntity getSessionSearch(final String searchCode, final GennyToken userToken)
+	{
+		String sessionSearchCode = searchCode + "_" + userToken.getSessionCode();
+		SearchEntity searchBE = VertxUtils.getObject(userToken.getRealm(), "", sessionSearchCode,
+				SearchEntity.class, userToken.getToken());
+
+		if (searchBE == null) {
+			searchBE = VertxUtils.getObject(userToken.getRealm(), "", searchCode, SearchEntity.class,
+					userToken.getToken());
+
+			/* we need to set the searchBe's code to session Search Code */
+			searchBE.setCode(sessionSearchCode);
+			for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+				ea.setBaseEntityCode(searchBE.getCode());
+			}
+
+			/*
+			 * Save Session Search in cache , ideally this should be in OutputParam and
+			 * saved to workflow
+			 */
+			VertxUtils.putObject(userToken.getRealm(), "", sessionSearchCode, searchBE,
+					userToken.getToken());
+
+		}
+		return searchBE;
+	}
+	
 	private static SearchEntity processSearchString(Answer answer, final String searchBarCode,
 			BaseEntityUtils beUtils) {
 		/* Perform a search bar search */
@@ -119,25 +146,7 @@ public class TableUtils {
 		}
 
 		/* Get the SearchBE */
-		String sessionSearchCode = searchBarCode + "_" + beUtils.getGennyToken().getSessionCode();
-		SearchEntity searchBE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", sessionSearchCode,
-				SearchEntity.class, beUtils.getServiceToken().getToken());
-
-		if (searchBE == null) {
-			searchBE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", searchBarCode, SearchEntity.class,
-					beUtils.getServiceToken().getToken());
-
-			/* we need to set the searchBe's code to session Search Code */
-			searchBE.setCode(sessionSearchCode);
-			for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
-				ea.setBaseEntityCode(searchBE.getCode());
-			}
-
-			/*
-			 * Save Session Search in cache , ideally this should be in OutputParam and
-			 * saved to workflow
-			 */
-		}
+		SearchEntity searchBE = getSessionSearch(searchBarCode,beUtils.getGennyToken());
 
 		BaseEntity user = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
 				beUtils.getGennyToken().getUserCode(), BaseEntity.class, beUtils.getServiceToken().getToken());
