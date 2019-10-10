@@ -105,14 +105,14 @@ public class TableUtils {
 
 	public static SearchEntity getSessionSearch(final String searchCode, final GennyToken userToken)
 	{
-		String sessionSearchCode = searchCode + "_" + userToken.getSessionCode();
+		String sessionSearchCode = searchCode + "_" + userToken.getSessionCode().toUpperCase();
 		SearchEntity searchBE = VertxUtils.getObject(userToken.getRealm(), "", sessionSearchCode,
 				SearchEntity.class, userToken.getToken());
 
 		if (searchBE == null) {
 			searchBE = VertxUtils.getObject(userToken.getRealm(), "", searchCode, SearchEntity.class,
 					userToken.getToken());
-
+		}
 			/* we need to set the searchBe's code to session Search Code */
 			searchBE.setCode(sessionSearchCode);
 			for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
@@ -123,10 +123,10 @@ public class TableUtils {
 			 * Save Session Search in cache , ideally this should be in OutputParam and
 			 * saved to workflow
 			 */
-			VertxUtils.putObject(userToken.getRealm(), "", sessionSearchCode, searchBE,
+			VertxUtils.putObject(userToken.getRealm(), "", searchBE.getCode(), searchBE,
 					userToken.getToken());
 
-		}
+
 		return searchBE;
 	}
 	
@@ -186,6 +186,12 @@ public class TableUtils {
 			}
 		}
 		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
+		/*
+		 * Save Session Search in cache , ideally this should be in OutputParam and
+		 * saved to workflow
+		 */
+		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
+				beUtils.getGennyToken().getToken());
 
 		return searchBE;
 	}
@@ -572,9 +578,6 @@ public class TableUtils {
 
 		int pageNumber = 1;
 
-		/* print the total */
-		log.info("total count is  :: " + totalResults + "");
-		log.info("page number is  :: " + pageNumber + "");
 
 		Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_TOTAL_RESULTS",
 				totalResults + "");
