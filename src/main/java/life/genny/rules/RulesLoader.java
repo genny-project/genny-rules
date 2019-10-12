@@ -27,6 +27,7 @@ import javax.persistence.Persistence;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
+
 import org.drools.compiler.compiler.DrlParser;
 import org.drools.compiler.compiler.DroolsParserException;
 import org.drools.compiler.lang.descr.AttributeDescr;
@@ -42,6 +43,9 @@ import org.jbpm.process.audit.AbstractAuditLogger;
 import org.jbpm.process.audit.JPAWorkingMemoryDbLogger;
 
 import org.jbpm.runtime.manager.impl.DefaultRegisterableItemsFactory;
+import org.jbpm.services.api.ProcessService;
+import org.jbpm.services.api.RuntimeDataService;
+import org.jbpm.services.api.UserTaskService;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
 import org.jbpm.services.api.query.QueryService;
@@ -70,6 +74,7 @@ import org.kie.api.runtime.manager.RuntimeEnvironmentBuilder;
 import org.kie.api.runtime.manager.RuntimeManager;
 import org.kie.api.runtime.manager.RuntimeManagerFactory;
 import org.kie.api.runtime.process.WorkItemHandler;
+import org.kie.api.task.TaskService;
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.query.QueryContext;
@@ -145,6 +150,12 @@ public class RulesLoader {
 	public static EntityManagerFactory emf = null;
 
 	private static ExecutorService executorService;
+	private static TaskService taskService;
+    protected ProcessService processService;
+    protected UserTaskService userTaskService;
+	
+
+    private static RuntimeDataService rds;
 
 	public static Set<String> frameCodes = new TreeSet<String>();
 	public static Set<String> themeCodes = new TreeSet<String>();
@@ -462,6 +473,7 @@ public class RulesLoader {
 			                  //      listeners.add(countDownListener);
 			                        return listeners;
 			                    }
+
 			                })							
 							
 							
@@ -494,6 +506,13 @@ public class RulesLoader {
 			}
 			getKieBaseCache().put(realm, kbase);
 			log.info(realm + " rules installed\n");
+			
+			
+			// Set up taskService
+			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+			taskService = runtimeEngine.getTaskService();
+//			userTaskService = runtimeEngine.
+//	        TaskServiceSession taskSession = taskService.createSession();
 
 		} catch (final Throwable t) {
 			t.printStackTrace();
@@ -994,9 +1013,9 @@ public class RulesLoader {
 		// Register handlers
 	//	log.info("Register SendSignal stateful version");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(RulesLoader.class));
+				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
-				new SendSignalWorkItemHandler2(RulesLoader.class));
+				new SendSignalWorkItemHandler2(MethodHandles.lookup().lookupClass()));
 
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
@@ -1011,9 +1030,9 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
 				new ThrowSignalProcessWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(RulesLoader.class));
+				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
-				new ThrowSignalWorkItemHandler(RulesLoader.class));
+				new ThrowSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
 	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
 
 	}
@@ -1023,9 +1042,9 @@ public class RulesLoader {
 		// Register handlers
 	//	log.info("Register SendSignal  kiesession");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(RulesLoader.class));
+				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
-				new SendSignalWorkItemHandler2(RulesLoader.class));
+				new SendSignalWorkItemHandler2(MethodHandles.lookup().lookupClass()));
 
 		
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
@@ -1041,9 +1060,9 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
 				new ThrowSignalProcessWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(RulesLoader.class));
+				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
-				new ThrowSignalWorkItemHandler(RulesLoader.class));
+				new ThrowSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
 	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
 
 
@@ -1206,7 +1225,8 @@ public class RulesLoader {
 
 	}
 
-	public static void init() {
+	public static void init(RuntimeDataService runtimeDataService) {
+		rds = runtimeDataService;
 		log.info("Setting up Persistence");
 
 		try {
@@ -1341,4 +1361,19 @@ public class RulesLoader {
 		return ret;
 	}
 
+	/**
+	 * @return the rds
+	 */
+	public RuntimeDataService getRds() {
+		return rds;
+	}
+
+	/**
+	 * @param rds the rds to set
+	 */
+	public void setRds(RuntimeDataService rds) {
+		this.rds = rds;
+	}
+
+	
 }

@@ -17,7 +17,7 @@
 	<properties>
 
 		<genny-verticle.version>${project.version}</genny-verticle.version>
-		<kie.version>7.26.0.Final</kie.version>
+		<kie.version>7.27.0.Final</kie.version>
 		<vertx.version>3.5.1</vertx.version>
 		<hazelcast.version>3.8.2</hazelcast.version>
 		<javax-cache.version>1.1.0</javax-cache.version>
@@ -38,7 +38,7 @@
 		<dropwizard.version>3.5.1</dropwizard.version>
 		<vertx-concurrent.version>1.0.0</vertx-concurrent.version>
 		<junit-version>4.12</junit-version>
-		<version.hibernate>5.4.5.Final</version.hibernate>
+		<version.hibernate>5.3.13.Final</version.hibernate>
 		<version.hibernate-validator>6.0.17.Final</version.hibernate-validator>
 		<version.javaassist>3.25.0-GA</version.javaassist>
 	</properties>
@@ -182,6 +182,7 @@
 			<artifactId>drools-decisiontables</artifactId>
 			<version>${kie.version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.drools</groupId>
 			<artifactId>drools-core</artifactId>
@@ -208,11 +209,6 @@
 		<dependency>
 			<groupId>org.jbpm</groupId>
 			<artifactId>jbpm-flow-builder</artifactId>
-			<version>${kie.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.jbpm</groupId>
-			<artifactId>jbpm-bpmn2</artifactId>
 			<version>${kie.version}</version>
 		</dependency>
 		<dependency>
@@ -245,7 +241,48 @@
 			<version>${kie.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-human-task-jpa</artifactId>
+			<version>${kie.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-human-task-core</artifactId>
+			<version>${kie.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-bpmn2</artifactId>
+			<version>${kie.version}</version>
+		</dependency>
 
+
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-human-task</artifactId>
+			<version>${kie.version}</version>
+			<type>pom</type>
+		</dependency>
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-services-api</artifactId>
+			<version>${kie.version}</version>
+		</dependency>
+
+
+		<dependency>
+			<groupId>org.optaplanner</groupId>
+			<artifactId>optaplanner-persistence-jpa</artifactId>
+			<version>${kie.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-test-util</artifactId>
+			<version>${kie.version}</version>
+			<scope>compile</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.hibernate.validator</groupId>
 			<artifactId>hibernate-validator</artifactId>
