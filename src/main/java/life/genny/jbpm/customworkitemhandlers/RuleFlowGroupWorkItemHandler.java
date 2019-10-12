@@ -20,6 +20,7 @@ import org.kie.api.runtime.rule.FactHandle;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.models.GennyToken;
+import life.genny.qwanda.rule.RuleDetails;
 import life.genny.rules.QRules;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.OutputParam;
@@ -59,6 +60,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		callingWorkflow = "";
 	}
 
+	RuleDetails ruleDetails = new RuleDetails(callingWorkflow,ruleFlowGroup);
+
 
     if (serviceToken == null) {
     	log.error("Must supply serviceToken!");
@@ -82,6 +85,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			
 			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
 						
+			newKieSession.insert(ruleDetails);
+
 			/* Inserting all the parameters in the working memory ad a facts */
 			for(String key : items.keySet()) {
 				newKieSession.insert(items.get(key));
@@ -129,7 +134,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			
 			KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
 			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
-			
+			newKieSession.insert(ruleDetails);
+
 			/* Inserting all the parameters in the working memory ad a facts */
 			for(String key : items.keySet()) {
 				newKieSession.insert(items.get(key));
