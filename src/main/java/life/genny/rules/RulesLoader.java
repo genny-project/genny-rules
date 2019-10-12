@@ -1225,8 +1225,7 @@ public class RulesLoader {
 
 	}
 
-	public static void init(RuntimeDataService runtimeDataService) {
-		rds = runtimeDataService;
+	public static void init() {
 		log.info("Setting up Persistence");
 
 		try {
