@@ -27,7 +27,7 @@ import javax.persistence.Persistence;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
-
+import org.dashbuilder.dataset.filter.ColumnFilter;
 import org.drools.compiler.compiler.DrlParser;
 import org.drools.compiler.compiler.DroolsParserException;
 import org.drools.compiler.lang.descr.AttributeDescr;
@@ -41,16 +41,15 @@ import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
 import org.jbpm.process.audit.AbstractAuditLogger;
 import org.jbpm.process.audit.JPAWorkingMemoryDbLogger;
-
+import org.jbpm.ruleflow.instance.RuleFlowProcessInstance;
 import org.jbpm.runtime.manager.impl.DefaultRegisterableItemsFactory;
-import org.jbpm.services.api.ProcessService;
-import org.jbpm.services.api.RuntimeDataService;
-import org.jbpm.services.api.UserTaskService;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
+import org.jbpm.services.api.query.QueryParamBuilder;
 import org.jbpm.services.api.query.QueryService;
 import org.jbpm.services.api.query.model.QueryParam;
 import org.jbpm.services.api.utils.KieServiceConfigurator;
+import org.jbpm.workflow.instance.WorkflowProcessInstance;
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
@@ -73,8 +72,8 @@ import org.kie.api.runtime.manager.RuntimeEnvironment;
 import org.kie.api.runtime.manager.RuntimeEnvironmentBuilder;
 import org.kie.api.runtime.manager.RuntimeManager;
 import org.kie.api.runtime.manager.RuntimeManagerFactory;
+import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkItemHandler;
-import org.kie.api.task.TaskService;
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.query.QueryContext;
@@ -150,12 +149,6 @@ public class RulesLoader {
 	public static EntityManagerFactory emf = null;
 
 	private static ExecutorService executorService;
-	private static TaskService taskService;
-    protected ProcessService processService;
-    protected UserTaskService userTaskService;
-	
-
-    private static RuntimeDataService rds;
 
 	public static Set<String> frameCodes = new TreeSet<String>();
 	public static Set<String> themeCodes = new TreeSet<String>();
@@ -423,6 +416,7 @@ public class RulesLoader {
 			final KieContainer kContainer = ks.newKieContainer(releaseId);
 			final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
 			final KieBase kbase = kContainer.newKieBase(kbconf);
+			
 
 			if (RUNTIME_MANAGER_ON) {
 				/* Using Runtime Environment */
@@ -473,7 +467,6 @@ public class RulesLoader {
 			                  //      listeners.add(countDownListener);
 			                        return listeners;
 			                    }
-
 			                })							
 							
 							
@@ -481,6 +474,7 @@ public class RulesLoader {
 				} else {
 					log.info("NOT USING EXECUTOR!");
 					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase).entityManagerFactory(emf).get();
+					
 				}
 
 				// <property name="org.kie.executor.jms.queue"
@@ -497,6 +491,7 @@ public class RulesLoader {
 					
 					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment);
 				}
+				
 			}
 
 			log.info("Put rules KieBase into Custom Cache");
@@ -506,13 +501,6 @@ public class RulesLoader {
 			}
 			getKieBaseCache().put(realm, kbase);
 			log.info(realm + " rules installed\n");
-			
-			
-			// Set up taskService
-			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-			taskService = runtimeEngine.getTaskService();
-//			userTaskService = runtimeEngine.
-//	        TaskServiceSession taskSession = taskService.createSession();
 
 		} catch (final Throwable t) {
 			t.printStackTrace();
@@ -602,14 +590,17 @@ public class RulesLoader {
 			 * one KieSession
 			 */
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-
+			
+			
 			/* For using ProcessInstanceIdContext */
 			// RuntimeEngine runtimeEngine =
 			// runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
 
 			/* Getting KieSession */
 			KieSession kieSession = runtimeEngine.getKieSession();
-
+			
+			WorkflowProcessInstance sas= (WorkflowProcessInstance)kieSession.getProcessInstance(1);
+			
 			log.debug("Using Runtime engine in Per Request Strategy ::::::: Stateful");
 
 			try {
@@ -761,13 +752,15 @@ public class RulesLoader {
 
 					Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
 
+					
+					
 					/* Check if the process already exist or not is there */
 					boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
 
 					if (hasProcessIdBySessionId) {
 
 						processId = processIdBysessionId.get();
-
+						
 						/* If the message is QEventMessage then send in to event channel */
 						if (facts.getMessage() instanceof QEventMessage) {
 
@@ -1013,9 +1006,9 @@ public class RulesLoader {
 		// Register handlers
 	//	log.info("Register SendSignal stateful version");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
+				new SendSignalWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
-				new SendSignalWorkItemHandler2(MethodHandles.lookup().lookupClass()));
+				new SendSignalWorkItemHandler2(RulesLoader.class));
 
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
@@ -1030,9 +1023,9 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
 				new ThrowSignalProcessWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
+				new AskQuestionWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
-				new ThrowSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
+				new ThrowSignalWorkItemHandler(RulesLoader.class));
 	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
 
 	}
@@ -1042,9 +1035,9 @@ public class RulesLoader {
 		// Register handlers
 	//	log.info("Register SendSignal  kiesession");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
+				new SendSignalWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
-				new SendSignalWorkItemHandler2(MethodHandles.lookup().lookupClass()));
+				new SendSignalWorkItemHandler2(RulesLoader.class));
 
 		
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
@@ -1060,9 +1053,9 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
 				new ThrowSignalProcessWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
+				new AskQuestionWorkItemHandler(RulesLoader.class));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
-				new ThrowSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
+				new ThrowSignalWorkItemHandler(RulesLoader.class));
 	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
 
 
@@ -1161,12 +1154,20 @@ public class RulesLoader {
 //		}
 
 	}
-
+	
+	public static Optional<Long> getProcessIdByVariableValue(String variableName , String variableValue){
+		QueryContext ctx = new QueryContext(0, 100);
+		Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstances",ProcessInstanceQueryMapper.get(), ctx,
+				QueryParam.equalsTo("variableId", variableName),
+				QueryParam.equalsTo("value", variableValue));
+																			
+		return instances.stream().map(d -> d.getId()).findFirst();
+	}
+	
 	public static Optional<Long> getProcessIdBysessionId(String sessionId) {
 		// Do pagination here
 		QueryContext ctx = new QueryContext(0, 100);
-		Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstances",
-				ProcessInstanceQueryMapper.get(), ctx, QueryParam.equalsTo("value", sessionId));
+		Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstances",ProcessInstanceQueryMapper.get(), ctx, QueryParam.equalsTo("value", sessionId));
 
 		return instances.stream().map(d -> d.getId()).findFirst();
 
@@ -1229,23 +1230,36 @@ public class RulesLoader {
 		log.info("Setting up Persistence");
 
 		try {
+			
 			emf = Persistence.createEntityManagerFactory("genny-persistence-jbpm-jpa");
 			env = EnvironmentFactory.newEnvironment(); // KnowledgeBaseFactory.newEnvironment();
 			env.set(EnvironmentName.ENTITY_MANAGER_FACTORY, emf);
 		} catch (Exception e) {
+			
 			log.warn("No persistence enabled, are you running wildfly-rulesservice?");
 		}
 
-		QueryDefinitionEntity qde = new QueryDefinitionEntity();
 		configureServices();
+		
+		registerSqlQuery();
+		System.out.println("Finished init");
+	}
+	
+	/*
+	 * This function register queries to the queryService
+	 */
+	public static void registerSqlQuery() {
+		
 		SqlQueryDefinition query = new SqlQueryDefinition("getAllProcessInstances", "java:jboss/datasources/gennyDS");
 		query.setExpression("select * from VariableInstanceLog");
+		
 		try {
 			queryService.registerQuery(query);
+			
 		} catch (QueryAlreadyRegisteredException e) {
 			log.warn(query.getName() + " is already registered");
 		}
-		System.out.println("Finished init");
+		
 	}
 
 	public static Optional<Long> getProcessIdBySessionId(String sessionId) {
@@ -1254,6 +1268,7 @@ public class RulesLoader {
 	}
 
 	private static Boolean processRule(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {
+	
 		Boolean ret = false;
 		// Determine what rules have changed via their hash .... and if so then clear
 		// their cache and db entries
@@ -1360,19 +1375,4 @@ public class RulesLoader {
 		return ret;
 	}
 
-	/**
-	 * @return the rds
-	 */
-	public RuntimeDataService getRds() {
-		return rds;
-	}
-
-	/**
-	 * @param rds the rds to set
-	 */
-	public void setRds(RuntimeDataService rds) {
-		this.rds = rds;
-	}
-
-	
 }
