@@ -51,6 +51,7 @@ import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
 import org.jbpm.services.api.query.QueryService;
 import org.jbpm.services.api.query.model.QueryParam;
 import org.jbpm.services.api.utils.KieServiceConfigurator;
+import org.jbpm.services.task.utils.TaskFluent;
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
@@ -75,6 +76,8 @@ import org.kie.api.runtime.manager.RuntimeManager;
 import org.kie.api.runtime.manager.RuntimeManagerFactory;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.task.TaskService;
+import org.kie.api.task.model.Task;
+import org.kie.api.task.model.TaskSummary;
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
 import org.kie.internal.query.QueryContext;
@@ -660,6 +663,22 @@ public class RulesLoader {
 									+ ": " + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
 									+ processId);
 
+							
+					        Map<String,Object> params = new HashMap<String,Object>();
+					        Task task = new TaskFluent().setName("This is my task name")
+					                .addPotentialGroup("GADA")
+					                .setAdminUser("Administrator")
+					                .addPotentialUser("acrow")
+					                .getTask();
+
+					        long taskId = task.getId();
+
+					        taskService.addTask(task, params);
+				              // Do Task Operations
+				            List<TaskSummary> tasksAssignedAsPotentialOwner = taskService.getTasksAssignedAsPotentialOwner("acrow", null);
+				            log.info("TaskId="+taskId+" TASKS ASSIGNED = "+tasksAssignedAsPotentialOwner);
+							
+							
 							kieSession.signalEvent("event", facts, processId);
 						}
 

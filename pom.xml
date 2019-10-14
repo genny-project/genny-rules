@@ -182,7 +182,7 @@
 			<artifactId>drools-decisiontables</artifactId>
 			<version>${kie.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.drools</groupId>
 			<artifactId>drools-core</artifactId>
@@ -253,8 +253,21 @@
 		</dependency>
 		<dependency>
 			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-human-task-audit</artifactId>
+			<version>${kie.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jbpm</groupId>
 			<artifactId>jbpm-bpmn2</artifactId>
 			<version>${kie.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jbpm</groupId>
+			<artifactId>jbpm-workitems</artifactId>
+			<version>${kie.version}</version>
+			<type>pom</type>
 		</dependency>
 
 

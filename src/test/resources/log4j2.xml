@@ -13,5 +13,11 @@ status="WARN">
     <Root level="error">
         <AppenderRef ref="Console"/>
     </Root>
+    	<logger name="org.hibernate.jpa.boot" level="OFF" />
+    	<logger name="org.hibernate.spatial.integration.SpatialService" level="OFF" />
+    	<logger name="org.hibernate.dialect.Dialect" level="OFF" />
+    	<logger name="org.hibernate.envers.boot.internal.EnversServiceImpl" level="OFF" />
+    	<logger name="org.hibernate.orm.beans" level="OFF" />
+    	<logger name="org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator" level="OFF" />
 </Loggers>
 </Configuration>
