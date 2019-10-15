@@ -428,6 +428,9 @@ public class RulesLoader {
 			final KieBase kbase = kContainer.newKieBase(kbconf);
 
 			if (RUNTIME_MANAGER_ON) {
+				// This is needed to get around the user permissions : TODO!!!!! fix
+				System.setProperty("org.kie.server.bypass.auth.user", "true");
+
 				/* Using Runtime Environment */
 				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
 
