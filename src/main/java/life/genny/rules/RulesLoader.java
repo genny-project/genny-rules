@@ -52,6 +52,7 @@ import org.jbpm.services.api.query.QueryService;
 import org.jbpm.services.api.query.model.QueryParam;
 import org.jbpm.services.api.utils.KieServiceConfigurator;
 import org.jbpm.services.task.utils.TaskFluent;
+import org.jbpm.services.task.wih.NonManagedLocalHTWorkItemHandler;
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
@@ -653,6 +654,8 @@ public class RulesLoader {
 
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(gToken));
+				kieSession.getWorkItemManager().registerWorkItemHandler("Human Task", new NonManagedLocalHTWorkItemHandler(kieSession,taskService));
+
 
 				/* If userToken is not null then send the event through user Session */
 				if (facts.getUserToken() != null) {
