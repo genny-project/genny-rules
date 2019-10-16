@@ -692,6 +692,8 @@ public class RulesLoader {
 					                .addPotentialGroup("GADA")
 					                .setAdminUser("Administrator")
 					                .addPotentialUser("acrow")
+					                .setProcessId("direct")
+					                .setDeploymentID(gToken.getRealm())
 					                .getTask();
 
 					        long taskId = task.getId();
