@@ -40,8 +40,8 @@ import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
 import org.jbpm.process.audit.AbstractAuditLogger;
+import org.jbpm.process.audit.AuditLoggerFactory;
 import org.jbpm.process.audit.JPAWorkingMemoryDbLogger;
-
 import org.jbpm.runtime.manager.impl.DefaultRegisterableItemsFactory;
 import org.jbpm.services.api.ProcessService;
 import org.jbpm.services.api.RuntimeDataService;
@@ -81,6 +81,7 @@ import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
+import org.kie.internal.process.CorrelationKey;
 import org.kie.internal.query.QueryContext;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.runtime.manager.context.EmptyContext;
@@ -155,7 +156,7 @@ public class RulesLoader {
 
 	private static ExecutorService executorService;
 	private static TaskService taskService;
-    protected ProcessService processService;
+    protected static ProcessService processService;
     protected UserTaskService userTaskService;
 	
 
@@ -181,6 +182,15 @@ public class RulesLoader {
 		for (String realm : realms) {
 			setupKieRules(realm, rules);
 		}
+	}
+	
+	public static Object[] getProcessIdByVariableValue(String variableName , String variableValue){
+		QueryContext ctx = new QueryContext(0, 100);
+		Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstances",ProcessInstanceQueryMapper.get(), ctx,
+				QueryParam.equalsTo("variableInstanceId", variableName),
+				QueryParam.equalsTo("value", variableValue));
+																			
+		return instances.stream().map(d -> d.getId()).toArray();
 	}
 
 	/**
@@ -456,8 +466,10 @@ public class RulesLoader {
 					((ExecutorImpl) ((ExecutorServiceImpl) executorService).getExecutor())
 							.setQueueName(executorQueueName);
 
-					executorService.init();
-
+					executorService.init();	
+					
+					
+					
 					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase)
 							.entityManagerFactory(emf)
 							.addEnvironmentEntry("ExecutorService", executorService)
@@ -626,14 +638,13 @@ public class RulesLoader {
 			 * one KieSession
 			 */
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-
 			/* For using ProcessInstanceIdContext */
 			// RuntimeEngine runtimeEngine =
 			// runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
 
 			/* Getting KieSession */
-			KieSession kieSession = runtimeEngine.getKieSession();
-
+			KieSession kieSession = runtimeEngine.getKieSession();	
+						
 			log.debug("Using Runtime engine in Per Request Strategy ::::::: Stateful");
 
 			try {
@@ -647,16 +658,18 @@ public class RulesLoader {
 
 				KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 
-				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 
 				//addHandlers(kieSession);
+				kieSession.addEventListener(logger);
 
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(gToken));
 				kieSession.getWorkItemManager().registerWorkItemHandler("Human Task", new NonManagedLocalHTWorkItemHandler(kieSession,taskService));
+				
 
-
+				
 				/* If userToken is not null then send the event through user Session */
 				if (facts.getUserToken() != null) {
 
@@ -669,6 +682,7 @@ public class RulesLoader {
 					/* Check if the process already exist or not */
 					boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
 
+					
 					if (hasProcessIdBySessionId) {
 
 						processId = processIdBysessionId.get();
@@ -703,7 +717,6 @@ public class RulesLoader {
 				            List<TaskSummary> tasksAssignedAsPotentialOwner = taskService.getTasksAssignedAsPotentialOwner("acrow", null);
 				            log.info("TaskId="+taskId+" TASKS ASSIGNED = "+tasksAssignedAsPotentialOwner);
 							
-							
 							kieSession.signalEvent("event", facts, processId);
 						}
 
@@ -721,6 +734,7 @@ public class RulesLoader {
 									+ processId);
 
 							kieSession.signalEvent("data", facts, processId);
+							
 						}
 
 					} else {
@@ -738,6 +752,8 @@ public class RulesLoader {
 
 							/* sending New Session Signal */
 							kieSession.signalEvent("newSession", facts);
+							
+							
 
 						} else {
 							log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
@@ -790,7 +806,7 @@ public class RulesLoader {
 						getKieBaseCache().get(facts.getServiceToken().getRealm()), ksconf, env);
 
 				JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
-
+					
 			//	addHandlers(kieSession);
 
 				kieSession.addEventListener(new GennyAgendaEventListener());
@@ -1266,7 +1282,7 @@ public class RulesLoader {
 
 		serviceConfigurator.configureServices("genny-persistence-jbpm-jpa", identityProvider, userGroupCallback);
 		queryService = serviceConfigurator.getQueryService();
-
+		processService = serviceConfigurator.getProcessService();
 	}
 
 	public static void init() {

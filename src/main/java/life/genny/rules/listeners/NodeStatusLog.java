@@ -96,6 +96,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 		internalSetIsJTA(env);
 		session.addEventListener(this);
 	}
+
 	/*
 	 * end of backward compatibility
 	 */
@@ -123,7 +124,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 			isJTA = bool.booleanValue();
 		}
 	}
- 
+
 	@Override
 	@Transactional(dontRollbackOn = { org.hibernate.AssertionFailure.class })
 	public void beforeNodeTriggered(ProcessNodeTriggeredEvent event) {
@@ -152,7 +153,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 				em.persist(nodeStatus);
 			} catch (Exception e) {
 
-				logger.error("Error in persisting nodeStatus:"+nodeStatus);
+				logger.error("Error in persisting nodeStatus:" + nodeStatus);
 			}
 			leaveTransaction(em, tx);
 		}

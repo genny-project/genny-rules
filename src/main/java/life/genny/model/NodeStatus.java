@@ -255,6 +255,14 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		return true;
 	}
 
+
+
+	@Override
+	public String getExternalId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	@Override
 	public String getNodeInstanceId() {
 		// TODO Auto-generated method stub
@@ -281,12 +289,6 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 
 	@Override
 	public Integer getType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getExternalId() {
 		// TODO Auto-generated method stub
 		return null;
 	}
