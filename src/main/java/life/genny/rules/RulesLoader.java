@@ -482,25 +482,7 @@ public class RulesLoader {
 			                    }
 
 			                })							
-							.userGroupCallback(new UserGroupCallback() {
-				    			public List<String> getGroupsForUser(String userId) {
-				    				List<String> result = new ArrayList<String>();
-				    				if ("sales-rep".equals(userId)) {
-				    					result.add("sales");
-				    				} else if ("john".equals(userId)) {
-				    					result.add("PM");
-				    				}
-				    				return result;
-				    			}
-				    			public boolean existsUser(String arg0) {
-				    				return true;
-				    			}
-				    			public boolean existsGroup(String arg0) {
-				    				return true;
-				    			}
-				    		})
-
-							
+							.userGroupCallback(new DummyCallback()) 
 							.get();
 				} else {
 					log.info("NOT USING EXECUTOR!");
