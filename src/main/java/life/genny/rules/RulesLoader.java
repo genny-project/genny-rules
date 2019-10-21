@@ -102,7 +102,7 @@ import life.genny.jbpm.customworkitemhandlers.AskQuestionWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.QueryProcessInstanceIDByVariable;
+import life.genny.jbpm.customworkitemhandlers.GetProcessesUsingVariable;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler2;
@@ -1070,7 +1070,7 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
 				new SendSignalWorkItemHandler2(MethodHandles.lookup().lookupClass()));
 
-		kieSession.getWorkItemManager().registerWorkItemHandler("QueryProcessInstanceIDByVariable", new QueryProcessInstanceIDByVariable());	
+		kieSession.getWorkItemManager().registerWorkItemHandler("GetProcessesUsingVariable", new GetProcessesUsingVariable());	
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
@@ -1102,7 +1102,7 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
 				new SendSignalWorkItemHandler2(MethodHandles.lookup().lookupClass()));
 
-		kieSession.getWorkItemManager().registerWorkItemHandler("QueryProcessInstanceIDByVariable", new QueryProcessInstanceIDByVariable());		
+		kieSession.getWorkItemManager().registerWorkItemHandler("GetProcessesUsingVariable", new GetProcessesUsingVariable());		
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
@@ -1134,7 +1134,7 @@ public class RulesLoader {
 
 			
 			handlers.put("Awesome", new AwesomeHandler());
-			handlers.put("QueryProcessInstanceIDByVariable", new QueryProcessInstanceIDByVariable());
+			handlers.put("GetProcessesUsingVariable", new GetProcessesUsingVariable());
 			handlers.put("Notification", new NotificationWorkItemHandler());
 			handlers.put("ShowAllForms", new ShowAllFormsHandler());
 			handlers.put("ShowFrame", new ShowFrame());

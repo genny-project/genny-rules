@@ -28,7 +28,7 @@ import org.kie.internal.task.api.UserGroupCallback;
 import life.genny.models.GennyToken;
 
 
-public class QueryProcessInstanceIDByVariable implements WorkItemHandler {
+public class GetProcessesUsingVariable implements WorkItemHandler {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
@@ -37,7 +37,7 @@ public class QueryProcessInstanceIDByVariable implements WorkItemHandler {
 	private static KieServiceConfigurator serviceConfigurator;
 
 	
-    public QueryProcessInstanceIDByVariable() {
+    public GetProcessesUsingVariable() {
         super();
     }
 
