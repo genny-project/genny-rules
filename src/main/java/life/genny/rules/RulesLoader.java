@@ -96,6 +96,7 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.core.buffer.Buffer;
+import life.genny.jbpm.customworkitemhandlers.AskQuestionTaskWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AskQuestionWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
@@ -482,7 +483,25 @@ public class RulesLoader {
 			                    }
 
 			                })							
-							.userGroupCallback(new DummyCallback()) 
+							.userGroupCallback(new UserGroupCallback() {
+				    			public List<String> getGroupsForUser(String userId) {
+				    				List<String> result = new ArrayList<String>();
+				    				if ("sales-rep".equals(userId)) {
+				    					result.add("sales");
+				    				} else if ("john".equals(userId)) {
+				    					result.add("PM");
+				    				}
+				    				return result;
+				    			}
+				    			public boolean existsUser(String arg0) {
+				    				return true;
+				    			}
+				    			public boolean existsGroup(String arg0) {
+				    				return true;
+				    			}
+				    		})
+
+							
 							.get();
 				} else {
 					log.info("NOT USING EXECUTOR!");
@@ -1057,6 +1076,8 @@ public class RulesLoader {
 				new ThrowSignalProcessWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
 				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
+		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
+				new AskQuestionTaskWorkItemHandler(MethodHandles.lookup().lookupClass()));
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
 				new ThrowSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
 	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
