@@ -656,7 +656,7 @@ public class RulesLoader {
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(gToken));
 				kieSession.getWorkItemManager().registerWorkItemHandler("Human Task", new NonManagedLocalHTWorkItemHandler(kieSession,taskService));
-
+				kieSession.getEnvironment().set("Autoclaim", "true");  // for JBPM
 
 				/* If userToken is not null then send the event through user Session */
 				if (facts.getUserToken() != null) {
