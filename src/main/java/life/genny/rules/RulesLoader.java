@@ -103,7 +103,7 @@ import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler2;
+
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
@@ -1059,8 +1059,6 @@ public class RulesLoader {
 	//	log.info("Register SendSignal stateful version");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
 				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
-		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
-				new SendSignalWorkItemHandler2(MethodHandles.lookup().lookupClass()));
 
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
@@ -1090,8 +1088,6 @@ public class RulesLoader {
 	//	log.info("Register SendSignal  kiesession");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
 				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
-		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
-				new SendSignalWorkItemHandler2(MethodHandles.lookup().lookupClass()));
 
 		
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
@@ -1120,8 +1116,6 @@ public class RulesLoader {
 		 Map<String, WorkItemHandler> handlers = new HashMap<String, WorkItemHandler>();
 		//	log.info("Register SendSignal  kiesession");
 			handlers.put("SendSignal",new SendSignalWorkItemHandler(RulesLoader.class,runtime));
-			handlers.put("SendSignal2",
-					new SendSignalWorkItemHandler2(RulesLoader.class,runtime));
 
 			
 			handlers.put("Awesome", new AwesomeHandler());
