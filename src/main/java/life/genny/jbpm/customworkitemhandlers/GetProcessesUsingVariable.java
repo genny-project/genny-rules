@@ -26,6 +26,7 @@ import org.kie.internal.query.QueryContext;
 import org.kie.internal.task.api.UserGroupCallback;
 
 import life.genny.models.GennyToken;
+import life.genny.utils.OutputParam;
 
 
 public class GetProcessesUsingVariable implements WorkItemHandler {
@@ -42,7 +43,7 @@ public class GetProcessesUsingVariable implements WorkItemHandler {
     }
 
     public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-        log.info("Executing QueryProcessInstanceIDByVariable handler. Requested PrcoessId By : " + workItem.getProcessInstanceId());
+        log.info("Executing GetProcessesUsingVariable handler. Requested PrcoessId By : " + workItem.getProcessInstanceId());
         final Map<String,Object> resultMap = new HashMap<String,Object>();
         
         /* Configuring query Service and registering query statement */
@@ -62,23 +63,25 @@ public class GetProcessesUsingVariable implements WorkItemHandler {
     		callingWorkflow = "";
     	}
 		
-		log.info("VariableName = " + variableName );
-		log.info("variableValue = " + variableValue );
     	log.info("Calling Workflow :: " + callingWorkflow);
     	log.info("User Requesting :: " + userToken.getUserCode());
+    	log.info("ColumnName / VariableName = " + variableName );
+		log.info("Value / VariableValue = " + variableValue );
 		
 		QueryContext ctx = new QueryContext(0, 100);
 		
 		if( variableName != null && variableValue != null ) {
+				
+			Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstancesByVariable",ProcessInstanceQueryMapper.get(), ctx,
+														QueryParam.equalsTo(variableName, variableValue));	
 			
-			Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstancesID",ProcessInstanceQueryMapper.get(), ctx,
-														QueryParam.equalsTo("variableInstanceId", variableName),
-														QueryParam.equalsTo("value", variableValue));	
+			List<Long> resultArray = instances.stream().map(d -> d.getId()).collect(Collectors.toList());
+			OutputParam output = new OutputParam();
+			output.setResult(resultArray);
 			
-			Object resultArray = (Long[]) instances.stream().map(d -> d.getId()).toArray();
-			resultMap.put("output", resultArray);
-			
+			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
+			log.info("Successful Executing GetProcessesUsingVariable handler");
 			
 		}else {
 			
@@ -99,7 +102,7 @@ public class GetProcessesUsingVariable implements WorkItemHandler {
      */
     private static void registerQuery() {
     	
-    	SqlQueryDefinition query = new SqlQueryDefinition("getAllProcessInstancesID", "java:jboss/datasources/gennyDS");
+    	SqlQueryDefinition query = new SqlQueryDefinition("getAllProcessInstancesByVariable", "java:jboss/datasources/gennyDS");
 		query.setExpression("select * from nodestatus");
 		try {
 			queryService.registerQuery(query);

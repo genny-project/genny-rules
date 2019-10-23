@@ -128,34 +128,59 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	@Override
 	@Transactional(dontRollbackOn = { org.hibernate.AssertionFailure.class })
 	public void beforeNodeTriggered(ProcessNodeTriggeredEvent event) {
+		
 		NodeInstanceLog log = (NodeInstanceLog) builder.buildEvent(event);
 		persist(log, event);
+		
 		((NodeInstanceImpl) event.getNodeInstance()).getMetaData().put("NodeInstanceLog", log);
-		String workflowCode = (String) event.getNodeInstance().getVariable("workflowcode");
-		if (workflowCode != null) {
-			org.kie.api.runtime.process.NodeInstance nodeInstance = event.getNodeInstance();
-			Date eventDate = event.getEventDate();
+		Date eventDate = event.getEventDate();
+		
+		String workflowStatus = (String) event.getNodeInstance().getVariable("workflowStatus");
+		
+		if (workflowStatus != null) {
+			
 			org.kie.api.runtime.process.ProcessInstance processInstance = event.getProcessInstance();
-			String processId = processInstance.getProcessId();
 			Long processInstanceId = processInstance.getId();
-			String nodeName = nodeInstance.getNodeName();
-			String nodeId = nodeInstance.getNode().getId() + "";
-			GennyToken userToken = (GennyToken) nodeInstance.getVariable("userToken");
-			String realm = userToken.getRealm();
-
-			String userCode = userToken.getUserCode();
-			NodeStatus nodeStatus = new NodeStatus(userCode, nodeName, nodeId, realm, processInstanceId, processId,
-					workflowCode);
+			
 			EntityManager em = getEntityManager(event);
-			Object tx = joinTransaction(em);
+			/* Object tx = joinTransaction(em);*/
 
 			try {
-				em.persist(nodeStatus);
+				
+				NodeStatus record = em.find(NodeStatus.class,processInstanceId );
+				if( record != null) {
+					
+					if( record.getWorkflowStatus() != workflowStatus) {
+						
+						logger.info(" UDATING " + record.toString() + " ENTRY IN NODESTATUS DB");
+						record.setWorkflowStatus(workflowStatus);
+						em.flush();	
+					}
+					
+				}else {
+					
+					org.kie.api.runtime.process.NodeInstance nodeInstance = event.getNodeInstance();					
+					
+					String processId = processInstance.getProcessId();
+					String nodeName = nodeInstance.getNodeName();
+					String nodeId = nodeInstance.getNode().getId() + "";
+					GennyToken userToken = (GennyToken) nodeInstance.getVariable("userToken");
+					String realm = userToken.getRealm();
+
+					String userCode = userToken.getUserCode();
+					NodeStatus nodeStatus = new NodeStatus(userCode, nodeName, nodeId, realm, processInstanceId, processId,
+							workflowStatus);
+					
+					logger.info(nodeStatus.toString() + " NOT FOUND IN NODESTATUS DB !!");
+					em.persist(nodeStatus);
+				}
+				
+				
 			} catch (Exception e) {
 
-				logger.error("Error in persisting nodeStatus:" + nodeStatus);
+				logger.error("Error in persisting nodeStatus");
+				
 			}
-			leaveTransaction(em, tx);
 		}
 	}
 
