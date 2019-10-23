@@ -40,8 +40,11 @@ import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
 import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
 import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
 import org.jbpm.process.audit.AbstractAuditLogger;
+import org.jbpm.process.audit.AuditLoggerFactory;
 import org.jbpm.process.audit.JPAWorkingMemoryDbLogger;
+
 import org.jbpm.ruleflow.instance.RuleFlowProcessInstance;
+
 import org.jbpm.runtime.manager.impl.DefaultRegisterableItemsFactory;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
@@ -50,6 +53,9 @@ import org.jbpm.services.api.query.QueryService;
 import org.jbpm.services.api.query.model.QueryParam;
 import org.jbpm.services.api.utils.KieServiceConfigurator;
 import org.jbpm.workflow.instance.WorkflowProcessInstance;
+import org.jbpm.services.task.utils.TaskFluent;
+import org.jbpm.services.task.wih.NonManagedLocalHTWorkItemHandler;
+
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
@@ -74,8 +80,14 @@ import org.kie.api.runtime.manager.RuntimeManager;
 import org.kie.api.runtime.manager.RuntimeManagerFactory;
 import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkItemHandler;
+
+import org.kie.api.task.TaskService;
+import org.kie.api.task.model.Task;
+import org.kie.api.task.model.TaskSummary;
+
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
+import org.kie.internal.process.CorrelationKey;
 import org.kie.internal.query.QueryContext;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.runtime.manager.context.EmptyContext;
@@ -91,13 +103,15 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.rxjava.core.Vertx;
 import io.vertx.rxjava.core.buffer.Buffer;
+import life.genny.jbpm.customworkitemhandlers.AskQuestionTaskWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AskQuestionWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
+import life.genny.jbpm.customworkitemhandlers.GetProcessesUsingVariable;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler2;
+
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
@@ -150,6 +164,14 @@ public class RulesLoader {
 
 	private static ExecutorService executorService;
 
+	private static TaskService taskService;
+    protected static ProcessService processService;
+    protected UserTaskService userTaskService;
+	
+
+    private static RuntimeDataService rds;
+
+
 	public static Set<String> frameCodes = new TreeSet<String>();
 	public static Set<String> themeCodes = new TreeSet<String>();
 
@@ -171,7 +193,7 @@ public class RulesLoader {
 			setupKieRules(realm, rules);
 		}
 	}
-
+	
 	/**
 	 * @param rulesDir
 	 */
@@ -419,6 +441,9 @@ public class RulesLoader {
 			
 
 			if (RUNTIME_MANAGER_ON) {
+				// This is needed to get around the user permissions : TODO!!!!! fix
+				System.setProperty("org.kie.server.bypass.auth.user", "true");
+
 				/* Using Runtime Environment */
 				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
 
@@ -443,8 +468,10 @@ public class RulesLoader {
 					((ExecutorImpl) ((ExecutorServiceImpl) executorService).getExecutor())
 							.setQueueName(executorQueueName);
 
-					executorService.init();
-
+					executorService.init();	
+					
+					
+					
 					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase)
 							.entityManagerFactory(emf)
 							.addEnvironmentEntry("ExecutorService", executorService)
@@ -468,7 +495,24 @@ public class RulesLoader {
 			                        return listeners;
 			                    }
 			                })							
-							
+							.userGroupCallback(new UserGroupCallback() {
+				    			public List<String> getGroupsForUser(String userId) {
+				    				List<String> result = new ArrayList<String>();
+				    				if ("sales-rep".equals(userId)) {
+				    					result.add("sales");
+				    				} else if ("john".equals(userId)) {
+				    					result.add("PM");
+				    				}
+				    				return result;
+				    			}
+				    			public boolean existsUser(String arg0) {
+				    				return true;
+				    			}
+				    			public boolean existsGroup(String arg0) {
+				    				return true;
+				    			}
+				    		})
+
 							
 							.get();
 				} else {
@@ -590,17 +634,18 @@ public class RulesLoader {
 			 * one KieSession
 			 */
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-			
-			
+
 			/* For using ProcessInstanceIdContext */
 			// RuntimeEngine runtimeEngine =
 			// runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
 
 			/* Getting KieSession */
+
 			KieSession kieSession = runtimeEngine.getKieSession();
 			
 			WorkflowProcessInstance sas= (WorkflowProcessInstance)kieSession.getProcessInstance(1);
 			
+
 			log.debug("Using Runtime engine in Per Request Strategy ::::::: Stateful");
 
 			try {
@@ -614,13 +659,16 @@ public class RulesLoader {
 
 				KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 
-				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 
 				//addHandlers(kieSession);
+				kieSession.addEventListener(logger);
 
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(gToken));
+				kieSession.getWorkItemManager().registerWorkItemHandler("Human Task", new NonManagedLocalHTWorkItemHandler(kieSession,taskService));
+				kieSession.getEnvironment().set("Autoclaim", "true");  // for JBPM
 
 				/* If userToken is not null then send the event through user Session */
 				if (facts.getUserToken() != null) {
@@ -634,6 +682,7 @@ public class RulesLoader {
 					/* Check if the process already exist or not */
 					boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
 
+					
 					if (hasProcessIdBySessionId) {
 
 						processId = processIdBysessionId.get();
@@ -651,6 +700,23 @@ public class RulesLoader {
 									+ ": " + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
 									+ processId);
 
+							
+					        Map<String,Object> params = new HashMap<String,Object>();
+					        Task task = new TaskFluent().setName("This is my task name")
+					                .addPotentialGroup("GADA")
+					                .setAdminUser("Administrator")
+					                .addPotentialUser("acrow")
+					                .setProcessId("direct")
+					                .setDeploymentID(gToken.getRealm())
+					                .getTask();
+
+					        long taskId = task.getId();
+
+					        taskService.addTask(task, params);
+				              // Do Task Operations
+				            List<TaskSummary> tasksAssignedAsPotentialOwner = taskService.getTasksAssignedAsPotentialOwner("acrow", null);
+				            log.info("TaskId="+taskId+" TASKS ASSIGNED = "+tasksAssignedAsPotentialOwner);
+							
 							kieSession.signalEvent("event", facts, processId);
 						}
 
@@ -668,6 +734,7 @@ public class RulesLoader {
 									+ processId);
 
 							kieSession.signalEvent("data", facts, processId);
+							
 						}
 
 					} else {
@@ -685,6 +752,8 @@ public class RulesLoader {
 
 							/* sending New Session Signal */
 							kieSession.signalEvent("newSession", facts);
+							
+							
 
 						} else {
 							log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
@@ -737,7 +806,7 @@ public class RulesLoader {
 						getKieBaseCache().get(facts.getServiceToken().getRealm()), ksconf, env);
 
 				JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
-
+					
 			//	addHandlers(kieSession);
 
 				kieSession.addEventListener(new GennyAgendaEventListener());
@@ -1006,10 +1075,10 @@ public class RulesLoader {
 		// Register handlers
 	//	log.info("Register SendSignal stateful version");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(RulesLoader.class));
-		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
-				new SendSignalWorkItemHandler2(RulesLoader.class));
+				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
 
+
+		kieSession.getWorkItemManager().registerWorkItemHandler("GetProcessesUsingVariable", new GetProcessesUsingVariable());	
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
@@ -1023,7 +1092,11 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
 				new ThrowSignalProcessWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(RulesLoader.class));
+
+				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
+		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
+				new AskQuestionTaskWorkItemHandler(MethodHandles.lookup().lookupClass()));
+
 		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
 				new ThrowSignalWorkItemHandler(RulesLoader.class));
 	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
@@ -1035,11 +1108,11 @@ public class RulesLoader {
 		// Register handlers
 	//	log.info("Register SendSignal  kiesession");
 		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(RulesLoader.class));
-		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal2",
-				new SendSignalWorkItemHandler2(RulesLoader.class));
 
-		
+				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
+
+
+		kieSession.getWorkItemManager().registerWorkItemHandler("GetProcessesUsingVariable", new GetProcessesUsingVariable());		
 		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
 		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
@@ -1066,11 +1139,10 @@ public class RulesLoader {
 		 Map<String, WorkItemHandler> handlers = new HashMap<String, WorkItemHandler>();
 		//	log.info("Register SendSignal  kiesession");
 			handlers.put("SendSignal",new SendSignalWorkItemHandler(RulesLoader.class,runtime));
-			handlers.put("SendSignal2",
-					new SendSignalWorkItemHandler2(RulesLoader.class,runtime));
 
 			
 			handlers.put("Awesome", new AwesomeHandler());
+			handlers.put("GetProcessesUsingVariable", new GetProcessesUsingVariable());
 			handlers.put("Notification", new NotificationWorkItemHandler());
 			handlers.put("ShowAllForms", new ShowAllFormsHandler());
 			handlers.put("ShowFrame", new ShowFrame());
@@ -1223,7 +1295,7 @@ public class RulesLoader {
 
 		serviceConfigurator.configureServices("genny-persistence-jbpm-jpa", identityProvider, userGroupCallback);
 		queryService = serviceConfigurator.getQueryService();
-
+		processService = serviceConfigurator.getProcessService();
 	}
 
 	public static void init() {

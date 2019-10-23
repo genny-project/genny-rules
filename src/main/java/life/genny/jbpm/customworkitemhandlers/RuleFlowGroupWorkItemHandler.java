@@ -34,17 +34,15 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 	
 	public RuleFlowGroupWorkItemHandler() {
+		
 	}
 	
 	public RuleFlowGroupWorkItemHandler(RuntimeEngine rteng) {
 		this.runtimeEngine = rteng;
 	}
-	
- 
 
   public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 
-	    
 	/* resultMap is used to map the result Value to the output parameters */
 	final Map<String,Object> resultMap = new HashMap<String,Object>();
 	
@@ -61,7 +59,6 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	}
 
 	RuleDetails ruleDetails = new RuleDetails(callingWorkflow,ruleFlowGroup);
-
 
     if (serviceToken == null) {
     	log.error("Must supply serviceToken!");
