@@ -108,6 +108,9 @@ public class ShowFrame implements WorkItemHandler {
 							userToken.getToken());
 
 					if (frame == null) {
+						if (VertxUtils.cachedEnabled) {
+							return; // don't worry about it
+						}
 						log.error("FRAME IS NOT IN CACHE  - " + rootFrameCode);
 						// ok, grab frame from rules
 						BaseEntityUtils beUtils = new BaseEntityUtils(userToken);

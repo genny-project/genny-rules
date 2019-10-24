@@ -78,6 +78,7 @@ import org.kie.api.runtime.manager.RuntimeManagerFactory;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.task.TaskService;
 import org.kie.api.task.model.Task;
+import org.kie.api.task.model.TaskData;
 import org.kie.api.task.model.TaskSummary;
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.persistence.jpa.JPAKnowledgeService;
@@ -102,6 +103,7 @@ import life.genny.jbpm.customworkitemhandlers.AskQuestionWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
+import life.genny.jbpm.customworkitemhandlers.ProcessTaskIdWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.GetProcessesUsingVariable;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
@@ -129,6 +131,7 @@ import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
 import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
@@ -693,22 +696,7 @@ public class RulesLoader {
 									+ processId);
 
 							
-					        Map<String,Object> params = new HashMap<String,Object>();
-					        Task task = new TaskFluent().setName("This is my task name")
-					                .addPotentialGroup("GADA")
-					                .setAdminUser("Administrator")
-					                .addPotentialUser("acrow")
-					                .setProcessId("direct")
-					                .setDeploymentID(gToken.getRealm())
-					                .getTask();
-
-					        long taskId = task.getId();
-
-					        taskService.addTask(task, params);
-				              // Do Task Operations
-				            List<TaskSummary> tasksAssignedAsPotentialOwner = taskService.getTasksAssignedAsPotentialOwner("acrow", null);
-				            log.info("TaskId="+taskId+" TASKS ASSIGNED = "+tasksAssignedAsPotentialOwner);
-							
+								
 							kieSession.signalEvent("event", facts, processId);
 						}
 
@@ -922,7 +910,7 @@ public class RulesLoader {
 			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(serviceToken.getRealm()).newKieSession(ksconf,
 					env);
 
-			addHandlers(kieSession);
+
 
 			kieSession.addEventListener(new GennyAgendaEventListener());
 			kieSession.addEventListener(new JbpmInitListener(serviceToken));
@@ -1060,64 +1048,71 @@ public class RulesLoader {
 		return new HashMap<File, ResourceType>(); // TODO
 	}
 
-	/* For old implementation */
-	public static void addHandlers(StatefulKnowledgeSession kieSession) {
-		// Register handlers
-	//	log.info("Register SendSignal stateful version");
-		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
-
-		kieSession.getWorkItemManager().registerWorkItemHandler("GetProcessesUsingVariable", new GetProcessesUsingVariable());	
-		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrames", new ShowFrames());
-		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
-				new ShowFrameWIthContextList());
-		kieSession.getWorkItemManager().registerWorkItemHandler("RuleFlowGroup",
-				new RuleFlowGroupWorkItemHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
-				new ThrowSignalProcessWorkItemHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
-		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
-				new AskQuestionTaskWorkItemHandler(MethodHandles.lookup().lookupClass()));
-		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
-				new ThrowSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
-	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
-
-	}
+//	/* For old implementation */
+//	public static void addHandlers(StatefulKnowledgeSession kieSession) {
+//		// Register handlers
+//	//	log.info("Register SendSignal stateful version");
+//		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
+//				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
+//
+//		kieSession.getWorkItemManager().registerWorkItemHandler("GetProcessesUsingVariable", new GetProcessesUsingVariable());	
+//		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrames", new ShowFrames());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
+//				new ShowFrameWIthContextList());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("RuleFlowGroup",
+//				new RuleFlowGroupWorkItemHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
+//				new ThrowSignalProcessWorkItemHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
+//				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
+//		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
+//				new AskQuestionTaskWorkItemHandler(MethodHandles.lookup().lookupClass()));
+//		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
+//				new ProcessTaskIdWorkItemHandler(MethodHandles.lookup().lookupClass()));
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
+//				new ThrowSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
+//	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
+//
+//	}
 
 	/* For new implementation */
-	public static void addHandlers(KieSession kieSession) {
-		// Register handlers
-	//	log.info("Register SendSignal  kiesession");
-		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
-				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
-
-		kieSession.getWorkItemManager().registerWorkItemHandler("GetProcessesUsingVariable", new GetProcessesUsingVariable());		
-		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrames", new ShowFrames());
-		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
-				new ShowFrameWIthContextList());
-		kieSession.getWorkItemManager().registerWorkItemHandler("RuleFlowGroup",
-				new RuleFlowGroupWorkItemHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
-				new ThrowSignalProcessWorkItemHandler());
-		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
-				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
-		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
-				new ThrowSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
-	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
-
-
-	}
+//	public static void addHandlers(KieSession kieSession) {
+//		// Register handlers
+//	//	log.info("Register SendSignal  kiesession");
+//		kieSession.getWorkItemManager().registerWorkItemHandler("SendSignal",
+//				new SendSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
+//
+//		kieSession.getWorkItemManager().registerWorkItemHandler("GetProcessesUsingVariable", new GetProcessesUsingVariable());		
+//		kieSession.getWorkItemManager().registerWorkItemHandler("Awesome", new AwesomeHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("Notification", new NotificationWorkItemHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ShowAllForms", new ShowAllFormsHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrame", new ShowFrame());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrames", new ShowFrames());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("Print", new PrintWorkItemHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ShowFrameWithContextList",
+//				new ShowFrameWIthContextList());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("RuleFlowGroup",
+//				new RuleFlowGroupWorkItemHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignalProcess",
+//				new ThrowSignalProcessWorkItemHandler());
+//		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestion",
+//				new AskQuestionWorkItemHandler(MethodHandles.lookup().lookupClass()));
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ThrowSignal",
+//				new ThrowSignalWorkItemHandler(MethodHandles.lookup().lookupClass()));
+//		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
+//				new AskQuestionTaskWorkItemHandler(RulesLoader.class,runtime,kieSession));
+//		kieSession.getWorkItemManager().registerWorkItemHandler("ProcessTaskId",
+//				new ProcessTaskIdWorkItemHandler(RulesLoader.class,runtime));
+//
+//	//	kieSession.getWorkItemManager().registerWorkItemHandler("JMSSendTask", new JMSSendTaskWorkItemHandler());
+//
+//
+//	}
 	
 	private static  Map<String, WorkItemHandler> getHandlers(RuntimeEngine runtime)
 	 {
@@ -1141,6 +1136,11 @@ public class RulesLoader {
 					new ThrowSignalProcessWorkItemHandler(runtime));
 			handlers.put("AskQuestion",
 					new AskQuestionWorkItemHandler(RulesLoader.class,runtime));
+			handlers.put("AskQuestionTask",
+					new AskQuestionTaskWorkItemHandler(RulesLoader.class,runtime));
+			handlers.put("ProcessTaskId",
+					new ProcessTaskIdWorkItemHandler(RulesLoader.class,runtime));
+
 			handlers.put("ThrowSignal",
 					new ThrowSignalWorkItemHandler(RulesLoader.class,runtime));
 	//	handlers.put("JMSSendTask", new JMSSendTaskWorkItemHandler());
@@ -1424,5 +1424,26 @@ public class RulesLoader {
 		this.rds = rds;
 	}
 
-	
+	public static OutputParam loadOutputFromTask(GennyToken userToken, Long taskId) 
+	{
+		OutputParam output = new OutputParam();
+		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+		taskService = runtimeEngine.getTaskService();
+        Map<String,Object> params = new HashMap<String,Object>();
+           // Do Task Operations
+        if (taskService == null) {
+        	log.error("TaskService is null");
+        	return output;
+        }
+
+        Task task = taskService.getTaskById(taskId);
+        
+        // Look at the task and simply set the output 
+       	TaskData taskData = task.getTaskData();
+       	String code = task.getFormName();
+       	output.setFormCode(code, "FRM_CONTENT");
+       	output.setTypeOfResult("FORMCODE");
+		
+		return output;
+	}
 }

@@ -1,7 +1,6 @@
 package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,7 +10,6 @@ import org.kie.api.KieBase;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
-import org.kie.api.runtime.ObjectFilter;
 import org.kie.api.runtime.manager.RuntimeEngine;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
@@ -83,7 +81,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
 						
 			newKieSession.insert(ruleDetails);
-
+	
 			/* Inserting all the parameters in the working memory ad a facts */
 			for(String key : items.keySet()) {
 				newKieSession.insert(items.get(key));

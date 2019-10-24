@@ -12,8 +12,8 @@ public class OutputParam implements Serializable,Comparable {
 	private Integer level=0;
 
 	private String typeOfResult="ERROR";  // FRAME_CODE or LIFECYCLE
-	private String resultCode = null;
-	private String targetCode = null;
+	private String resultCode = "DUMMY";
+	private String targetCode = "DUMMY";
 
 	public OutputParam()
 	{
