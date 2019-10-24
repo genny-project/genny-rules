@@ -32,7 +32,7 @@ import com.google.gson.annotations.Expose;
 @Table(name = "nodestatus", indexes = {@Index(name = "IDX_NStat_nodeId", columnList = "nodeId"),
         @Index(name = "IDX_NStat_realm", columnList = "realm"),
         @Index(name = "IDX_NStat_pId", columnList = "processId")})
-@SequenceGenerator(name="nodeStatusIdSeq", sequenceName="NODE_STATUS_LOG_ID_SEQ", allocationSize=1)
+//@SequenceGenerator(name="nodeStatusIdSeq", sequenceName="NODE_STATUS_LOG_ID_SEQ", allocationSize=1)
 
 
 @Entity
@@ -45,7 +45,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 	private static final long serialVersionUID = 910l;
 	
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator="nodeStatusIdSeq")
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
     
     @Temporal(TemporalType.TIMESTAMP)
@@ -68,7 +68,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 	private String processId;
     @Expose
     @Column(nullable=true)
-	private String workflowCode;
+	private String workflowStatus;
 	
 	private NodeStatus()
 	{
@@ -83,16 +83,18 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 	 * @param processInstanceId
 	 * @param processId
 	 */
+	
 	public NodeStatus(String userCode, String nodeName, String nodeId, String realm, Long processInstanceId,
-			String processId, String workflowCode) {
+			String processId, String workflowStatus) {
 
+		this.id = processInstanceId;
 		this.userCode = userCode;
 		this.nodeName = nodeName;
 		this.nodeId = nodeId;
 		this.realm = realm;
 		this.processInstanceId = processInstanceId;
 		this.processId = processId;
-		this.workflowCode = workflowCode;
+		this.workflowStatus = workflowStatus;
 	}
 
 	/**
@@ -154,10 +156,17 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 	/**
 	 * @return the workflowCode
 	 */
-	public String getWorkflowCode() {
-		return workflowCode;
+	public String getWorkflowStatus() {
+		return workflowStatus;
 	}
-
+	
+	/**
+	 * @return the workflowCode
+	 */
+	public void setWorkflowStatus(String workFlowStatus) {
+		this.workflowStatus = workFlowStatus;
+	}
+	
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
@@ -166,7 +175,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		return "NodeStatus [" + (userCode != null ? "userCode=" + userCode + ", " : "")
 				+ (nodeId != null ? "nodeId=" + nodeId + ", " : "") + (status != null ? "status=" + status + ", " : "")
 				+ (realm != null ? "realm=" + realm + ", " : "") + (processId != null ? "processId=" + processId : "")
-				+ (workflowCode != null ? "workflowCode=" + workflowCode : "")
+				+ (workflowStatus != null ? "workflowCode=" + workflowStatus : "")
 				+ "]";
 	}
 
@@ -201,7 +210,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		result = prime * result + ((realm == null) ? 0 : realm.hashCode());
 		result = prime * result + ((status == null) ? 0 : status.hashCode());
 		result = prime * result + ((userCode == null) ? 0 : userCode.hashCode());
-		result = prime * result + ((workflowCode == null) ? 0 : workflowCode.hashCode());
+		result = prime * result + ((workflowStatus == null) ? 0 : workflowStatus.hashCode());
 		return result;
 	}
 
@@ -247,12 +256,20 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 				return false;
 		} else if (!userCode.equals(other.userCode))
 			return false;
-		if (workflowCode == null) {
-			if (other.workflowCode != null)
+		if (workflowStatus == null) {
+			if (other.workflowStatus != null)
 				return false;
-		} else if (!workflowCode.equals(other.workflowCode))
+		} else if (!workflowStatus.equals(other.workflowStatus))
 			return false;
 		return true;
+	}
+
+
+
+	@Override
+	public String getExternalId() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
@@ -281,12 +298,6 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 
 	@Override
 	public Integer getType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getExternalId() {
 		// TODO Auto-generated method stub
 		return null;
 	}
