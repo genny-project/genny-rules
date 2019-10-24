@@ -191,7 +191,9 @@ public class ShowFrame implements WorkItemHandler {
 					String payload = JsonUtils.toJson(FRM_MSG);
 					JSONObject js = new JSONObject(payload);
 					String payload2 = js.toString();
-					VertxUtils.writeMsg("webcmds", payload2);
+					if (payload2!=null) {
+						VertxUtils.writeMsg("webcmds", payload2);
+					}
 
 					sendAsks(rootFrameCode, userToken, callingWorkflow);
 
@@ -213,11 +215,16 @@ public class ShowFrame implements WorkItemHandler {
 	private static void sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow) {
 		Type setType = new TypeToken<Set<QDataAskMessage>>() {
 		}.getType();
+		
+		if (VertxUtils.cachedEnabled) {
+			// No point sending asks
+			return;
+		}
 
 		String askMsgs2Str = null;
 		if ("TRUE".equalsIgnoreCase(System.getenv("FORCE_CACHE_USE_API"))) { // if in junit then use the bridge to fetch
 																				// cache data
-			log.info("Forcing ASKS to be read from api call to cache");
+ 			log.info("Forcing ASKS to be read from api call to cache");
 //						askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
 //						String.class, userToken.getToken());
 			try {

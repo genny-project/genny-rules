@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.Optional;
 import java.util.TreeSet;
 
+import com.github.javaparser.utils.Log;
+
 import life.genny.utils.OutputParam;
 
 public class OutputParamTreeSet implements Serializable {
@@ -83,15 +85,23 @@ public class OutputParamTreeSet implements Serializable {
 		
 				} else { // NO TARGET EXISTS IN THE DOM
 					// Now check if any existing items already point to that parent and remove them.
+					for (OutputParam x : tree.toArray(new OutputParam[0])) {
+						if (x == null) {
+							System.out.println("An outputparam is null!");
+						}
+					}
+					if (outputParam != null ) {
 					Optional<OutputParam> optExisting = tree.parallelStream()
-							.filter(x ->  (x.getTargetCode().equals(outputParam.getTargetCode())))
-							.findFirst();
-				
+							.filter(x -> x!=null)
+							.filter(x -> x.getTargetCode()!=null)
+							.filter(x ->  x.getTargetCode().equals(outputParam.getTargetCode()))
+							.findFirst();				
 						if (optExisting.isPresent()) {
 							this.tree.remove(optExisting.get());
 						}
 						this.tree.add(outputParam); // this needs to replace any existing treesets that have the same
 													// target code
+					}
 				}
 					}
 				last = outputParam;
@@ -99,4 +109,11 @@ public class OutputParamTreeSet implements Serializable {
 			}
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "OutputParamTreeSet [tree=" + tree + ", last=" + last + "]";
+	}
+	
+	
 }

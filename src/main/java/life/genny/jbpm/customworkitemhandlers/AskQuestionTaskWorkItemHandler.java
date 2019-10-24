@@ -46,14 +46,10 @@ import org.kie.internal.task.api.model.InternalOrganizationalEntity;
 import org.kie.internal.task.api.model.InternalTask;
 import org.kie.internal.task.api.model.InternalTaskData;
 
-import io.vertx.core.json.JsonObject;
 import life.genny.models.GennyToken;
-import life.genny.qwanda.Question;
 import life.genny.qwanda.message.QEventMessage;
-import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.SessionFacts;
-import life.genny.utils.VertxUtils;
 
 public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHandler {
 
@@ -82,57 +78,25 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
-	public void executeWorkItem2(WorkItem workItem, WorkItemManager manager) {
 
-		/* resultMap is used to map the result Value to the output parameters */
-		final Map<String, Object> resultMap = new HashMap<String, Object>();
-
-		/* items used to save the extracted input parameters from the custom task */
-		Map<String, Object> items = workItem.getParameters();
-
-		GennyToken userToken = (GennyToken) items.get("userToken");
-		String questionCode = (String) items.get("questionCode");
-		String callingWorkflow = (String)items.get("callingWorkflow");
-		if (StringUtils.isBlank(callingWorkflow)) {
-			callingWorkflow = "";
-		}
-
-		Long processId = null;
+	/**
+	 * @param userToken
+	 * @param processId
+	 * @param taskId
+	 */
+	private void sendTaskSignal(GennyToken userToken, Task task) {
+		Long targetProcessId = null;
 		
+
 		
-		// Create Task
-	    TaskService taskService = runtimeEngine.getTaskService();
-
-	    Map<String, Object> params = new HashMap<String, Object>();
-	    Task task =
-	        new TaskFluent()
-	            .setName(questionCode)
-	           // .addPotentialGroup("GADA")
-	            .setAdminUser("Administrator")
-	            .addPotentialUser(userToken.getUserCode())   // only offer to the actual interacting user
-	            .setProcessId(workItem.getName())
-	            .setDeploymentID(userToken.getRealm())
-	            .getTask();
-	    
-	    // TODO, from the Questions find the expiry time and set as the task deadline....
-	    
-	    taskService.addTask(task, params);
-	    long taskId = task.getId();
-
-	    Map<String, Object> content = taskService.getTaskContent(taskId);
-		System.out.println(callingWorkflow+" Sending Question Code  " + questionCode + " to processId " + processId
-				+ " for target user " + userToken.getUserCode()+" using TASK "+taskId+":"+content);
-
-
 		QEventMessage taskMsg = new QEventMessage("EVT_MSG", "TASK");
-		taskMsg.getData().setValue(taskId+"");
+		taskMsg.getData().setValue(task.getId()+"");
 		taskMsg.setToken(userToken.getToken());
 		
 		
 		
 		SessionFacts sessionFacts = new SessionFacts(userToken,userToken,taskMsg); // Let the userSession know that there is a question Waiting
 
-		if (processId == null) {
 			Method m;
 			Optional<Long> processIdBysessionId = Optional.empty();
 			try {
@@ -159,11 +123,18 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			}
 			boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
 			if (hasProcessIdBySessionId) {
-				processId = processIdBysessionId.get();
+				targetProcessId = processIdBysessionId.get();
 			}
-		}
 
-		if (processId != null) {
+
+		if (targetProcessId != null) {
+			
+		    long taskId = task.getId();
+
+			System.out.println(task.getDescription()+" Sending Question Code  " + task.getFormName() + " to processId " +targetProcessId
+					+ " for target user " + userToken.getUserCode()+" using TASK "+taskId+":"+task.getTaskData());
+
+
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 
@@ -173,78 +144,75 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 				newKieSession = (StatefulKnowledgeSession) this.runtimeEngine.getKieSession();
 
-				newKieSession.signalEvent("internalSignal", sessionFacts, processId);
+				newKieSession.signalEvent("internalSignal", sessionFacts, targetProcessId);
 			} else {
 
 				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
 
-				newKieSession.signalEvent("internalSignal", sessionFacts, processId);
+				newKieSession.signalEvent("internalSignal", sessionFacts, targetProcessId);
 
 				newKieSession.dispose();
 
 			}
 		}
-		// notify manager that work item has been completed
-	//	manager.completeWorkItem(workItem.getId(), resultMap);
-
 	}
 
-    @Override
-    public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-        
-        Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
-        ContentData content = createTaskContentBasedOnWorkItemParams(this.getKsession(), workItem);
-        try {
-            long taskId = ((InternalTaskService) this.getTaskService()).addTask(task, content);
-            if (isAutoClaim(this.getKsession(), workItem, task)) {
-            	String actor = (String) workItem.getParameter("SwimlaneActorId");
-                this.getTaskService().claim(taskId, actor);
-            }
-        } catch (Exception e) {
-            if (action.equals(OnErrorAction.ABORT)) {
-                manager.abortWorkItem(workItem.getId());
-            } else if (action.equals(OnErrorAction.RETHROW)) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException) e;
-                } else {
-                    throw new RuntimeException(e);
-                }
-            } else if (action.equals(OnErrorAction.LOG)) {
-                StringBuilder logMsg = new StringBuilder();
-                logMsg.append(new Date()).append(": Error when creating task on task server for work item id ").append(workItem.getId());
-                logMsg.append(". Error reported by task server: ").append(e.getMessage());
-                log.error(logMsg.toString(), e);
-            }
-        } 
-    }
-
-    @Override
-    public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
-        Task task = this.getTaskService().getTaskByWorkItemId(workItem.getId());
-        if (task != null) {
-            try {
-                String adminUser = ADMIN_USER;
-                
-                List<OrganizationalEntity> businessAdmins = task.getPeopleAssignments().getBusinessAdministrators();
-                for (OrganizationalEntity admin : businessAdmins) {
-                    if (admin instanceof Group) {
-                        continue;
-                    }
-                    
-                    if (!admin.getId().equals(ADMIN_USER)) {
-                        adminUser = admin.getId();
-                        break;
-                    }
-                }
-                log.debug("Task {} is going to be exited by {} who is business admin", task.getId(), adminUser);
-                this.getTaskService().exit(task.getId(), adminUser);
-            } catch (PermissionDeniedException e) {
-                log.info(e.getMessage());
-            }
-        }
-        
-    }
+//    @Override
+//    public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
+//        
+//        Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
+//        ContentData content = createTaskContentBasedOnWorkItemParams(this.getKsession(), workItem);
+//        try {
+//            long taskId = ((InternalTaskService) this.getTaskService()).addTask(task, content);
+//            if (isAutoClaim(this.getKsession(), workItem, task)) {
+//            	String actor = (String) workItem.getParameter("SwimlaneActorId");
+//                this.getTaskService().claim(taskId, actor);
+//            }
+//        } catch (Exception e) {
+//            if (action.equals(OnErrorAction.ABORT)) {
+//                manager.abortWorkItem(workItem.getId());
+//            } else if (action.equals(OnErrorAction.RETHROW)) {
+//                if (e instanceof RuntimeException) {
+//                    throw (RuntimeException) e;
+//                } else {
+//                    throw new RuntimeException(e);
+//                }
+//            } else if (action.equals(OnErrorAction.LOG)) {
+//                StringBuilder logMsg = new StringBuilder();
+//                logMsg.append(new Date()).append(": Error when creating task on task server for work item id ").append(workItem.getId());
+//                logMsg.append(". Error reported by task server: ").append(e.getMessage());
+//                log.error(logMsg.toString(), e);
+//            }
+//        } 
+//    }
+//
+//    @Override
+//    public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
+//        Task task = this.getTaskService().getTaskByWorkItemId(workItem.getId());
+//        if (task != null) {
+//            try {
+//                String adminUser = ADMIN_USER;
+//                
+//                List<OrganizationalEntity> businessAdmins = task.getPeopleAssignments().getBusinessAdministrators();
+//                for (OrganizationalEntity admin : businessAdmins) {
+//                    if (admin instanceof Group) {
+//                        continue;
+//                    }
+//                    
+//                    if (!admin.getId().equals(ADMIN_USER)) {
+//                        adminUser = admin.getId();
+//                        break;
+//                    }
+//                }
+//                log.debug("Task {} is going to be exited by {} who is business admin", task.getId(), adminUser);
+//                this.getTaskService().exit(task.getId(), adminUser);
+//            } catch (PermissionDeniedException e) {
+//                log.info(e.getMessage());
+//            }
+//        }
+//        
+//    }
 
     @Override
     protected Task createTaskBasedOnWorkItemParams(KieSession session, WorkItem workItem) {
@@ -258,7 +226,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
-		String taskName = (String) workItem.getParameter("NodeName");
 	
 //		JsonObject questionObj = VertxUtils.readCachedJson(userToken.getRealm(),
 //				questionCode,userToken.getToken());
@@ -356,7 +323,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
         String createdBy = userToken.getUserCode();//(String) workItem.getParameter("CreatedBy");
         if (createdBy != null && createdBy.trim().length() > 0) {
         	User user = TaskModelProvider.getFactory().newUser();
-        	((InternalOrganizationalEntity) user).setId(createdBy);
+        	((InternalOrganizationalEntity) user).setId(userToken.getRealm()+"+"+createdBy);
             taskData.setCreatedBy(user);            
         }
         String dueDateString = (String) workItem.getParameter("DueDate");
@@ -386,6 +353,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
         task.setTaskData(taskData);
         task.setDeadlines(HumanTaskHandlerHelper.setDeadlines(workItem.getParameters(), businessAdministrators, session.getEnvironment()));
         
+        sendTaskSignal(userToken, task); // TODO, watch the timing as the workitem may not be ready if the target tries to do stuff.
         return task;
     }
 

@@ -45,7 +45,7 @@ public class ShowFrames implements WorkItemHandler {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-
+		System.out.println("Executing ShowFrames!!! WIH");
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
 
