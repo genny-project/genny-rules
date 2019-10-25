@@ -129,7 +129,14 @@ public class ShowFrame implements WorkItemHandler {
 							return;
 						}
 					}
+					if (frame.getCode()==null) {
+						frame = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode, Frame3.class,
+								userToken.getToken());
 
+
+						log.error("frame.getCode() in display  is null ");
+					//	return;
+					}
 					FrameUtils2.toMessage2(frame, userToken);
 					FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
 							QDataBaseEntityMessage.class, userToken.getToken());
@@ -257,8 +264,17 @@ public class ShowFrame implements WorkItemHandler {
 					JsonObject json = new JsonObject(askMsgs2Str);
 					askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
 					if (askMsgs2Str == null) {
-						log.error("No Asks in cache - asking api to refresh cache");
-						return;
+						log.error("No Asks in cache - asking api to generate and refresh cache for "+rootFrameCode + "_ASKS");
+						String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
+								userToken.getToken());
+						Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
+						FrameUtils2.toMessage(rootFrame, userToken);
+						askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS",
+								userToken.getToken());
+						if (askMsgs2Str==null) {
+							log.error("Frame ASKS for "+rootFrameCode+" is just not happening...");
+							return;
+						}
 					}
 				} catch (ClientProtocolException e) {
 

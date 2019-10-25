@@ -586,6 +586,9 @@ public class RulesLoader {
 				kfs.write(inMemoryDrlFileName, rs.setResourceType(ResourceType.DRL));
 				DrlParser parser = new DrlParser();
 				try {
+					if (parser.parse(rs).getRules().size()>1) {
+						log.error("ERROR!! "+rule._2+" has more than one rule in it!");
+					}
 					RuleDescr ruleObj = parser.parse(rs).getRules().get(0);
 					processRule(realm, ruleObj, rule);
 				} catch (NullPointerException e) {
@@ -602,8 +605,23 @@ public class RulesLoader {
 			} else if (rule._2.endsWith(".bpmn")) {
 				// final String inMemoryDrlFileName = "src/main/resources/" + rule._2;
 				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
-				kfs.write(inMemoryDrlFileName, ks.getResources().newReaderResource(new StringReader(rule._3))
-						.setResourceType(ResourceType.BPMN2));
+				Resource rs = ks.getResources().newReaderResource(new StringReader(rule._3));
+				kfs.write(inMemoryDrlFileName, rs.setResourceType(ResourceType.BPMN2));
+				processJbpm(realm,rule);
+//				DrlParser parser = new DrlParser();
+//				try {
+//					RuleDescr ruleObj = parser.parse(rs).getRules().get(0);
+//					processRule(realm, ruleObj, rule);
+//				} catch (NullPointerException e) {
+//					log.error("Error with the rules:: " + rule._2 + " -> " + e.getLocalizedMessage());
+//				}
+//				catch (DroolsParserException e) {
+//					log.error("BAD RULE : " + rule._2 + " -> " + e.getLocalizedMessage());
+//				} catch (IOException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+				
 			} else if (rule._2.endsWith(".xls")) {
 				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 
@@ -1405,6 +1423,72 @@ public class RulesLoader {
 				VertxUtils.writeCachedJson(realm, existingRuleBe.getCode(),null,realmTokenMap.get(realm));
 				
 			}
+			ret = true;
+		}
+		return ret;
+	}
+	
+	private static Boolean processJbpm(String realm,  Tuple3<String, String, String> ruleTuple) {
+		Boolean ret = false;
+		Map<String, String> realmTokenMap = new HashMap<String, String>();
+		Map<String, BaseEntityUtils> realmBeUtilsMap = new HashMap<String, BaseEntityUtils>();
+		String name = ruleTuple._2.replaceAll("\\.[^.]*$", "");
+		String filename = ruleTuple._2;
+		String ruleText = ruleTuple._3;
+		Integer hashcode = ruleText.hashCode();
+		if (realmTokenMap.get(realm) == null) {
+			JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+			String token = tokenObj.getString("value");
+			realmTokenMap.put(realm, token);
+		}
+		// get kie type
+		String ext = filename.substring(filename.lastIndexOf(".") + 1);
+		String kieType = ext.toUpperCase();
+
+		// Get rule filename
+		String ruleCode = "BPM_" + filename.replaceAll("\\.[^.]*$", "");
+
+
+		// get existing rule from cache
+
+		BaseEntity existingRuleBe = VertxUtils.readFromDDT(realm, ruleCode, true, realmTokenMap.get(realm));
+		Integer existingHashCode = 0;
+		if (existingRuleBe != null) {
+			existingHashCode = existingRuleBe.getValue("PRI_HASHCODE", -1);
+		}
+
+		BaseEntityUtils beUtils = null;
+		if (realmBeUtilsMap.get(realm) == null) {
+			beUtils = new BaseEntityUtils(new GennyToken(realmTokenMap.get(realm)));
+			realmBeUtilsMap.put(realm, beUtils);
+		} else {
+			beUtils = realmBeUtilsMap.get(realm);
+		}
+		if (existingRuleBe == null) {
+			existingRuleBe = beUtils.create(ruleCode, name);
+		}
+
+		if ((!hashcode.equals(existingHashCode))&&(existingRuleBe != null)) {
+			log.info("Hashcode for rule " + realm + ":" + filename + " = " + hashcode + " existing hashcode="
+					+ existingHashCode + "  match = " + (hashcode.equals(existingHashCode) ? "TRUE" : "FALSE ****"));
+
+
+			// create the rule Baseentity
+			try {
+				Attribute hashcodeAttribute = RulesUtils.getAttribute("PRI_HASHCODE", realmTokenMap.get(realm));
+				existingRuleBe.setValue(hashcodeAttribute, hashcode);
+				Attribute filenameAttribute = RulesUtils.getAttribute("PRI_FILENAME", realmTokenMap.get(realm));
+				existingRuleBe.setValue(filenameAttribute, filename);
+				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_TYPE", realmTokenMap.get(realm)), kieType);
+				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_TEXT", realmTokenMap.get(realm)), ruleText);
+				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_NAME", realmTokenMap.get(realm)),
+						name);
+
+			} catch (BadDataException e) {
+				log.error("Bad data");
+			}
+
+			beUtils.saveBaseEntityAttributes(existingRuleBe);
 			ret = true;
 		}
 		return ret;

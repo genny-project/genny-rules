@@ -239,7 +239,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
         task.setName(questionCode);
         // this should be replaced by FormName filled by designer
         // TaskName shouldn't be trimmed if we are planning to use that for the task lists
-        String formName = questionCode; //(String) workItem.getParameter(questionCode); 
+        String formName = "FRM_"+questionCode; //(String) workItem.getParameter(questionCode); 
         if(formName != null){
             task.setFormName(formName);
         }
