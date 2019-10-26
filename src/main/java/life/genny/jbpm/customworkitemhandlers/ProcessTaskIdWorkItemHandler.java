@@ -4,6 +4,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.manager.RuntimeEngine;
@@ -49,11 +50,18 @@ public class ProcessTaskIdWorkItemHandler implements WorkItemHandler {
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 
-		log.info("Processing TaskId");
+		String callingWorkflow = (String)workItem.getParameter("callingWorkflow");
+		if (StringUtils.isBlank(callingWorkflow)) {
+			callingWorkflow = "";
+		}
+
 
 		QEventMessage msg = (QEventMessage) workItem.getParameter("message");
 		String taskIdStr = msg.getData().getValue();
 		Long taskId = Long.parseLong(taskIdStr);
+		
+		log.info(callingWorkflow+" Processing TaskId");
+
 
 		Task task = taskService.getTaskById(taskId);
 		OutputParam output = new OutputParam();
