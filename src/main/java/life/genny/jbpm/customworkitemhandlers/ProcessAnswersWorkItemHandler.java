@@ -13,10 +13,14 @@ import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.kie.api.task.TaskService;
+import org.kie.api.task.model.Status;
+import org.kie.api.task.model.Task;
+import org.kie.api.task.model.TaskSummary;
 
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
+import life.genny.qwanda.Ask;
 import life.genny.utils.BaseEntityUtils;
 
 public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
@@ -59,13 +63,44 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		}
 
 		// Extract all the current questions from all the users Tasks
+		List<Status> statuses = new ArrayList<Status>();
+        statuses.add(Status.Ready);
+      //  statuses.add(Status.Completed);
+      //  statuses.add(Status.Created);
+      //  statuses.add(Status.Error);
+      //  statuses.add(Status.Exited);
+        statuses.add(Status.InProgress);
+      //  statuses.add(Status.Obsolete);
+        statuses.add(Status.Reserved);
+      //  statuses.add(Status.Suspended);
+
+		String realm = userToken.getRealm();
+		String userCode = userToken.getUserCode();
+		List<TaskSummary> tasks = taskService.getTasksOwnedByStatus(realm+"+"+userCode, statuses, null);
+		log.info("Tasks="+tasks);
+		Map<String,Object> asks = new HashMap<String,Object>();
+
+		for (TaskSummary taskSummary : tasks) {
+			Task task = taskService.getTaskById(taskSummary.getId());
+			Map<String,Object> taskAsks = task.getTaskData().getTaskInputVariables();
+			if (taskAsks != null)  {
+				asks.putAll( taskAsks);
+			}
+		}
+
 		
 		// Loop through all the answers check their validity and save them.
 		List<Answer> validAnswers = new ArrayList<Answer>();
 		for (Answer answer : answersToSave.getAnswers()) {
 			// check answer
 			if (answer.getSourceCode().equals(userToken.getUserCode())) {
-				validAnswers.add(answer);
+				String key = answer.getSourceCode()+":"+answer.getTargetCode()+":"+answer.getAttributeCode();
+				Ask ask = (Ask) asks.get(key);
+				if (ask != null) {
+					validAnswers.add(answer);
+				} else {
+					log.error("Not a valid ASK! "+key);
+				}
 			}
 		}
 		log.info(callingWorkflow+" Saving Valid Answers ...");

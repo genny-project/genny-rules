@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -47,6 +48,8 @@ import org.kie.internal.task.api.model.InternalTask;
 import org.kie.internal.task.api.model.InternalTaskData;
 
 import life.genny.models.GennyToken;
+import life.genny.qwanda.Ask;
+import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.SessionFacts;
@@ -335,8 +338,16 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
         List<OrganizationalEntity> businessAdministrators = peopleAssignments.getBusinessAdministrators();
         
         
-       
-        
+       // Fetch the questions and set in the task for us to tick off as they get done
+        Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(formName, userToken);
+        Map<String,Object> asks = new HashMap<String,Object>();
+        for (QDataAskMessage dataMsg : formSet) {
+        	for (Ask askMsg : dataMsg.getItems()) {
+        		String key = askMsg.getSourceCode()+":"+askMsg.getTargetCode()+":"+askMsg.getAttributeCode();
+        		asks.put(key, askMsg);
+        	}
+        }
+        taskData.setTaskInputVariables(asks);
         taskData.initialize();
         task.setTaskData(taskData);
         task.setDeadlines(HumanTaskHandlerHelper.setDeadlines(workItem.getParameters(), businessAdministrators, session.getEnvironment()));

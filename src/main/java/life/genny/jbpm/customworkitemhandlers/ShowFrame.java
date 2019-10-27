@@ -223,13 +223,43 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param callingWorkflow
 	 */
 	private static void sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow) {
-		Type setType = new TypeToken<Set<QDataAskMessage>>() {
-		}.getType();
 		
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
 			return;
 		}
+
+		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
+
+		// System.out.println("Sending Asks");
+		if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
+			for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
+				for (Ask aask : askMsg.getItems()) {
+					for (Validation val : aask.getQuestion().getAttribute().getDataType().getValidationList()) {
+						if (val.getRegex() == null) {
+							log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode() + " == null");
+						}
+
+					}
+				}
+				askMsg.setToken(userToken.getToken());
+				String json = JsonUtils.toJson(askMsg);
+				String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
+																							// user
+				VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
+			}
+		}
+	}
+
+	/**
+	 * @param rootFrameCode
+	 * @param userToken
+	 * @param setType
+	 * @return
+	 */
+	public static Set<QDataAskMessage> fetchAskMessages(String rootFrameCode, GennyToken userToken) {
+		Type setType = new TypeToken<Set<QDataAskMessage>>() {
+		}.getType();
 
 		String askMsgs2Str = null;
 		if ("TRUE".equalsIgnoreCase(System.getenv("FORCE_CACHE_USE_API"))) { // if in junit then use the bridge to fetch
@@ -273,7 +303,7 @@ public class ShowFrame implements WorkItemHandler {
 								userToken.getToken());
 						if (askMsgs2Str==null) {
 							log.error("Frame ASKS for "+rootFrameCode+" is just not happening...");
-							return;
+							return new HashSet<QDataAskMessage>();
 						}
 					}
 				} catch (ClientProtocolException e) {
@@ -318,25 +348,7 @@ public class ShowFrame implements WorkItemHandler {
 			log.info("About to do deserialization2!");
 			askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 		}
-
-		// System.out.println("Sending Asks");
-		if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
-			for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
-				for (Ask aask : askMsg.getItems()) {
-					for (Validation val : aask.getQuestion().getAttribute().getDataType().getValidationList()) {
-						if (val.getRegex() == null) {
-							log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode() + " == null");
-						}
-
-					}
-				}
-				askMsg.setToken(userToken.getToken());
-				String json = JsonUtils.toJson(askMsg);
-				String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
-																							// user
-				VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
-			}
-		}
+		return askMsgs2;
 	}
 
 	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
