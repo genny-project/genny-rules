@@ -103,6 +103,7 @@ import life.genny.jbpm.customworkitemhandlers.AskQuestionWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
+import life.genny.jbpm.customworkitemhandlers.ProcessAnswersWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ProcessTaskIdWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.GetProcessesUsingVariable;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
@@ -1156,6 +1157,9 @@ public class RulesLoader {
 					new AskQuestionWorkItemHandler(RulesLoader.class,runtime));
 			handlers.put("AskQuestionTask",
 					new AskQuestionTaskWorkItemHandler(RulesLoader.class,runtime));
+			handlers.put("ProcessAnswers",
+					new ProcessAnswersWorkItemHandler(RulesLoader.class,runtime));
+
 			handlers.put("ProcessTaskId",
 					new ProcessTaskIdWorkItemHandler(RulesLoader.class,runtime));
 

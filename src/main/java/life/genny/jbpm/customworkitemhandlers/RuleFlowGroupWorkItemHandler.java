@@ -1,7 +1,9 @@
 package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +20,8 @@ import org.kie.api.runtime.rule.FactHandle;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.models.GennyToken;
+import life.genny.qwanda.Answer;
+import life.genny.qwanda.Answers;
 import life.genny.qwanda.rule.RuleDetails;
 import life.genny.rules.QRules;
 import life.genny.rules.RulesLoader;
@@ -75,6 +79,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		KieSession newKieSession = null;
 		
 		OutputParam output =  new OutputParam();
+		Answers answersToSave = new Answers();
 		
 		if (this.runtimeEngine!=null) {
 			
@@ -102,7 +107,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			
 			/* INserting facts to save the output result*/
 			FactHandle factHandle =  newKieSession.insert(output);
-			
+			FactHandle answersToSaveHandle =  newKieSession.insert(answersToSave);
 			
 
 			
@@ -120,9 +125,11 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //	    	Collection<? extends Object> results = newKieSession.getObjects( filter );
 	    	/* saving result from rule-task in map*/
 	    	output = (OutputParam) newKieSession.getObject(factHandle);
+	    	answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
 	    	resultMap.put("output", output);
+	    	resultMap.put("answersToSave",answersToSave);
 	    	newKieSession.retract(factHandle);
-
+	    	newKieSession.retract(answersToSaveHandle);
 	    	// don't dispose
 
 		} else {
