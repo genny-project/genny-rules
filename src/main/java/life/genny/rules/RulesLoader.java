@@ -686,8 +686,8 @@ public class RulesLoader {
 				kieSession.addEventListener(logger);
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(gToken));
-				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask", new AskQuestionTaskWorkItemHandler(kieSession,taskService));
-				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers", new ProcessAnswersWorkItemHandler(kieSession,taskService));
+				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask", new AskQuestionTaskWorkItemHandler(RulesLoader.class,kieSession,taskService));
+				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers", new ProcessAnswersWorkItemHandler(RulesLoader.class,kieSession,taskService));
 
 				kieSession.getEnvironment().set("Autoclaim", "true");  // for JBPM
 

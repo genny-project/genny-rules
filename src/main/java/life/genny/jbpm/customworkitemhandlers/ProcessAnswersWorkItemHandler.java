@@ -54,9 +54,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
-    public ProcessAnswersWorkItemHandler(KieSession ksession, TaskService taskService) {
+    public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface,KieSession ksession, TaskService taskService) {
     	this.taskService = taskService;
     	this.kieSession = ksession;
+    	this.wClass = workflowQueryInterface.getCanonicalName();
      }
     
 	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng, KieSession kieSession) {

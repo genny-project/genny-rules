@@ -77,8 +77,9 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
     	super();
     }
     
-    public AskQuestionTaskWorkItemHandler(KieSession ksession, TaskService taskService) {
+    public <R> AskQuestionTaskWorkItemHandler(Class<R> workflowQueryInterface,KieSession ksession, TaskService taskService) {
     	super(ksession,taskService);
+    	this.wClass = workflowQueryInterface.getCanonicalName();
      }
 
 	public <R> AskQuestionTaskWorkItemHandler(Class<R> workflowQueryInterface) {
