@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.drools.core.ClassObjectFilter;
@@ -19,12 +20,14 @@ import org.drools.core.process.instance.impl.WorkItemImpl;
 import org.jbpm.process.core.timer.DateTimeUtils;
 import org.jbpm.services.task.exception.PermissionDeniedException;
 import org.jbpm.services.task.impl.util.HumanTaskHandlerHelper;
+import org.jbpm.services.task.utils.ContentMarshallerHelper;
 import org.jbpm.services.task.utils.OnErrorAction;
 import org.jbpm.services.task.utils.TaskFluent;
 import org.jbpm.services.task.wih.NonManagedLocalHTWorkItemHandler;
 import org.jbpm.services.task.wih.util.PeopleAssignmentHelper;
 import org.kie.api.KieBase;
 import org.kie.api.KieServices;
+import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
 import org.kie.api.runtime.manager.RuntimeEngine;
@@ -32,6 +35,8 @@ import org.kie.api.runtime.process.CaseData;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.kie.api.task.TaskService;
+import org.kie.api.task.model.Attachment;
+import org.kie.api.task.model.Content;
 import org.kie.api.task.model.Group;
 import org.kie.api.task.model.I18NText;
 import org.kie.api.task.model.OrganizationalEntity;
@@ -41,7 +46,10 @@ import org.kie.api.task.model.User;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.task.api.InternalTaskService;
 import org.kie.internal.task.api.TaskModelProvider;
+import org.kie.internal.task.api.model.AccessType;
 import org.kie.internal.task.api.model.ContentData;
+import org.kie.internal.task.api.model.InternalAttachment;
+import org.kie.internal.task.api.model.InternalContent;
 import org.kie.internal.task.api.model.InternalI18NText;
 import org.kie.internal.task.api.model.InternalOrganizationalEntity;
 import org.kie.internal.task.api.model.InternalTask;
@@ -49,8 +57,10 @@ import org.kie.internal.task.api.model.InternalTaskData;
 
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QEventMessage;
+import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.SessionFacts;
 
@@ -97,13 +107,45 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 
 	        Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
-	        ContentData content = createTaskContentBasedOnWorkItemParams(this.getKsession(), workItem);
+	        
+	        
+            // Fetch the questions and set in the task for us to tick off as they get done
+            Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
+            HashMap<String,Object> taskAsksMap = new HashMap<String,Object>();
+            for (QDataAskMessage dataMsg : formSet) {
+            	Boolean createOnTrigger = false;
+            	for (Ask askMsg : dataMsg.getItems()) {
+            		createOnTrigger = askMsg.hasTriggerQuestion();
+            		processAsk(task.getFormName(),askMsg,taskAsksMap,userToken,createOnTrigger);
+             		
+            	}
+            }
+
+//            Attachment attach = TaskModelProvider.getFactory().newAttachment();
+//            ((InternalAttachment)attach).setAccessType(AccessType.Inline);
+//            ((InternalAttachment)attach).setAttachedAt(new Date());
+//            ((InternalAttachment)attach).setName(task.getFormName());
+//            ((InternalAttachment)attach).setContentType("String");
+//            Content content2 = TaskModelProvider.getFactory().newContent();
+//            byte[] byteArray = SerializationUtils.serialize(taskAsksMap);
+//            ((InternalContent)content2).setContent(byteArray);
+
+	        
+	        ContentData content = createTaskContentBasedOnWorkItemParams(this.getKsession(),  taskAsksMap);
+
 	        try {
 	            long taskId = ((InternalTaskService) this.getTaskService()).addTask(task, content);
 	            if (isAutoClaim(this.getKsession(), workItem, task)) {
 	            	 this.getTaskService().claim(taskId, (String) workItem.getParameter("SwimlaneActorId"));
 
 	            }
+	            
+	            
+	     
+	           // ((InternalContent)content).setContent(ContentMarshallerHelper.marshallContent(task, payload, null));
+	           // taskData.getAttachments().add(attach);
+	                  
+	         
                 sendTaskSignal(userToken, task, callingWorkflow); // TODO, watch the timing as the workitem may not be ready if the target tries to do stuff.
 
 	        } catch (Exception e) {
@@ -124,6 +166,29 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	        } 
 	    }
 	
+	private void processAsk(String formName,Ask askMsg, HashMap<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger) {
+   		// replace askMesg source and target with required src and target, initially we will use both src and target
+		String json = JsonUtils.toJson(askMsg);
+		json = json.replaceAll("PER_SERVICE", userToken.getUserCode());
+		Ask newMsg = JsonUtils.fromJson(json, Ask.class);
+		String key = newMsg.getSourceCode()+":"+newMsg.getTargetCode()+":"+newMsg.getAttributeCode();
+		// work out whether an Ask has already got a value for that attribute
+		Boolean answered = false;
+		
+		Boolean isTableRow = false;
+		// TODO, if the question is a submit then 
+		
+		Boolean formTrigger = newMsg.getFormTrigger();
+		TaskAsk taskAsk = new TaskAsk(newMsg,formName, answered, isTableRow, formTrigger, createOnTrigger);
+		taskAsksMap.put(key, taskAsk);
+		if ((newMsg.getChildAsks()!=null)&&(newMsg.getChildAsks().length>0)) {
+			for (Ask childAsk : newMsg.getChildAsks()) {
+				processAsk(formName,childAsk,taskAsksMap,userToken,createOnTrigger);
+			}
+		}
+		return ;
+	}
+
 	/**
 	 * @param userToken
 	 * @param processId
@@ -337,22 +402,63 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
         PeopleAssignments peopleAssignments = task.getPeopleAssignments();
         List<OrganizationalEntity> businessAdministrators = peopleAssignments.getBusinessAdministrators();
         
-        
-       // Fetch the questions and set in the task for us to tick off as they get done
-        Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(formName, userToken);
-        Map<String,Object> asks = new HashMap<String,Object>();
-        for (QDataAskMessage dataMsg : formSet) {
-        	for (Ask askMsg : dataMsg.getItems()) {
-        		String key = askMsg.getSourceCode()+":"+askMsg.getTargetCode()+":"+askMsg.getAttributeCode();
-        		asks.put(key, askMsg);
-        	}
-        }
-        taskData.setTaskInputVariables(asks);
-        taskData.initialize();
+//        // Fetch the questions and set in the task for us to tick off as they get done
+//        Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
+//        HashMap<String,Object> taskAsksMap = new HashMap<String,Object>();
+//        for (QDataAskMessage dataMsg : formSet) {
+//        	for (Ask askMsg : dataMsg.getItems()) {
+//        		// replace askMesg source and target with required src and target, initially we will use both src and target
+//        		String json = JsonUtils.toJson(askMsg);
+//        		json = json.replaceAll("PER_SERVICE", userToken.getUserCode());
+//        		Ask newMsg = JsonUtils.fromJson(json, Ask.class);
+//        		String key = newMsg.getSourceCode()+":"+newMsg.getTargetCode()+":"+newMsg.getAttributeCode();
+//        		// work out whether an Ask has already got a value for that attribute
+//        		Boolean answered = false;
+//        		
+//        		Boolean isTableRow = false;
+//        		// TODO, if the question is a submit then 
+//        		
+//        		Boolean formTrigger = newMsg.getFormTrigger();
+//        		Boolean createOnTrigger = false;
+//        		TaskAsk taskAsk = new TaskAsk(newMsg, task.getFormName(), answered, isTableRow, formTrigger, createOnTrigger);
+//        		taskAsksMap.put(key, taskAsk);
+//        	}
+//        }
+//
+//        Attachment attach = TaskModelProvider.getFactory().newAttachment();
+//        ((InternalAttachment)attach).setAccessType(AccessType.Inline);
+//        ((InternalAttachment)attach).setAttachedAt(new Date());
+//        ((InternalAttachment)attach).setName(task.getFormName());
+//        ((InternalAttachment)attach).setContentType("String");
+//        Content content = TaskModelProvider.getFactory().newContent();
+//        byte[] byteArray = SerializationUtils.serialize(taskAsksMap);
+//        ((InternalContent)content).setContent(byteArray);
+//        
+//       // ((InternalContent)content).setContent(ContentMarshallerHelper.marshallContent(task, payload, null));
+//       // taskData.getAttachments().add(attach);
+//        
+
+      //  taskData.setTaskInputVariables(taskAsksMap); 
         task.setTaskData(taskData);
         task.setDeadlines(HumanTaskHandlerHelper.setDeadlines(workItem.getParameters(), businessAdministrators, session.getEnvironment()));
-        
+  
+
         return task;
     }
 
+
+    protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session,  HashMap<String,Object> taskAsksMap) {
+        ContentData content = null;
+        Object contentObject = null;
+            contentObject = new HashMap<String, Object>(taskAsksMap);
+         if (contentObject != null) {
+            Environment env = null;
+            if(session != null){
+                env = session.getEnvironment();
+            }
+           
+            content = ContentMarshallerHelper.marshal(null, contentObject, env);
+        }
+        return content;
+    }
 }

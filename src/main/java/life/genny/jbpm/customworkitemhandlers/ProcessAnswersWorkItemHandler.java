@@ -6,13 +6,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.jbpm.services.task.utils.ContentMarshallerHelper;
 import org.kie.api.runtime.manager.RuntimeEngine;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.kie.api.task.TaskService;
+import org.kie.api.task.model.Attachment;
+import org.kie.api.task.model.Content;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
@@ -21,6 +25,7 @@ import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.TaskAsk;
 import life.genny.utils.BaseEntityUtils;
 
 public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
@@ -82,10 +87,23 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		for (TaskSummary taskSummary : tasks) {
 			Task task = taskService.getTaskById(taskSummary.getId());
-			Map<String,Object> taskAsks = task.getTaskData().getTaskInputVariables();
-			if (taskAsks != null)  {
-				asks.putAll( taskAsks);
-			}
+	        Content c = taskService.getContentById(task.getTaskData().getDocumentContentId());
+			HashMap<String, Object> taskAsks = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
+			asks.putAll( taskAsks);
+//			List<Attachment> attachments = task.getTaskData().getAttachments();
+//			if (!attachments.isEmpty()) {
+//				for (Attachment attachment : attachments) {
+//					long firstAttachContentId = attachment.getAttachmentContentId();
+//			        Content firstAttachContent = taskService.getContentById(firstAttachContentId);
+//			        HashMap<String,Object> taskAsks = SerializationUtils.deserialize(firstAttachContent.getContent());
+//			        
+//				//	byte[] byteArray = attachment.
+//			//Map<String,Object> taskAsks = task.getTaskData().getTaskInputVariables();
+//			if (taskAsks != null)  {
+//				asks.putAll( taskAsks);
+//			}
+//				}
+//			}
 		}
 
 		
@@ -95,7 +113,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			// check answer
 			if (answer.getSourceCode().equals(userToken.getUserCode())) {
 				String key = answer.getSourceCode()+":"+answer.getTargetCode()+":"+answer.getAttributeCode();
-				Ask ask = (Ask) asks.get(key);
+				TaskAsk ask = (TaskAsk) asks.get(key);
 				if (ask != null) {
 					validAnswers.add(answer);
 				} else {
