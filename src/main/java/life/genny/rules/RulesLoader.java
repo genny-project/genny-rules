@@ -465,7 +465,13 @@ public class RulesLoader {
 
 					executorService.init();	
 					
-					
+//					Map<String, Object> jmsProps = new HashMap<String, Object>();
+//					jmsProps.put("jbpm.audit.jms.transacted", true);
+//					jmsProps.put("jbpm.audit.jms.connection.factory", factory);
+//					jmsProps.put("jbpm.audit.jms.queue", queue);
+//					AbstractAuditLogger auditLogger = AuditLoggerFactory.newInstance(Type.JMS, ksession, jmsProps);
+				//	ksession.addProcessEventListener(auditLogger);
+
 					
 					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase)
 							.entityManagerFactory(emf)
@@ -476,7 +482,7 @@ public class RulesLoader {
 
 			                        Map<String, WorkItemHandler> handlers = super.getWorkItemHandlers(runtime);
 			                   //     handlers.put("async", new AsyncWorkItemHandler(executorService, "org.jbpm.executor.commands.PrintOutCommand"));
-			                        Map<String,WorkItemHandler> gennyHandlers = getHandlers(runtime);
+			                        Map<String,WorkItemHandler> gennyHandlers = getHandlers(runtime,null);
 			                        for (String handlerKey : gennyHandlers.keySet()) {
 			                		handlers.put(handlerKey,
 			                				gennyHandlers.get(handlerKey));
@@ -678,10 +684,11 @@ public class RulesLoader {
 
 				//addHandlers(kieSession);
 				kieSession.addEventListener(logger);
-
 				kieSession.addEventListener(new GennyAgendaEventListener());
 				kieSession.addEventListener(new JbpmInitListener(gToken));
-				kieSession.getWorkItemManager().registerWorkItemHandler("Human Task", new NonManagedLocalHTWorkItemHandler(kieSession,taskService));
+				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask", new AskQuestionTaskWorkItemHandler(kieSession,taskService));
+				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers", new ProcessAnswersWorkItemHandler(kieSession,taskService));
+
 				kieSession.getEnvironment().set("Autoclaim", "true");  // for JBPM
 
 				/* If userToken is not null then send the event through user Session */
@@ -1133,7 +1140,7 @@ public class RulesLoader {
 //
 //	}
 	
-	private static  Map<String, WorkItemHandler> getHandlers(RuntimeEngine runtime)
+	private static  Map<String, WorkItemHandler> getHandlers(RuntimeEngine runtime, KieSession kieSession)
 	 {
 		 Map<String, WorkItemHandler> handlers = new HashMap<String, WorkItemHandler>();
 		//	log.info("Register SendSignal  kiesession");
@@ -1158,7 +1165,7 @@ public class RulesLoader {
 			handlers.put("AskQuestionTask",
 					new AskQuestionTaskWorkItemHandler(RulesLoader.class,runtime));
 			handlers.put("ProcessAnswers",
-					new ProcessAnswersWorkItemHandler(RulesLoader.class,runtime));
+					new ProcessAnswersWorkItemHandler(RulesLoader.class,runtime,kieSession));
 
 			handlers.put("ProcessTaskId",
 					new ProcessTaskIdWorkItemHandler(RulesLoader.class,runtime));
