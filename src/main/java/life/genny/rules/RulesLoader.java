@@ -101,6 +101,7 @@ import io.vertx.rxjava.core.buffer.Buffer;
 import life.genny.jbpm.customworkitemhandlers.AskQuestionTaskWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AskQuestionWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
+import life.genny.jbpm.customworkitemhandlers.CheckTasksWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ProcessAnswersWorkItemHandler;
@@ -688,6 +689,7 @@ public class RulesLoader {
 				kieSession.addEventListener(new JbpmInitListener(gToken));
 				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask", new AskQuestionTaskWorkItemHandler(RulesLoader.class,kieSession,taskService));
 				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers", new ProcessAnswersWorkItemHandler(RulesLoader.class,kieSession,taskService));
+				kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks", new CheckTasksWorkItemHandler(RulesLoader.class,kieSession,taskService));
 
 				kieSession.getEnvironment().set("Autoclaim", "true");  // for JBPM
 
@@ -696,6 +698,8 @@ public class RulesLoader {
 
 					gToken = facts.getUserToken();
 					String session_state = gToken.getSessionCode();
+					
+					
 					Long processId = null;
 
 					Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
@@ -721,7 +725,8 @@ public class RulesLoader {
 									+ ": " + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
 									+ processId);
 
-							
+						//	kieSession.signalEvent("EV_"+session_state, facts);
+
 								
 							kieSession.signalEvent("event", facts, processId);
 						}
@@ -739,6 +744,7 @@ public class RulesLoader {
 									+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
 									+ processId);
 
+							//kieSession.signalEvent("DT_"+session_state, facts);
 							kieSession.signalEvent("data", facts, processId);
 							
 						}
@@ -1162,10 +1168,10 @@ public class RulesLoader {
 					new ThrowSignalProcessWorkItemHandler(runtime));
 			handlers.put("AskQuestion",
 					new AskQuestionWorkItemHandler(RulesLoader.class,runtime));
-			handlers.put("AskQuestionTask",
-					new AskQuestionTaskWorkItemHandler(RulesLoader.class,runtime));
-			handlers.put("ProcessAnswers",
-					new ProcessAnswersWorkItemHandler(RulesLoader.class,runtime,kieSession));
+//			handlers.put("AskQuestionTask",
+//					new AskQuestionTaskWorkItemHandler(RulesLoader.class,runtime));
+//			handlers.put("ProcessAnswers",
+//					new ProcessAnswersWorkItemHandler(RulesLoader.class,runtime));
 
 			handlers.put("ProcessTaskId",
 					new ProcessTaskIdWorkItemHandler(RulesLoader.class,runtime));

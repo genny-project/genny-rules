@@ -54,13 +54,16 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
-    public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface,KieSession ksession, TaskService taskService) {
-    	this.taskService = taskService;
-    	this.kieSession = ksession;
-    	this.wClass = workflowQueryInterface.getCanonicalName();
-     }
-    
-	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng, KieSession kieSession) {
+
+	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, KieSession ksession,
+			TaskService taskService) {
+		this.taskService = taskService;
+		this.kieSession = ksession;
+		this.wClass = workflowQueryInterface.getCanonicalName();
+	}
+
+	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng,
+			KieSession kieSession) {
 		this.runtimeEngine = rteng;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 		this.taskService = rteng.getTaskService();
@@ -71,7 +74,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new HashMap<String, Object>();
-		Map<TaskSummary,Map<String,Object>> taskAskMap = new HashMap<TaskSummary,Map<String,Object>>();
+		Map<TaskSummary, Map<String, Object>> taskAskMap = new HashMap<TaskSummary, Map<String, Object>>();
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
@@ -114,103 +117,108 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			// Loop through all the answers check their validity and save them.
 			List<Answer> validAnswers = new ArrayList<Answer>();
 			List<TaskAsk> taskAsksProcessed = new ArrayList<TaskAsk>();
-			for (Answer answer : answersToSave.getAnswers()) {
-				// check answer
-				if (answer.getSourceCode().equals(userToken.getUserCode())) {
-					String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":"
-							+ answer.getAttributeCode();
-					TaskAsk ask = (TaskAsk) taskAsks.get(key);
-					if (ask != null) {
+			if (answersToSave != null) {
+				for (Answer answer : answersToSave.getAnswers()) {
+					// check answer
+					if (answer.getSourceCode().equals(userToken.getUserCode())) {
+						String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":"
+								+ answer.getAttributeCode();
+						TaskAsk ask = (TaskAsk) taskAsks.get(key);
+						if (ask != null) {
 
-						// Now confirm the validity of the value
-						Boolean validated = validate(answer);
+							// Now confirm the validity of the value
+							Boolean validated = validate(answer);
 
-						if (validated) {
-							ask.setValue(answer.getValue());
-							// checek
-							taskAsksProcessed.add(ask); // save for later updating
-							validAnswers.add(answer);
-							
-						}
-					} else {
-						log.error("Not a valid ASK! " + key);
-					}
-				}
-			}
-			log.info(callingWorkflow + " Saving " + validAnswers.size() + " Valid Answers ...");
-			if (validAnswers.size() > 0) {
-				beUtils.saveAnswers(validAnswers); // save answers in one big thing
-				
-				// tick off the valid answers
-				for (TaskAsk ta : taskAsksProcessed) {
-					ta.setAnswered(true);
-				}
+							if (validated) {
+								ask.setValue(answer.getValue());
+								// checek
+								taskAsksProcessed.add(ask); // save for later updating
+								validAnswers.add(answer);
 
-				// check if all mandatory answers done
-				Boolean allMandatoryTicked = true;
-				Boolean isCreateOnTrigger = false;
-				Boolean isNowTriggered = false;
-				for (String key : taskAsks.keySet()) {
-					TaskAsk ask = (TaskAsk) taskAsks.get(key);
-					if (ask.getAsk().getMandatory()) {
-						if (!ask.getAnswered()) {
-							allMandatoryTicked = false;
+							}
+						} else {
+							log.error("Not a valid ASK! " + key);
 						}
 					}
-					if (ask.getCreateOnTrigger()) {
-						isCreateOnTrigger = true; // ok, so if any trigger questions are answered and all mandatory questions are answered then create!
-					}
-					if (ask.getFormTrigger()&&ask.getAnswered()) {
-						isNowTriggered = true;
-					}
-					// HACK TODO TODO TODO
-					if (ask.getAsk().getAttributeCode().startsWith("QQQ_QUESTION_GROUP_BUT")) {
-						isNowTriggered = true;
-					}
-					log.info(callingWorkflow+" TASK-ASK:"+ask);
 				}
-				// check all the tasks to see if any are completed and if so then complete them!
-				if (allMandatoryTicked && isNowTriggered) {
-					if (isCreateOnTrigger) {
-						// Okay, so grab the temporary target BE and make it the final target BE!
-						log.info(callingWorkflow+" Creating actual Target BE from Temporary BE for "+task.getFormName());
-					}	
+				log.info(callingWorkflow + " Saving " + validAnswers.size() + " Valid Answers ...");
+				if (validAnswers.size() > 0) {
+					beUtils.saveAnswers(validAnswers); // save answers in one big thing
+
+					// tick off the valid answers
+					for (TaskAsk ta : taskAsksProcessed) {
+						ta.setAnswered(true);
+					}
+
+					// check if all mandatory answers done
+					Boolean allMandatoryTicked = true;
+					Boolean isCreateOnTrigger = false;
+					Boolean isNowTriggered = false;
+					for (String key : taskAsks.keySet()) {
+						TaskAsk ask = (TaskAsk) taskAsks.get(key);
+						if (ask.getAsk().getMandatory()) {
+							if (!ask.getAnswered()) {
+								allMandatoryTicked = false;
+							}
+						}
+						if (ask.getCreateOnTrigger()) {
+							isCreateOnTrigger = true; // ok, so if any trigger questions are answered and all mandatory
+														// questions are answered then create!
+						}
+						if (ask.getFormTrigger() && ask.getAnswered()) {
+							isNowTriggered = true;
+						}
+						// HACK TODO TODO TODO
+						if (ask.getAsk().getAttributeCode().startsWith("QQQ_QUESTION_GROUP_BUT")) {
+							isNowTriggered = true;
+						}
+						log.info(callingWorkflow + " TASK-ASK:" + ask);
+					}
+					// check all the tasks to see if any are completed and if so then complete them!
+					if (allMandatoryTicked && isNowTriggered) {
+						if (isCreateOnTrigger) {
+							// Okay, so grab the temporary target BE and make it the final target BE!
+							log.info(callingWorkflow + " Creating actual Target BE from Temporary BE for "
+									+ task.getFormName());
+						}
 						// Now complete the Task!!
-					log.info(callingWorkflow+" Completed TASK "+task.getFormName());
-					taskAskMap.put(taskSummary, taskAsks);
-				}
-				// Now save back to Task
-			//	 ((InternalTaskService) taskService).deleteContent(task.getId(), c.getId());
-			// ((InternalTaskService) taskService).addContent(task.getId(), taskAsks);
-			 EntityManager em = (EntityManager)  this.kieSession.getEnvironment().get(EnvironmentName.APP_SCOPED_ENTITY_MANAGER);
-			// ContentData cd = createTaskContentBasedOnWorkItemParams(this.kieSession,  taskAsks);
-			 Object contentObject = null;
-	            contentObject = new HashMap<String, Object>(taskAsks);
-			 Environment env = null;
-	            if(kieSession != null){
-	                env = kieSession.getEnvironment();
-	            }
-	           
-	            ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env);			  
+						log.info(callingWorkflow + " Completed TASK " + task.getFormName());
+						taskAskMap.put(taskSummary, taskAsks);
+					}
+					// Now save back to Task
+					// ((InternalTaskService) taskService).deleteContent(task.getId(), c.getId());
+					// ((InternalTaskService) taskService).addContent(task.getId(), taskAsks);
+					EntityManager em = (EntityManager) this.kieSession.getEnvironment()
+							.get(EnvironmentName.APP_SCOPED_ENTITY_MANAGER);
+					// ContentData cd = createTaskContentBasedOnWorkItemParams(this.kieSession,
+					// taskAsks);
+					Object contentObject = null;
+					contentObject = new HashMap<String, Object>(taskAsks);
+					Environment env = null;
+					if (kieSession != null) {
+						env = kieSession.getEnvironment();
+					}
+
+					ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env);
 //	            persistenceContext.persistContent(content);
 //			  persistenceContext.setOutputToTask(content, content, task);
 //             em.persist(content);
-	          //  taskService..addContent(task.getId(), content);
-	            Content content = TaskModelProvider.getFactory().newContent();
-	            ((InternalContent) content).setContent(contentData.getContent());
-	         //   kieSession.
-	           // TaskContext ctx = (TaskContext) context;
-	           // TaskPersistenceContext persistenceContext = ctx.getPersistenceContext();
-	         //   persistenceContext.persistContent(content);
-	             em.persist(content);
-	             InternalTask iTask = (InternalTask)task;
-	             InternalTaskData iTaskData = (InternalTaskData)iTask.getTaskData();
-	             iTaskData.setDocument(content.getId(), contentData);
-	             iTask.setTaskData(iTaskData);
-	          //  persistenceContext.setDocumentToTask(content, contentData, task);
-             //task.getTaskData().setDocument(content.getId(), content);
-	
-		//	 em.merge(cd);
+					// taskService..addContent(task.getId(), content);
+					Content content = TaskModelProvider.getFactory().newContent();
+					((InternalContent) content).setContent(contentData.getContent());
+					// kieSession.
+					// TaskContext ctx = (TaskContext) context;
+					// TaskPersistenceContext persistenceContext = ctx.getPersistenceContext();
+					// persistenceContext.persistContent(content);
+					em.persist(content);
+					InternalTask iTask = (InternalTask) task;
+					InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
+					iTaskData.setDocument(content.getId(), contentData);
+					iTask.setTaskData(iTaskData);
+					// persistenceContext.setDocumentToTask(content, contentData, task);
+					// task.getTaskData().setDocument(content.getId(), content);
+
+					// em.merge(cd);
 					Task task2 = taskService.getTaskById(taskSummary.getId());
 
 					Long docId2 = task2.getTaskData().getDocumentContentId();
@@ -218,22 +226,22 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					HashMap<String, Object> taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
 							.unmarshall(content.getContent(), this.kieSession.getEnvironment());
 					System.out.println(taskAsks2);
+				}
 			}
 		}
-		
 		// Now complete the tasks if done
 		manager.completeWorkItem(workItem.getId(), resultMap);
-		
+
 		for (TaskSummary taskSummary : tasks) {
-			Map<String,Object> results = taskAskMap.get(taskSummary);
+			Map<String, Object> results = taskAskMap.get(taskSummary);
 			if (results != null) {
-				taskService.complete(taskSummary.getId(), realm+"+"+userCode, results);
+				taskService.complete(taskSummary.getId(), realm + "+" + userCode, results);
 			}
 		}
-		 return;
+		return;
 
 		// notify manager that work item has been completed
-	//	manager.completeWorkItem(workItem.getId(), resultMap);
+		// manager.completeWorkItem(workItem.getId(), resultMap);
 
 	}
 
@@ -246,18 +254,19 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	   protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session,  HashMap<String,Object> taskAsksMap) {
-	        ContentData content = null;
-	        Object contentObject = null;
-	            contentObject = new HashMap<String, Object>(taskAsksMap);
-	         if (contentObject != null) {
-	            Environment env = null;
-	            if(session != null){
-	                env = session.getEnvironment();
-	            }
-	           
-	            content = ContentMarshallerHelper.marshal(null, contentObject, env);
-	        }
-	        return content;
-	    }
+	protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session,
+			HashMap<String, Object> taskAsksMap) {
+		ContentData content = null;
+		Object contentObject = null;
+		contentObject = new HashMap<String, Object>(taskAsksMap);
+		if (contentObject != null) {
+			Environment env = null;
+			if (session != null) {
+				env = session.getEnvironment();
+			}
+
+			content = ContentMarshallerHelper.marshal(null, contentObject, env);
+		}
+		return content;
+	}
 }

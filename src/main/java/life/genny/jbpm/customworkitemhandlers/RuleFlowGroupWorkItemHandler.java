@@ -154,15 +154,21 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			}
 			
 			/* INserting facts to save the output result*/
-			newKieSession.insert(output);
+			FactHandle factHandle =  newKieSession.insert(output);
+			FactHandle answersToSaveHandle =  newKieSession.insert(answersToSave);
 			
 			/* Setting focus to rule-flow group */
 	    	newKieSession.getAgenda().getAgendaGroup( ruleFlowGroup ).setFocus();
 	    	
 	    	newKieSession.fireAllRules();
 	    	
-	    	/* saving result from rule-task in map*/
+	    	output = (OutputParam) newKieSession.getObject(factHandle);
+	    	answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
 	    	resultMap.put("output", output);
+	    	resultMap.put("answersToSave",answersToSave);
+	    	newKieSession.retract(factHandle);
+	    	newKieSession.retract(answersToSaveHandle);
+
 	    	newKieSession.dispose();
 		}    	
     }

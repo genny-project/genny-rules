@@ -254,13 +254,14 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			if (this.runtimeEngine != null) {
 
 				newKieSession = (StatefulKnowledgeSession) this.runtimeEngine.getKieSession();
-
+				//newKieSession.signalEvent("IS_"+userToken.getSessionCode(), sessionFacts);
 				newKieSession.signalEvent("internalSignal", sessionFacts, targetProcessId);
 			} else {
 
 				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
 
+				//newKieSession.signalEvent("IS_"+userToken.getSessionCode(), sessionFacts);
 				newKieSession.signalEvent("internalSignal", sessionFacts, targetProcessId);
 
 				newKieSession.dispose();
