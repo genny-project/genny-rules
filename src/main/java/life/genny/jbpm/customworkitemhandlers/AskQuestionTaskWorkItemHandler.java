@@ -181,7 +181,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		
 		Boolean formTrigger = newMsg.getFormTrigger();
 		TaskAsk taskAsk = new TaskAsk(newMsg,formName, answered, isTableRow, formTrigger, createOnTrigger);
-		taskAsksMap.put(key, taskAsk);
+		// don't add questions that are just groups
+		if (!askMsg.getQuestionCode().endsWith("_GRP")) {
+			taskAsksMap.put(key, taskAsk);
+		}
 		if ((newMsg.getChildAsks()!=null)&&(newMsg.getChildAsks().length>0)) {
 			for (Ask childAsk : newMsg.getChildAsks()) {
 				processAsk(formName,childAsk,taskAsksMap,userToken,createOnTrigger);

@@ -110,6 +110,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		for (TaskSummary taskSummary : tasks) {
 
 			Task task = taskService.getTaskById(taskSummary.getId());
+			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
+				taskService.start(taskSummary.getId(), realm + "+" + userCode); // start!
+			}
 			Long docId = task.getTaskData().getDocumentContentId();
 			Content c = taskService.getContentById(docId);
 			HashMap<String, Object> taskAsks = (HashMap<String, Object>) ContentMarshallerHelper
@@ -235,6 +238,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		for (TaskSummary taskSummary : tasks) {
 			Map<String, Object> results = taskAskMap.get(taskSummary);
 			if (results != null) {
+				InternalTask iTask = (InternalTask) taskService.getTaskById(taskSummary.getId());
+				System.out.println(callingWorkflow+" closing task with status "+iTask.getTaskData().getStatus());
 				taskService.complete(taskSummary.getId(), realm + "+" + userCode, results);
 			}
 		}

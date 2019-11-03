@@ -118,10 +118,12 @@ import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.JMSSendTaskWorkItemHandler;
 import life.genny.models.GennyToken;
+import life.genny.qwanda.Answer;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.exception.BadDataException;
+import life.genny.qwanda.message.QDataAnswerMessage;
 import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
 import life.genny.qwanda.message.QEventLinkChangeMessage;
@@ -727,8 +729,22 @@ public class RulesLoader {
 
 						//	kieSession.signalEvent("EV_"+session_state, facts);
 
-								
-							kieSession.signalEvent("event", facts, processId);
+							// HACK!!
+							if (msg_code.equals("QUE_SUBMIT")) {
+								Answer dataAnswer = new Answer(gToken.getUserCode(),gToken.getUserCode(),"PRI_EVENT","QUE_SUBMIT");
+								QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
+								SessionFacts sessionFactsData = new SessionFacts(gToken, gToken , dataMsg);							
+								kieSession.signalEvent("data", sessionFactsData, processId);
+							}
+								else	if (msg_code.equals("QUE_CANCEL")) {
+									Answer dataAnswer = new Answer(gToken.getUserCode(),gToken.getUserCode(),"PRI_EVENT","QUE_CANCEL");
+									QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
+									SessionFacts sessionFactsData = new SessionFacts(gToken, gToken , dataMsg);							
+									kieSession.signalEvent("data", sessionFactsData, processId);
+								} else {
+
+									kieSession.signalEvent("event", facts, processId);
+								}
 						}
 
 						/* If the message is data message then send in to data channel */
