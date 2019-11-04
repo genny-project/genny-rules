@@ -733,13 +733,13 @@ public class RulesLoader {
 							if (msg_code.equals("QUE_SUBMIT")) {
 								Answer dataAnswer = new Answer(gToken.getUserCode(),gToken.getUserCode(),"PRI_EVENT","QUE_SUBMIT");
 								QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
-								SessionFacts sessionFactsData = new SessionFacts(gToken, gToken , dataMsg);							
+								SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(), gToken , dataMsg);							
 								kieSession.signalEvent("data", sessionFactsData, processId);
 							}
 								else	if (msg_code.equals("QUE_CANCEL")) {
 									Answer dataAnswer = new Answer(gToken.getUserCode(),gToken.getUserCode(),"PRI_EVENT","QUE_CANCEL");
 									QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
-									SessionFacts sessionFactsData = new SessionFacts(gToken, gToken , dataMsg);							
+									SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(), gToken , dataMsg);							
 									kieSession.signalEvent("data", sessionFactsData, processId);
 								} else {
 

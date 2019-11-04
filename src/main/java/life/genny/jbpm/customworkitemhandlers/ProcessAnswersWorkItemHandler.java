@@ -138,6 +138,15 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 								taskAsksProcessed.add(ask); // save for later updating
 								validAnswers.add(answer);
 
+							} else {
+								if (ask.getAsk().getMandatory()) { // if an invalid result sent, then clear this mandatory ask
+									ask.setAnswered(false); // revert to unanswered
+									// do not save this invalid answer so we save an empty value
+									ask.setValue("");
+									taskAsksProcessed.add(ask); // save for later updating
+									answer.setValue("");
+									validAnswers.add(answer);
+								}
 							}
 						} else {
 							log.error("Not a valid ASK! " + key);
