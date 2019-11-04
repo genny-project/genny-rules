@@ -124,6 +124,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				for (Answer answer : answersToSave.getAnswers()) {
 					// check answer
 					if (answer.getSourceCode().equals(userToken.getUserCode())) {
+						// HACK! TODO
+						if (answer.getAttributeCode().equals("PRI_EVENT")) {
+							answer.setAttributeCode("PRI_SUBMIT");
+						}
 						String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":"
 								+ answer.getAttributeCode();
 						TaskAsk ask = (TaskAsk) taskAsks.get(key);

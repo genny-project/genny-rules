@@ -79,7 +79,7 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
        */
 
       try {
-        emailHelper.deliverEmailMsg(recipientEmail, emailBody);
+        emailHelper.deliverEmailMsg("adamcrow63@gmail.com"/*recipientEmail*/, emailBody);
       } catch (AddressException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
@@ -107,6 +107,7 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
       }
 
       // This will send a SMS to the user
+      recipientSms = "+61433501177";
       smsHelper.deliverSmsMsg(recipientSms, smsBody);
     }
     // notify manager that work item has been completed
