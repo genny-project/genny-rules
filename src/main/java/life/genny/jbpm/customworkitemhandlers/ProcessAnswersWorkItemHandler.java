@@ -241,7 +241,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					Content c2 = taskService.getContentById(docId2);
 					HashMap<String, Object> taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
 							.unmarshall(content.getContent(), this.kieSession.getEnvironment());
-					System.out.println(taskAsks2);
+					//System.out.println(taskAsks2);
 				}
 			}
 		}
