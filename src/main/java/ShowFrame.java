@@ -223,7 +223,7 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param callingWorkflow
 	 */
 	private static void sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow) {
-		
+
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
 			return;
@@ -231,7 +231,7 @@ public class ShowFrame implements WorkItemHandler {
 
 		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
 
-		// System.out.println("Sending Asks");
+		System.out.println("Sending Asks");
 		if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
 			for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
 				for (Ask aask : askMsg.getItems()) {
