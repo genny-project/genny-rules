@@ -159,7 +159,7 @@ public class RulesLoader {
 	public static boolean RUNTIME_MANAGER_ON = true;
 	public static RuntimeEnvironment runtimeEnvironment;
 	public static RuntimeEnvironmentBuilder runtimeEnvironmentBuilder;
-	public static RuntimeManager runtimeManager;
+	public static RuntimeManager runtimeManager;  // THIS IS THREADSAFE - KEEP ALIVE ALWAYS
 	public static Environment env; // drools persistence
 	public static EntityManagerFactory emf = null;
 
@@ -180,6 +180,11 @@ public class RulesLoader {
 
 	public static Boolean rulesChanged = !GennySettings.detectRuleChanges;
 	//public static Boolean rulesChanged = true;
+	
+	public static void shutdown()
+	{
+		runtimeManager.close();
+	}
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
@@ -535,10 +540,10 @@ public class RulesLoader {
 				}
 				
 				if (true || "TRUE".equals(System.getenv("USE_SINGLETON"))) { // TODO
-					runtimeManager = RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment);
+					runtimeManager = RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment,realm); // TODO 
 				} else {
 					
-					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment);
+					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment,realm);
 				}
 			}
 
@@ -552,8 +557,6 @@ public class RulesLoader {
 			
 			
 			// Set up taskService
-			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-			taskService = runtimeEngine.getTaskService();
 //			userTaskService = runtimeEngine.
 //	        TaskServiceSession taskSession = taskService.createSession();
 
@@ -656,13 +659,20 @@ public class RulesLoader {
 		EntityManager em = emf.createEntityManager();
 		EntityTransaction tx = em.getTransaction();
 
-		if (RUNTIME_MANAGER_ON) {
+		if (getKieBaseCache().get(gToken.getRealm()) == null) {
+			log.error("The realm  kieBaseCache is null, not loaded " + gToken.getRealm());
+			return;
+		}
+
+		if ( RUNTIME_MANAGER_ON) {
 
 			/*
 			 * getting Runtime Engine from RuntimeManager each instance of Engine handles
 			 * one KieSession
 			 */
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+			taskService = runtimeEngine.getTaskService();
+
 			/* For using ProcessInstanceIdContext */
 			// RuntimeEngine runtimeEngine =
 			// runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
@@ -679,10 +689,6 @@ public class RulesLoader {
 
 				tx.begin();
 
-				if (getKieBaseCache().get(gToken.getRealm()) == null) {
-					log.error("The realm  kieBaseCache is null, not loaded " + gToken.getRealm());
-					return;
-				}
 
 				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
@@ -815,7 +821,7 @@ public class RulesLoader {
 				tx.commit();
 				em.close();
 
-				//runtimeManager.disposeRuntimeEngine(runtimeEngine);
+				runtimeManager.disposeRuntimeEngine(runtimeEngine);
 			}
 
 		} else {
@@ -931,7 +937,8 @@ public class RulesLoader {
 
 				tx.commit();
 				em.close();
-				// kieSession.dispose();
+			 kieSession.dispose();
+			 
 			}
 
 		}

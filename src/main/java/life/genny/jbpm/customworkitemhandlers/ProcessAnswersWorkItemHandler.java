@@ -15,11 +15,13 @@ import javax.transaction.Transaction;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.jbpm.runtime.manager.impl.task.SynchronizedTaskService;
 import org.jbpm.services.task.utils.ContentMarshallerHelper;
 import org.kie.api.KieBase;
 import org.kie.api.KieServices;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
+import org.kie.api.runtime.ExecutionResults;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.KieSessionConfiguration;
@@ -33,6 +35,8 @@ import org.kie.api.task.model.Content;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
+import org.kie.internal.command.CommandFactory;
+import org.kie.internal.runtime.manager.context.EmptyContext;
 import org.kie.internal.task.api.InternalTaskService;
 import org.kie.internal.task.api.TaskContext;
 import org.kie.internal.task.api.TaskModelProvider;
@@ -49,6 +53,8 @@ import life.genny.qwanda.Ask;
 import life.genny.qwanda.TaskAsk;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.SessionFacts;
+import life.genny.utils.VertxUtils;
 
 public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
@@ -116,12 +122,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		String realm = userToken.getRealm();
 		String userCode = userToken.getUserCode();
 		
-//		 KieServices ks = KieServices.Factory.get();
+		 KieServices ks = KieServices.Factory.get();
 //		 KieContainer kieContainer = ks.getKieClasspathContainer();
 //		 Collection<String> kieBasenames = kieContainer.getKieBaseNames();
 //		 log.info("kiebase names = "+kieBasenames);;
 //		 
-//        KieBase kieBase = RulesLoader.getKieBaseCache().get(realm); //kieContainer.getKieBase("defaultKieBase");   // this name is supposedly found in the kmodule.xml in META-INF in widlfy-rulesservice
+        KieBase kieBase = RulesLoader.getKieBaseCache().get(realm); //kieContainer.getKieBase("defaultKieBase");   // this name is supposedly found in the kmodule.xml in META-INF in widlfy-rulesservice
 
 		
 		
@@ -141,7 +147,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 			// Save the kieSession for this task
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-			KieSession kSession = kieSession; //ks.getStoreServices().loadKieSession(task.getTaskData().getProcessSessionId(), kieBase, ksconf, env );
+			KieSession kSession = null;
+			if (VertxUtils.cachedEnabled) {
+				kSession = kieSession;
+			} else {
+				kSession = ks.getStoreServices().loadKieSession(task.getTaskData().getProcessSessionId(), kieBase, ksconf, env );
+			}
 			if (kSession==null) {
 				log.error("Cannot find session to restore for ksid="+task.getTaskData().getProcessSessionId());
 				kSession = this.kieSession;
@@ -299,7 +310,6 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		}
 		
 
-
 		// Now complete the tasks if done
 		for (TaskSummary taskSummary : tasks) {
 			Map<String, Object> results = taskAskMap.get(taskSummary);
@@ -308,12 +318,29 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				System.out.println(callingWorkflow+" closing task with status "+iTask.getTaskData().getStatus());
 				log.info("####### processAnswers! sessionId="+iTask.getTaskData().getProcessSessionId());
 		         KieSession kSession = kieSessionMap.get(iTask.getId());
-		          
-				taskService.complete(taskSummary.getId(), realm + "+" + userCode, results);
+		         results.put("taskid",iTask.getId());
+		         SessionFacts facts = new SessionFacts(serviceToken,userToken,results);
+		         kSession.signalEvent("closeTask", facts);
+		         
+//		  		ExecutionResults results2 = null;
+//		  			try {
+//		  				results = kSession.execute(CommandFactory.newBatchExecution(cmds));
+//		  			} catch (Exception ee) {
+//
+//		  			} finally {
+//		  			}
+//					RuntimeEngine runtimeEngine = RulesLoader.runtimeManager.getRuntimeEngine(EmptyContext.get());
+//					// TODO USE THE SAME kSession as the task stores
+//					SynchronizedTaskService taskServiceSynced = new SynchronizedTaskService(kSession,(InternalTaskService) runtimeEngine.getTaskService());
+//					//TaskService taskService2 = runtimeEngine.getTaskService();
+//
+//					taskServiceSynced.complete(iTask.getId(), realm + "+" + userCode, results);
+//				RulesLoader.runtimeManager.disposeRuntimeEngine(runtimeEngine);
 			}
 		}
 
 		manager.completeWorkItem(workItem.getId(), resultMap);
+
 
 
 		return;
