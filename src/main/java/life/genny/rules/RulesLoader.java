@@ -178,8 +178,8 @@ public class RulesLoader {
 
 	public static List<String> activeRealms = new ArrayList<String>();
 
-	//public static Boolean rulesChanged = !GennySettings.detectRuleChanges;
-	public static Boolean rulesChanged = true;
+	public static Boolean rulesChanged = !GennySettings.detectRuleChanges;
+	//public static Boolean rulesChanged = true;
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
@@ -433,11 +433,12 @@ public class RulesLoader {
 			}
 
 			ReleaseId releaseId = kieBuilder.getKieModule().getReleaseId();
-
+			log.info("kieBuilder kieModule getReleaseId = "+releaseId);
 			final KieContainer kContainer = ks.newKieContainer(releaseId);
 			final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
+			kbconf.setProperty("name", realm);
 			final KieBase kbase = kContainer.newKieBase(kbconf);
-
+			
 			if (RUNTIME_MANAGER_ON) {
 				// This is needed to get around the user permissions : TODO!!!!! fix
 				System.setProperty("org.kie.server.bypass.auth.user", "true");
@@ -533,7 +534,7 @@ public class RulesLoader {
 					runtimeManager.close();
 				}
 				
-				if ("TRUE".equals(System.getenv("USE_SINGLETON"))) {
+				if (true || "TRUE".equals(System.getenv("USE_SINGLETON"))) { // TODO
 					runtimeManager = RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment);
 				} else {
 					
@@ -667,9 +668,12 @@ public class RulesLoader {
 			// runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
 
 			/* Getting KieSession */
+			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+			ksconf.setProperty("name", facts.getServiceToken().getRealm());
+
 			KieSession kieSession = runtimeEngine.getKieSession();	
 						
-			log.debug("Using Runtime engine in Per Request Strategy ::::::: Stateful");
+			log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="+kieSession.getId());
 
 			try {
 
@@ -679,8 +683,6 @@ public class RulesLoader {
 					log.error("The realm  kieBaseCache is null, not loaded " + gToken.getRealm());
 					return;
 				}
-
-				KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 
 				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
@@ -813,7 +815,7 @@ public class RulesLoader {
 				tx.commit();
 				em.close();
 
-				runtimeManager.disposeRuntimeEngine(runtimeEngine);
+				//runtimeManager.disposeRuntimeEngine(runtimeEngine);
 			}
 
 		} else {
@@ -991,7 +993,7 @@ public class RulesLoader {
 		} catch (final Throwable t) {
 			log.error(t.getLocalizedMessage());
 		} finally {
-			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + gToken);
+			log.info("Finished Stateless Message Handling ("+msg_code+") - Fired " + rulesFired + " rules for " + userToken.getUserCode()+":"+userToken.getSessionCode());
 			kieSession.dispose();
 		}
 	}
@@ -1071,13 +1073,14 @@ public class RulesLoader {
 
 			try {
 				if ((msg instanceof QEventAttributeValueChangeMessage) || (msg instanceof QEventLinkChangeMessage)) {
-					log.info("Executing Stateless ");
+					log.info("Executing Stateless for "+msg);
 
 					List<Object> facts = new ArrayList<Object>();
 					facts.add(msg);
 					facts.add(userToken);
 					facts.add(serviceToken);
-
+				//	SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
+				//	RulesLoader.executeStateful(globals, facts);
 					RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
 				} else {
 

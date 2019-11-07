@@ -367,6 +367,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             }
             if (session instanceof KieSession) {
                 taskData.setProcessSessionId(((KieSession) session).getIdentifier());
+                log.info("####### askQuestion! sessionId="+taskData.getProcessSessionId());
             }
             @SuppressWarnings("unchecked")
             Collection<CaseData> caseFiles = (Collection<CaseData>) session.getObjects(new ClassObjectFilter(CaseData.class));

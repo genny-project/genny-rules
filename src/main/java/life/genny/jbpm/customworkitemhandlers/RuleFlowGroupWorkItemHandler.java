@@ -169,7 +169,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	    	newKieSession.retract(factHandle);
 	    	newKieSession.retract(answersToSaveHandle);
 
-	    	newKieSession.dispose();
+	    	//newKieSession.dispose();
 		}    	
     }
      
