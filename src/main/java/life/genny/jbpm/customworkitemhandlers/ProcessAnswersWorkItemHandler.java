@@ -94,7 +94,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
-		Map<Long,KieSession> kieSessionMap = new HashMap<Long,KieSession>();
+		Map<Long, KieSession> kieSessionMap = new HashMap<Long, KieSession>();
 
 		GennyToken userToken = (GennyToken) items.get("userToken");
 		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
@@ -121,20 +121,19 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		String realm = userToken.getRealm();
 		String userCode = userToken.getUserCode();
-		
-		 KieServices ks = KieServices.Factory.get();
+
+		KieServices ks = KieServices.Factory.get();
 //		 KieContainer kieContainer = ks.getKieClasspathContainer();
 //		 Collection<String> kieBasenames = kieContainer.getKieBaseNames();
 //		 log.info("kiebase names = "+kieBasenames);;
 //		 
-        KieBase kieBase = RulesLoader.getKieBaseCache().get(realm); //kieContainer.getKieBase("defaultKieBase");   // this name is supposedly found in the kmodule.xml in META-INF in widlfy-rulesservice
+		KieBase kieBase = RulesLoader.getKieBaseCache().get(realm); // kieContainer.getKieBase("defaultKieBase"); //
+																	// this name is supposedly found in the kmodule.xml
+																	// in META-INF in widlfy-rulesservice
 
-		
-		
 		List<TaskSummary> tasks = taskService.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
 		log.info("Tasks=" + tasks);
 
-		 
 		for (TaskSummary taskSummary : tasks) {
 
 			Task task = taskService.getTaskById(taskSummary.getId());
@@ -151,16 +150,17 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (VertxUtils.cachedEnabled) {
 				kSession = kieSession;
 			} else {
-				kSession = ks.getStoreServices().loadKieSession(task.getTaskData().getProcessSessionId(), kieBase, ksconf, env );
+				kSession = ks.getStoreServices().loadKieSession(task.getTaskData().getProcessSessionId(), kieBase,
+						ksconf, env);
 			}
-			if (kSession==null) {
-				log.error("Cannot find session to restore for ksid="+task.getTaskData().getProcessSessionId());
+			if (kSession == null) {
+				log.error("Cannot find session to restore for ksid=" + task.getTaskData().getProcessSessionId());
 				kSession = this.kieSession;
 			} else {
-				log.info("Found session to restore for ksid="+task.getTaskData().getProcessSessionId());
+				log.info("Found session to restore for ksid=" + task.getTaskData().getProcessSessionId());
 			}
 			kieSessionMap.put(task.getId(), kSession);
-			
+
 			Long docId = task.getTaskData().getDocumentContentId();
 			Content c = taskService.getContentById(docId);
 			HashMap<String, Object> taskAsks = (HashMap<String, Object>) ContentMarshallerHelper
@@ -192,7 +192,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 								validAnswers.add(answer);
 
 							} else {
-								if (ask.getAsk().getMandatory()) { // if an invalid result sent, then clear this mandatory ask
+								if (ask.getAsk().getMandatory()) { // if an invalid result sent, then clear this
+																	// mandatory ask
 									ask.setAnswered(false); // revert to unanswered
 									// do not save this invalid answer so we save an empty value
 									ask.setValue("");
@@ -203,7 +204,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							}
 						} else {
 							if (answer.getInferred()) {
-								// This is a valid answer but has not come from the frondend and is not going to be expected in the task list */
+								// This is a valid answer but has not come from the frondend and is not going to
+								// be expected in the task list */
 								validAnswers.add(answer);
 							} else {
 								log.error("Not a valid ASK! " + key);
@@ -280,20 +282,19 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					// TaskContext ctx = (TaskContext) context;
 					// TaskPersistenceContext persistenceContext = ctx.getPersistenceContext();
 					// persistenceContext.persistContent(content);
-				//	EntityTransaction tx = em.getTransaction();
-				//	tx.begin();
+					// EntityTransaction tx = em.getTransaction();
+					// tx.begin();
 					if (!finishUp) {
 						em.persist(content);
 					}
-					
-					
-					//InternalTask iTask = (InternalTask) task;
+
+					// InternalTask iTask = (InternalTask) task;
 					InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
 					InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
 					iTaskData.setDocument(content.getId(), contentData);
 					iTask.setTaskData(iTaskData);
-				//	em.merge(iTask);
-				//	tx.commit();
+					// em.merge(iTask);
+					// tx.commit();
 					// persistenceContext.setDocumentToTask(content, contentData, task);
 					// task.getTaskData().setDocument(content.getId(), content);
 
@@ -304,24 +305,32 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 //					Content c2 = taskService.getContentById(docId2);
 //					HashMap<String, Object> taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
 //							.unmarshall(content.getContent(), this.kieSession.getEnvironment());
-					//System.out.println(taskAsks2);
+					// System.out.println(taskAsks2);
 				}
 			}
 		}
-		
 
-		// Now complete the tasks if done
-		for (TaskSummary taskSummary : tasks) {
-			Map<String, Object> results = taskAskMap.get(taskSummary);
-			if (results != null) {
-				InternalTask iTask = (InternalTask) taskService.getTaskById(taskSummary.getId());
-				System.out.println(callingWorkflow+" closing task with status "+iTask.getTaskData().getStatus());
-				log.info("####### processAnswers! sessionId="+iTask.getTaskData().getProcessSessionId());
-		         KieSession kSession = kieSessionMap.get(iTask.getId());
-		         results.put("taskid",iTask.getId());
-		         SessionFacts facts = new SessionFacts(serviceToken,userToken,results);
-		         kSession.signalEvent("closeTask", facts);
-		         
+		manager.completeWorkItem(workItem.getId(), resultMap);
+		//synchronized (this) {
+			// Now complete the tasks if done
+			for (TaskSummary taskSummary : tasks) {
+				Map<String, Object> results = taskAskMap.get(taskSummary);
+				if (results != null) {
+					InternalTask iTask = (InternalTask) taskService.getTaskById(taskSummary.getId());
+					System.out
+							.println(callingWorkflow + " closing task with status " + iTask.getTaskData().getStatus());
+					log.info("####### processAnswers! sessionId=" + iTask.getTaskData().getProcessSessionId());
+
+					KieSession kSession = kieSessionMap.get(iTask.getId());
+					if (kSession == null) {
+						log.error("NULL kSession when trying to retrieve kSession for kieSesswionId="
+								+ iTask.getTaskData().getProcessSessionId());
+					}
+					results.put("taskid", iTask.getId());
+					SessionFacts facts = new SessionFacts(serviceToken, userToken, results);
+
+					kSession.signalEvent("closeTask", facts);
+
 //		  		ExecutionResults results2 = null;
 //		  			try {
 //		  				results = kSession.execute(CommandFactory.newBatchExecution(cmds));
@@ -336,12 +345,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 //
 //					taskServiceSynced.complete(iTask.getId(), realm + "+" + userCode, results);
 //				RulesLoader.runtimeManager.disposeRuntimeEngine(runtimeEngine);
+				}
 			}
-		}
-
-		manager.completeWorkItem(workItem.getId(), resultMap);
+		//}
 
 
+		
 
 		return;
 

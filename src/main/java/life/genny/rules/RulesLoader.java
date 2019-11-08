@@ -164,10 +164,12 @@ public class RulesLoader {
 	public static EntityManagerFactory emf = null;
 
 	private static ExecutorService executorService;
-	private static TaskService taskService;
+	//private static TaskService taskService;
     protected static ProcessService processService;
     protected UserTaskService userTaskService;
-	
+    
+    public static Map<String,KieSession> kieSessionMap = new HashMap<String,KieSession>();
+    public static Map<String,TaskService> taskServiceMap = new HashMap<String,TaskService>();
 
     private static RuntimeDataService rds;
 
@@ -483,6 +485,7 @@ public class RulesLoader {
 
 					
 					runtimeEnvironment = runtimeEnvironmentBuilder.knowledgeBase(kbase)
+						
 							.entityManagerFactory(emf)
 							.addEnvironmentEntry("ExecutorService", executorService)
 							.registerableItemsFactory(new DefaultRegisterableItemsFactory() {
@@ -539,12 +542,15 @@ public class RulesLoader {
 					runtimeManager.close();
 				}
 				
-				if (true || "TRUE".equals(System.getenv("USE_SINGLETON"))) { // TODO
+		//		if (true && "TRUE".equals(System.getenv("USE_SINGLETON"))) { // TODO
+				log.info("Creating Singleton runtimeManager for "+realm);
 					runtimeManager = RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment,realm); // TODO 
-				} else {
+					log.info("Created Singleton runtimeManager for "+realm);
 					
-					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment,realm);
-				}
+		//		} else {
+					
+		//			runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment,realm);
+		//		}
 			}
 
 			log.info("Put rules KieBase into Custom Cache");
@@ -555,6 +561,23 @@ public class RulesLoader {
 			getKieBaseCache().put(realm, kbase);
 			log.info(realm + " rules installed\n");
 			
+			/*
+			 * getting Runtime Engine from RuntimeManager each instance of Engine handles
+			 * one KieSession
+			 */
+			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+			taskServiceMap.put(realm, runtimeEngine.getTaskService());
+
+			/* For using ProcessInstanceIdContext */
+			// RuntimeEngine runtimeEngine =
+			// runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
+
+			/* Getting KieSession */
+			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+			ksconf.setProperty("name", realm);
+
+			kieSessionMap.put(realm,runtimeEngine.getKieSession());	
+
 			
 			// Set up taskService
 //			userTaskService = runtimeEngine.
@@ -664,24 +687,11 @@ public class RulesLoader {
 			return;
 		}
 
+		KieSession kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
+		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
+		
 		if ( RUNTIME_MANAGER_ON) {
 
-			/*
-			 * getting Runtime Engine from RuntimeManager each instance of Engine handles
-			 * one KieSession
-			 */
-			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-			taskService = runtimeEngine.getTaskService();
-
-			/* For using ProcessInstanceIdContext */
-			// RuntimeEngine runtimeEngine =
-			// runtimeManager.getRuntimeEngine(ProcessInstanceIdContext.get());
-
-			/* Getting KieSession */
-			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-			ksconf.setProperty("name", facts.getServiceToken().getRealm());
-
-			KieSession kieSession = runtimeEngine.getKieSession();	
 						
 			log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="+kieSession.getId());
 
@@ -821,12 +831,12 @@ public class RulesLoader {
 				tx.commit();
 				em.close();
 
-				runtimeManager.disposeRuntimeEngine(runtimeEngine);
+			//	runtimeManager.disposeRuntimeEngine(runtimeEngine);
 			}
 
 		} else {
 
-			StatefulKnowledgeSession kieSession = null;
+		//	StatefulKnowledgeSession kieSession = null;
 
 			try {
 				tx.begin();
@@ -937,7 +947,7 @@ public class RulesLoader {
 
 				tx.commit();
 				em.close();
-			 kieSession.dispose();
+			// kieSession.dispose();
 			 
 			}
 
@@ -946,7 +956,7 @@ public class RulesLoader {
 
 	public static void executeStateless(final List<Tuple2<String, Object>> globals, final List<Object> facts,
 			final GennyToken serviceToken, final GennyToken userToken) {
-		StatefulKnowledgeSession kieSession = null;
+	//	StatefulKnowledgeSession kieSession = null;
 		int rulesFired = 0;
 		QEventMessage eventMsg = null;
 		QDataMessage dataMsg = null;
@@ -962,11 +972,11 @@ public class RulesLoader {
 				return;
 			}
 
-			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-
-			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(serviceToken.getRealm()).newKieSession(ksconf,
-					env);
-
+//			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+//
+//			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(serviceToken.getRealm()).newKieSession(ksconf,
+//					env);
+			KieSession kieSession = kieSessionMap.get(serviceToken.getRealm());
 
 
 			kieSession.addEventListener(new GennyAgendaEventListener());
@@ -1001,7 +1011,7 @@ public class RulesLoader {
 			log.error(t.getLocalizedMessage());
 		} finally {
 			log.info("Finished Stateless Message Handling ("+msg_code+") - Fired " + rulesFired + " rules for " + userToken.getUserCode()+":"+userToken.getSessionCode());
-			kieSession.dispose();
+			//kieSession.dispose();
 		}
 	}
 
@@ -1555,7 +1565,7 @@ public class RulesLoader {
 	{
 		OutputParam output = new OutputParam();
 		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-		taskService = runtimeEngine.getTaskService();
+		TaskService taskService = taskServiceMap.get(userToken.getRealm());
         Map<String,Object> params = new HashMap<String,Object>();
            // Do Task Operations
         if (taskService == null) {
