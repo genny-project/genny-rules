@@ -53,6 +53,7 @@ import life.genny.qwanda.Ask;
 import life.genny.qwanda.TaskAsk;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.OutputParam;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
 
@@ -95,7 +96,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
 		Map<Long, KieSession> kieSessionMap = new HashMap<Long, KieSession>();
-
+		OutputParam output = (OutputParam) items.get("output");
 		GennyToken userToken = (GennyToken) items.get("userToken");
 		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
 
@@ -163,6 +164,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 			Long docId = task.getTaskData().getDocumentContentId();
 			Content c = taskService.getContentById(docId);
+			if (c==null) {
+				log.error("Task content is NULL");
+				return;
+			}
 			HashMap<String, Object> taskAsks = (HashMap<String, Object>) ContentMarshallerHelper
 					.unmarshall(c.getContent(), null);
 			// Loop through all the answers check their validity and save them.
@@ -310,7 +315,6 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 		}
 
-		manager.completeWorkItem(workItem.getId(), resultMap);
 		//synchronized (this) {
 			// Now complete the tasks if done
 			for (TaskSummary taskSummary : tasks) {
@@ -330,7 +334,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					SessionFacts facts = new SessionFacts(serviceToken, userToken, results);
 
 					kSession.signalEvent("closeTask", facts);
-
+					output = new OutputParam();
+					output.setFormCode("FRM_APP", "FRM_CONTENT");
 //		  		ExecutionResults results2 = null;
 //		  			try {
 //		  				results = kSession.execute(CommandFactory.newBatchExecution(cmds));
@@ -349,8 +354,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 		//}
 
+			resultMap.put("output",output);
+			manager.completeWorkItem(workItem.getId(), resultMap);
 
-		
 
 		return;
 
