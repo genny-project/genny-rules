@@ -55,12 +55,14 @@ public class CheckTasksWorkItemHandler implements WorkItemHandler {
 	public <R> CheckTasksWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
-    public <R> CheckTasksWorkItemHandler(Class<R> workflowQueryInterface,KieSession ksession, TaskService taskService) {
-    	this.taskService = taskService;
-    	this.kieSession = ksession;
-    	this.wClass = workflowQueryInterface.getCanonicalName();
-     }
-    
+
+	public <R> CheckTasksWorkItemHandler(Class<R> workflowQueryInterface, KieSession ksession,
+			TaskService taskService) {
+		this.taskService = taskService;
+		this.kieSession = ksession;
+		this.wClass = workflowQueryInterface.getCanonicalName();
+	}
+
 	public <R> CheckTasksWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng, KieSession kieSession) {
 		this.runtimeEngine = rteng;
 		this.wClass = workflowQueryInterface.getCanonicalName();
@@ -72,7 +74,7 @@ public class CheckTasksWorkItemHandler implements WorkItemHandler {
 
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new HashMap<String, Object>();
-		Map<TaskSummary,Map<String,Object>> taskAskMap = new HashMap<TaskSummary,Map<String,Object>>();
+		Map<TaskSummary, Map<String, Object>> taskAskMap = new HashMap<TaskSummary, Map<String, Object>>();
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
@@ -104,19 +106,23 @@ public class CheckTasksWorkItemHandler implements WorkItemHandler {
 		String userCode = userToken.getUserCode();
 		List<TaskSummary> tasks = taskService.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
 
-		
-		for (TaskSummary taskSummary : tasks) {
+		if (tasks.isEmpty()) {
+			resultMap.put("output", output);  // if no tasks then ensure output passed in is passed through
+		} else {
+			for (TaskSummary taskSummary : tasks) {
 
-			Task task = taskService.getTaskById(taskSummary.getId());
-			log.info(callingWorkflow+" Pending Task for "+userToken.getUserCode()+" = "+task.getFormName());
-			String formName = task.getFormName();
-			output = new OutputParam();
-			output.setTypeOfResult("FORMCODE");
-			output.setResultCode(formName);
-			output.setTargetCode("FRM_CONTENT");
-			resultMap.put("output", output);
+				Task task = taskService.getTaskById(taskSummary.getId());
+				log.info(callingWorkflow + " Pending Task for " + userToken.getUserCode() + " = " + task.getFormName());
+				String formName = task.getFormName();
+				output = new OutputParam();
+				output.setTypeOfResult("FORMCODE");
+				output.setResultCode(formName);
+				output.setTargetCode("FRM_CONTENT");
+				resultMap.put("output", output);
+			}
+
 		}
-		
+
 		// notify manager that work item has been completed
 		try {
 			manager.completeWorkItem(workItem.getId(), resultMap);
@@ -136,18 +142,19 @@ public class CheckTasksWorkItemHandler implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	   protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session,  HashMap<String,Object> taskAsksMap) {
-	        ContentData content = null;
-	        Object contentObject = null;
-	            contentObject = new HashMap<String, Object>(taskAsksMap);
-	         if (contentObject != null) {
-	            Environment env = null;
-	            if(session != null){
-	                env = session.getEnvironment();
-	            }
-	           
-	            content = ContentMarshallerHelper.marshal(null, contentObject, env);
-	        }
-	        return content;
-	    }
+	protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session,
+			HashMap<String, Object> taskAsksMap) {
+		ContentData content = null;
+		Object contentObject = null;
+		contentObject = new HashMap<String, Object>(taskAsksMap);
+		if (contentObject != null) {
+			Environment env = null;
+			if (session != null) {
+				env = session.getEnvironment();
+			}
+
+			content = ContentMarshallerHelper.marshal(null, contentObject, env);
+		}
+		return content;
+	}
 }
