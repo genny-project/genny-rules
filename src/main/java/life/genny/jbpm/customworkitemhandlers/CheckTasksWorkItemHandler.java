@@ -120,6 +120,9 @@ public class CheckTasksWorkItemHandler implements WorkItemHandler {
 				output.setTargetCode("FRM_CONTENT");
 				resultMap.put("output", output);
 			}
+			if (resultMap.get("oputput")==null) {
+				resultMap.put("output", output); // TODO, ugly
+			}
 
 		}
 
