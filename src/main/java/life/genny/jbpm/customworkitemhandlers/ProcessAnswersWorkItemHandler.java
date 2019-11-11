@@ -335,7 +335,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 					kSession.signalEvent("closeTask", facts);
 					output = new OutputParam();
-					output.setFormCode("FRM_APP", "FRM_CONTENT");
+					output.setFormCode("FRM_QUE_TAB_VIEW","FRM_CONTENT");
 //		  		ExecutionResults results2 = null;
 //		  			try {
 //		  				results = kSession.execute(CommandFactory.newBatchExecution(cmds));
