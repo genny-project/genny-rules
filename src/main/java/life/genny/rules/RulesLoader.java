@@ -699,7 +699,7 @@ public class RulesLoader {
 						+ kieSession.getId());
 			}
 
-			synchronized (kieSession) {
+			/*synchronized (kieSession)*/ {
 				try {
 
 					tx.begin();
@@ -851,7 +851,7 @@ public class RulesLoader {
 		} else {
 
 			// StatefulKnowledgeSession kieSession = null;
-			synchronized (kieSession) {
+		/*	synchronized (kieSession) */{
 				try {
 					tx.begin();
 
