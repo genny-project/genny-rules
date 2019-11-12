@@ -2,6 +2,7 @@ package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
 
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -56,6 +57,8 @@ import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.OutputParam;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
+
+import static java.util.stream.Collectors.toList;
 
 public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
@@ -134,7 +137,28 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		List<TaskSummary> tasks = taskService.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
 		log.info("Tasks=" + tasks);
-
+		
+		// Quick answer validation
+		Boolean validAnswersExist = false;
+		Map<String,Answer> answerMap = new HashMap<String,Answer>();
+		
+		for (Answer answer : answersToSave.getAnswers()) {
+			Boolean validAnswer = validate(answer,userToken);
+			// Quick and dirty ...
+			if (validAnswer) {
+				validAnswersExist = true;
+				String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":"
+						+ answer.getAttributeCode();
+				answerMap.put(key, answer);
+			}
+			
+		}
+		if (!validAnswersExist) {
+			resultMap.put("output",output);
+			manager.completeWorkItem(workItem.getId(), resultMap);
+			return;
+		}
+		
 		for (TaskSummary taskSummary : tasks) {
 
 			Task task = taskService.getTaskById(taskSummary.getId());
@@ -188,13 +212,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						if (ask != null) {
 
 							// Now confirm the validity of the value
-							Boolean validated = validate(answer);
+							Boolean validated = validate(answer, userToken);
 
 							if (validated) {
 								ask.setValue(answer.getValue());
 								// check
 								taskAsksProcessed.add(ask); // save for later updating
 								validAnswers.add(answer);
+								answerMap.remove(key); 
 
 							} else {
 								if (ask.getAsk().getMandatory()) { // if an invalid result sent, then clear this
@@ -205,6 +230,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 									taskAsksProcessed.add(ask); // save for later updating
 									answer.setValue("");
 									validAnswers.add(answer);
+									answerMap.remove(key); 
 								}
 							}
 						} else {
@@ -212,6 +238,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 								// This is a valid answer but has not come from the frondend and is not going to
 								// be expected in the task list */
 								validAnswers.add(answer);
+								answerMap.remove(key); 
 							} else {
 								log.error("Not a valid ASK! " + key);
 							}
@@ -354,6 +381,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 		//}
 
+			if (validAnswersExist) {
+				// Check that the form answer is allowed 
+				beUtils.saveAnswers(new ArrayList<>(answerMap.values()));
+			}
+			
 			resultMap.put("output",output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
 
@@ -365,8 +397,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 	}
 
-	private Boolean validate(Answer answer) {
+	private Boolean validate(Answer answer,GennyToken userToken) {
 		// TODO - check value using regexs
+		if (!answer.getSourceCode().equals(userToken.getUserCode())) {
+			if (userToken.hasRole("admin")) {
+				return true;
+			}
+			return false;
+		}
 		return true;
 	}
 
