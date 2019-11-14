@@ -189,9 +189,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			Long docId = task.getTaskData().getDocumentContentId();
 			Content c = taskService.getContentById(docId);
 			if (c==null) {
-				log.error("Task content is NULL");
+				log.error("*************** Task content is NULL *********** ABORTING");
 				return;
-			}
+			} 
 			HashMap<String, Object> taskAsks = (HashMap<String, Object>) ContentMarshallerHelper
 					.unmarshall(c.getContent(), null);
 			// Loop through all the answers check their validity and save them.
@@ -325,6 +325,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
 					iTaskData.setDocument(content.getId(), contentData);
 					iTask.setTaskData(iTaskData);
+					
 					// em.merge(iTask);
 					// tx.commit();
 					// persistenceContext.setDocumentToTask(content, contentData, task);
@@ -341,6 +342,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				}
 			}
 		}
+
+		if (validAnswersExist) {
+			// Check that the form answer is allowed 
+			beUtils.saveAnswers(new ArrayList<>(answerMap.values()));
+		}
+		
 
 		//synchronized (this) {
 			// Now complete the tasks if done
@@ -381,11 +388,6 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 		//}
 
-			if (validAnswersExist) {
-				// Check that the form answer is allowed 
-				beUtils.saveAnswers(new ArrayList<>(answerMap.values()));
-			}
-			
 			resultMap.put("output",output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
 
