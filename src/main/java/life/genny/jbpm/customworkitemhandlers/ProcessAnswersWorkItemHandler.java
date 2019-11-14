@@ -378,6 +378,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					output = new OutputParam();
 					if ("NONE".equals(formCode)) {
 						output.setTypeOfResult("NONE");
+					} else {
+						output.setTypeOfResult("FORMCODE");
 					}
 					output.setFormCode(formCode,targetCode);
 //		  		ExecutionResults results2 = null;
