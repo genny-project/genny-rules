@@ -108,6 +108,17 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 				callingWorkflow = "";
 			}
 
+			String formCode = (String)workItem.getParameter("formCode");
+			String targetCode = (String)workItem.getParameter("targetCode");
+			
+			if (formCode == null) {
+				formCode = "FRM_QUE_TAB_VIEW";
+			}
+
+			if (targetCode == null) {
+				targetCode = "FRM_CONTENT";
+			}
+
 			BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 
 	        Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
