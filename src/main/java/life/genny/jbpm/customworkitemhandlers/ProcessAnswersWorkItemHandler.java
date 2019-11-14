@@ -102,6 +102,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		OutputParam output = (OutputParam) items.get("output");
 		GennyToken userToken = (GennyToken) items.get("userToken");
 		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
+		String formCode = "NONE";
+		String targetCode = "NONE";
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
 
@@ -194,6 +196,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			} 
 			HashMap<String, Object> taskAsks = (HashMap<String, Object>) ContentMarshallerHelper
 					.unmarshall(c.getContent(), null);
+			formCode = (String)taskAsks.get("FORM_CODE");
+			targetCode = (String)taskAsks.get("TARGET_CODE");
 			// Loop through all the answers check their validity and save them.
 			List<Answer> validAnswers = new ArrayList<Answer>();
 			List<TaskAsk> taskAsksProcessed = new ArrayList<TaskAsk>();
@@ -259,6 +263,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					Boolean isCreateOnTrigger = false;
 					Boolean isNowTriggered = false;
 					for (String key : taskAsks.keySet()) {
+						if ("FORM_CODE".equals(key)||"TARGET_CODE".equals(key)) {
+							continue;
+						}
 						TaskAsk ask = (TaskAsk) taskAsks.get(key);
 						if (ask.getAsk().getMandatory()) {
 							if (!ask.getAnswered()) {
@@ -369,7 +376,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 					kSession.signalEvent("closeTask", facts);
 					output = new OutputParam();
-					output.setFormCode("FRM_QUE_TAB_VIEW","FRM_CONTENT");
+					if ("NONE".equals(formCode)) {
+						output.setTypeOfResult("NONE");
+					}
+					output.setFormCode(formCode,targetCode);
 //		  		ExecutionResults results2 = null;
 //		  			try {
 //		  				results = kSession.execute(CommandFactory.newBatchExecution(cmds));

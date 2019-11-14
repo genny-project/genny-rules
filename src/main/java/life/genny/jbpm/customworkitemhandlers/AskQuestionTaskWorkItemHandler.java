@@ -111,6 +111,8 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			String formCode = (String)workItem.getParameter("formCode");
 			String targetCode = (String)workItem.getParameter("targetCode");
 			
+			
+			
 			if (formCode == null) {
 				formCode = "FRM_QUE_TAB_VIEW";
 			}
@@ -145,6 +147,14 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 //            byte[] byteArray = SerializationUtils.serialize(taskAsksMap);
 //            ((InternalContent)content2).setContent(byteArray);
 
+            // Now tuck the intended after complete formcode into taskAsksMap
+            taskAsksMap.put("FORM_CODE", formCode);            
+            taskAsksMap.put("TARGET_CODE",targetCode);
+//            InternalTask iTask = (InternalTask) task;
+//			InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
+//            iTaskData.setTaskOutputVariables(new HashMap<String,Object>());
+//            task.getTaskData().getTaskOutputVariables().put("FORM_CODE", formCode);
+//            task.getTaskData().getTaskOutputVariables().put("TARGET_CODE", targetCode);
 	        
 	        ContentData content = createTaskContentBasedOnWorkItemParams(this.getKsession(),  taskAsksMap);
 
@@ -430,43 +440,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
         PeopleAssignments peopleAssignments = task.getPeopleAssignments();
         List<OrganizationalEntity> businessAdministrators = peopleAssignments.getBusinessAdministrators();
         
-//        // Fetch the questions and set in the task for us to tick off as they get done
-//        Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
-//        HashMap<String,Object> taskAsksMap = new HashMap<String,Object>();
-//        for (QDataAskMessage dataMsg : formSet) {
-//        	for (Ask askMsg : dataMsg.getItems()) {
-//        		// replace askMesg source and target with required src and target, initially we will use both src and target
-//        		String json = JsonUtils.toJson(askMsg);
-//        		json = json.replaceAll("PER_SERVICE", userToken.getUserCode());
-//        		Ask newMsg = JsonUtils.fromJson(json, Ask.class);
-//        		String key = newMsg.getSourceCode()+":"+newMsg.getTargetCode()+":"+newMsg.getAttributeCode();
-//        		// work out whether an Ask has already got a value for that attribute
-//        		Boolean answered = false;
-//        		
-//        		Boolean isTableRow = false;
-//        		// TODO, if the question is a submit then 
-//        		
-//        		Boolean formTrigger = newMsg.getFormTrigger();
-//        		Boolean createOnTrigger = false;
-//        		TaskAsk taskAsk = new TaskAsk(newMsg, task.getFormName(), answered, isTableRow, formTrigger, createOnTrigger);
-//        		taskAsksMap.put(key, taskAsk);
-//        	}
-//        }
-//
-//        Attachment attach = TaskModelProvider.getFactory().newAttachment();
-//        ((InternalAttachment)attach).setAccessType(AccessType.Inline);
-//        ((InternalAttachment)attach).setAttachedAt(new Date());
-//        ((InternalAttachment)attach).setName(task.getFormName());
-//        ((InternalAttachment)attach).setContentType("String");
-//        Content content = TaskModelProvider.getFactory().newContent();
-//        byte[] byteArray = SerializationUtils.serialize(taskAsksMap);
-//        ((InternalContent)content).setContent(byteArray);
-//        
-//       // ((InternalContent)content).setContent(ContentMarshallerHelper.marshallContent(task, payload, null));
-//       // taskData.getAttachments().add(attach);
-//        
 
-      //  taskData.setTaskInputVariables(taskAsksMap); 
         task.setTaskData(taskData);
         task.setDeadlines(HumanTaskHandlerHelper.setDeadlines(workItem.getParameters(), businessAdministrators, session.getEnvironment()));
   
