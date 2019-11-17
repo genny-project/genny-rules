@@ -16,6 +16,7 @@ import org.kie.api.runtime.manager.RuntimeEngine;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
+import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
@@ -82,10 +83,12 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		Answers answersToSave = new Answers();
 		
 		if (this.runtimeEngine!=null) {
-			
-			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
+			KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
+			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
+
+//			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
 						
-			newKieSession.insert(ruleDetails);
+			FactHandle ruleDetailsHandle =  newKieSession.insert(ruleDetails);
 	
 			/* Inserting all the parameters in the working memory ad a facts */
 			for(String key : items.keySet()) {
@@ -108,6 +111,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			/* INserting facts to save the output result*/
 			FactHandle factHandle =  newKieSession.insert(output);
 			FactHandle answersToSaveHandle =  newKieSession.insert(answersToSave);
+			FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 			
 
 			
@@ -128,15 +132,18 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	    	answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
 	    	resultMap.put("output", output);
 	    	resultMap.put("answersToSave",answersToSave);
+	    	newKieSession.retract(ruleDetailsHandle);
 	    	newKieSession.retract(factHandle);
 	    	newKieSession.retract(answersToSaveHandle);
-	    	// don't dispose
+	    	newKieSession.retract(kieSessionHandle);	    	// don't dispose
+	    	newKieSession.dispose();
 
 		} else {
 			
 			KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
 			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
-			newKieSession.insert(ruleDetails);
+			
+			FactHandle ruleDetailsHandle = newKieSession.insert(ruleDetails);
 
 			/* Inserting all the parameters in the working memory ad a facts */
 			for(String key : items.keySet()) {
@@ -156,6 +163,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			/* INserting facts to save the output result*/
 			FactHandle factHandle =  newKieSession.insert(output);
 			FactHandle answersToSaveHandle =  newKieSession.insert(answersToSave);
+			FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
+			// inject kieSession
+			
 			
 			/* Setting focus to rule-flow group */
 	    	newKieSession.getAgenda().getAgendaGroup( ruleFlowGroup ).setFocus();
@@ -166,10 +176,11 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	    	answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
 	    	resultMap.put("output", output);
 	    	resultMap.put("answersToSave",answersToSave);
+	    	newKieSession.retract(ruleDetailsHandle);
 	    	newKieSession.retract(factHandle);
 	    	newKieSession.retract(answersToSaveHandle);
-
-	    	//newKieSession.dispose();
+	    	newKieSession.retract(kieSessionHandle);
+	    	newKieSession.dispose();
 		}    	
     }
      

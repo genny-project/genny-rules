@@ -754,7 +754,11 @@ public class RulesLoader {
 								// HACK!!
 								if (msg_code.equals("QUE_SUBMIT")) {
 									Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(),
-											facts.getUserToken().getUserCode(), "PRI_EVENT", "QUE_SUBMIT");
+											facts.getUserToken().getUserCode(), "PRI_SUBMIT", "QUE_SUBMIT");
+//									String ad = "{\"street_number\":\"64\",\"street_name\":\"Fakenham Road\",\"suburb\":\"Ashburton\",\"state\":\"Victoria\",\"country\":\"AU\",\"postal_code\":\"3147\",\"full_address\":\"64 Fakenham Rd, Ashburton VIC 3147, Australia\",\"latitude\":-37.863208,\"longitude\":145.092359,\"street_address\":\"64 Fakenham Road\"}";
+//									dataAnswer = new Answer(facts.getUserToken().getUserCode(),
+//											facts.getUserToken().getUserCode(), "PRI_ADDRESS_JSON", ad);
+									dataAnswer.setChangeEvent(false);
 									QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
 									SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
 											facts.getUserToken(), dataMsg);
@@ -764,6 +768,7 @@ public class RulesLoader {
 								} else if (msg_code.equals("QUE_CANCEL")) {
 									Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(),
 											facts.getUserToken().getUserCode(), "PRI_EVENT", "QUE_CANCEL");
+									dataAnswer.setChangeEvent(false);
 									QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
 									SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
 											facts.getUserToken(), dataMsg);
@@ -971,7 +976,7 @@ public class RulesLoader {
 
 	public static void executeStateless(final List<Tuple2<String, Object>> globals, final List<Object> facts,
 			final GennyToken serviceToken, final GennyToken userToken) {
-		// StatefulKnowledgeSession kieSession = null;
+		StatefulKnowledgeSession kieSession = null;
 		int rulesFired = 0;
 		QEventMessage eventMsg = null;
 		QDataMessage dataMsg = null;
@@ -989,11 +994,11 @@ public class RulesLoader {
 				return;
 			}
 
-//			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-//
-//			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(serviceToken.getRealm()).newKieSession(ksconf,
-//					env);
-			KieSession kieSession = kieSessionMap.get(serviceToken.getRealm());
+			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+
+			kieSession = (StatefulKnowledgeSession) getKieBaseCache().get(serviceToken.getRealm()).newKieSession(ksconf,
+					env);
+//			KieSession kieSession = kieSessionMap.get(serviceToken.getRealm());
 
 			kieSession.addEventListener(new GennyAgendaEventListener());
 			kieSession.addEventListener(new JbpmInitListener(serviceToken));
@@ -1028,7 +1033,7 @@ public class RulesLoader {
 		} finally {
 			log.info("Finished Stateless Message Handling (" + msg_code + ") - Fired " + rulesFired + " rules for "
 					+ userToken.getUserCode() + ":" + userToken.getSessionCode());
-			// kieSession.dispose();
+			kieSession.dispose();
 		}
 	}
 
