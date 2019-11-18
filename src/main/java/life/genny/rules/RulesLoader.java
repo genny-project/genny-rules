@@ -762,7 +762,7 @@ public class RulesLoader {
 									QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
 									SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
 											facts.getUserToken(), dataMsg);
-									log.info("SignalEvent -> event to 'data' for " + facts.getUserToken().getUserCode()
+									log.info("SignalEvent -> QUE_SUBMIT event to 'data' for " + facts.getUserToken().getUserCode()
 											+ ":" + processId);
 									kieSession.signalEvent("data", sessionFactsData, processId);
 								} else if (msg_code.equals("QUE_CANCEL")) {
@@ -772,7 +772,7 @@ public class RulesLoader {
 									QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
 									SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
 											facts.getUserToken(), dataMsg);
-									log.info("SignalEvent -> event to 'data' for " + facts.getUserToken().getUserCode()
+									log.info("SignalEvent -> QUE_CANCEL event to 'data' for " + facts.getUserToken().getUserCode()
 											+ ":" + processId);
 									kieSession.signalEvent("data", sessionFactsData, processId);
 								} else {

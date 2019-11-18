@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.persistence.EntityManager;
 
@@ -36,6 +37,7 @@ import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
 import life.genny.qwanda.TaskAsk;
+import life.genny.qwanda.entity.BaseEntity;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.OutputParam;
@@ -72,12 +74,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-		System.out.println("PROCESS ANSWERS *************************0434321230");
+		System.out.println("PROCESS ANSWERS *************************");
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new HashMap<String, Object>();
 		Map<TaskSummary, Map<String, Object>> taskAskMap = new HashMap<TaskSummary, Map<String, Object>>();
-		Boolean finishUp = false;
-		Boolean hackTrigger2 = false;
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
@@ -137,8 +137,19 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			// Quick and dirty ...
 			if (validAnswer) {
 				validAnswersExist = true;
-				String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
-				answerMap.put(key, answer);
+				String targetBeCode = answer.getTargetCode();
+				BaseEntity target = beUtils.getBaseEntityByCode(targetBeCode);
+				Optional<String> value = target.getValue(answer.getAttributeCode());
+				Boolean changed = true;
+				if (value.isPresent()) {
+					if (value.get().equals(answer.getValue())) {
+						changed = false;
+					}
+				}
+				if (changed) {
+					String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
+					answerMap.put(key, answer);
+				}
 			}
 
 		}
@@ -190,8 +201,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			// Loop through all the answers check their validity and save them.
 			List<Answer> validAnswers = new ArrayList<Answer>();
 			List<TaskAsk> taskAsksProcessed = new ArrayList<TaskAsk>();
-			if (answersToSave != null) {
-				for (Answer answer : answersToSave.getAnswers()) {
+			if (!answerMap.isEmpty() ) {
+				for (Answer answer : answerMap.values()) {
 					// check answer
 					if (answer.getSourceCode().equals(userToken.getUserCode())) {
 						// HACK! TODO
