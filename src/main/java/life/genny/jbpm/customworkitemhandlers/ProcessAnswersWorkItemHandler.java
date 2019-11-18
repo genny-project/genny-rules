@@ -77,6 +77,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		final Map<String, Object> resultMap = new HashMap<String, Object>();
 		Map<TaskSummary, Map<String, Object>> taskAskMap = new HashMap<TaskSummary, Map<String, Object>>();
 		Boolean finishUp = false;
+		Boolean hackTrigger2 = false;
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
@@ -121,9 +122,18 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		// Quick answer validation
 		Boolean validAnswersExist = false;
 		Map<String, Answer> answerMap = new HashMap<String, Answer>();
-
+		Boolean exitOut = false;
 		for (Answer answer : answersToSave.getAnswers()) {
 			Boolean validAnswer = validate(answer, userToken);
+			if (answer.getAttributeCode().equals("PRI_SUBMIT")) {
+				if (hackTrigger2) {
+					log.info(callingWorkflow+" exit early due to PRI_SUBMIT");
+					manager.completeWorkItem(workItem.getId(), resultMap);
+
+					return;
+				}
+
+			}
 			// Quick and dirty ...
 			if (validAnswer) {
 				validAnswersExist = true;
@@ -132,7 +142,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 
 		}
-		if (!validAnswersExist) {
+		if ((!validAnswersExist)||exitOut) {
+			log.error(callingWorkflow+" exiting out early due to no valid answers or pri_submit");
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
 			return;
@@ -271,7 +282,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							isNowTriggered = true;
 						}
 						if ((ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")/*||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")*/) && (ask.getAnswered())) {
-							log.info(callingWorkflow+" PRI_SUBMIT detected and is answered");
+							log.info(callingWorkflow+" PRI_EVENT detected and is answered");
 							hackTrigger = true;
 						}
 //						if ((ask.getAsk().getAttributeCode().equals("PRI_ADDRESS_FULL")) && (ask.getAnswered())) {
