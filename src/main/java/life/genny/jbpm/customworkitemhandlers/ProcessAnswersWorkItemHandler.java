@@ -125,15 +125,15 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		Boolean exitOut = false;
 		for (Answer answer : answersToSave.getAnswers()) {
 			Boolean validAnswer = validate(answer, userToken);
-			if (answer.getAttributeCode().equals("PRI_SUBMIT")) {
-				if (hackTrigger2) {
-					log.info(callingWorkflow+" exit early due to PRI_SUBMIT");
-					manager.completeWorkItem(workItem.getId(), resultMap);
-
-					return;
-				}
-
-			}
+//			if (answer.getAttributeCode().equals("PRI_SUBMIT")) {
+//				if (hackTrigger2) {
+//					log.info(callingWorkflow+" exit early due to PRI_SUBMIT");
+//					manager.completeWorkItem(workItem.getId(), resultMap);
+//
+//					return;
+//				}
+//
+//			}
 			// Quick and dirty ...
 			if (validAnswer) {
 				validAnswersExist = true;
@@ -282,7 +282,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							isNowTriggered = true;
 						}
 						if ((ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")/*||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")*/) && (ask.getAnswered())) {
-							log.info(callingWorkflow+" PRI_EVENT detected and is answered");
+							log.info(callingWorkflow+" PRI_SUBMIT detected and is answered");
 							hackTrigger = true;
 						}
 //						if ((ask.getAsk().getAttributeCode().equals("PRI_ADDRESS_FULL")) && (ask.getAnswered())) {

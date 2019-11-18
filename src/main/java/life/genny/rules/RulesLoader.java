@@ -767,7 +767,7 @@ public class RulesLoader {
 									kieSession.signalEvent("data", sessionFactsData, processId);
 								} else if (msg_code.equals("QUE_CANCEL")) {
 									Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(),
-											facts.getUserToken().getUserCode(), "PRI_EVENT", "QUE_CANCEL");
+											facts.getUserToken().getUserCode(), "PRI_SUBMIT", "QUE_CANCEL");
 									dataAnswer.setChangeEvent(false);
 									QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
 									SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
