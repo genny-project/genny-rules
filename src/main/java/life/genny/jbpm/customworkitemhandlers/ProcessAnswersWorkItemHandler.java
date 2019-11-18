@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.persistence.EntityManager;
 
@@ -37,6 +38,7 @@ import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
 import life.genny.qwanda.TaskAsk;
+import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
@@ -121,7 +123,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		// Quick answer validation
 		Boolean validAnswersExist = false;
-		Map<String, Answer> answerMap = new HashMap<String, Answer>();
+		Map<String, Answer> answerMap = new ConcurrentHashMap<String, Answer>();
 		Boolean exitOut = false;
 		for (Answer answer : answersToSave.getAnswers()) {
 			Boolean validAnswer = validate(answer, userToken);
@@ -139,11 +141,15 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				validAnswersExist = true;
 				String targetBeCode = answer.getTargetCode();
 				BaseEntity target = beUtils.getBaseEntityByCode(targetBeCode);
-				Optional<String> value = target.getValue(answer.getAttributeCode());
+				Optional<EntityAttribute> ea = target.findEntityAttribute(answer.getAttributeCode());
 				Boolean changed = true;
-				if (value.isPresent()) {
-					if (value.get().equals(answer.getValue())) {
-						changed = false;
+				if (ea.isPresent()) {
+					String strValue = ea.get().getAsString();
+					if (!StringUtils.isBlank(strValue)) {
+						if (strValue.equals(answer.getValue())) {
+							log.info("This Already exists! "+answer.getAttributeCode()+":"+answer.getValue());
+							changed = false;
+						}
 					}
 				}
 				if (changed) {
@@ -202,6 +208,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			List<Answer> validAnswers = new ArrayList<Answer>();
 			List<TaskAsk> taskAsksProcessed = new ArrayList<TaskAsk>();
 			if (!answerMap.isEmpty() ) {
+				
 				for (Answer answer : answerMap.values()) {
 					// check answer
 					if (answer.getSourceCode().equals(userToken.getUserCode())) {
