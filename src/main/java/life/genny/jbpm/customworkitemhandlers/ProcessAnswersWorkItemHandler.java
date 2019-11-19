@@ -141,16 +141,31 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				validAnswersExist = true;
 				String targetBeCode = answer.getTargetCode();
 				BaseEntity target = beUtils.getBaseEntityByCode(targetBeCode);
-				Optional<EntityAttribute> ea = target.findEntityAttribute(answer.getAttributeCode());
+				Optional<EntityAttribute> optea = target.findEntityAttribute(answer.getAttributeCode());
 				Boolean changed = true;
-				if (ea.isPresent()) {
-					String strValue = ea.get().getAsString();
-					if (!StringUtils.isBlank(strValue)) {
-						if (strValue.equals(answer.getValue())) {
+				if (optea.isPresent()) {
+					EntityAttribute ea = optea.get();
+					Boolean equaled = false;
+					String valueObj = ea.getAsString();
+					if (valueObj instanceof String) {
+
+						if (!StringUtils.isBlank(valueObj)) {
+							if (valueObj.equals(answer.getValue())) {
+								equaled = true;
+							}
+						}
+					}
+//					if (valueObj instanceof Double) {
+//						Double dbl = (Double)valueObj;
+//						Double answerDbl = Double.parseDouble(answer.getValue());
+//							if (dbl.equals(answerDbl)) {
+//								equaled = true;
+//							}
+//					}
+						if (equaled) {
 							log.info("This Already exists! "+answer.getAttributeCode()+":"+answer.getValue());
 							changed = false;
 						}
-					}
 				}
 				if (changed) {
 					String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
@@ -159,7 +174,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 
 		}
-		if ((!validAnswersExist)||exitOut) {
+		if ((!validAnswersExist)||exitOut||(answerMap.isEmpty())) {
 			log.error(callingWorkflow+" exiting out early due to no valid answers or pri_submit");
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
