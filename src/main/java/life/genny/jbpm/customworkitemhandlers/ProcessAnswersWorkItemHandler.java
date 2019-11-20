@@ -78,7 +78,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 		System.out.println("PROCESS ANSWERS *************************");
 		/* resultMap is used to map the result Value to the output parameters */
-		final Map<String, Object> resultMap = new HashMap<String, Object>();
+		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
 		Map<TaskSummary, Map<String, Object>> taskAskMap = new HashMap<TaskSummary, Map<String, Object>>();
 
 		/* items used to save the extracted input parameters from the custom task */
