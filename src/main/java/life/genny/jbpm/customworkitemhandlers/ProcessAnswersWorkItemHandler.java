@@ -124,6 +124,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		// Quick answer validation
 		Boolean validAnswersExist = false;
 		Map<String, Answer> answerMap = new ConcurrentHashMap<String, Answer>();
+		Map<String, Answer> answerMap2 = new ConcurrentHashMap<String, Answer>();
 		Boolean exitOut = false;
 		for (Answer answer : answersToSave.getAnswers()) {
 			Boolean validAnswer = validate(answer, userToken);
@@ -169,12 +170,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				}
 				if (changed) {
 					String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
-					answerMap.put(key, answer);
+					answerMap2.put(key, answer);
 				}
 			}
 
 		}
-		if ((!validAnswersExist)||exitOut||(answerMap.isEmpty())) {
+		if ((!validAnswersExist)||exitOut||(answerMap2.isEmpty())) {
 			log.error(callingWorkflow+" exiting out early due to no valid answers or pri_submit");
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
@@ -222,9 +223,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			// Loop through all the answers check their validity and save them.
 			List<Answer> validAnswers = new ArrayList<Answer>();
 			List<TaskAsk> taskAsksProcessed = new ArrayList<TaskAsk>();
-			if (!answerMap.isEmpty() ) {
-				
-				for (Answer answer : answerMap.values()) {
+			
+			if (!answerMap2.isEmpty() ) {
+				answerMap.putAll(answerMap2);
+				for (Answer answer : answerMap2.values()) {
 					// check answer
 					if (answer.getSourceCode().equals(userToken.getUserCode())) {
 						// HACK! TODO
