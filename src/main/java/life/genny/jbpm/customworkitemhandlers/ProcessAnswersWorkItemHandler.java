@@ -40,7 +40,7 @@ import life.genny.qwanda.Answers;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
-import life.genny.rules.RulesLoader;
+import life.genny.rules.RulesLoader2;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.OutputParam;
 import life.genny.utils.SessionFacts;
@@ -114,7 +114,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		String userCode = userToken.getUserCode();
 
 		KieServices ks = KieServices.Factory.get();
-		KieBase kieBase = RulesLoader.getKieBaseCache().get(realm); // kieContainer.getKieBase("defaultKieBase"); //
+		KieBase kieBase = RulesLoader2.getKieBaseCache().get(realm); // kieContainer.getKieBase("defaultKieBase"); //
 																	// this name is supposedly found in the kmodule.xml
 																	// in META-INF in widlfy-rulesservice
 
@@ -128,55 +128,18 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		Boolean exitOut = false;
 		for (Answer answer : answersToSave.getAnswers()) {
 			Boolean validAnswer = validate(answer, userToken);
-//			if (answer.getAttributeCode().equals("PRI_SUBMIT")) {
-//				if (hackTrigger2) {
-//					log.info(callingWorkflow+" exit early due to PRI_SUBMIT");
-//					manager.completeWorkItem(workItem.getId(), resultMap);
-//
-//					return;
-//				}
-//
-//			}
 			// Quick and dirty ...
 			if (validAnswer) {
 				validAnswersExist = true;
-				String targetBeCode = answer.getTargetCode();
-				BaseEntity target = beUtils.getBaseEntityByCode(targetBeCode);
-				Optional<EntityAttribute> optea = target.findEntityAttribute(answer.getAttributeCode());
-				Boolean changed = true;
-				if (optea.isPresent()) {
-					EntityAttribute ea = optea.get();
-					Boolean equaled = false;
-					String valueObj = ea.getAsString();
-					if (valueObj instanceof String) {
+				String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
+				answerMap2.put(key, answer);
 
-						if (!StringUtils.isBlank(valueObj)) {
-							if (valueObj.equals(answer.getValue())) {
-								equaled = true;
-							}
-						}
-					}
-//					if (valueObj instanceof Double) {
-//						Double dbl = (Double)valueObj;
-//						Double answerDbl = Double.parseDouble(answer.getValue());
-//							if (dbl.equals(answerDbl)) {
-//								equaled = true;
-//							}
-//					}
-						if (equaled) {
-							log.info("This Already exists! "+answer.getAttributeCode()+":"+answer.getValue());
-							changed = false;
-						}
-				}
-				if (changed) {
-					String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
-					answerMap2.put(key, answer);
-				}
 			}
 
 		}
 		if ((!validAnswersExist)||exitOut||(answerMap2.isEmpty())) {
 			log.error(callingWorkflow+" exiting out early due to no valid answers or pri_submit");
+			output.setResult("NONE");
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
 			return;

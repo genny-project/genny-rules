@@ -140,7 +140,7 @@ import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
 
-public class RulesLoader {
+public class RulesLoader3 {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
@@ -672,7 +672,6 @@ public class RulesLoader {
 	}
 
 	public static void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
-
 		int rulesFired = 0;
 		String msg_code = "";
 		GennyToken serviceToken = facts.getServiceToken();
@@ -712,11 +711,11 @@ public class RulesLoader {
 					kieSession.addEventListener(new GennyAgendaEventListener());
 					kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
 					kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
-							new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
+							new AskQuestionTaskWorkItemHandler(RulesLoader3.class, kieSession, taskService));
 					kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
-							new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession, taskService));
+							new ProcessAnswersWorkItemHandler(RulesLoader3.class, kieSession, taskService));
 					kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
-							new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
+							new CheckTasksWorkItemHandler(RulesLoader3.class, kieSession, taskService));
 
 					kieSession.getEnvironment().set("Autoclaim", "true"); // for JBPM
 
@@ -1042,7 +1041,7 @@ public class RulesLoader {
 	}
 
 	public static void setKieBaseCache(Map<String, KieBase> kieBaseCache) {
-		RulesLoader.kieBaseCache = kieBaseCache;
+		RulesLoader3.kieBaseCache = kieBaseCache;
 
 	}
 
@@ -1085,7 +1084,7 @@ public class RulesLoader {
 
 		GennyToken gennyServiceToken = new GennyToken("PER_SERVICE", serviceToken);
 
-		List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();
+		List<Tuple2<String, Object>> globals = RulesLoader3.getStandardGlobals();
 
 		SessionFacts facts = new SessionFacts(gennyServiceToken, null, msg);
 
@@ -1119,12 +1118,12 @@ public class RulesLoader {
 					facts.add(userToken);
 					facts.add(serviceToken);
 					// SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
-					// RulesLoader.executeStateful(globals, facts);
-					RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
+					// RulesLoader3.executeStateful(globals, facts);
+					RulesLoader3.executeStateless(globals, facts, serviceToken, userToken);
 				} else {
 
 					SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
-					RulesLoader.executeStateful(globals, facts);
+					RulesLoader3.executeStateful(globals, facts);
 				}
 
 			} catch (Exception e) {
@@ -1141,7 +1140,7 @@ public class RulesLoader {
 	private static Map<String, WorkItemHandler> getHandlers(RuntimeEngine runtime, KieSession kieSession) {
 		Map<String, WorkItemHandler> handlers = new HashMap<String, WorkItemHandler>();
 		// log.info("Register SendSignal kiesession");
-		handlers.put("SendSignal", new SendSignalWorkItemHandler(RulesLoader.class, runtime));
+		handlers.put("SendSignal", new SendSignalWorkItemHandler(RulesLoader3.class, runtime));
 
 		handlers.put("Awesome", new AwesomeHandler());
 		handlers.put("GetProcessesUsingVariable", new GetProcessesUsingVariable());
@@ -1153,15 +1152,15 @@ public class RulesLoader {
 		handlers.put("ShowFrameWithContextList", new ShowFrameWIthContextList());
 		handlers.put("RuleFlowGroup", new RuleFlowGroupWorkItemHandler());
 		handlers.put("ThrowSignalProcess", new ThrowSignalProcessWorkItemHandler(runtime));
-		handlers.put("AskQuestion", new AskQuestionWorkItemHandler(RulesLoader.class, runtime));
+		handlers.put("AskQuestion", new AskQuestionWorkItemHandler(RulesLoader3.class, runtime));
 //			handlers.put("AskQuestionTask",
-//					new AskQuestionTaskWorkItemHandler(RulesLoader.class,runtime));
+//					new AskQuestionTaskWorkItemHandler(RulesLoader3.class,runtime));
 //			handlers.put("ProcessAnswers",
-//					new ProcessAnswersWorkItemHandler(RulesLoader.class,runtime));
+//					new ProcessAnswersWorkItemHandler(RulesLoader3.class,runtime));
 
-		handlers.put("ProcessTaskId", new ProcessTaskIdWorkItemHandler(RulesLoader.class, runtime));
+		handlers.put("ProcessTaskId", new ProcessTaskIdWorkItemHandler(RulesLoader3.class, runtime));
 
-		handlers.put("ThrowSignal", new ThrowSignalWorkItemHandler(RulesLoader.class, runtime));
+		handlers.put("ThrowSignal", new ThrowSignalWorkItemHandler(RulesLoader3.class, runtime));
 		// handlers.put("JMSSendTask", new JMSSendTaskWorkItemHandler());
 
 		return handlers;
@@ -1319,7 +1318,7 @@ public class RulesLoader {
 
 	public static Optional<Long> getProcessIdBySessionId(String sessionId) {
 		// TODO Auto-generated method stub
-		return RulesLoader.getProcessIdBysessionId(sessionId);
+		return RulesLoader3.getProcessIdBysessionId(sessionId);
 	}
 
 	private static Boolean processRule(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {

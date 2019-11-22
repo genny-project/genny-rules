@@ -189,6 +189,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	}
 
 	@Override
+	@Transactional(dontRollbackOn = { Exception.class })
 	public void afterVariableChanged(ProcessVariableChangedEvent event) {
 
 		List<org.kie.api.runtime.manager.audit.VariableInstanceLog> variables = indexManager.index(getBuilder(), event);
@@ -198,6 +199,8 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	}
 
 	@Override
+	@Transactional(dontRollbackOn = { Exception.class })
+
 	public void beforeProcessStarted(ProcessStartedEvent event) {
 		ProcessInstanceLog log = (ProcessInstanceLog) builder.buildEvent(event);
 		persist(log, event);
@@ -205,6 +208,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	}
 
 	@Override
+	@Transactional(dontRollbackOn = { Exception.class })
 	public void afterProcessCompleted(ProcessCompletedEvent event) {
 		long processInstanceId = event.getProcessInstance().getId();
 		EntityManager em = getEntityManager(event);
@@ -229,6 +233,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	}
 
 	@Override
+	@Transactional(dontRollbackOn = { Exception.class })
 	public void afterNodeTriggered(ProcessNodeTriggeredEvent event) {
 		// trigger this to record some of the data (like work item id) after activity
 		// was triggered
@@ -239,6 +244,8 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	}
 
 	@Override
+	@Transactional(dontRollbackOn = { Exception.class })
+
 	public void afterSLAViolated(SLAViolatedEvent event) {
 		EntityManager em = getEntityManager(event);
 		Object tx = joinTransaction(em);
