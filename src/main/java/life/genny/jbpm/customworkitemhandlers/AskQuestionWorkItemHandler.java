@@ -37,7 +37,7 @@ import life.genny.models.GennyToken;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.rules.QRules;
 
-import life.genny.rules.RulesLoader2;
+import life.genny.rules.RulesLoader;
 import life.genny.utils.OutputParam;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
@@ -130,7 +130,7 @@ public class AskQuestionWorkItemHandler implements WorkItemHandler {
 				newKieSession.signalEvent("internalSignal", sessionFacts, processId);
 			} else {
 
-				KieBase kieBase = RulesLoader2.getKieBaseCache().get(userToken.getRealm());
+				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
 
 				newKieSession.signalEvent("internalSignal", sessionFacts, processId);

@@ -20,7 +20,7 @@ import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.models.GennyToken;
 import life.genny.rules.QRules;
-import life.genny.rules.RulesLoader2;
+import life.genny.rules.RulesLoader;
 import life.genny.utils.OutputParam;
 
 public class ThrowMessageProcessWorkItemHandler implements WorkItemHandler {
@@ -72,7 +72,7 @@ public class ThrowMessageProcessWorkItemHandler implements WorkItemHandler {
 
 		} else {
 			
-			KieBase kieBase = RulesLoader2.getKieBaseCache().get(gToken.getRealm());
+			KieBase kieBase = RulesLoader.getKieBaseCache().get(gToken.getRealm());
 			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
 			
 			newKieSession.signalEvent(signalCode, payload, processId);

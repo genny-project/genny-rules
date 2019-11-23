@@ -21,7 +21,7 @@ import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.models.GennyToken;
 
-import life.genny.rules.RulesLoader2;
+import life.genny.rules.RulesLoader;
 import life.genny.utils.SessionFacts;
 
 public class SendSignalWorkItemHandler implements WorkItemHandler {
@@ -111,7 +111,7 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 				newKieSession.signalEvent(signalCode, sessionFacts, processId);
 			} else {
 
-				KieBase kieBase = RulesLoader2.getKieBaseCache().get(userToken.getRealm());
+				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
 
 				newKieSession.signalEvent(signalCode, sessionFacts, processId);

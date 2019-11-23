@@ -63,7 +63,7 @@ import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.JsonUtils;
 
-import life.genny.rules.RulesLoader2;
+import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.SessionFacts;
 
@@ -294,7 +294,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 				newKieSession.signalEvent("internalSignal", sessionFacts, targetProcessId);
 			} else {
 
-				KieBase kieBase = RulesLoader2.getKieBaseCache().get(userToken.getRealm());
+				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
 
 				//newKieSession.signalEvent("IS_"+userToken.getSessionCode(), sessionFacts);

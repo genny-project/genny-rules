@@ -40,7 +40,7 @@ import life.genny.qwanda.Answers;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
-import life.genny.rules.RulesLoader2;
+import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.OutputParam;
 import life.genny.utils.SessionFacts;
@@ -114,7 +114,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		String userCode = userToken.getUserCode();
 
 		KieServices ks = KieServices.Factory.get();
-		KieBase kieBase = RulesLoader2.getKieBaseCache().get(realm); // kieContainer.getKieBase("defaultKieBase"); //
+		KieBase kieBase = RulesLoader.getKieBaseCache().get(realm); // kieContainer.getKieBase("defaultKieBase"); //
 																	// this name is supposedly found in the kmodule.xml
 																	// in META-INF in widlfy-rulesservice
 

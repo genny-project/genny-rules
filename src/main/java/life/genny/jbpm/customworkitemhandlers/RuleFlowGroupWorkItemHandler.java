@@ -26,7 +26,7 @@ import life.genny.qwanda.Answers;
 import life.genny.qwanda.rule.RuleDetails;
 import life.genny.rules.QRules;
 
-import life.genny.rules.RulesLoader2;
+import life.genny.rules.RulesLoader;
 import life.genny.utils.OutputParam;
 
 public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
@@ -84,7 +84,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		Answers answersToSave = new Answers();
 		
 		if (this.runtimeEngine!=null) {
-			KieBase kieBase = RulesLoader2.getKieBaseCache().get(serviceToken.getRealm());
+			KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
 			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
 
 //			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
@@ -141,7 +141,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 		} else {
 			
-			KieBase kieBase = RulesLoader2.getKieBaseCache().get(serviceToken.getRealm());
+			KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
 			newKieSession = (StatefulKnowledgeSession)kieBase.newKieSession(ksconf, null);
 			
 			FactHandle ruleDetailsHandle = newKieSession.insert(ruleDetails);
