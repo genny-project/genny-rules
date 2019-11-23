@@ -79,7 +79,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		System.out.println("PROCESS ANSWERS *************************");
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
-		Map<TaskSummary, Map<String, Object>> taskAskMap = new HashMap<TaskSummary, Map<String, Object>>();
+		Map<TaskSummary, Map<String, Object>> taskAskMap = new ConcurrentHashMap<TaskSummary, Map<String, Object>>();
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
@@ -308,12 +308,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 								.get(EnvironmentName.APP_SCOPED_ENTITY_MANAGER);
 						// taskAsks);
 						Object contentObject = null;
-						contentObject = new HashMap<String, Object>(taskAsks);
+						contentObject = new ConcurrentHashMap<String, Object>(taskAsks);
 						Environment env2 = null;
 						if (kSession != null) {
 							env2 = kSession.getEnvironment();
 						}
-						
+						synchronized (this) {
 						ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env2);
 						Content content = TaskModelProvider.getFactory().newContent();
 						((InternalContent) content).setContent(contentData.getContent());
@@ -322,6 +322,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
 						iTaskData.setDocument(content.getId(), contentData);
 						iTask.setTaskData(iTaskData);
+						}
 					}
 				}
 			}
@@ -339,7 +340,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				}
 			}
 			if ((!uglySkip)&&(!answerMap.values().isEmpty())) { // don't save submit button
-				beUtils.saveAnswers(new ArrayList<>(answerMap.values()));
+				synchronized (this) {
+					beUtils.saveAnswers(new ArrayList<>(answerMap.values()));
+				}
 			}
 		}
 
