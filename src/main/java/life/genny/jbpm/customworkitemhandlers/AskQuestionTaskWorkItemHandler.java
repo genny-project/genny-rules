@@ -44,6 +44,7 @@ import org.kie.api.task.model.PeopleAssignments;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.User;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
+import org.kie.internal.runtime.manager.context.EmptyContext;
 import org.kie.internal.task.api.InternalTaskService;
 import org.kie.internal.task.api.TaskModelProvider;
 import org.kie.internal.task.api.model.AccessType;
@@ -104,6 +105,11 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	   @Override
 	    public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 			GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
+			
+			if (this.runtimeEngine==null) {
+				this.runtimeEngine = RulesLoader.runtimeManager.getRuntimeEngine(EmptyContext.get()); 
+			}
+			
 			String callingWorkflow = (String)workItem.getParameter("callingWorkflow");
 			if (StringUtils.isBlank(callingWorkflow)) {
 				callingWorkflow = "";

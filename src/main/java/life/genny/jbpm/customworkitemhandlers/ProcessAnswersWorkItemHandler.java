@@ -55,15 +55,16 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	String wClass;
 	TaskService taskService;
 	KieSession kieSession;
+	Environment env = null;
 
 	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
-	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, KieSession ksession,
+	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, Environment env,
 			TaskService taskService) {
 		this.taskService = taskService;
-		this.kieSession = ksession;
+		this.env = env;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
@@ -137,8 +138,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 
 		}
-		if ((!validAnswersExist)||exitOut||(answerMap2.isEmpty())) {
-			log.error(callingWorkflow+" exiting out early due to no valid answers or pri_submit");
+		if ((!validAnswersExist) || exitOut || (answerMap2.isEmpty())) {
+			log.error(callingWorkflow + " exiting out early due to no valid answers or pri_submit");
 			output.setResult("NONE");
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
@@ -152,7 +153,6 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
 				taskService.start(taskSummary.getId(), realm + "+" + userCode); // start!
 			}
-			Environment env = null;
 			if (kieSession != null) {
 				env = kieSession.getEnvironment();
 			}
@@ -167,7 +167,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 			if (kSession == null) {
 				log.error("Cannot find session to restore for ksid=" + task.getTaskData().getProcessSessionId());
-				kSession = this.kieSession;
+				log.error(callingWorkflow + " exiting out early due to nokSession");
+				output.setResult("NONE");
+				resultMap.put("output", output);
+				manager.completeWorkItem(workItem.getId(), resultMap);
+				return;
 			} else {
 				log.info("Found session to restore for ksid=" + task.getTaskData().getProcessSessionId());
 			}
@@ -186,8 +190,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			// Loop through all the answers check their validity and save them.
 			List<Answer> validAnswers = new ArrayList<Answer>();
 			List<TaskAsk> taskAsksProcessed = new ArrayList<TaskAsk>();
-			
-			if (!answerMap2.isEmpty() ) {
+
+			if (!answerMap2.isEmpty()) {
 				answerMap.putAll(answerMap2);
 				for (Answer answer : answerMap2.values()) {
 					// check answer
@@ -279,8 +283,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						if (ask.getAsk().getAttributeCode().startsWith("QQQ_QUESTION_GROUP_BUT")) {
 							isNowTriggered = true;
 						}
-						if ((ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")/*||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")*/) && (ask.getAnswered())) {
-							log.info(callingWorkflow+" PRI_SUBMIT detected and is answered");
+						if ((ask.getAsk().getAttributeCode()
+								.equals("PRI_SUBMIT")/* ||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT") */)
+								&& (ask.getAnswered())) {
+							log.info(callingWorkflow + " PRI_SUBMIT detected and is answered");
 							hackTrigger = true;
 						}
 //						if ((ask.getAsk().getAttributeCode().equals("PRI_ADDRESS_FULL")) && (ask.getAnswered())) {
@@ -302,7 +308,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						taskAskMap.put(taskSummary, taskAsks);
 					}
 					Map<String, Object> results = taskAskMap.get(taskSummary);
-					if ((results == null)&&(!hackTrigger)) {
+					if ((results == null) && (!hackTrigger)) {
 						// Now save back to Task
 						EntityManager em = (EntityManager) kSession.getEnvironment()
 								.get(EnvironmentName.APP_SCOPED_ENTITY_MANAGER);
@@ -314,14 +320,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							env2 = kSession.getEnvironment();
 						}
 						synchronized (this) {
-						ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env2);
-						Content content = TaskModelProvider.getFactory().newContent();
-						((InternalContent) content).setContent(contentData.getContent());
-						em.persist(content);
-						InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
-						InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
-						iTaskData.setDocument(content.getId(), contentData);
-						iTask.setTaskData(iTaskData);
+							ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env2);
+							Content content = TaskModelProvider.getFactory().newContent();
+							((InternalContent) content).setContent(contentData.getContent());
+							em.persist(content);
+							InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
+							InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
+							iTaskData.setDocument(content.getId(), contentData);
+							iTask.setTaskData(iTaskData);
 						}
 					}
 				}
@@ -332,14 +338,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			// Check that the form answer is allowed
 			// ugly hack
 			Boolean uglySkip = false;
-			if (answerMap.values().size()==1) {
+			if (answerMap.values().size() == 1) {
 				String key = answerMap.keySet().toArray(new String[0])[0];
 				String[] keySplit = key.split(":");
 				if ("PRI_SUBMIT".equals(keySplit[2])) {
 					uglySkip = true;
 				}
 			}
-			if ((!uglySkip)&&(!answerMap.values().isEmpty())) { // don't save submit button
+			if ((!uglySkip) && (!answerMap.values().isEmpty())) { // don't save submit button
 				synchronized (this) {
 					beUtils.saveAnswers(new ArrayList<>(answerMap.values()));
 				}
@@ -353,7 +359,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (results != null) {
 				InternalTask iTask = (InternalTask) taskService.getTaskById(taskSummary.getId());
 				System.out.println(callingWorkflow + " closing task with status " + iTask.getTaskData().getStatus());
-				log.info("####### processAnswers! sessionId=" + iTask.getTaskData().getProcessSessionId()+" with status "+iTask.getTaskData().getStatus());
+				log.info("####### processAnswers! sessionId=" + iTask.getTaskData().getProcessSessionId()
+						+ " with status " + iTask.getTaskData().getStatus());
 
 				KieSession kSession = kieSessionMap.get(iTask.getId());
 				if (kSession == null) {
@@ -362,7 +369,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				}
 				results.put("taskid", iTask.getId());
 				SessionFacts facts = new SessionFacts(serviceToken, userToken, results);
-				
+
 				kSession.signalEvent("closeTask", facts);
 				output = new OutputParam();
 				if ("NONE".equals(formCode)) {

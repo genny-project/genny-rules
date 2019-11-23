@@ -593,7 +593,7 @@ public class RulesLoader {
 				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
 						new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
 				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
-						new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession, taskService));
+						new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService));
 				kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
 						new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
@@ -729,7 +729,7 @@ public class RulesLoader {
 				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
 						new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
 				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
-						new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession, taskService));
+						new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService));  // the env should be the same for all kieSessions
 				kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
 						new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
