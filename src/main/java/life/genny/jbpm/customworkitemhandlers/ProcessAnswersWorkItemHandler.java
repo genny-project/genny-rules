@@ -80,7 +80,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		System.out.println("PROCESS ANSWERS *************************");
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
-		Map<TaskSummary, Map<String, Object>> taskAskMap = new ConcurrentHashMap<TaskSummary, Map<String, Object>>();
+		Map<TaskSummary, ConcurrentHashMap<String, Object>> taskAskMap = new ConcurrentHashMap<TaskSummary, ConcurrentHashMap<String, Object>>();
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
@@ -127,6 +127,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		Map<String, Answer> answerMap = new ConcurrentHashMap<String, Answer>();
 		Map<String, Answer> answerMap2 = new ConcurrentHashMap<String, Answer>();
 		Boolean exitOut = false;
+		Boolean submitDetected = false;
 		for (Answer answer : answersToSave.getAnswers()) {
 			Boolean validAnswer = validate(answer, userToken);
 			// Quick and dirty ...
@@ -134,12 +135,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				validAnswersExist = true;
 				String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
 				answerMap2.put(key, answer);
-
+				if (answer.getAttributeCode().equals("QUE_SUBMIT")) {
+					submitDetected = true;
+				}
 			}
 
 		}
 		if ((!validAnswersExist) || exitOut || (answerMap2.isEmpty())) {
-			log.error(callingWorkflow + " exiting out early due to no valid answers or pri_submit");
+			log.error(callingWorkflow + " exiting out early due to no valid answers nor pri_submit");
 			output.setResult("NONE");
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
@@ -183,8 +186,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				log.error("*************** Task content is NULL *********** ABORTING");
 				return;
 			}
-			HashMap<String, Object> taskAsks = (HashMap<String, Object>) ContentMarshallerHelper
+			HashMap<String, Object> taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
 					.unmarshall(c.getContent(), null);
+			ConcurrentHashMap<String,Object> taskAsks = new ConcurrentHashMap<String,Object>(taskAsks2);
+			
 			formCode = (String) taskAsks.get("FORM_CODE");
 			targetCode = (String) taskAsks.get("TARGET_CODE");
 			// Loop through all the answers check their validity and save them.
@@ -244,7 +249,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				log.info(callingWorkflow + " Saving " + validAnswers.size() + " Valid Answers ...");
 
 				if (validAnswers.size() > 0) {
-					beUtils.saveAnswers(validAnswers); // save answers in one big thing
+					if (!submitDetected) { // dont save if submit
+						beUtils.saveAnswers(validAnswers); // save answers in one big thing
+					}
 
 					// tick off the valid answers
 					for (TaskAsk ta : taskAsksProcessed) {
@@ -284,9 +291,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							isNowTriggered = true;
 						}
 						if ((ask.getAsk().getAttributeCode()
-								.equals("PRI_SUBMIT")/* ||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT") */)
-								&& (ask.getAnswered())) {
-							log.info(callingWorkflow + " PRI_SUBMIT detected and is answered");
+								.equals("PRI_SUBMIT") && (ask.getAnswered())/* ||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT") */)
+								) {
+							log.info(callingWorkflow + " PRI_SUBMIT detected ");
 							hackTrigger = true;
 						}
 //						if ((ask.getAsk().getAttributeCode().equals("PRI_ADDRESS_FULL")) && (ask.getAnswered())) {
@@ -324,10 +331,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							Content content = TaskModelProvider.getFactory().newContent();
 							((InternalContent) content).setContent(contentData.getContent());
 							em.persist(content);
-							InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
-							InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
-							iTaskData.setDocument(content.getId(), contentData);
-							iTask.setTaskData(iTaskData);
+//							InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
+//							InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
+//							iTaskData.setDocument(content.getId(), contentData);
+//							iTask.setTaskData(iTaskData);
 						}
 					}
 				}
@@ -354,6 +361,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		// synchronized (this) {
 		// Now complete the tasks if done
+		
 		for (TaskSummary taskSummary : tasks) {
 			Map<String, Object> results = taskAskMap.get(taskSummary);
 			if (results != null) {
@@ -368,9 +376,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							+ iTask.getTaskData().getProcessSessionId());
 				}
 				results.put("taskid", iTask.getId());
-				SessionFacts facts = new SessionFacts(serviceToken, userToken, results);
+				taskService.complete(iTask.getId(), realm + "+" + userCode, results);
 
-				kSession.signalEvent("closeTask", facts);
+				//kSession.signalEvent("closeTask", facts);
 				output = new OutputParam();
 				if ("NONE".equals(formCode)) {
 					output.setTypeOfResult("NONE");

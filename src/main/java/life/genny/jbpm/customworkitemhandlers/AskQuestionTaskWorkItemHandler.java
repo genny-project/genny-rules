@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -135,7 +136,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	        
             // Fetch the questions and set in the task for us to tick off as they get done
             Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
-            HashMap<String,Object> taskAsksMap = new HashMap<String,Object>();
+            Map<String,Object> taskAsksMap = new ConcurrentHashMap<String,Object>();
             for (QDataAskMessage dataMsg : formSet) {
             	Boolean createOnTrigger = false;
             	for (Ask askMsg : dataMsg.getItems()) {
@@ -198,7 +199,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	        } 
 	    }
 	
-	private void processAsk(BaseEntityUtils beUtils, String formName,Ask askMsg, HashMap<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger) {
+	private void processAsk(BaseEntityUtils beUtils, String formName,Ask askMsg, Map<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger) {
    		// replace askMesg source and target with required src and target, initially we will use both src and target
 		String json = JsonUtils.toJson(askMsg);
 		json = json.replaceAll("PER_SERVICE", userToken.getUserCode());
@@ -456,10 +457,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
     }
 
 
-    protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session,  HashMap<String,Object> taskAsksMap) {
+    protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session,  Map<String,Object> taskAsksMap) {
         ContentData content = null;
         Object contentObject = null;
-            contentObject = new HashMap<String, Object>(taskAsksMap);
+            contentObject = new ConcurrentHashMap<String, Object>(taskAsksMap);
          if (contentObject != null) {
             Environment env = null;
             if(session != null){
