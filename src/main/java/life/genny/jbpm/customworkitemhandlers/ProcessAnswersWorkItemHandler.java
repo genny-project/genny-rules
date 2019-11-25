@@ -331,10 +331,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							Content content = TaskModelProvider.getFactory().newContent();
 							((InternalContent) content).setContent(contentData.getContent());
 							em.persist(content);
-//							InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
-//							InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
-//							iTaskData.setDocument(content.getId(), contentData);
-//							iTask.setTaskData(iTaskData);
+							InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
+							InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
+							iTaskData.setDocument(content.getId(), contentData);
+							iTask.setTaskData(iTaskData);
 						}
 					}
 				}
