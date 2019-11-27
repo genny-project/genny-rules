@@ -116,6 +116,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 				callingWorkflow = "";
 			}
 
+			
+			String baseEntityTargetCode = (String)workItem.getParameter("baseEntityTargetCode");
+			if (StringUtils.isBlank(baseEntityTargetCode)) {
+				baseEntityTargetCode = userToken.getUserCode();
+			}
+			
 			String formCode = (String)workItem.getParameter("formCode");
 			String targetCode = (String)workItem.getParameter("targetCode");
 			
@@ -141,7 +147,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             	Boolean createOnTrigger = false;
             	for (Ask askMsg : dataMsg.getItems()) {
             		createOnTrigger = askMsg.hasTriggerQuestion();
-            		processAsk(beUtils,task.getFormName(),askMsg,taskAsksMap,userToken,createOnTrigger);
+            		processAsk(beUtils,task.getFormName(),askMsg,taskAsksMap,userToken,createOnTrigger,baseEntityTargetCode);
              		
             	}
             }
@@ -199,9 +205,11 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	        } 
 	    }
 	
-	private void processAsk(BaseEntityUtils beUtils, String formName,Ask askMsg, Map<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger) {
+	private void processAsk(BaseEntityUtils beUtils, String formName,Ask askMsg, Map<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger, String baseEntityTargetCode) {
    		// replace askMesg source and target with required src and target, initially we will use both src and target
 		String json = JsonUtils.toJson(askMsg);
+		json = json.replaceAll("PER_SOURCE", userToken.getUserCode());
+		json = json.replaceAll("PER_TARGET", baseEntityTargetCode);
 		json = json.replaceAll("PER_SERVICE", userToken.getUserCode());
 		Ask newMsg = JsonUtils.fromJson(json, Ask.class);
 		String key = newMsg.getSourceCode()+":"+newMsg.getTargetCode()+":"+newMsg.getAttributeCode();
@@ -227,7 +235,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		if ((newMsg.getChildAsks()!=null)&&(newMsg.getChildAsks().length>0)) {
 			for (Ask childAsk : newMsg.getChildAsks()) {
-				processAsk(beUtils,formName,childAsk,taskAsksMap,userToken,createOnTrigger);
+				processAsk(beUtils,formName,childAsk,taskAsksMap,userToken,createOnTrigger,baseEntityTargetCode);
 			}
 		}
 		return ;
