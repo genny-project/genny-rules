@@ -77,6 +77,8 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 	RuntimeEngine runtimeEngine;
 	String wClass;
+	String baseEntitySourceCode = null;
+	String baseEntityTargetCode = null;
 	
     public AskQuestionTaskWorkItemHandler() {
     	super();
@@ -116,10 +118,16 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 				callingWorkflow = "";
 			}
 
-			
-			String baseEntityTargetCode = (String)workItem.getParameter("baseEntityTargetCode");
-			if (StringUtils.isBlank(baseEntityTargetCode)) {
-				baseEntityTargetCode = userToken.getUserCode();
+			baseEntitySourceCode = userToken.getUserCode();
+			BaseEntity baseEntitySource = (BaseEntity)workItem.getParameter("baseEntitySource");
+			if (baseEntitySource != null) {
+				baseEntitySourceCode = baseEntitySource.getCode();
+			}
+
+			baseEntityTargetCode = userToken.getUserCode();
+			BaseEntity baseEntityTarget = (BaseEntity)workItem.getParameter("baseEntityTarget");
+			if (baseEntityTarget != null) {
+				baseEntityTargetCode = baseEntityTarget.getCode();
 			}
 			
 			String formCode = (String)workItem.getParameter("formCode");
@@ -147,7 +155,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             	Boolean createOnTrigger = false;
             	for (Ask askMsg : dataMsg.getItems()) {
             		createOnTrigger = askMsg.hasTriggerQuestion();
-            		processAsk(beUtils,task.getFormName(),askMsg,taskAsksMap,userToken,createOnTrigger,baseEntityTargetCode);
+            		processAsk(beUtils,task.getFormName(),askMsg,taskAsksMap,userToken,createOnTrigger);
              		
             	}
             }
@@ -205,12 +213,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	        } 
 	    }
 	
-	private void processAsk(BaseEntityUtils beUtils, String formName,Ask askMsg, Map<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger, String baseEntityTargetCode) {
+	private void processAsk(BaseEntityUtils beUtils, String formName,Ask askMsg, Map<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger) {
    		// replace askMesg source and target with required src and target, initially we will use both src and target
 		String json = JsonUtils.toJson(askMsg);
-		json = json.replaceAll("PER_SOURCE", userToken.getUserCode());
+		json = json.replaceAll("PER_SOURCE", baseEntitySourceCode);
 		json = json.replaceAll("PER_TARGET", baseEntityTargetCode);
-		json = json.replaceAll("PER_SERVICE", userToken.getUserCode());
+		json = json.replaceAll("PER_SERVICE", baseEntitySourceCode);
 		Ask newMsg = JsonUtils.fromJson(json, Ask.class);
 		String key = newMsg.getSourceCode()+":"+newMsg.getTargetCode()+":"+newMsg.getAttributeCode();
 		// work out whether an Ask has already got a value for that attribute
