@@ -243,7 +243,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		if ((newMsg.getChildAsks()!=null)&&(newMsg.getChildAsks().length>0)) {
 			for (Ask childAsk : newMsg.getChildAsks()) {
-				processAsk(beUtils,formName,childAsk,taskAsksMap,userToken,createOnTrigger,baseEntityTargetCode);
+				processAsk(beUtils,formName,childAsk,taskAsksMap,userToken,createOnTrigger);
 			}
 		}
 		return ;

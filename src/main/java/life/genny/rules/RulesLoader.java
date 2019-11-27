@@ -1176,7 +1176,6 @@ public class RulesLoader {
 		handlers.put("ShowFrameWithContextList", new ShowFrameWIthContextList());
 		handlers.put("RuleFlowGroup", new RuleFlowGroupWorkItemHandler());
 		handlers.put("ThrowSignalProcess", new ThrowSignalProcessWorkItemHandler(runtime));
-		handlers.put("AskQuestion", new AskQuestionWorkItemHandler(RulesLoader.class, runtime));
 //			handlers.put("AskQuestionTask",
 //					new AskQuestionTaskWorkItemHandler(RulesLoader.class,runtime));
 //			handlers.put("ProcessAnswers",
