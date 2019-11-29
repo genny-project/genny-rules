@@ -1089,6 +1089,15 @@ public class TableUtils {
 		return themeBe;
 	}
 
+	public Ask getBucketContentAsk(Map<String, ContextList> contextListMap, GennyToken serviceToken) {
+
+		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken.getToken());
+		Question bucketContentQuestion = new Question("QUE_BUCKET_CONTENT_GRP", "",questionAttribute, true);
+		Ask bucketContentAsk = new Ask(bucketContentQuestion, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
+		return bucketContentAsk;
+	
+	}
+
 	public Ask getBucketHeaderAsk(Map<String, ContextList> contextListMap, GennyToken serviceToken) {
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
@@ -1133,6 +1142,7 @@ public class TableUtils {
 		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_LABEL), VisualControlType.GROUP_LABEL, 1.0));
 		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER), VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_VCL_INPUT), VisualControlType.VCL_INPUT, 1.0));
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_QUESTION_GRP_LABEL), VisualControlType.GROUP, 1.0));
 
 		/* row2Context context */
 		List<Context> row2Context = new ArrayList<>();
@@ -1193,7 +1203,7 @@ public class TableUtils {
 		row1Ask.setChildAsks(row1ChildAsks);
 
 		/* row-two-ask */
-		Question row2Ques = new Question("QUE_BUCKET_HEADER_ROW_TWO_GRP", questionAttribute.getName(), questionAttribute, false);
+		Question row2Ques = new Question("QUE_BUCKET_HEADER_ROW_TWO_GRP", questionAttribute.getName(), tableCellAttribute, false);
 		Ask row2Ask = new Ask(row2Ques, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
 
 		/* search ask */
@@ -1212,6 +1222,68 @@ public class TableUtils {
 		bucketHeaderAsk.setChildAsks(bucketChildAsks);
 		
 		return bucketHeaderAsk;
+	}
+
+	public Ask getBucketFooterAsk(Map<String, ContextList> contextListMap, GennyToken serviceToken) {
+
+		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
+
+		/* get the themes */
+		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_HORIZONTAL",Theme.class, serviceToken.getToken());
+		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_WIDTH_100_PERCENT",Theme.class, serviceToken.getToken());
+		Theme THM_ICON = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_ICON", Theme.class,serviceToken.getToken());
+		Theme THM_JUSTIFY_CONTENT_SPACE_AROUND = Theme.builder("THM_JUSTIFY_CONTENT_SPACE_AROUND").addAttribute().justifyContent("space-around").end().build();
+
+		/* get the baseentities */
+		BaseEntity ICN_ARROW_FORWARD_IOS = beUtils.getBaseEntityByCode("ICN_ARROW_FORWARD_IOS");
+		BaseEntity ICN_ARROW_BACK_IOS = beUtils.getBaseEntityByCode("ICN_ARROW_BACK_IOS");
+
+		/* get the attributes */
+		Attribute questionAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
+		Attribute nextAttribute = RulesUtils.attributeMap.get("PRI_NEXT_BTN");
+		Attribute prevAttribute = RulesUtils.attributeMap.get("PRI_PREVIOUS_BTN");
+
+		/* we create context here */
+
+		/* bucketFooter context */
+		List<Context> bucketFooterContext = new ArrayList<>();
+		bucketFooterContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL), VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		bucketFooterContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_WIDTH_100_PERCENT), VisualControlType.GROUP_WRAPPER, 1.0));
+		bucketFooterContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_JUSTIFY_CONTENT_SPACE_AROUND), VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+
+		/* nextBucket context */
+		List<Context> nextBucketContext = new ArrayList<>();
+		nextBucketContext.add(new Context(ContextType.ICON, ICN_ARROW_FORWARD_IOS, VisualControlType.VCL_ICON, 1.0));
+		nextBucketContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON), VisualControlType.VCL, 1.0));
+	
+		/* prevBucket context */
+		List<Context> prevBucketContext = new ArrayList<>();
+		prevBucketContext.add(new Context(ContextType.ICON, ICN_ARROW_BACK_IOS, VisualControlType.VCL_ICON, 1.0));
+		prevBucketContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON), VisualControlType.VCL, 1.0));
+
+		/* add the contextList to contextMap */
+		contextListMap.put("QUE_BUCKET_FOOTER_GRP", new ContextList(bucketFooterContext));
+		contextListMap.put("QUE_NEXT_BUCKET", new ContextList(nextBucketContext));
+		contextListMap.put("QUE_PREV_BUCKET", new ContextList(prevBucketContext));
+
+		/* Initialize Bucket Footer Ask group */
+		Question bucketFooterQuestion = new Question("QUE_BUCKET_FOOTER_GRP", "Footer Group", questionAttribute, true);
+		Ask bucketFooterAsk = new Ask(bucketFooterQuestion, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
+
+		/* next ask */
+		Question nextBucketQues = new Question("QUE_NEXT_BUCKET", "", nextAttribute, false);
+		Ask nextBucketAsk = new Ask(nextBucketQues, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
+
+		/* prev ask */
+		Question prevBucketQues = new Question("QUE_PREV_BUCKET", "", prevAttribute, false);
+		Ask prevBucketAsk = new Ask(prevBucketQues, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
+
+		/* set the child asks */
+		Ask[] bucketChildAsksArray = { prevBucketAsk, nextBucketAsk };
+		bucketFooterAsk.setChildAsks(bucketChildAsksArray);
+
+		return bucketFooterAsk;
+	 
 	}
 
 }
