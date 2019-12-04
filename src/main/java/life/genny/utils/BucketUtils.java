@@ -27,6 +27,7 @@ import life.genny.models.GennyToken;
 import life.genny.models.TableData;
 import life.genny.models.Theme;
 import life.genny.models.ThemeAttribute;
+import life.genny.models.ThemeAttributeType;
 import life.genny.models.ThemePosition;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
@@ -51,6 +52,7 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.QRules;
+import life.genny.test.GennyJbpmBaseTest;
 import life.genny.utils.ContextUtils;
 
 public class BucketUtils {
@@ -61,70 +63,322 @@ public class BucketUtils {
 		this.beUtils = beUtils;
 	}
 
-	/* Generate List of asks from a SearchEntity */
-	public static List<Ask> generateQuestions(GennyToken userToken, BaseEntityUtils beUtils, List<BaseEntity> bes, Map<String, String> columns, String targetCode) {
+	/* generates all the contextListMap for card */
+	public Map<String, ContextList> getCardContextListMap(Map<String, ContextList> contextListMap,
+			GennyToken serviceToken) {
 
-		/* initialize an empty ask list */
-		List<Ask> askList = new ArrayList<>();
-		List<QDataBaseEntityMessage> themeMsgList = new ArrayList<QDataBaseEntityMessage>();
+		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
 		BucketUtils bucketUtils = new BucketUtils(beUtils);
 
-		if (columns != null) {
-			if (bes != null && bes.isEmpty() == false) {
+		try {
 
-				/* loop through baseentities to generate ask */
-				for (BaseEntity be : bes) {
+			// get the themes from cache
+			Theme THM_DISPLAY_VERTICAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_VERTICAL",
+					Theme.class, serviceToken.getToken());
 
-					/* we add attributes for each be */
-					beUtils.addAttributes(be);
+			Theme THM_JUSTIFY_CONTENT_FLEX_START = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_JUSTIFY_CONTENT_FLEX_START", Theme.class, serviceToken.getToken());
 
-					/* initialize child ask list */
-					List<Ask> childAskList = new ArrayList<>();
+			Theme THM_CARD = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_CARD", Theme.class,
+					serviceToken.getToken());
 
-					for (Map.Entry<String, String> column : columns.entrySet()) {
+			Theme THM_DISPLAY_HORIZONTAL = Theme.builder("THM_DISPLAY_HORIZONTAL").addAttribute().flexDirection("row")
+					.end().addAttribute(ThemeAttributeType.PRI_IS_INHERITABLE, false).end().build();
 
-						String attributeCode = column.getKey();
-						String attributeName = column.getValue();
-						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
+			Theme THM_DROPDOWN_ICON_ALT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DROPDOWN_ICON_ALT",
+					Theme.class, serviceToken.getToken());
 
-						Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
-								true);
-						Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
+			Theme THM_DROPDOWN_BEHAVIOUR_GENNY = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_DROPDOWN_BEHAVIOUR_GENNY", Theme.class, serviceToken.getToken());
 
-						/* add the entityAttribute ask to list */
-						childAskList.add(childAsk);
+			Theme THM_BACKGROUND_NONE = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BACKGROUND_NONE",
+					Theme.class, serviceToken.getToken());
 
-					}
+			Theme THM_DROPDOWN_PROFILE_BEHAVIOUR_GENNY = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_DROPDOWN_PROFILE_BEHAVIOUR_GENNY", Theme.class, serviceToken.getToken());
 
-					/* converting childAsks list to array */
-					Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
+			Theme THM_DROPDOWN_HEADER_WRAPPER_GENNY = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_DROPDOWN_HEADER_WRAPPER_GENNY", Theme.class, serviceToken.getToken());
 
-					/* Get the on-the-fly question attribute */
-					Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+			Theme THM_DROPDOWN_GROUP_LABEL_GENNY = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_DROPDOWN_GROUP_LABEL_GENNY", Theme.class, serviceToken.getToken());
 
-					Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
-							new DataType(String.class));
+			Theme THM_DROPDOWN_CONTENT_WRAPPER_GENNY = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_DROPDOWN_CONTENT_WRAPPER_GENNY", Theme.class, serviceToken.getToken());
 
-					/* Generate ask for the baseentity */
-					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
-							questionTableRowAttribute, true);
-					Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
+			Theme THM_BOX_SHADOW_SM = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BOX_SHADOW_SM",
+					Theme.class, serviceToken.getToken());
 
-					/* setting weight to parent ask */
-					parentAsk.setWeight(be.getIndex().doubleValue());
+			Theme THM_DROPDOWN_VCL_GENNY = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DROPDOWN_VCL_GENNY",
+					Theme.class, serviceToken.getToken());
 
-					/* set all the childAsks to parentAsk */
-					parentAsk.setChildAsks(childAsArr);
+			Theme THM_IMAGE_PLACEHOLDER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_IMAGE_PLACEHOLDER",
+					Theme.class, serviceToken.getToken());
+					
+			Theme THM_HEADER_PROFILE_PICTURE = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_HEADER_PROFILE_PICTURE", Theme.class, serviceToken.getToken());
+					
+			// Theme THM_BORDER_RADIUS_50 = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BORDER_RADIUS_50",
+			// 		Theme.class, serviceToken.getToken());
 
-					/* add the baseentity asks to a list */
-					askList.add(parentAsk);
-				}
 
-			}
+
+			Theme THM_BORDER_RADIUS_50 = Theme.builder("THM_BORDER_RADIUS_50")
+					.addAttribute()
+						.borderRadius(50)
+					.end()
+					.build();
+					
+			Theme THM_EXPANDABLE = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_EXPANDABLE", Theme.class,
+					serviceToken.getToken());
+					
+			Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_WIDTH_100_PERCENT",
+					Theme.class, serviceToken.getToken());
+					
+			Theme THM_JUSTIFY_CONTENT_CENTRE = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_JUSTIFY_CONTENT_CENTRE", Theme.class, serviceToken.getToken());
+					
+			Theme THM_IMAGE_PLACEHOLDER_PERSON = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_IMAGE_PLACEHOLDER_PERSON", Theme.class, serviceToken.getToken());
+					
+			Theme THM_PROFILE_IMAGE = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_PROFILE_IMAGE",
+					Theme.class, serviceToken.getToken());
+					
+			// Theme THM_PROJECT_COLOR_SURFACE = VertxUtils.getObject(serviceToken.getRealm(), "",
+			// 		"THM_PROJECT_COLOR_SURFACE", Theme.class, serviceToken.getToken());
+			
+			Theme THM_PROJECT_COLOR_SURFACE = Theme.builder("THM_PROJECT_COLOR_SURFACE")
+					.addAttribute()
+						.backgroundColor("#FFFFFF")
+						.color("#000000")
+					.end()
+					.build();  
+					
+			Theme THM_PADDING_X_10 = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_PADDING_X_10", Theme.class,
+					serviceToken.getToken());
+					
+			Theme THM_FLEX_ONE = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_FLEX_ONE", Theme.class,
+					serviceToken.getToken());
+					
+			Theme THM_FLEX_ONE_INHERITABLE = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_FLEX_ONE_INHERITABLE", Theme.class, serviceToken.getToken());
+
+			/* cardContext */
+			List<Context> cardContext = new ArrayList<>();
+			cardContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DISPLAY_HORIZONTAL),
+					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+			cardContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_CARD),
+					VisualControlType.GROUP_WRAPPER, 1.0));
+
+			/* cardStatusContext */
+			List<Context> cardStatusContext = new ArrayList<>();
+			cardStatusContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_FLEX_ONE),
+					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+			cardStatusContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_FLEX_ONE_INHERITABLE),
+					VisualControlType.VCL_WRAPPER, 1.0));
+			cardStatusContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DROPDOWN_ICON_ALT),
+					VisualControlType.GROUP_ICON, 1.0));
+
+			/* cardMainContext */
+			List<Context> cardMainContext = new ArrayList<>();
+			cardMainContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DISPLAY_VERTICAL),
+					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+			cardMainContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_FLEX_ONE),
+					VisualControlType.GROUP_WRAPPER, 1.0));
+
+			/* cardContentContext */
+			List<Context> cardContentContext = new ArrayList<>();
+			cardContentContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DISPLAY_HORIZONTAL),
+					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+
+			/* cardLeftContext */
+			List<Context> cardLeftContext = new ArrayList<>();
+			cardLeftContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_HEADER_PROFILE_PICTURE),
+					VisualControlType.INPUT_SELECTED, 1.0));
+			cardLeftContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_BORDER_RADIUS_50),
+					VisualControlType.INPUT_FIELD, 1.0));
+			cardLeftContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_PROFILE_IMAGE),
+					VisualControlType.INPUT_SELECTED, 1.0));
+			cardLeftContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_IMAGE_PLACEHOLDER_PERSON),
+					VisualControlType.INPUT_PLACEHOLDER, 1.0));
+
+			/* cardCentreContext */
+			List<Context> cardCentreContext = new ArrayList<>();
+			cardCentreContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DISPLAY_VERTICAL),
+					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+			cardCentreContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_FLEX_ONE),
+					VisualControlType.GROUP_WRAPPER, 1.0));
+
+			/* cardRightContext */
+			List<Context> cardRightContext = new ArrayList<>();
+			cardRightContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DISPLAY_VERTICAL),
+					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+			cardRightContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DROPDOWN_BEHAVIOUR_GENNY),
+					VisualControlType.GROUP, 1.0));
+			cardRightContext.add(new Context(ContextType.THEME,
+					bucketUtils.getThemeBe(THM_DROPDOWN_PROFILE_BEHAVIOUR_GENNY), VisualControlType.GROUP, 1.0));
+			cardRightContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_PROJECT_COLOR_SURFACE),
+					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+
+			/* cardBottomContext */
+			List<Context> cardBottomContext = new ArrayList<>();
+			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_JUSTIFY_CONTENT_CENTRE),
+					VisualControlType.GROUP_CLICKABLE_WRAPPER, 1.0));
+			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_EXPANDABLE),
+					VisualControlType.GROUP, 1.0));
+			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_WIDTH_100_PERCENT),
+					VisualControlType.GROUP, 1.0));
+			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_PADDING_X_10),
+					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+
+			contextListMap.put("QUE_CARD_APPLICATION_TEMPLATE_GRP", new ContextList(cardContext));
+			contextListMap.put("QUE_CARD_STATUS_GRP", new ContextList(cardStatusContext));
+			contextListMap.put("QUE_CARD_MAIN_GRP", new ContextList(cardMainContext));
+			contextListMap.put("QUE_CARD_CONTENT_GRP", new ContextList(cardContentContext));
+			contextListMap.put("QUE_CARD_LEFT_GRP", new ContextList(cardLeftContext));
+			contextListMap.put("QUE_CARD_CENTRE_GRP", new ContextList(cardCentreContext));
+			contextListMap.put("QUE_CARD_RIGHT_GRP", new ContextList(cardRightContext));
+			contextListMap.put("QUE_CARD_BOTTOM_GRP", new ContextList(cardBottomContext));
+
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		
+		return contextListMap;
+
+	}
+
+	/* returns a card template */
+	public Ask getCardTemplate(GennyToken serviceToken) {
+
+		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
+		BucketUtils bucketUtils = new BucketUtils(beUtils);
+
+		String sourceCode = "PER_SERVICE", targetCode = "PER_SERVICE";
+		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+
+		try {
+
+			// card ask
+			Question cardQuestion = new Question("QUE_CARD_APPLICATION_TEMPLATE_GRP", "Card", questionAttribute, true);
+			Ask cardAsk = new Ask(cardQuestion, sourceCode, targetCode);
+
+				// status ask
+				Question cardStatusQuestion = new Question("QUE_CARD_STATUS_GRP", "Card Status", questionAttribute, true);
+				Ask cardStatusAsk = new Ask(cardStatusQuestion, sourceCode, targetCode);
+
+				// main ask
+				Question cardMainQuestion = new Question("QUE_CARD_MAIN_GRP", "Card Main", questionAttribute, true);
+				Ask cardMainAsk = new Ask(cardMainQuestion, sourceCode, targetCode);
+				cardMainAsk.setReadonly(true);
+
+					// content ask
+					Question cardContentQuestion = new Question("QUE_CARD_CONTENT_GRP", "Card Content", questionAttribute, true);
+					Ask cardContentAsk = new Ask(cardContentQuestion, sourceCode, targetCode);
+
+						// left ask
+						Question cardLeftQuestion = new Question("QUE_CARD_LEFT_GRP", "Card Left", questionAttribute, true);
+						Ask cardLeftAsk = new Ask(cardLeftQuestion, sourceCode, targetCode);
+
+						// centre ask
+						Question cardCentreQuestion = new Question("QUE_CARD_CENTRE_GRP", "Card Centre", questionAttribute, true);
+						Ask cardCentreAsk = new Ask(cardCentreQuestion, sourceCode, targetCode);
+
+						// right ask
+						Question cardRightQuestion = new Question("QUE_CARD_RIGHT_GRP", "Card Right", questionAttribute, true);
+						Ask cardRightAsk = new Ask(cardRightQuestion, sourceCode, targetCode);
+
+							// forward ask
+							Question cardForwardQuestion = new Question("QUE_FORWARD", "Forward", questionAttribute, true);
+							Ask cardForwardAsk = new Ask(cardForwardQuestion, sourceCode, targetCode);
+							
+							// backward ask
+							Question cardBackwardQuestion = new Question("QUE_BACKWARD", "Backward", questionAttribute, true);
+							Ask cardBackwardAsk = new Ask(cardBackwardQuestion, sourceCode, targetCode);
+
+							Ask[] cardRightChildAsks = { cardForwardAsk, cardBackwardAsk };
+							cardRightAsk.setChildAsks(cardRightChildAsks);
+
+					Ask[] cardContentChildAsks = { cardLeftAsk, cardCentreAsk, cardRightAsk };
+					cardContentAsk.setChildAsks(cardContentChildAsks);
+
+					// bottom ask
+					Question cardBottomQuestion = new Question("QUE_CARD_BOTTOM_GRP", "Card Bottom", questionAttribute, true);
+					Ask cardBottomAsk = new Ask(cardBottomQuestion, sourceCode, targetCode);
+
+				Ask[] cardMainChildAsks = { cardContentAsk, cardBottomAsk };
+				cardMainAsk.setChildAsks(cardMainChildAsks);					
+
+			Ask[] cardChildAsks = { cardStatusAsk, cardMainAsk };
+			cardAsk.setChildAsks(cardChildAsks);
+
+			return cardAsk;
+
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		return null;
+
+	}
+
+	/* implements a template ask to the supplied askList */
+	public List<Ask> implementCardTemplate(List<Ask> askList, Ask templateAsk, Map<String, ContextList> contextListMap) {
+
+		Ask[] templateAsks = templateAsk.getChildAsks();
+		ContextList contextList = templateAsk.getContextList();
+		
+		List<Context> cardContext = contextListMap.get("QUE_CARD_APPLICATION_TEMPLATE_GRP").getContextList();
+
+		Ask cardStatusAsk = templateAsks[0];
+		Ask cardMainAsk = templateAsks[1];
+		Ask cardContentAsk = cardMainAsk.getChildAsks()[0];
+		Ask cardLeftAsk = cardContentAsk.getChildAsks()[0];
+		Ask cardCentreAsk = cardContentAsk.getChildAsks()[1];
+		Ask cardRightAsk = cardContentAsk.getChildAsks()[2];
+		Ask cardBottomAsk = cardMainAsk.getChildAsks()[1];
+		
+
+		for (Ask app : askList) {
+
+				Ask[] attributeArr = app.getChildAsks();
+
+				List<Ask> attributeList = new ArrayList<Ask>(Arrays.asList(attributeArr));
+
+				Ask[] cardStatusChildAsks = { attributeList.get(0) };
+				cardStatusAsk.setChildAsks(cardStatusChildAsks);
+				cardStatusAsk.setTargetCode(app.getTargetCode());
+				
+				cardMainAsk.setTargetCode(app.getTargetCode());
+
+				Ask[] cardLeftChildAsks = { attributeList.get(1) };
+				cardLeftAsk.setReadonly(true);
+				cardLeftAsk.setChildAsks(cardLeftChildAsks);
+				cardLeftAsk.setTargetCode(app.getTargetCode());
+
+				Ask[] cardCentreChildAsks = { attributeList.get(2), attributeList.get(3), attributeList.get(4),
+								attributeList.get(5) };
+				cardCentreAsk.setReadonly(true);
+				cardCentreAsk.setChildAsks(cardCentreChildAsks);
+				cardCentreAsk.setTargetCode(app.getTargetCode());
+
+				Ask[] cardBottomChildAsks = { attributeList.get(6), attributeList.get(7), attributeList.get(8) };
+				cardBottomAsk.setReadonly(true);
+				cardBottomAsk.setChildAsks(cardBottomChildAsks);
+				cardBottomAsk.setTargetCode(app.getTargetCode());
+
+				// we create a new ask with all the new groups
+				app.setTargetCode(app.getTargetCode());
+				app.setChildAsks(templateAsks);
+
+				// we set the themes from cardAsk group to the the appAsk
+				app.setContextList(contextList);
+				app.setReadonly(true);
+				
+				/* add the contextList for the cardQuestion */
+				contextListMap.put(app.getQuestionCode(), new ContextList(cardContext));
 
 		}
-
-		/* return list of asks */
+		// return the updated askList
 		return askList;
 	}
 
@@ -132,37 +386,36 @@ public class BucketUtils {
 	public List<SearchEntity> getBucketSearchBeListFromCache(GennyToken serviceToken) {
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
-
 		List<SearchEntity> bucketSearchBeList = new ArrayList<SearchEntity>();
 
 		try {
-				SearchEntity SBE_APPLIED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
-								"SBE_APPLIED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
-				SearchEntity SBE_SHORTLISTED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
-								"SBE_SHORTLISTED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
-				SearchEntity SBE_INTERVIEWED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
-								"SBE_INTERVIEWED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
-				SearchEntity SBE_OFFERED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
-								"SBE_OFFERED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
-				SearchEntity SBE_PLACED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
-								"SBE_PLACED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
-				SearchEntity SBE_INPROGRESS_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
-								"SBE_INPROGRESS_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
+			SearchEntity SBE_APPLIED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"SBE_APPLIED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
+			SearchEntity SBE_SHORTLISTED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"SBE_SHORTLISTED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
+			SearchEntity SBE_INTERVIEWED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"SBE_INTERVIEWED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
+			SearchEntity SBE_OFFERED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"SBE_OFFERED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
+			SearchEntity SBE_PLACED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"SBE_PLACED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
+			SearchEntity SBE_INPROGRESS_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"SBE_INPROGRESS_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
 
-				bucketSearchBeList.add(SBE_APPLIED_APPLICATIONS);
-				bucketSearchBeList.add(SBE_SHORTLISTED_APPLICATIONS);
-				bucketSearchBeList.add(SBE_INTERVIEWED_APPLICATIONS);
-				bucketSearchBeList.add(SBE_OFFERED_APPLICATIONS);
-				bucketSearchBeList.add(SBE_PLACED_APPLICATIONS);
-				bucketSearchBeList.add(SBE_INPROGRESS_APPLICATIONS);
+			bucketSearchBeList.add(SBE_APPLIED_APPLICATIONS);
+			bucketSearchBeList.add(SBE_SHORTLISTED_APPLICATIONS);
+			bucketSearchBeList.add(SBE_INTERVIEWED_APPLICATIONS);
+			bucketSearchBeList.add(SBE_OFFERED_APPLICATIONS);
+			bucketSearchBeList.add(SBE_PLACED_APPLICATIONS);
+			bucketSearchBeList.add(SBE_INPROGRESS_APPLICATIONS);
 
 		} catch (Exception e) {
 
 		}
 		return bucketSearchBeList;
 	}
-	
-	/* returns baseentity of a theme  */
+
+	/* returns baseentity of a theme */
 	public BaseEntity getThemeBe(Theme theme) {
 
 		BaseEntity themeBe = null;
@@ -171,9 +424,8 @@ public class BucketUtils {
 			for (ThemeAttribute themeAttribute : theme.getAttributes()) {
 
 				try {
-					themeBe.addAttribute(new EntityAttribute(themeBe,
-							new Attribute(themeAttribute.getCode(), themeAttribute.getCode(), new DataType("DTT_THEME")), 1.0,
-							themeAttribute.getJson()));
+					themeBe.addAttribute(new EntityAttribute(themeBe, new Attribute(themeAttribute.getCode(),
+							themeAttribute.getCode(), new DataType("DTT_THEME")), 1.0, themeAttribute.getJson()));
 				} catch (BadDataException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -187,10 +439,10 @@ public class BucketUtils {
 	public Ask getBucketContentAsk(Map<String, ContextList> contextListMap, GennyToken serviceToken) {
 
 		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken.getToken());
-		Question bucketContentQuestion = new Question("QUE_BUCKET_CONTENT_GRP", "",questionAttribute, true);
+		Question bucketContentQuestion = new Question("QUE_BUCKET_CONTENT_GRP", "", questionAttribute, true);
 		Ask bucketContentAsk = new Ask(bucketContentQuestion, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
 		return bucketContentAsk;
-	
+
 	}
 
 	/* generates the bucket-header ask */
@@ -200,31 +452,31 @@ public class BucketUtils {
 
 		Theme THM_QUESTION_GRP_LABEL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_QUESTION_GRP_LABEL",
 				Theme.class, serviceToken.getToken());
-		Theme THM_DISPLAY_VERTICAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_VERTICAL", Theme.class,
-				serviceToken.getToken());
+		Theme THM_DISPLAY_VERTICAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_VERTICAL",
+				Theme.class, serviceToken.getToken());
 		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_HORIZONTAL",
 				Theme.class, serviceToken.getToken());
 		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_WIDTH_100_PERCENT",
 				Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_ONE_GRP_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_ONE_GRP_WRAPPER",
-				Theme.class, serviceToken.getToken());
+		Theme THM_BH_ROW_ONE_GRP_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
+				"THM_BH_ROW_ONE_GRP_WRAPPER", Theme.class, serviceToken.getToken());
 		Theme THM_BH_ROW_ONE_GRP_LABEL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_ONE_GRP_LABEL",
 				Theme.class, serviceToken.getToken());
 		Theme THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
 				"THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER", Theme.class, serviceToken.getToken());
 		Theme THM_BH_ROW_ONE_VCL_INPUT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_ONE_VCL_INPUT",
 				Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_TWO_VCL_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_TWO_VCL_WRAPPER",
-				Theme.class, serviceToken.getToken());
+		Theme THM_BH_ROW_TWO_VCL_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
+				"THM_BH_ROW_TWO_VCL_WRAPPER", Theme.class, serviceToken.getToken());
 		Theme THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
 				"THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER", Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_TWO_INPUT_FIELD = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_TWO_INPUT_FIELD",
-				Theme.class, serviceToken.getToken());
+		Theme THM_BH_ROW_TWO_INPUT_FIELD = VertxUtils.getObject(serviceToken.getRealm(), "",
+				"THM_BH_ROW_TWO_INPUT_FIELD", Theme.class, serviceToken.getToken());
 		Theme THM_ICON = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_ICON", Theme.class,
 				serviceToken.getToken());
-		Theme THM_BH_GROUP_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_GROUP_WRAPPER", Theme.class,
-				serviceToken.getToken());
-		
+		Theme THM_BH_GROUP_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_GROUP_WRAPPER",
+				Theme.class, serviceToken.getToken());
+
 		/* get the sort icon */
 		BaseEntity ICN_SORT = beUtils.getBaseEntityByCode("ICN_SORT");
 
@@ -232,35 +484,46 @@ public class BucketUtils {
 
 		/* row1Context context */
 		List<Context> row1Context = new ArrayList<>();
-		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL), VisualControlType.GROUP_WRAPPER, 1.0));
-		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_WRAPPER), VisualControlType.GROUP_WRAPPER, 1.0));
-		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_LABEL), VisualControlType.GROUP_LABEL, 1.0));
-		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER), VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
-		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_VCL_INPUT), VisualControlType.VCL_INPUT, 1.0));
-		
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_WRAPPER),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_LABEL),
+				VisualControlType.GROUP_LABEL, 1.0));
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER),
+				VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_VCL_INPUT),
+				VisualControlType.VCL_INPUT, 1.0));
+
 		/* row2Context context */
 		List<Context> row2Context = new ArrayList<>();
-		row2Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL), VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
-		row2Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_TWO_VCL_WRAPPER), VisualControlType.VCL_WRAPPER, 1.0));
-		row2Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER), VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
-		
+		row2Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL),
+				VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		row2Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_TWO_VCL_WRAPPER),
+				VisualControlType.VCL_WRAPPER, 1.0));
+		row2Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER),
+				VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+
 		/* bucketCountContextList context */
 		List<Context> bucketCountContextList = new ArrayList<>();
-		bucketCountContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_QUESTION_GRP_LABEL), VisualControlType.GROUP_WRAPPER, 1.0));
-		
+		bucketCountContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_QUESTION_GRP_LABEL),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+
 		/* bucketSearchContextList context */
 		List<Context> bucketSearchContextList = new ArrayList<>();
-		bucketSearchContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_TWO_INPUT_FIELD), VisualControlType.VCL_WRAPPER, 1.0));
-		
+		bucketSearchContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_TWO_INPUT_FIELD),
+				VisualControlType.VCL_WRAPPER, 1.0));
+
 		/* bucketSortContextList context */
 		List<Context> bucketSortContextList = new ArrayList<>();
-		bucketSortContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON), VisualControlType.VCL, 1.0));
+		bucketSortContextList
+				.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON), VisualControlType.VCL, 1.0));
 		bucketSortContextList.add(new Context(ContextType.ICON, ICN_SORT, VisualControlType.VCL_ICON, 1.0));
-		
+
 		/* add the contextList to contextMap */
 		contextListMap.put("QUE_BUCKET_HEADER_ROW_ONE_GRP", new ContextList(row1Context));
 		contextListMap.put("QUE_BUCKET_HEADER_ROW_TWO_GRP", new ContextList(row2Context));
-		contextListMap.put("QUE_BUCKET_COUNT", new ContextList(bucketCountContextList));  
+		contextListMap.put("QUE_BUCKET_COUNT", new ContextList(bucketCountContextList));
 		contextListMap.put("QUE_BUCKET_SEARCH", new ContextList(bucketSearchContextList));
 		contextListMap.put("QUE_BUCKET_SORT", new ContextList(bucketSortContextList));
 
@@ -270,22 +533,24 @@ public class BucketUtils {
 		validations.add(validation);
 		ValidationList searchValidationList = new ValidationList();
 		searchValidationList.setValidationList(validations);
-		
-		Attribute searchAttribute = new Attribute("PRI_NAME", "Search", new DataType("Text", searchValidationList, "Text"));
+
+		Attribute searchAttribute = new Attribute("PRI_NAME", "Search",
+				new DataType("Text", searchValidationList, "Text"));
 
 		/* get the attributes */
 		Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken.getToken());
 		Attribute sortAttribute = RulesUtils.getAttribute("PRI_SORT", serviceToken.getToken());
 		Attribute nameAttribute = RulesUtils.getAttribute("PRI_NAME", serviceToken.getToken());
 		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken.getToken());
-		Attribute tableCellAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP_TABLE_CELL", serviceToken.getToken());
+		Attribute tableCellAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP_TABLE_CELL",
+				serviceToken.getToken());
 
 		/* Initialize Bucket Header Ask group */
 		Question bucketHeaderQuestion = new Question("QUE_BUCKET_HEADER_GRP", "Bucket Header", questionAttribute, true);
 		Ask bucketHeaderAsk = new Ask(bucketHeaderQuestion, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
 
 		/* row-one-ask */
-		Question row1Ques = new Question("QUE_BUCKET_HEADER_ROW_ONE_GRP", "Row One", tableCellAttribute,false);
+		Question row1Ques = new Question("QUE_BUCKET_HEADER_ROW_ONE_GRP", "Row One", tableCellAttribute, false);
 		Ask row1Ask = new Ask(row1Ques, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
 
 		/* count ask */
@@ -300,7 +565,8 @@ public class BucketUtils {
 		Ask row2Ask = new Ask(row2Ques, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
 
 		/* search ask */
-		Question bucketSearchQues = new Question("QUE_BUCKET_SEARCH", searchAttribute.getName(), searchAttribute, false);
+		Question bucketSearchQues = new Question("QUE_BUCKET_SEARCH", searchAttribute.getName(), searchAttribute,
+				false);
 		Ask bucketSearchAsk = new Ask(bucketSearchQues, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
 
 		/* sort ask */
@@ -313,7 +579,7 @@ public class BucketUtils {
 		/* set the bucketHeader child asks */
 		Ask[] bucketChildAsks = { row1Ask, row2Ask };
 		bucketHeaderAsk.setChildAsks(bucketChildAsks);
-		
+
 		return bucketHeaderAsk;
 	}
 
@@ -323,10 +589,14 @@ public class BucketUtils {
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
 
 		/* get the themes */
-		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_HORIZONTAL",Theme.class, serviceToken.getToken());
-		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_WIDTH_100_PERCENT",Theme.class, serviceToken.getToken());
-		Theme THM_ICON = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_ICON", Theme.class,serviceToken.getToken());
-		Theme THM_JUSTIFY_CONTENT_SPACE_AROUND = Theme.builder("THM_JUSTIFY_CONTENT_SPACE_AROUND").addAttribute().justifyContent("space-around").end().build();
+		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_HORIZONTAL",
+				Theme.class, serviceToken.getToken());
+		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_WIDTH_100_PERCENT",
+				Theme.class, serviceToken.getToken());
+		Theme THM_ICON = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_ICON", Theme.class,
+				serviceToken.getToken());
+		Theme THM_JUSTIFY_CONTENT_SPACE_AROUND = Theme.builder("THM_JUSTIFY_CONTENT_SPACE_AROUND").addAttribute()
+				.justifyContent("space-around").end().build();
 
 		/* get the baseentities */
 		BaseEntity ICN_ARROW_FORWARD_IOS = beUtils.getBaseEntityByCode("ICN_ARROW_FORWARD_IOS");
@@ -341,15 +611,18 @@ public class BucketUtils {
 
 		/* bucketFooter context */
 		List<Context> bucketFooterContext = new ArrayList<>();
-		bucketFooterContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL), VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
-		bucketFooterContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_WIDTH_100_PERCENT), VisualControlType.GROUP_WRAPPER, 1.0));
-		bucketFooterContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_JUSTIFY_CONTENT_SPACE_AROUND), VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		bucketFooterContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL),
+				VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		bucketFooterContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_WIDTH_100_PERCENT),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+		bucketFooterContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_JUSTIFY_CONTENT_SPACE_AROUND),
+				VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 
 		/* nextBucket context */
 		List<Context> nextBucketContext = new ArrayList<>();
 		nextBucketContext.add(new Context(ContextType.ICON, ICN_ARROW_FORWARD_IOS, VisualControlType.VCL_ICON, 1.0));
 		nextBucketContext.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON), VisualControlType.VCL, 1.0));
-	
+
 		/* prevBucket context */
 		List<Context> prevBucketContext = new ArrayList<>();
 		prevBucketContext.add(new Context(ContextType.ICON, ICN_ARROW_BACK_IOS, VisualControlType.VCL_ICON, 1.0));
@@ -377,7 +650,7 @@ public class BucketUtils {
 		bucketFooterAsk.setChildAsks(bucketChildAsksArray);
 
 		return bucketFooterAsk;
-	 
+
 	}
 
 }
