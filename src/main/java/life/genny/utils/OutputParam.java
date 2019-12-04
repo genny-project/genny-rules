@@ -14,6 +14,8 @@ public class OutputParam implements Serializable,Comparable {
 	private String typeOfResult="ERROR";  // FRAME_CODE or LIFECYCLE
 	private String resultCode = "DUMMY";
 	private String targetCode = "DUMMY";
+	
+	private Long taskId = -1L;
 
 	public OutputParam()
 	{
@@ -116,6 +118,25 @@ public class OutputParam implements Serializable,Comparable {
 		this.level = level;
 	}
 
+	
+	
+	/**
+	 * @return the taskId
+	 */
+	public Long getTaskId() {
+		return taskId;
+	}
+
+	/**
+	 * @param taskId the taskId to set
+	 */
+	public void setTaskId(Long taskId) {
+		if (taskId == null) {
+			taskId = -1L;
+		}
+		this.taskId = taskId;
+	}
+
 	@Override
 	public String toString() {
 		return "OutputParam [typeOfResult=" + typeOfResult + ", resultCode=" + resultCode + ":target="+this.getTargetCode()+": lvl="+level+"]";
@@ -135,6 +156,7 @@ public class OutputParam implements Serializable,Comparable {
 		result = prime * result + ((resultCode == null) ? 0 : resultCode.hashCode());
 		result = prime * result + ((targetCode == null) ? 0 : targetCode.hashCode());
 		result = prime * result + ((typeOfResult == null) ? 0 : typeOfResult.hashCode());
+	//	result = prime * result + ((taskId == null) ? 0 : taskId.hashCode());
 		return result;
 	}
 
@@ -167,6 +189,11 @@ public class OutputParam implements Serializable,Comparable {
 				return false;
 		} else if (!typeOfResult.equals(other.typeOfResult))
 			return false;
+//		if (taskId == null) {
+//			if (other.taskId != null)
+//				return false;
+//		} else if (!taskId.equals(other.taskId))
+//			return false;
 		return true;
 	}
 
@@ -183,7 +210,11 @@ public class OutputParam implements Serializable,Comparable {
 		if (this.resultCode.compareTo(other.getResultCode())==0) {
 			if (this.targetCode.compareTo(other.getTargetCode())==0) {
 				if (this.level.compareTo(other.getLevel())==0) {
-					return 0;
+//					if (this.taskId.compareTo(other.getTaskId())==0) {
+						return 0;
+//					} else {
+//						return this.taskId.compareTo(other.getTaskId());
+//					}
 				} else {
 					return this.level.compareTo(other.getLevel());
 				}

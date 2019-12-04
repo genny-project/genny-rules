@@ -69,6 +69,7 @@ public class ProcessTaskIdWorkItemHandler implements WorkItemHandler {
 			String formcode = task.getFormName();
 			output.setFormCode(formcode, "FRM_CONTENT");
 			output.setTypeOfResult("FORMCODE");
+			output.setTaskId(task.getId());
 			resultMap.put("output", output);
 		} else {
 			log.error("Task is null for task Id=" + taskId);

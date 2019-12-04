@@ -3,6 +3,7 @@ package life.genny.jbpm.customworkitemhandlers;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -12,12 +13,16 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
+import org.jbpm.services.task.utils.ContentMarshallerHelper;
 import org.json.JSONObject;
 import org.kie.api.runtime.KieSession;
 import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
+import org.kie.api.task.TaskService;
+import org.kie.api.task.model.Content;
+import org.kie.api.task.model.Task;
 
 import com.google.gson.reflect.TypeToken;
 
@@ -25,6 +30,7 @@ import io.vertx.core.json.JsonObject;
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
@@ -36,8 +42,10 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.QRules;
+import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.FrameUtils2;
+import life.genny.utils.OutputParam;
 import life.genny.utils.VertxUtils;
 import life.genny.models.FramePosition;
 
@@ -58,6 +66,7 @@ public class ShowFrame implements WorkItemHandler {
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
 		String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
+		OutputParam output = (OutputParam) workItem.getParameter("output");
 
 		if (rootFrameCode.equals("NONE")) { // Do not change anything
 			return;
@@ -69,7 +78,7 @@ public class ShowFrame implements WorkItemHandler {
 		}
 		callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
-		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow);
+		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output);
 
 		// notify manager that work item has been completed
 		if (workItem == null) {
@@ -79,6 +88,10 @@ public class ShowFrame implements WorkItemHandler {
 
 	}
 
+	public static void display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+			String callingWorkflow) {
+		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, null);
+	}
 	/**
 	 * @param userToken
 	 * @param rootFrameCode
@@ -86,7 +99,7 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param callingWorkflow
 	 */
 	public static void display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
-			String callingWorkflow) {
+			String callingWorkflow, OutputParam output) {
 		if (userToken == null) {
 			log.error(callingWorkflow + ": Must supply userToken!");
 
@@ -205,7 +218,7 @@ public class ShowFrame implements WorkItemHandler {
 						VertxUtils.writeMsg("webcmds", payload2);
 					}
 
-					sendAsks(rootFrameCode, userToken, callingWorkflow);
+					sendAsks(rootFrameCode, userToken, callingWorkflow,output);
 
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
@@ -222,13 +235,46 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param userToken
 	 * @param callingWorkflow
 	 */
-	private static void sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow) {
+	private static void sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow, OutputParam output) {
 		
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
 			return;
 		}
 
+		TaskService taskService;
+		Task task = null;
+		Map<String, Object> taskAsks = null;
+		Map<String,TaskAsk> attributeTaskAskMap = null;
+		String sourceCode = null;
+		String targetCode = null;
+		
+		if ((output != null)) {
+			if ((output.getTaskId()!=null)&&(output.getTaskId()>0L)) {
+				taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+				task =  taskService.getTaskById(output.getTaskId());
+				// Now get the TaskAsk that relates to this specific Ask
+				// assume that all attributes have the same source and target
+				Long docId = task.getTaskData().getDocumentContentId();
+				Content c = taskService.getContentById(docId);
+				if (c == null) {
+					log.error("*************** Task content is NULL *********** ABORTING");
+					return;
+				}
+				taskAsks = (HashMap<String, Object>) ContentMarshallerHelper
+						.unmarshall(c.getContent(), null);
+				for (String key : taskAsks.keySet()) {
+					Object obj = taskAsks.get(key);
+					if (obj instanceof TaskAsk) { // This gets around my awful formcode values
+						TaskAsk taskAsk = (TaskAsk)taskAsks.get(key);
+						String attributeStr = taskAsk.getAsk().getAttributeCode();
+						//	attributeTaskAskMap.put(attributeStr,taskAsk);
+						sourceCode = taskAsk.getAsk().getSourceCode();
+						targetCode = taskAsk.getAsk().getTargetCode();
+					}
+				}
+			}
+		}
 		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
 
 		// System.out.println("Sending Asks");
@@ -245,7 +291,13 @@ public class ShowFrame implements WorkItemHandler {
 				askMsg.setToken(userToken.getToken());
 				String json = JsonUtils.toJson(askMsg);
 				String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
-																							// user
+				if (sourceCode!=null) {																		// user
+					jsonStr = jsonStr.replaceAll("PER_SOURCE", sourceCode);
+				}
+				if (targetCode!=null) {																		// user
+					jsonStr = jsonStr.replaceAll("PER_TARGET", targetCode);
+				}
+
 				VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 			}
 		}
