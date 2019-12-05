@@ -52,7 +52,6 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.QRules;
-import life.genny.test.GennyJbpmBaseTest;
 import life.genny.utils.ContextUtils;
 
 public class BucketUtils {

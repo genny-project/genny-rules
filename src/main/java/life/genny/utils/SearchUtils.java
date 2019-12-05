@@ -52,7 +52,6 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.QRules;
-import life.genny.test.GennyJbpmBaseTest;
 import life.genny.utils.ContextUtils;
 
 public class SearchUtils {
@@ -120,7 +119,6 @@ public class SearchUtils {
 		/* initialize an empty ask list */
 		List<Ask> askList = new ArrayList<>();
 		List<QDataBaseEntityMessage> themeMsgList = new ArrayList<QDataBaseEntityMessage>();
-		TableUtilsTest tableUtils = new TableUtilsTest(beUtils);
 
 		if (columns != null) {
 			if (bes != null && bes.isEmpty() == false) {
