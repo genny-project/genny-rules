@@ -30,6 +30,7 @@ import io.vertx.core.json.JsonObject;
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.ContextList;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.datatype.DataType;
@@ -353,7 +354,10 @@ public class ShowFrame implements WorkItemHandler {
 						if (rootFrame.getCode().startsWith("FRM_QUE_")) {
 							FrameUtils2.toMessage(rootFrame, userToken,"PER_SOURCE","PER_TARGET",true);
 						} else {
-							FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
+							Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
+							FrameUtils2.toMessage(rootFrame, userToken, contextListMap,"PER_SERVICE","PER_SERVICE",true);
+
+							//FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
 						}
 						askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS",
 								userToken.getToken());
