@@ -926,7 +926,7 @@ public class TableUtils {
 			e1.printStackTrace();
 		}
 
-		QDataBaseEntityMessage msg = FrameUtils2.toMessage(frame, serviceToken, askMsgs);
+		QDataBaseEntityMessage msg = FrameUtils2.toMessage(frame, serviceToken, askMsgs,true);
 		msg.setReplace(true);
 
 		msg.setToken(userToken.getToken());

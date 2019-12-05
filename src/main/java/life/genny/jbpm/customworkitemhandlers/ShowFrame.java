@@ -350,7 +350,11 @@ public class ShowFrame implements WorkItemHandler {
 						String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 								userToken.getToken());
 						Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
-						FrameUtils2.toMessage(rootFrame, userToken);
+						if (rootFrame.getCode().startsWith("FRM_QUE_")) {
+							FrameUtils2.toMessage(rootFrame, userToken,"PER_SOURCE","PER_TARGET",true);
+						} else {
+							FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
+						}
 						askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS",
 								userToken.getToken());
 						if (askMsgs2Str==null) {
