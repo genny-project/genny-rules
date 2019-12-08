@@ -66,20 +66,19 @@ public class TableUtils {
 		this.beUtils = beUtils;
 	}
 
-	public static void performSearch(GennyToken serviceToken, BaseEntityUtils beUtils, final String searchBarCode,
+	public void performSearch(GennyToken serviceToken, final String searchBarCode,
 			Answer answer) {
-		TableUtils tableUtils = new TableUtils(beUtils);
-		tableUtils.beUtils.setServiceToken(serviceToken);
+		beUtils.setServiceToken(serviceToken);
 
-		SearchEntity searchBE = processSearchString(answer, searchBarCode, beUtils);
+		SearchEntity searchBE = processSearchString(answer, searchBarCode);
 
 		// Send out Search Results
-		QDataBaseEntityMessage msg = tableUtils.fetchSearchResults(searchBE, beUtils.getGennyToken());
+		QDataBaseEntityMessage msg = fetchSearchResults(searchBE);
 
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 
 		/* publishing the searchBE to frontEnd */
-		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", (msg.getTotal()) + "", beUtils.getGennyToken()); // if result
+		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", (msg.getTotal()) + ""); // if result
 		// count = 0
 		// then
 		// frontend
@@ -90,27 +89,27 @@ public class TableUtils {
 		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
 
-		Map<String, String> columns = tableUtils.getTableColumns(searchBE);
+		Map<String, String> columns = getTableColumns(searchBE);
 
 		/*
 		 * Display the table header
 		 */
 
-		QDataAskMessage headerAskMsg = showTableHeader(tableUtils, searchBE, columns, msg);
+		QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg);
 
-		showTableContent(serviceToken, beUtils, searchBE, msg, columns);
+		showTableContent(serviceToken,  searchBE, msg, columns);
 
-		showTableFooter(beUtils, searchBE);
+		showTableFooter(searchBE);
 
 	}
 
-	public static SearchEntity getSessionSearch(final String searchCode, final GennyToken userToken) {
-		String sessionSearchCode = searchCode + "_" + userToken.getSessionCode().toUpperCase();
-		SearchEntity searchBE = VertxUtils.getObject(userToken.getRealm(), "", sessionSearchCode, SearchEntity.class,
-				userToken.getToken());
+	public  SearchEntity getSessionSearch(final String searchCode) {
+		String sessionSearchCode = searchCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", sessionSearchCode, SearchEntity.class,
+				beUtils.getGennyToken().getToken());
 
 		if (searchBE == null) {
-			searchBE = VertxUtils.getObject(userToken.getRealm(), "", searchCode, SearchEntity.class, userToken.getToken());
+			searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
 		}
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
@@ -122,12 +121,12 @@ public class TableUtils {
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
 		 */
-		VertxUtils.putObject(userToken.getRealm(), "", searchBE.getCode(), searchBE, userToken.getToken());
+		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE, beUtils.getGennyToken().getToken());
 
 		return searchBE;
 	}
 
-	private static SearchEntity processSearchString(Answer answer, final String searchBarCode, BaseEntityUtils beUtils) {
+	private SearchEntity processSearchString(Answer answer, final String searchBarCode) {
 		/* Perform a search bar search */
 		String searchBarString = null;
 		if (answer != null) {
@@ -142,9 +141,9 @@ public class TableUtils {
 		}
 
 		/* Get the SearchBE */
-		SearchEntity searchBE = getSessionSearch(searchBarCode, beUtils.getGennyToken());
+		SearchEntity searchBE = getSessionSearch(searchBarCode);
 
-		BaseEntity user = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
+		BaseEntity user = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
 				beUtils.getGennyToken().getUserCode(), BaseEntity.class, beUtils.getServiceToken().getToken());
 
 		log.info("search code coming from searchBE getCode  :: " + searchBE.getCode());
@@ -192,13 +191,13 @@ public class TableUtils {
 		return searchBE;
 	}
 
-	private static QDataAskMessage showTableHeader(TableUtils tableUtils, SearchEntity searchBE,
+	private  QDataAskMessage showTableHeader( SearchEntity searchBE,
 			Map<String, String> columns, QDataBaseEntityMessage msg) {
 
-		GennyToken userToken = tableUtils.beUtils.getGennyToken();
+		GennyToken userToken = beUtils.getGennyToken();
 
 		// Now Send out Table Header Ask and Question
-		TableData tableData = tableUtils.generateTableAsks(searchBE, userToken);
+		TableData tableData = generateTableAsks(searchBE);
 		Ask headerAsk = tableData.getAsk();
 		Ask[] askArray = new Ask[1];
 		askArray[0] = headerAsk;
@@ -212,8 +211,8 @@ public class TableUtils {
 
 		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
 
-		QDataBaseEntityMessage msg2 = TableUtils.changeQuestion(searchBE, "FRM_TABLE_HEADER", headerAsk,
-				tableUtils.beUtils.getServiceToken(), userToken, askMsgs);
+		QDataBaseEntityMessage msg2 = changeQuestion(searchBE, "FRM_TABLE_HEADER", headerAsk,
+				beUtils.getGennyToken(), userToken, askMsgs);
 		msg2.setToken(userToken.getToken());
 		msg2.setReplace(true);
 
@@ -229,8 +228,8 @@ public class TableUtils {
 
 		// Set the table title
 
-		sendQuestion("QUE_TABLE_TITLE_TEST", tableUtils.beUtils.getGennyToken().getUserCode(), searchBE.getCode(),
-				"SCH_TITLE", tableUtils.beUtils.getGennyToken());
+		sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(), searchBE.getCode(),
+				"SCH_TITLE", beUtils.getGennyToken());
 
 		return headerAskMsg;
 	}
@@ -244,7 +243,7 @@ public class TableUtils {
 	 * @param askMsgs
 	 * @param headerAskMsg
 	 */
-	private static void showTableContent(GennyToken serviceToken, BaseEntityUtils beUtils, SearchEntity searchBE,
+	private void showTableContent(GennyToken serviceToken,  SearchEntity searchBE,
 			QDataBaseEntityMessage msg,
 			Map<String, String> columns/*
 																	 * , Set<QDataAskMessage> askMsgs, QDataAskMessage headerAskMsg
@@ -284,9 +283,9 @@ public class TableUtils {
 		//
 		// if (askMsgs2Str == null) {
 		// log.error("FRM_TABLE_CONTENT_ASKS is NOT IN CACHE!");
-		// Frame3 frame = VertxUtils.getObject(serviceToken.getRealm(), "",
+		// Frame3 frame = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
 		// "FRM_TABLE_CONTENT", Frame3.class,
-		// serviceToken.getToken());
+		// beUtils.getGennyToken().getToken());
 		//
 		// FrameUtils2.toMessage2(frame, serviceToken);
 		// askMsgs2Str = (String)
@@ -363,7 +362,7 @@ public class TableUtils {
 		// serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
 
 		List<BaseEntity> rowList = Arrays.asList(msg.getItems());
-		List<Ask> rowAsks = generateQuestions(beUtils.getGennyToken(), beUtils, rowList, columns,
+		List<Ask> rowAsks = generateQuestions( rowList, columns,
 				beUtils.getGennyToken().getUserCode());
 
 		/* converting rowAsks list to array */
@@ -387,7 +386,7 @@ public class TableUtils {
 		// /* link single ask QUE_TEST_TABLE_RESULTS_GRP to FRM_TABLE_CONTENT ? */
 		// String tableResultAskCode = tableResultAsk.getQuestionCode();
 		//
-		QDataBaseEntityMessage msg3 = TableUtils.changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk, serviceToken,
+		QDataBaseEntityMessage msg3 = changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk, serviceToken,
 				beUtils.getGennyToken(), tableResultAskMsgs);
 		msg3.setToken(beUtils.getGennyToken().getToken());
 		msg3.setReplace(true);
@@ -417,7 +416,7 @@ public class TableUtils {
 	 * @param beUtils
 	 * @param searchBE
 	 */
-	private static void showTableFooter(BaseEntityUtils beUtils, SearchEntity searchBE) {
+	private void showTableFooter(SearchEntity searchBE) {
 		/* need to send the footer question again here */
 		Attribute totalAttribute = new Attribute("PRI_TOTAL_RESULTS", "link", new DataType(String.class));
 		Attribute indexAttribute = new Attribute("PRI_INDEX", "link", new DataType(String.class));
@@ -453,7 +452,7 @@ public class TableUtils {
 
 	}
 
-	public TableData generateTableAsks(SearchEntity searchBe, GennyToken gennyToken) {
+	public TableData generateTableAsks(SearchEntity searchBe) {
 
 		// Show columns
 		Map<String, String> columns = getTableColumns(searchBe);
@@ -495,68 +494,69 @@ public class TableUtils {
 		return columns;
 	}
 
-	public QDataBaseEntityMessage fetchSearchResults(SearchEntity searchBE, GennyToken gennyToken) {
+	public QDataBaseEntityMessage fetchSearchResults(SearchEntity searchBE) {
+
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
 		msg.setReplace(true);
-		if (gennyToken == null) {
+		if (beUtils.getGennyToken() == null) {
 			log.error("GENNY TOKEN IS NULL!!! in getSearchResults");
 			return msg;
 		}
-		searchBE.setRealm(gennyToken.getRealm());
+		searchBE.setRealm(beUtils.getGennyToken().getRealm());
 		log.debug("The search BE is :: " + JsonUtils.toJson(searchBE));
 
 		if (VertxUtils.cachedEnabled) {
 			List<BaseEntity> results = new ArrayList<BaseEntity>();
-			// tests.add(createTestPerson(gennyToken, "The Phantom",
+			// tests.add(createTestPerson(beUtils.getGennyToken(), "The Phantom",
 			// "kit.walker@phantom.bg"));
-			// tests.add(createTestPerson(gennyToken, "Phantom Menace",
+			// tests.add(createTestPerson(beUtils.getGennyToken(), "Phantom Menace",
 			// "menace43r@starwars.net"));
-			// tests.add(createTestPerson(gennyToken, "The Phantom Ranger",
+			// tests.add(createTestPerson(beUtils.getGennyToken(), "The Phantom Ranger",
 			// "phantom@rangers.com"));
 			Integer pageStart = searchBE.getValue("SCH_PAGE_START", 0);
 			Integer pageSize = searchBE.getValue("SCH_PAGE_SIZE", 10);
 
 			List<BaseEntity> tests = new ArrayList<>();
 
-			tests.add(createTestCompany(gennyToken, "Melbourne University", "0398745321", "support@melbuni.edu.au",
+			tests.add(createTestCompany("Melbourne University", "0398745321", "support@melbuni.edu.au",
 					"MELBOURNE", "Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Monash University", "0398744421", "support@melbuni.edu.au", "CLAYTON",
+			tests.add(createTestCompany("Monash University", "0398744421", "support@melbuni.edu.au", "CLAYTON",
 					"Victoria", "3142"));
-			tests.add(createTestCompany(gennyToken, "Latrobe University", "0398733321", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("Latrobe University", "0398733321", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "University Of Warracknabeal", "0392225321", "support@melbuni.edu.au",
+			tests.add(createTestCompany("University Of Warracknabeal", "0392225321", "support@melbuni.edu.au",
 					"WARRACKNABEAL", "Victoria", "3993"));
-			tests.add(createTestCompany(gennyToken, "Ashburton University", "0398741111", "support@melbuni.edu.au",
+			tests.add(createTestCompany("Ashburton University", "0398741111", "support@melbuni.edu.au",
 					"ASHBURTON", "Victoria", "3147"));
-			tests.add(createTestCompany(gennyToken, "Outcome Academy", "0398745777", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("Outcome Academy", "0398745777", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Holland University", "0298555521", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("Holland University", "0298555521", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "University of Greenvale", "0899995321", "support@melbuni.edu.au",
+			tests.add(createTestCompany("University of Greenvale", "0899995321", "support@melbuni.edu.au",
 					"MELBOURNE", "Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Crow University", "0398749999", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("Crow University", "0398749999", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "RMIT University", "0398748787", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("RMIT University", "0398748787", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Mt Buller University", "0398836421", "support@melbuni.edu.au",
+			tests.add(createTestCompany("Mt Buller University", "0398836421", "support@melbuni.edu.au",
 					"MELBOURNE", "Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Australian National University", "0198876541", "support@melbuni.edu.au",
+			tests.add(createTestCompany("Australian National University", "0198876541", "support@melbuni.edu.au",
 					"MELBOURNE", "Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Dodgy University", "0390000001", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("Dodgy University", "0390000001", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Australian Catholic University", "0398711121", "support@melbuni.edu.au",
+			tests.add(createTestCompany("Australian Catholic University", "0398711121", "support@melbuni.edu.au",
 					"MELBOURNE", "Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Australian Jedi University", "0798788881", "support@melbuni.edu.au",
+			tests.add(createTestCompany("Australian Jedi University", "0798788881", "support@melbuni.edu.au",
 					"MELBOURNE", "Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Brisbane Lions University", "0401020319", "support@melbuni.edu.au",
+			tests.add(createTestCompany("Brisbane Lions University", "0401020319", "support@melbuni.edu.au",
 					"BRISBANE", "Queensland", "4000"));
-			tests.add(createTestCompany(gennyToken, "AFL University", "0390000001", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("AFL University", "0390000001", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Uluru University", "0398711441", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("Uluru University", "0398711441", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "University Of Hard Knocks", "0798744881", "support@melbuni.edu.au",
+			tests.add(createTestCompany("University Of Hard Knocks", "0798744881", "support@melbuni.edu.au",
 					"MELBOURNE", "Victoria", "3001"));
-			tests.add(createTestCompany(gennyToken, "Scam University", "0705020319", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("Scam University", "0705020319", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
 
 			for (Integer pageIndex = pageStart; pageIndex < (pageStart + pageSize); pageIndex++) {
@@ -572,8 +572,15 @@ public class TableUtils {
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson;
 		try {
+//			GennyToken gToken = beUtils.getGennyToken();
+//			if (beUtils.getGennyToken().hasRole("admin")) {
+//				gToken = beUtils.getServiceToken();
+//			}
+//			if (gToken == null) {
+//				log.error
+//			}
 			resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-					jsonSearchBE, gennyToken.getToken());
+					jsonSearchBE, beUtils.getGennyToken().getToken());
 			final BaseEntity[] items = new BaseEntity[0];
 			final String parentCode = "GRP_ROOT";
 			final String linkCode = "LINK";
@@ -603,7 +610,7 @@ public class TableUtils {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		msg.setToken(gennyToken.getToken());
+		msg.setToken(beUtils.getGennyToken().getToken());
 		msg.setReplace(true);
 		/* get the total count of the results */
 		long totalResults = msg.getTotal();
@@ -622,7 +629,7 @@ public class TableUtils {
 		beUtils.updateBaseEntity(searchBE, totalAnswer);
 		beUtils.updateBaseEntity(searchBE, pageNumberAnswer);
 
-		log.info("Search Results for " + searchBE.getCode() + " and user " + gennyToken.getUserCode()); // use
+		log.info("Search Results for " + searchBE.getCode() + " and user " + beUtils.getGennyToken().getUserCode()); // use
 		// QUE_TABLE_VIEW_TEST
 		log.info("Search result items = " + msg.getReturnCount());
 		if (msg.getReturnCount() > 0) {
@@ -638,26 +645,26 @@ public class TableUtils {
 
 	}
 
-	static BaseEntity createTestPerson(GennyToken gennyToken, String name, String email) {
+	public BaseEntity createTestPerson(String name, String email) {
 		String usercode = "PER_" + QwandaUtils.getNormalisedUsername(email);
 		BaseEntity result1 = new BaseEntity(usercode, name);
-		result1.setRealm(gennyToken.getRealm());
+		result1.setRealm(beUtils.getGennyToken().getRealm());
 
 		return result1;
 	}
 
-	static BaseEntity createTestCompany(GennyToken gennyToken, String name, String phone, String email, String city,
+	public BaseEntity createTestCompany(String name, String phone, String email, String city,
 			String state, String postcode) {
 		String usercode = "CPY_" + UUID.randomUUID().toString().substring(0, 15).toUpperCase().replaceAll("-", "");
 
 		BaseEntity result1 = new BaseEntity(usercode, name);
-		result1.setRealm(gennyToken.getRealm());
+		result1.setRealm(beUtils.getGennyToken().getRealm());
 		try {
-			result1.addAnswer(new Answer(result1, result1, attribute("PRI_EMAIL", gennyToken), email));
-			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_STATE", gennyToken), state));
-			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_CITY", gennyToken), city));
-			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_POSTCODE", gennyToken), postcode));
-			result1.addAnswer(new Answer(result1, result1, attribute("PRI_LANDLINE", gennyToken), phone));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_EMAIL", beUtils.getGennyToken()), email));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_STATE", beUtils.getGennyToken()), state));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_CITY", beUtils.getGennyToken()), city));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_POSTCODE", beUtils.getGennyToken()), postcode));
+			result1.addAnswer(new Answer(result1, result1, attribute("PRI_LANDLINE", beUtils.getGennyToken()), phone));
 		} catch (BadDataException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -666,7 +673,7 @@ public class TableUtils {
 		return result1;
 	}
 
-	private static Attribute attribute(final String attributeCode, GennyToken gToken) {
+	public  Attribute attribute(final String attributeCode, GennyToken gToken) {
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, gToken.getToken());
 		return attribute;
 	}
@@ -868,7 +875,7 @@ public class TableUtils {
 	 * @param serviceToken
 	 * @return
 	 */
-	public static QDataBaseEntityMessage changeQuestion(SearchEntity searchBE, final String frameCode, final Ask ask,
+	public QDataBaseEntityMessage changeQuestion(SearchEntity searchBE, final String frameCode, final Ask ask,
 			GennyToken serviceToken, GennyToken userToken, Set<QDataAskMessage> askMsgs) {
 		Frame3 frame = null;
 		try {
@@ -970,7 +977,7 @@ public class TableUtils {
 	/*
 	 * Generate List of asks from a SearchEntity
 	 */
-	public static List<Ask> generateQuestions(GennyToken userToken, BaseEntityUtils beUtils, List<BaseEntity> bes,
+	public  List<Ask> generateQuestions( List<BaseEntity> bes,
 			Map<String, String> columns, String targetCode) {
 
 		/* initialize an empty ask list */
@@ -1037,7 +1044,7 @@ public class TableUtils {
 		return askList;
 	}
 
-	private static void sendQuestion(String titleQuestionCode, String sourceCode, String targetCode, String attributeCode,
+	private void sendQuestion(String titleQuestionCode, String sourceCode, String targetCode, String attributeCode,
 			GennyToken userToken) {
 		// Set the table title
 		Attribute nameAttribute = RulesUtils.getAttribute(attributeCode, userToken.getToken());
@@ -1056,11 +1063,11 @@ public class TableUtils {
 
 	}
 
-	private static void updateBaseEntity(BaseEntity be, String attributeCode, String value, GennyToken gennyToken) {
-		Attribute attribute = RulesUtils.getAttribute(attributeCode, gennyToken.getToken());
+	private void updateBaseEntity(BaseEntity be, String attributeCode, String value) {
+		Attribute attribute = RulesUtils.getAttribute(attributeCode, beUtils.getGennyToken().getToken());
 		try {
 			be.addAnswer(new Answer(be, be, attribute, value));
-			VertxUtils.putObject(gennyToken.getRealm(), "", be.getCode(), be, gennyToken.getToken());
+			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", be.getCode(), be, beUtils.getGennyToken().getToken());
 
 		} catch (BadDataException e) {
 			// TODO Auto-generated catch block
@@ -1091,43 +1098,42 @@ public class TableUtils {
 
 	public Ask getBucketContentAsk(Map<String, ContextList> contextListMap, GennyToken serviceToken) {
 
-		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken.getToken());
+		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", beUtils.getGennyToken().getToken());
 		Question bucketContentQuestion = new Question("QUE_BUCKET_CONTENT_GRP", "",questionAttribute, true);
 		Ask bucketContentAsk = new Ask(bucketContentQuestion, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
 		return bucketContentAsk;
 	
 	}
 
-	public Ask getBucketHeaderAsk(Map<String, ContextList> contextListMap, GennyToken serviceToken) {
+	public Ask getBucketHeaderAsk(Map<String, ContextList> contextListMap) {
 
-		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
 
-		Theme THM_QUESTION_GRP_LABEL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_QUESTION_GRP_LABEL",
-				Theme.class, serviceToken.getToken());
-		Theme THM_DISPLAY_VERTICAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_VERTICAL", Theme.class,
-				serviceToken.getToken());
-		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_HORIZONTAL",
-				Theme.class, serviceToken.getToken());
-		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_WIDTH_100_PERCENT",
-				Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_ONE_GRP_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_ONE_GRP_WRAPPER",
-				Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_ONE_GRP_LABEL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_ONE_GRP_LABEL",
-				Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
-				"THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER", Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_ONE_VCL_INPUT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_ONE_VCL_INPUT",
-				Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_TWO_VCL_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_TWO_VCL_WRAPPER",
-				Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
-				"THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER", Theme.class, serviceToken.getToken());
-		Theme THM_BH_ROW_TWO_INPUT_FIELD = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_ROW_TWO_INPUT_FIELD",
-				Theme.class, serviceToken.getToken());
-		Theme THM_ICON = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_ICON", Theme.class,
-				serviceToken.getToken());
-		Theme THM_BH_GROUP_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_GROUP_WRAPPER", Theme.class,
-				serviceToken.getToken());
+		Theme THM_QUESTION_GRP_LABEL = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_QUESTION_GRP_LABEL",
+				Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_DISPLAY_VERTICAL = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_DISPLAY_VERTICAL", Theme.class,
+				beUtils.getGennyToken().getToken());
+		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_DISPLAY_HORIZONTAL",
+				Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_WIDTH_100_PERCENT",
+				Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_BH_ROW_ONE_GRP_WRAPPER = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_BH_ROW_ONE_GRP_WRAPPER",
+				Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_BH_ROW_ONE_GRP_LABEL = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_BH_ROW_ONE_GRP_LABEL",
+				Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
+				"THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER", Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_BH_ROW_ONE_VCL_INPUT = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_BH_ROW_ONE_VCL_INPUT",
+				Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_BH_ROW_TWO_VCL_WRAPPER = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_BH_ROW_TWO_VCL_WRAPPER",
+				Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
+				"THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER", Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_BH_ROW_TWO_INPUT_FIELD = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_BH_ROW_TWO_INPUT_FIELD",
+				Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_ICON = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_ICON", Theme.class,
+				beUtils.getGennyToken().getToken());
+		Theme THM_BH_GROUP_WRAPPER = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_BH_GROUP_WRAPPER", Theme.class,
+				beUtils.getGennyToken().getToken());
 		
 		BaseEntity ICN_SORT = beUtils.getBaseEntityByCode("ICN_SORT");
 
@@ -1181,14 +1187,14 @@ public class TableUtils {
 		ValidationList searchValidationList = new ValidationList();
 		searchValidationList.setValidationList(validations);
 
-		Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken.getToken());
-		Attribute sortAttribute = RulesUtils.getAttribute("PRI_SORT", serviceToken.getToken());
-		Attribute nameAttribute = RulesUtils.getAttribute("PRI_NAME", serviceToken.getToken());
+		Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", beUtils.getGennyToken().getToken());
+		Attribute sortAttribute = RulesUtils.getAttribute("PRI_SORT", beUtils.getGennyToken().getToken());
+		Attribute nameAttribute = RulesUtils.getAttribute("PRI_NAME", beUtils.getGennyToken().getToken());
 
 		Attribute searchAttribute = new Attribute("PRI_NAME", "Search", new DataType("Text", searchValidationList, "Text"));
 
-		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken.getToken());
-		Attribute tableCellAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP_TABLE_CELL", serviceToken.getToken());
+		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", beUtils.getGennyToken().getToken());
+		Attribute tableCellAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP_TABLE_CELL", beUtils.getGennyToken().getToken());
 
 		/* Initialize Bucket Header Ask group */
 		Question bucketHeaderQuestion = new Question("QUE_BUCKET_HEADER_GRP", "Bucket Header", questionAttribute, true);
@@ -1232,9 +1238,9 @@ public class TableUtils {
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
 
 		/* get the themes */
-		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_DISPLAY_HORIZONTAL",Theme.class, serviceToken.getToken());
-		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_WIDTH_100_PERCENT",Theme.class, serviceToken.getToken());
-		Theme THM_ICON = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_ICON", Theme.class,serviceToken.getToken());
+		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_DISPLAY_HORIZONTAL",Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_WIDTH_100_PERCENT",Theme.class, beUtils.getGennyToken().getToken());
+		Theme THM_ICON = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", "THM_ICON", Theme.class,beUtils.getGennyToken().getToken());
 		Theme THM_JUSTIFY_CONTENT_SPACE_AROUND = Theme.builder("THM_JUSTIFY_CONTENT_SPACE_AROUND").addAttribute().justifyContent("space-around").end().build();
 
 		/* get the baseentities */

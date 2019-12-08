@@ -453,9 +453,9 @@ public class RulesLoader {
 				/* Using Runtime Environment */
 				runtimeEnvironmentBuilder = RuntimeEnvironmentBuilder.Factory.get().newDefaultBuilder();
 
-				if (!"FALSE".equalsIgnoreCase(System.getenv("USE_EXECUTOR"))) { // default to true if no system env set
+				if (GennySettings.useExecutor) { // default to true if no system env set
 					log.info("USING EXECUTOR!");
-					if (!"FALSE".equalsIgnoreCase(System.getenv("USE_JMS"))) {
+					if (GennySettings.useJMS) {
 						log.info("USING JMS!");
 						System.setProperty("org.kie.executor.jms", "true");
 					} else {
@@ -541,7 +541,7 @@ public class RulesLoader {
 					runtimeManager.close();
 				}
 
-				if (true || "TRUE".equals(System.getenv("USE_SINGLETON"))) { // TODO
+				if (GennySettings.useSingleton) { // TODO
 					log.info("Creating Singleton runtimeManager for " + realm);
 					runtimeManager = RuntimeManagerFactory.Factory.get().newSingletonRuntimeManager(runtimeEnvironment,
 							realm); // TODO
@@ -581,7 +581,7 @@ public class RulesLoader {
 			KieSession kieSession = runtimeEngine.getKieSession();
 			kieSessionMap.put(realm, kieSession);
 
-			if (true || "TRUE".equals(System.getenv("USE_SINGLETON"))) { // TODO
+			if (GennySettings.useSingleton) { // TODO
 
 				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
