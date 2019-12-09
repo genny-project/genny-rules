@@ -135,7 +135,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				validAnswersExist = true;
 				String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
 				answerMap2.put(key, answer);
-				if (answer.getAttributeCode().equals("QUE_SUBMIT")) {
+				if (answer.getAttributeCode().equals("PRI_SUBMIT")) {
 					submitDetected = true;
 				}
 			}

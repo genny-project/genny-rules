@@ -220,6 +220,7 @@ public class TableUtils {
 		if ((askMsgArr.length > 0) && (askMsgArr[0].getItems().length > 0)) {
 			ContextList contextList = askMsgArr[0].getItems()[0].getContextList();
 			headerAskMsg.getItems()[0].setContextList(contextList);
+			headerAskMsg.getItems()[0].setRealm(userToken.getRealm());
 		}
 
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));

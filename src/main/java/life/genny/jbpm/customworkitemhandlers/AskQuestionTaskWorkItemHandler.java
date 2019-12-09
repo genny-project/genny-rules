@@ -60,6 +60,7 @@ import org.kie.internal.task.api.model.InternalTaskData;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.TaskAsk;
+import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QEventMessage;
@@ -232,10 +233,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		
 		// Check if already answered ...
 		BaseEntity target = beUtils.getBaseEntityByCode(newMsg.getTargetCode());
-		Optional<String> value = target.getValue(taskAsk.getAsk().getAttributeCode());
-		if (value.isPresent()) {
+		Optional<EntityAttribute> attributeValue =  target.findEntityAttribute(taskAsk.getAsk().getAttributeCode());
+		//Optional<String> value = target.getValue(taskAsk.getAsk().getAttributeCode());
+		if (attributeValue.isPresent()) {
 			taskAsk.setAnswered(true);
-			taskAsk.setValue(value.get());
+			EntityAttribute ea = attributeValue.get();
+			taskAsk.setValue(ea.getAsString());
 		}
 		// don't add questions that are just groups
 		if (!askMsg.getQuestionCode().endsWith("_GRP")) {
