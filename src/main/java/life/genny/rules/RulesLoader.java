@@ -289,6 +289,7 @@ public class RulesLoader {
 						if ((activeRealms.stream().anyMatch(fileprj::equals))
 								|| ("prj_genny".equalsIgnoreCase(fileName))) {
 							localRealm = fileName.substring("prj_".length()).toLowerCase(); // extract realm name
+							log.info("LocalRealm changed to "+localRealm);
 						} else {
 							continue;
 						}
@@ -712,7 +713,7 @@ public class RulesLoader {
 
 		if (RUNTIME_MANAGER_ON) {
 
-			if (true || "TRUE".equals(System.getenv("USE_SINGLETON"))) { // TODO
+			if (GennySettings.useSingleton) { // TODO
 				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getId());
 				  kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
@@ -851,7 +852,7 @@ public class RulesLoader {
 					else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
 
 						/* Running init_project workflow */
-
+						log.info("initProject Events! with facts="+facts);
 						kieSession.signalEvent("initProject", facts);
 					} else {
 						log.info("Invalid Events coming in");
@@ -1096,7 +1097,7 @@ public class RulesLoader {
 
 	public void initMsg(final String msgType, String realm, final Object msg) {
 
-		log.info("INIT MSG with Stateless");
+		log.info("INIT MSG with Stateful");
 		// Service Token
 		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
 		String serviceToken = tokenObj.getString("value");
@@ -1465,6 +1466,11 @@ public class RulesLoader {
 			String token = tokenObj.getString("value");
 			realmTokenMap.put(realm, token);
 		}
+		
+		if ("init_project.bpmn".equals(filename)) {
+			log.info("DETECTED INIT_PROJECT");
+		}
+		
 		// get kie type
 		String ext = filename.substring(filename.lastIndexOf(".") + 1);
 		String kieType = ext.toUpperCase();

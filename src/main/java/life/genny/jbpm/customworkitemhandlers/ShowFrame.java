@@ -91,7 +91,13 @@ public class ShowFrame implements WorkItemHandler {
 
 	public static void display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow) {
-		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, null);
+		OutputParam output = new OutputParam();
+
+		
+		output.setTypeOfResult("FORMCODE");
+		output.setResultCode(rootFrameCode);
+		output.setTargetCode(targetFrameCode);
+		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output);
 	}
 	/**
 	 * @param userToken
@@ -101,6 +107,8 @@ public class ShowFrame implements WorkItemHandler {
 	 */
 	public static void display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output) {
+
+		
 		if (userToken == null) {
 			log.error(callingWorkflow + ": Must supply userToken!");
 
@@ -292,6 +300,7 @@ public class ShowFrame implements WorkItemHandler {
 				askMsg.setToken(userToken.getToken());
 				String json = JsonUtils.toJson(askMsg);
 				String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
+				log.info("ShowFrame: Setting outgoing Asks to have "+sourceCode+":"+targetCode);
 				if (sourceCode!=null) {																		// user
 					jsonStr = jsonStr.replaceAll("PER_SOURCE", sourceCode);
 				}
@@ -315,7 +324,7 @@ public class ShowFrame implements WorkItemHandler {
 		}.getType();
 
 		String askMsgs2Str = null;
-		if ("TRUE".equalsIgnoreCase(System.getenv("FORCE_CACHE_USE_API"))) { // if in junit then use the bridge to fetch
+		if (GennySettings.forceCacheApi) { // if in junit then use the bridge to fetch
 																				// cache data
  			log.info("Forcing ASKS to be read from api call to cache");
 //						askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
@@ -352,7 +361,8 @@ public class ShowFrame implements WorkItemHandler {
 								userToken.getToken());
 						Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
 						if (rootFrame.getCode().startsWith("FRM_QUE_")) {
-							FrameUtils2.toMessage(rootFrame, userToken,"PER_SOURCE","PER_TARGET",true);
+							
+							FrameUtils2.toMessage2(rootFrame, userToken,"PER_SOURCE","PER_TARGET");
 						} else {
 							Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
 							FrameUtils2.toMessage(rootFrame, userToken, contextListMap,"PER_SERVICE","PER_SERVICE",true);

@@ -221,7 +221,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		json = json.replaceAll("PER_TARGET", baseEntityTargetCode);
 		json = json.replaceAll("PER_SERVICE", baseEntitySourceCode);
 		Ask newMsg = JsonUtils.fromJson(json, Ask.class);
-		String key = newMsg.getSourceCode()+":"+newMsg.getTargetCode()+":"+newMsg.getAttributeCode();
+		String key = baseEntitySourceCode+":"+baseEntityTargetCode+":"+newMsg.getAttributeCode();
 		// work out whether an Ask has already got a value for that attribute
 		Boolean answered = false;
 		
