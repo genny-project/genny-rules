@@ -162,6 +162,12 @@ public class BucketUtils {
 					
 			Theme THM_FLEX_ONE_INHERITABLE = VertxUtils.getObject(serviceToken.getRealm(), "",
 					"THM_FLEX_ONE_INHERITABLE", Theme.class, serviceToken.getToken());
+			
+			Theme THM_DROPDOWN_ICON_MORE_HORIZ = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_DROPDOWN_ICON_MORE_HORIZ", Theme.class, serviceToken.getToken());
+			
+			Theme THM_EXPANDABLE_ICON = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_EXPANDABLE_ICON", Theme.class, serviceToken.getToken());
 
 			/* cardContext */
 			List<Context> cardContext = new ArrayList<>();
@@ -219,6 +225,8 @@ public class BucketUtils {
 					bucketUtils.getThemeBe(THM_DROPDOWN_PROFILE_BEHAVIOUR_GENNY), VisualControlType.GROUP, 1.0));
 			cardRightContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_PROJECT_COLOR_SURFACE),
 					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+			cardRightContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DROPDOWN_ICON_MORE_HORIZ),
+					VisualControlType.GROUP_ICON, 1.0));
 
 			/* cardBottomContext */
 			List<Context> cardBottomContext = new ArrayList<>();
@@ -230,6 +238,8 @@ public class BucketUtils {
 					VisualControlType.GROUP, 1.0));
 			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_PADDING_X_10),
 					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_EXPANDABLE_ICON),
+					VisualControlType.GROUP_ICON, 1.0));
 
 			contextListMap.put("QUE_CARD_APPLICATION_TEMPLATE_GRP", new ContextList(cardContext));
 			contextListMap.put("QUE_CARD_STATUS_GRP", new ContextList(cardStatusContext));
