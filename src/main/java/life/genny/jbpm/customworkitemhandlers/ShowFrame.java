@@ -213,7 +213,7 @@ public class ShowFrame implements WorkItemHandler {
 						}
 					}
 
-					log.info(callingWorkflow + ": ShowFrame!!! : " + rootFrameCode + ":" + targetFrameCode);
+					log.info(callingWorkflow + ": ShowFrame !!!!! : " + rootFrameCode + ":" + targetFrameCode);
 
 					FRM_MSG.setToken(userToken.getToken());
 
