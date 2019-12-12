@@ -375,7 +375,7 @@ public class BucketUtils {
 				cardCentreAsk.setChildAsks(cardCentreChildAsks);
 				cardCentreAsk.setTargetCode(app.getTargetCode());
 
-				Ask[] cardBottomChildAsks = { attributeList.get(6), attributeList.get(7), attributeList.get(8) };
+				Ask[] cardBottomChildAsks = { attributeList.get(6), attributeList.get(7), attributeList.get(8), attributeList.get(9) };
 				cardBottomAsk.setReadonly(true);
 				cardBottomAsk.setChildAsks(cardBottomChildAsks);
 				cardBottomAsk.setTargetCode(app.getTargetCode());
