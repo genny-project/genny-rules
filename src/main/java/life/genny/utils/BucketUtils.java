@@ -403,6 +403,8 @@ public class BucketUtils {
 		List<SearchEntity> bucketSearchBeList = new ArrayList<SearchEntity>();
 
 		try {
+			SearchEntity SBE_AVAILABLE_INTERNS = VertxUtils.getObject(serviceToken.getRealm(), "",
+							"SBE_AVAILABLE_INTERNS", SearchEntity.class, serviceToken.getToken());
 			SearchEntity SBE_APPLIED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
 					"SBE_APPLIED_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
 			SearchEntity SBE_SHORTLISTED_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
@@ -416,6 +418,7 @@ public class BucketUtils {
 			SearchEntity SBE_INPROGRESS_APPLICATIONS = VertxUtils.getObject(serviceToken.getRealm(), "",
 					"SBE_INPROGRESS_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
 
+			bucketSearchBeList.add(SBE_AVAILABLE_INTERNS);
 			bucketSearchBeList.add(SBE_APPLIED_APPLICATIONS);
 			bucketSearchBeList.add(SBE_SHORTLISTED_APPLICATIONS);
 			bucketSearchBeList.add(SBE_INTERVIEWED_APPLICATIONS);
