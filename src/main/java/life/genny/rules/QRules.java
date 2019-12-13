@@ -149,7 +149,7 @@ public class QRules implements Serializable {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
-	public static final String projectUrl = System.getenv("PROJECT_URL");
+	public static final String projectUrl = GennySettings.projectUrl;
 
 	final static String DEFAULT_STATE = "NEW";
 
@@ -5245,7 +5245,7 @@ public class QRules implements Serializable {
 		/* Force these capabilities to exist */
 		List<Attribute> capabilityManifest = new ArrayList<Attribute>();
 
-		String proj_realm = System.getenv("PROJECT_REALM");
+		String proj_realm = GennySettings.mainrealm;
 		String token = RulesUtils.generateServiceToken(proj_realm, getToken());
 
 		addCapability(capabilityManifest, "ADD_QUOTE", "Allowed to post a quote", token);
