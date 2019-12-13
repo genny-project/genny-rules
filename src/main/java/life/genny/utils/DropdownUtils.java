@@ -94,7 +94,7 @@ public class DropdownUtils {
 	private QDataBaseEntityMessage setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
 			String linkValue, GennyToken gennyToken) {
 		
-		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode("PER_USER1");
+		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);
 		Set<EntityEntity> childLinks = new HashSet<>();
 		double index = 0.0;
 
