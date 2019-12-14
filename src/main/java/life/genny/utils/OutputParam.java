@@ -1,6 +1,8 @@
 package life.genny.utils;
 
 import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class OutputParam implements Serializable,Comparable {
@@ -16,6 +18,8 @@ public class OutputParam implements Serializable,Comparable {
 	private String targetCode = "DUMMY";
 	
 	private Long taskId = -1L;
+	
+	private Map<String,String> attributeTargetCodeMap = new ConcurrentHashMap<String,String>();
 
 	public OutputParam()
 	{
@@ -135,6 +139,23 @@ public class OutputParam implements Serializable,Comparable {
 			taskId = -1L;
 		}
 		this.taskId = taskId;
+	}
+
+	
+	
+	
+	/**
+	 * @return the attributeTargetCodeMap
+	 */
+	public Map<String, String> getAttributeTargetCodeMap() {
+		return attributeTargetCodeMap;
+	}
+
+	/**
+	 * @param attributeTargetCodeMap the attributeTargetCodeMap to set
+	 */
+	public void setAttributeTargetCodeMap(Map<String, String> attributeTargetCodeMap) {
+		this.attributeTargetCodeMap = attributeTargetCodeMap;
 	}
 
 	@Override

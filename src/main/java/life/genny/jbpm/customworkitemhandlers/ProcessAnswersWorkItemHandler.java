@@ -345,16 +345,16 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			// Check that the form answer is allowed
 			// ugly hack
 			Boolean uglySkip = false;
-			if (answerMap.values().size() == 1) {
-				String key = answerMap.keySet().toArray(new String[0])[0];
+			if (answerMap2.values().size() == 1) {
+				String key = answerMap2.keySet().toArray(new String[0])[0];
 				String[] keySplit = key.split(":");
 				if ("PRI_SUBMIT".equals(keySplit[2])) {
 					uglySkip = true;
 				}
 			}
-			if ((!uglySkip) && (!answerMap.values().isEmpty())) { // don't save submit button
+			if ((!uglySkip) && (!answerMap2.values().isEmpty())) { // don't save submit button
 				synchronized (this) {
-					beUtils.saveAnswers(new ArrayList<>(answerMap.values()));
+					beUtils.saveAnswers(new ArrayList<>(answerMap2.values()));
 				}
 			}
 		}

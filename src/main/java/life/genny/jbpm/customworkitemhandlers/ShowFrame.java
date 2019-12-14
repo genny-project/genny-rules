@@ -298,19 +298,64 @@ public class ShowFrame implements WorkItemHandler {
 					}
 				}
 				askMsg.setToken(userToken.getToken());
-				String json = JsonUtils.toJson(askMsg);
-				String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
-				log.info("ShowFrame: Setting outgoing Asks to have "+sourceCode+":"+targetCode);
-				if (sourceCode!=null) {																		// user
-					jsonStr = jsonStr.replaceAll("PER_SOURCE", sourceCode);
-				}
-				if (targetCode!=null) {																		// user
-					jsonStr = jsonStr.replaceAll("PER_TARGET", targetCode);
-				}
+				
+				
+				String jsonStr = updateSourceAndTarget(askMsg,sourceCode, targetCode, output, userToken);
+
+
 
 				VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 			}
 		}
+	}
+
+	private static void updateTargetInAsk(Ask ask, String sourceCode, String targetCode,
+			OutputParam output, GennyToken userToken) {
+			String attributeCode = ask.getAttributeCode();
+			String askTargetCode = output.getAttributeTargetCodeMap().get(attributeCode);
+			if (askTargetCode!=null) {
+				ask.setTargetCode(askTargetCode);
+			} else if (targetCode != null){
+				ask.setTargetCode(targetCode);
+			} else {
+				ask.setTargetCode(userToken.getUserCode());
+			}
+
+		if ((ask.getChildAsks()!=null)&&(ask.getChildAsks().length >0)) {
+			for (Ask childAsk : ask.getChildAsks()) {
+				updateTargetInAsk(childAsk,sourceCode,targetCode,output,userToken);
+			}
+		}
+	}
+	
+	private static String updateSourceAndTarget(QDataAskMessage askMsg, String sourceCode, String targetCode,
+			OutputParam output, GennyToken userToken) {
+		
+		if (!output.getAttributeTargetCodeMap().keySet().isEmpty()) {
+			for (Ask ask : askMsg.getItems()) {
+				updateTargetInAsk(ask,sourceCode,targetCode,output,userToken);
+			}
+			
+		}
+		
+		
+		
+		String json = JsonUtils.toJson(askMsg);
+
+		String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
+		
+		log.info("ShowFrame: Setting outgoing Asks to have "+sourceCode+":"+targetCode);
+		if (sourceCode!=null) {																		// user
+			jsonStr = jsonStr.replaceAll("PER_SOURCE", sourceCode);
+		}else {
+			jsonStr = jsonStr.replaceAll("PER_SOURCE", userToken.getUserCode());
+		}
+		if (targetCode!=null) {																		// user
+			jsonStr = jsonStr.replaceAll("PER_TARGET", targetCode);
+		} else {
+			jsonStr = jsonStr.replaceAll("PER_TARGET", userToken.getUserCode());	
+		}
+		return jsonStr;
 	}
 
 	/**
