@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.persistence.EntityManager;
 
@@ -109,18 +110,37 @@ public class CheckTasksWorkItemHandler implements WorkItemHandler {
 		if (tasks.isEmpty()) {
 			resultMap.put("output", output);  // if no tasks then ensure output passed in is passed through
 		} else {
-			for (TaskSummary taskSummary : tasks) {
+			for (TaskSummary taskSummary : tasks) { // need to sort by prioritise
 
 				Task task = taskService.getTaskById(taskSummary.getId());
 				log.info(callingWorkflow + " Pending Task for " + userToken.getUserCode() + " = " + task.getFormName());
 				String formName = task.getFormName();
+				Long docId = task.getTaskData().getDocumentContentId();
+				Content c = taskService.getContentById(docId);
+				if (c == null) {
+					log.error("*************** Task content is NULL *********** ABORTING");
+					return;
+				}
+				HashMap<String, Object> taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
+						.unmarshall(c.getContent(), null);
+				ConcurrentHashMap<String,Object> taskAsks = new ConcurrentHashMap<String,Object>(taskAsks2);
+				Map<String,String> attributeTargetCodeMap = new ConcurrentHashMap<String,String>();
+				for (String key : taskAsks.keySet()) {
+
+					if (taskAsks.get(key) instanceof String) {
+						continue;
+					}
+					TaskAsk taskAsk = (TaskAsk) taskAsks.get(key);
+					attributeTargetCodeMap.put(taskAsk.getAsk().getAttributeCode(),taskAsk.getAsk().getTargetCode());
+				}
 				output = new OutputParam();
 				output.setTypeOfResult("FORMCODE");
 				output.setResultCode(formName);
 				output.setTargetCode("FRM_CONTENT");
+				output.setAttributeTargetCodeMap( attributeTargetCodeMap);
 				resultMap.put("output", output);
 			}
-			if (resultMap.get("oputput")==null) {
+			if (resultMap.get("output")==null) {
 				resultMap.put("output", output); // TODO, ugly
 			}
 
