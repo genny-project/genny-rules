@@ -3,6 +3,7 @@ package life.genny.model;
 import java.io.Serializable;
 import java.util.Optional;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import com.github.javaparser.utils.Log;
 
@@ -13,11 +14,13 @@ public class OutputParamTreeSet implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	TreeSet<OutputParam> tree;
+	ConcurrentSkipListSet<OutputParam> tree;
+//	TreeSet<OutputParam> tree;
 	OutputParam last = null;
 
 	public OutputParamTreeSet() {
-		tree = new TreeSet<OutputParam>();
+		tree = new ConcurrentSkipListSet<OutputParam>();
+	//	tree = new TreeSet<OutputParam>();
 		OutputParam root = new OutputParam();
 		root.setFormCode("FRM_APP", "FRM_ROOT");
 		root.setLevel(0);
@@ -25,7 +28,8 @@ public class OutputParamTreeSet implements Serializable {
 	}
 
 	public OutputParamTreeSet(final String rootFrameCode) {
-		tree = new TreeSet<OutputParam>();
+		tree = new ConcurrentSkipListSet<OutputParam>();
+		//tree = new TreeSet<OutputParam>();
 		OutputParam root = new OutputParam();
 		root.setFormCode(rootFrameCode, "FRM_ROOT");
 		root.setLevel(0);
@@ -35,14 +39,14 @@ public class OutputParamTreeSet implements Serializable {
 	/**
 	 * @return the tree
 	 */
-	public TreeSet<OutputParam> getTree2() {
+	public ConcurrentSkipListSet<OutputParam> getTree2() {
 		return tree;
 	}
 
 	/**
 	 * @param tree the tree to set
 	 */
-	public void setTree(TreeSet<OutputParam> tree) {
+	public void setTree(ConcurrentSkipListSet<OutputParam> tree) {
 		this.tree = tree;
 	}
 

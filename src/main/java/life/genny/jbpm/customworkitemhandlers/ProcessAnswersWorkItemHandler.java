@@ -128,7 +128,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		Map<String, Answer> answerMap2 = new ConcurrentHashMap<String, Answer>();
 		Boolean exitOut = false;
 		Boolean submitDetected = false;
-		for (Answer answer : answersToSave.getAnswers()) {
+		List<Answer> answersToSave2 = new ArrayList<>(answersToSave.getAnswers());
+		for (Answer answer : answersToSave2) {
 			Boolean validAnswer = validate(answer, userToken);
 			// Quick and dirty ...
 			if (validAnswer) {
