@@ -42,6 +42,7 @@ import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
+import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
@@ -511,16 +512,25 @@ public class ShowFrame implements WorkItemHandler {
 		if (attribute != null) {
 			DataType dt = attribute.getDataType();
 			log.info("DATATYPE IS " + dt);
+			List<Validation> vl = dt.getValidationList();
+			if ((vl!=null)&&(vl.get(0)!=null)) {
+					Validation val = vl.get(0);
+					if ((val.getSelectionBaseEntityGroupList()!=null)&&(!val.getSelectionBaseEntityGroupList().isEmpty())) {
+						String groupCode = val.getSelectionBaseEntityGroupList().get(0);
+					
+			
 			DropdownUtils dropDownUtils = new DropdownUtils();
 			dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items")
 					.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%")
-					.setSourceCode("GRP_DEGREE_SELECTION").setPageStart(0).setPageSize(10000);
+					.setSourceCode(groupCode).setPageStart(0).setPageSize(10000);
 			try {
-				dropDownUtils.sendSearchResults("GRP_DEGREE_SELECTION", "LNK_CORE", "DEGREE", userToken);
+				dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "DEGREE", userToken);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			}
+		}
 		}
 	}
 
