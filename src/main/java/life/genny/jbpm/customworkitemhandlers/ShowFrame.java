@@ -38,6 +38,7 @@ import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
+import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
@@ -47,10 +48,15 @@ import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.QRules;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.DropdownUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.OutputParam;
+import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 import life.genny.models.FramePosition;
+
+import org.mentaregex.*;
+import static org.mentaregex.Regex.*;
 
 public class ShowFrame implements WorkItemHandler {
 
@@ -95,12 +101,12 @@ public class ShowFrame implements WorkItemHandler {
 			String callingWorkflow) {
 		OutputParam output = new OutputParam();
 
-		
 		output.setTypeOfResult("FORMCODE");
 		output.setResultCode(rootFrameCode);
 		output.setTargetCode(targetFrameCode);
 		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output);
 	}
+
 	/**
 	 * @param userToken
 	 * @param rootFrameCode
@@ -110,7 +116,6 @@ public class ShowFrame implements WorkItemHandler {
 	public static void display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output) {
 
-		
 		if (userToken == null) {
 			log.error(callingWorkflow + ": Must supply userToken!");
 
@@ -153,13 +158,12 @@ public class ShowFrame implements WorkItemHandler {
 							return;
 						}
 					}
-					if (frame.getCode()==null) {
+					if (frame.getCode() == null) {
 						frame = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode, Frame3.class,
 								userToken.getToken());
 
-
 						log.error("frame.getCode() in display  is null ");
-					//	return;
+						// return;
 					}
 					FrameUtils2.toMessage2(frame, userToken);
 					FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
@@ -225,11 +229,11 @@ public class ShowFrame implements WorkItemHandler {
 					String payload = JsonUtils.toJson(FRM_MSG);
 					JSONObject js = new JSONObject(payload);
 					String payload2 = js.toString();
-					if (payload2!=null) {
+					if (payload2 != null) {
 						VertxUtils.writeMsg("webcmds", payload2);
 					}
 
-					sendAsks(rootFrameCode, userToken, callingWorkflow,output);
+					sendAsks(rootFrameCode, userToken, callingWorkflow, output);
 
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
@@ -246,8 +250,9 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param userToken
 	 * @param callingWorkflow
 	 */
-	private static void sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow, OutputParam output) {
-		
+	private static void sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow,
+			OutputParam output) {
+
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
 			return;
@@ -256,14 +261,14 @@ public class ShowFrame implements WorkItemHandler {
 		TaskService taskService;
 		Task task = null;
 		Map<String, Object> taskAsks = null;
-		Map<String,TaskAsk> attributeTaskAskMap = null;
+		Map<String, TaskAsk> attributeTaskAskMap = null;
 		String sourceCode = null;
 		String targetCode = null;
-		
+
 		if ((output != null)) {
-			if ((output.getTaskId()!=null)&&(output.getTaskId()>0L)) {
+			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
-				task =  taskService.getTaskById(output.getTaskId());
+				task = taskService.getTaskById(output.getTaskId());
 				// Now get the TaskAsk that relates to this specific Ask
 				// assume that all attributes have the same source and target
 				Long docId = task.getTaskData().getDocumentContentId();
@@ -272,14 +277,13 @@ public class ShowFrame implements WorkItemHandler {
 					log.error("*************** Task content is NULL *********** ABORTING");
 					return;
 				}
-				taskAsks = (HashMap<String, Object>) ContentMarshallerHelper
-						.unmarshall(c.getContent(), null);
+				taskAsks = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
 				for (String key : taskAsks.keySet()) {
 					Object obj = taskAsks.get(key);
 					if (obj instanceof TaskAsk) { // This gets around my awful formcode values
-						TaskAsk taskAsk = (TaskAsk)taskAsks.get(key);
+						TaskAsk taskAsk = (TaskAsk) taskAsks.get(key);
 						String attributeStr = taskAsk.getAsk().getAttributeCode();
-						//	attributeTaskAskMap.put(attributeStr,taskAsk);
+						// attributeTaskAskMap.put(attributeStr,taskAsk);
 						sourceCode = taskAsk.getAsk().getSourceCode();
 						targetCode = taskAsk.getAsk().getTargetCode();
 					}
@@ -300,12 +304,11 @@ public class ShowFrame implements WorkItemHandler {
 					}
 				}
 				askMsg.setToken(userToken.getToken());
-				
-				
-				String jsonStr = updateSourceAndTarget(askMsg,sourceCode, targetCode, output, userToken);
+
+				String jsonStr = updateSourceAndTarget(askMsg, sourceCode, targetCode, output, userToken);
 
 				// Find all the target be's to send
-				Set<String> beCodes =  new HashSet<String>();
+				Set<String> beCodes = new HashSet<String>();
 				// The user will already be there
 				if ((targetCode != null)) {
 					beCodes.add(targetCode);
@@ -324,8 +327,17 @@ public class ShowFrame implements WorkItemHandler {
 					QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(besToSend);
 					beMsg.setToken(userToken.getToken());
 					beMsg.setReplace(true);
-					VertxUtils.writeMsg("webdata",JsonUtils.toJson(beMsg));
-					
+					VertxUtils.writeMsg("webdata", JsonUtils.toJson(beMsg));
+
+				}
+
+				// find any select Attributes, find their selection Baseentities and send
+				String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
+				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
+					for (String dropdownCode : dropdownCodes) {
+						dropdownCode = dropdownCode.replaceAll("\"","");
+						sendSelectionItems(dropdownCode, userToken);
+					}
 				}
 
 				VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
@@ -333,51 +345,49 @@ public class ShowFrame implements WorkItemHandler {
 		}
 	}
 
-	private static void updateTargetInAsk(Ask ask, String sourceCode, String targetCode,
-			OutputParam output, GennyToken userToken) {
-			String attributeCode = ask.getAttributeCode();
-			String askTargetCode = output.getAttributeTargetCodeMap().get(attributeCode);
-			if (askTargetCode!=null) {
-				ask.setTargetCode(askTargetCode);
-			} else if (targetCode != null){
-				ask.setTargetCode(targetCode);
-			} else {
-				ask.setTargetCode(userToken.getUserCode());
-			}
+	private static void updateTargetInAsk(Ask ask, String sourceCode, String targetCode, OutputParam output,
+			GennyToken userToken) {
+		String attributeCode = ask.getAttributeCode();
+		String askTargetCode = output.getAttributeTargetCodeMap().get(attributeCode);
+		if (askTargetCode != null) {
+			ask.setTargetCode(askTargetCode);
+		} else if (targetCode != null) {
+			ask.setTargetCode(targetCode);
+		} else {
+			ask.setTargetCode(userToken.getUserCode());
+		}
 
-		if ((ask.getChildAsks()!=null)&&(ask.getChildAsks().length >0)) {
+		if ((ask.getChildAsks() != null) && (ask.getChildAsks().length > 0)) {
 			for (Ask childAsk : ask.getChildAsks()) {
-				updateTargetInAsk(childAsk,sourceCode,targetCode,output,userToken);
+				updateTargetInAsk(childAsk, sourceCode, targetCode, output, userToken);
 			}
 		}
 	}
-	
+
 	private static String updateSourceAndTarget(QDataAskMessage askMsg, String sourceCode, String targetCode,
 			OutputParam output, GennyToken userToken) {
-		
+
 		if (!output.getAttributeTargetCodeMap().keySet().isEmpty()) {
 			for (Ask ask : askMsg.getItems()) {
-				updateTargetInAsk(ask,sourceCode,targetCode,output,userToken);
+				updateTargetInAsk(ask, sourceCode, targetCode, output, userToken);
 			}
-			
+
 		}
-		
-		
-		
+
 		String json = JsonUtils.toJson(askMsg);
 
 		String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
-		
-		log.info("ShowFrame: Setting outgoing Asks to have "+sourceCode+":"+targetCode);
-		if (sourceCode!=null) {																		// user
+
+		log.info("ShowFrame: Setting outgoing Asks to have " + sourceCode + ":" + targetCode);
+		if (sourceCode != null) { // user
 			jsonStr = jsonStr.replaceAll("PER_SOURCE", sourceCode);
-		}else {
+		} else {
 			jsonStr = jsonStr.replaceAll("PER_SOURCE", userToken.getUserCode());
 		}
-		if (targetCode!=null) {																		// user
+		if (targetCode != null) { // user
 			jsonStr = jsonStr.replaceAll("PER_TARGET", targetCode);
 		} else {
-			jsonStr = jsonStr.replaceAll("PER_TARGET", userToken.getUserCode());	
+			jsonStr = jsonStr.replaceAll("PER_TARGET", userToken.getUserCode());
 		}
 		return jsonStr;
 	}
@@ -394,8 +404,8 @@ public class ShowFrame implements WorkItemHandler {
 
 		String askMsgs2Str = null;
 		if (GennySettings.forceCacheApi) { // if in junit then use the bridge to fetch
-																				// cache data
- 			log.info("Forcing ASKS to be read from api call to cache");
+											// cache data
+			log.info("Forcing ASKS to be read from api call to cache");
 //						askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
 //						String.class, userToken.getToken());
 			try {
@@ -425,23 +435,25 @@ public class ShowFrame implements WorkItemHandler {
 					JsonObject json = new JsonObject(askMsgs2Str);
 					askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
 					if (askMsgs2Str == null) {
-						log.error("No Asks in cache - asking api to generate and refresh cache for "+rootFrameCode + "_ASKS");
-						String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
-								userToken.getToken());
+						log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode
+								+ "_ASKS");
+						String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
+								rootFrameCode, userToken.getToken());
 						Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
 						if (rootFrame.getCode().startsWith("FRM_QUE_")) {
-							
-							FrameUtils2.toMessage2(rootFrame, userToken,"PER_SOURCE","PER_TARGET");
+
+							FrameUtils2.toMessage2(rootFrame, userToken, "PER_SOURCE", "PER_TARGET");
 						} else {
 							Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
-							FrameUtils2.toMessage(rootFrame, userToken, contextListMap,"PER_SERVICE","PER_SERVICE",true);
+							FrameUtils2.toMessage(rootFrame, userToken, contextListMap, "PER_SERVICE", "PER_SERVICE",
+									true);
 
-							//FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
+							// FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
 						}
-						askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS",
-								userToken.getToken());
-						if (askMsgs2Str==null) {
-							log.error("Frame ASKS for "+rootFrameCode+" is just not happening...");
+						askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
+								rootFrameCode + "_ASKS", userToken.getToken());
+						if (askMsgs2Str == null) {
+							log.error("Frame ASKS for " + rootFrameCode + " is just not happening...");
 							return new HashSet<QDataAskMessage>();
 						}
 					}
@@ -492,6 +504,24 @@ public class ShowFrame implements WorkItemHandler {
 
 	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
 		// Do nothing, notifications cannot be aborted
+	}
+
+	private static void sendSelectionItems(String attributeCode, GennyToken userToken) {
+		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken.getToken());
+		if (attribute != null) {
+			DataType dt = attribute.getDataType();
+			log.info("DATATYPE IS " + dt);
+			DropdownUtils dropDownUtils = new DropdownUtils();
+			dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items")
+					.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%")
+					.setSourceCode("GRP_DEGREE_SELECTION").setPageStart(0).setPageSize(10000);
+			try {
+				dropDownUtils.sendSearchResults("GRP_DEGREE_SELECTION", "LNK_CORE", "DEGREE", userToken);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
 }
