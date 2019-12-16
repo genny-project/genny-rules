@@ -247,7 +247,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					}
 				}
 				
-				answerMap2.keySet().removeAll(answerMap.keySet());
+				
 				log.info(callingWorkflow + " Saving " + validAnswers.size() + " Valid Answers ...");
 
 				if (validAnswers.size() > 0) {
@@ -343,6 +343,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 		}
 
+		answerMap2.keySet().removeAll(answerMap.keySet());
+		
 		if (validAnswersExist) {
 			// Check that the form answer is allowed
 			// ugly hack

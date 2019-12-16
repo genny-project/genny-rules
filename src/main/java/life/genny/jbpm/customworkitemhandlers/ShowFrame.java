@@ -3,8 +3,10 @@ package life.genny.jbpm.customworkitemhandlers;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -302,7 +304,29 @@ public class ShowFrame implements WorkItemHandler {
 				
 				String jsonStr = updateSourceAndTarget(askMsg,sourceCode, targetCode, output, userToken);
 
-
+				// Find all the target be's to send
+				Set<String> beCodes =  new HashSet<String>();
+				// The user will already be there
+				if ((targetCode != null)) {
+					beCodes.add(targetCode);
+				}
+				if (!output.getAttributeTargetCodeMap().keySet().isEmpty()) {
+					beCodes.addAll(output.getAttributeTargetCodeMap().values());
+				}
+				beCodes.remove(userToken.getUserCode()); // no need to send the user
+				if (!beCodes.isEmpty()) {
+					List<BaseEntity> besToSend = new ArrayList<BaseEntity>();
+					BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+					for (String tCode : beCodes) {
+						BaseEntity be = beUtils.getBaseEntityByCode(tCode);
+						besToSend.add(be);
+					}
+					QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(besToSend);
+					beMsg.setToken(userToken.getToken());
+					beMsg.setReplace(true);
+					VertxUtils.writeMsg("webdata",JsonUtils.toJson(beMsg));
+					
+				}
 
 				VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 			}
