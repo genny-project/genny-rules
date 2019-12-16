@@ -168,7 +168,31 @@ public class BucketUtils {
 			
 			Theme THM_EXPANDABLE_ICON = VertxUtils.getObject(serviceToken.getRealm(), "",
 					"THM_EXPANDABLE_ICON", Theme.class, serviceToken.getToken());
+			
+			Theme THM_PROGRESS_VCL_INPUT = Theme.builder("THM_PROGRESS_VCL_INPUT")
+																	.addAttribute()
+																		.sections(12)
+																		.color("green")
+																	.end()
+																	.addAttribute(ThemeAttributeType.PRI_IS_INHERITABLE, false).end()
+																	.build();  
 
+			Theme THM_PROGRESS_INPUT_WRAPPER = Theme.builder("THM_PROGRESS_INPUT_WRAPPER")
+																	.addAttribute()
+																		.padding(10)
+																	.end()
+																	.addAttribute(ThemeAttributeType.PRI_IS_INHERITABLE, false).end()
+																	.build();   
+
+
+			/* prepare context for progress bar */
+			Context progressVclInputContext = new Context(ContextType.THEME,
+					bucketUtils.getThemeBe(THM_PROGRESS_VCL_INPUT), VisualControlType.VCL_INPUT, 1.0);
+			progressVclInputContext.setDataType("Progress");
+			Context progressInputWrapperContext = new Context(ContextType.THEME,
+					bucketUtils.getThemeBe(THM_PROGRESS_INPUT_WRAPPER), VisualControlType.INPUT_WRAPPER, 1.0);
+			progressInputWrapperContext.setDataType("Progress");
+			
 			/* cardContext */
 			List<Context> cardContext = new ArrayList<>();
 			cardContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DISPLAY_HORIZONTAL),
@@ -240,6 +264,8 @@ public class BucketUtils {
 					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_EXPANDABLE_ICON),
 					VisualControlType.GROUP_ICON, 1.0));
+			cardBottomContext.add(progressVclInputContext);
+			cardBottomContext.add(progressInputWrapperContext);		
 
 			contextListMap.put("QUE_CARD_APPLICATION_TEMPLATE_GRP", new ContextList(cardContext));
 			contextListMap.put("QUE_CARD_STATUS_GRP", new ContextList(cardStatusContext));
