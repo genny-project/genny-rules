@@ -84,6 +84,7 @@ public class DropdownUtils {
 			return beMessage;
 			
 		} else {
+			
 			return null;
 		}
 	}
@@ -95,31 +96,39 @@ public class DropdownUtils {
 			String linkValue, GennyToken gennyToken) {
 		
 		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);
-		Set<EntityEntity> childLinks = new HashSet<>();
-		double index = 0.0;
-
-		/* creating a dumb attribute for linking the search results to the parent */
-		Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
-
-		for (BaseEntity be : beMsg.getItems()) {
+		if(parentBe != null) {
+			Set<EntityEntity> childLinks = new HashSet<>();
+			double index = 0.0;
+	
+			/* creating a dumb attribute for linking the search results to the parent */
+			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
+	
+			for (BaseEntity be : beMsg.getItems()) {
+				
+				EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
+	
+				/* creating link for child */
+				Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
+	
+				/* adding link */
+				ee.setLink(link);
+	
+				/* adding child link to set of links */
+				childLinks.add(ee);
+	
+				index++;
+			}
+	
+			parentBe.setLinks(childLinks);
+			beMsg.add(parentBe);
+			return beMsg;
 			
-			EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
-
-			/* creating link for child */
-			Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
-
-			/* adding link */
-			ee.setLink(link);
-
-			/* adding child link to set of links */
-			childLinks.add(ee);
-
-			index++;
+		}else {
+			
+			log.error("Unable to fetch Parent BaseEntity : parentCode");
+			return null;
 		}
-
-		parentBe.setLinks(childLinks);
-		beMsg.add(parentBe);
-		return beMsg;
+		
 	}
 	
 	private void writeToVertx(String channel, QDataBaseEntityMessage msg){
