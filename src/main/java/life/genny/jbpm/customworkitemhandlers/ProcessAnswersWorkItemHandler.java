@@ -38,11 +38,16 @@ import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
 import life.genny.qwanda.TaskAsk;
+import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
+import life.genny.qwanda.exception.BadDataException;
+import life.genny.qwanda.message.QDataBaseEntityMessage;
+import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.OutputParam;
+import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
 
@@ -139,6 +144,24 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				if (answer.getAttributeCode().equals("PRI_SUBMIT")) {
 					submitDetected = true;
 				}
+				if (answer.getAttributeCode().equals("PRI_ADDRESS_FULL")) {
+					/* send full address back to frontend */
+
+					BaseEntity be = beUtils.getBaseEntityByCode(answer.getTargetCode());
+					try {
+						Attribute attribute = RulesUtils.getAttribute("PRI_ADDRESS_FULL",userToken.getToken());
+						answer.setAttribute(attribute);
+						be.addAnswer(answer);
+						QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be);
+						msg.setToken(userToken.getToken());
+						VertxUtils.writeMsg("webcmds",JsonUtils.toJson(msg));
+					} catch (BadDataException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+				}
+
 			}
 
 		}
