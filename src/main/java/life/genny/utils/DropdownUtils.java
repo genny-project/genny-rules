@@ -1,15 +1,13 @@
 package life.genny.utils;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+
 import org.apache.logging.log4j.Logger;
-import io.vertx.core.json.JsonObject;
+
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.attribute.Attribute;
@@ -17,15 +15,18 @@ import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
-import life.genny.qwanda.entity.SearchEntity.Filter;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 
-public class DropdownUtils {
+public class DropdownUtils implements Serializable {
 	
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private SearchEntity searchEntity;
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
@@ -35,13 +36,13 @@ public class DropdownUtils {
 		return this.searchEntity;
 	}
 	
-	public void sendSearchResults( String parentCode, String linkCode, String linkValue,
+	public QDataBaseEntityMessage  sendSearchResults( String parentCode, String linkCode, String linkValue,
 			GennyToken gennyToken) throws IOException {
 		
-		this.sendSearchResults( parentCode, linkCode, linkValue, false,  false, gennyToken);
+		return this.sendSearchResults( parentCode, linkCode, linkValue, false,  false, gennyToken);
 	}
 	
-	public void sendSearchResults( String parentCode, String linkCode, String linkValue,
+	public QDataBaseEntityMessage sendSearchResults( String parentCode, String linkCode, String linkValue,
 			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken gennyToken) throws IOException {
 		
 		QDataBaseEntityMessage beMessage = getSearchResults(this.searchEntity,parentCode, linkCode, linkValue,replace,
@@ -55,6 +56,7 @@ public class DropdownUtils {
 			/* Writing to Vert.x EventBus*/
 			writeToVertx("webcmds", beMessage);
 		}
+		return beMessage;
 	}
 	
 	/*

@@ -40,6 +40,7 @@ import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.message.QDataAskMessage;
+import life.genny.qwanda.message.QDataAttributeMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
 import life.genny.qwanda.validation.ValidationList;
@@ -336,7 +337,7 @@ public class ShowFrame implements WorkItemHandler {
 				String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
 				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
 					for (String dropdownCode : dropdownCodes) {
-						dropdownCode = dropdownCode.replaceAll("\"","");
+						dropdownCode = dropdownCode.replaceAll("\"", "");
 						sendSelectionItems(dropdownCode, userToken);
 					}
 				}
@@ -508,29 +509,39 @@ public class ShowFrame implements WorkItemHandler {
 	}
 
 	private static void sendSelectionItems(String attributeCode, GennyToken userToken) {
-		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken.getToken());
+		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		if (attribute != null) {
 			DataType dt = attribute.getDataType();
 			log.info("DATATYPE IS " + dt);
 			List<Validation> vl = dt.getValidationList();
-			if ((vl!=null)&&(vl.get(0)!=null)) {
-					Validation val = vl.get(0);
-					if ((val.getSelectionBaseEntityGroupList()!=null)&&(!val.getSelectionBaseEntityGroupList().isEmpty())) {
-						String groupCode = val.getSelectionBaseEntityGroupList().get(0);
+			if ((vl != null) && (vl.get(0) != null)) {
+				Validation val = vl.get(0);
+				if ((val.getSelectionBaseEntityGroupList() != null)
+						&& (!val.getSelectionBaseEntityGroupList().isEmpty())) {
+					String groupCode = val.getSelectionBaseEntityGroupList().get(0);
+					// Check if already in cache
+					QDataBaseEntityMessage qdb  = null;
 					
-			
-			DropdownUtils dropDownUtils = new DropdownUtils();
-			dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items")
-					.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%")
-					.setSourceCode(groupCode).setPageStart(0).setPageSize(10000);
-			try {
-				dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "DEGREE", userToken);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+					JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(),"QDB_"+groupCode,userToken.getToken());
+					
+					if ("ok".equals(json.getString("status"))) {
+						qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
+						VertxUtils.writeMsg("webcmds",JsonUtils.toJson(qdb));
+					} else {
+						DropdownUtils dropDownUtils = new DropdownUtils();
+						dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items")
+							.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%").setSourceCode(groupCode)
+							.setPageStart(0).setPageSize(10000);
+					try {
+						qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "DEGREE", userToken);
+						VertxUtils.writeCachedJson(userToken.getRealm(),"QDB_"+groupCode,JsonUtils.toJson(qdb),userToken.getToken());
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+				}
 			}
-			}
-		}
 		}
 	}
 
