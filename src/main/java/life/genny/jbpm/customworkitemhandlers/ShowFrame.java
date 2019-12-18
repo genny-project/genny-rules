@@ -526,6 +526,7 @@ public class ShowFrame implements WorkItemHandler {
 					
 					if ("ok".equals(json.getString("status"))) {
 						qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
+						qdb.setToken(userToken.getToken());
 						VertxUtils.writeMsg("webcmds",JsonUtils.toJson(qdb));
 					} else {
 						DropdownUtils dropDownUtils = new DropdownUtils();
