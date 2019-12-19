@@ -510,40 +510,69 @@ public class ShowFrame implements WorkItemHandler {
 
 	private static void sendSelectionItems(String attributeCode, GennyToken userToken) {
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
+		
 		if (attribute != null) {
 			DataType dt = attribute.getDataType();
 			log.info("DATATYPE IS " + dt);
 			List<Validation> vl = dt.getValidationList();
+			
 			if ((vl != null) && (vl.get(0) != null)) {
 				Validation val = vl.get(0);
+				
 				if ((val.getSelectionBaseEntityGroupList() != null)
 						&& (!val.getSelectionBaseEntityGroupList().isEmpty())) {
+					
 					String groupCode = val.getSelectionBaseEntityGroupList().get(0);
-					// Check if already in cache
-					QDataBaseEntityMessage qdb  = null;
+
+					DropdownUtils dropDownUtils = new DropdownUtils();
 					
-					JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(),"QDB_"+groupCode,userToken.getToken());
+					JsonObject searchBe = VertxUtils.readCachedJson(userToken.getRealm(),"SBE_"+groupCode,userToken.getToken());
 					
-					if ("ok".equals(json.getString("status"))) {
-						qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
-						qdb.setToken(userToken.getToken());
-						VertxUtils.writeMsg("webcmds",JsonUtils.toJson(qdb));
-					} else {
-						DropdownUtils dropDownUtils = new DropdownUtils();
-						dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items")
-							.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%").setSourceCode(groupCode)
-							.setPageStart(0).setPageSize(10000);
-					try {
-						qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "DEGREE", userToken);
-						VertxUtils.writeCachedJson(userToken.getRealm(),"QDB_"+groupCode,JsonUtils.toJson(qdb),userToken.getToken());
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					if ("ok".equals(searchBe.getString("status"))) {
+						
+						/* This is for dynamically generated items*/
+						SearchEntity sbe = JsonUtils.fromJson(searchBe.getString("value"), SearchEntity.class);
+									
+						try {
+							
+							dropDownUtils.setSearch(sbe);
+							dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken);
+							
+						}catch(Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
+					}else {
+					
+						// Check if already in cache
+						QDataBaseEntityMessage qdb  = null;
+						
+						JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(),"QDB_"+groupCode,userToken.getToken());
+						
+						if ("ok".equals(json.getString("status"))) {
+							
+							qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
+							qdb.setToken(userToken.getToken());
+							VertxUtils.writeMsg("webcmds",JsonUtils.toJson(qdb));
+							
+						} else {
+							
+							dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items")
+								.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%").setSourceCode(groupCode)
+								.setPageStart(0).setPageSize(10000);
+							
+							try {
+								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken);
+								VertxUtils.writeCachedJson(userToken.getRealm(),"QDB_"+groupCode,JsonUtils.toJson(qdb),userToken.getToken());
+							}catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+							}
+						}
 					}
 				}
 			}
 		}
 	}
-
 }

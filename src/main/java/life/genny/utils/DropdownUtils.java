@@ -32,8 +32,14 @@ public class DropdownUtils implements Serializable {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 	
 	public SearchEntity setNewSearch(String code, String name) {
+		
 		searchEntity = new SearchEntity(code,name);
 		return this.searchEntity;
+	}
+	
+	public void setSearch(SearchEntity sbe) {
+		
+		this.searchEntity = sbe;
 	}
 	
 	public QDataBaseEntityMessage  sendSearchResults( String parentCode, String linkCode, String linkValue,
