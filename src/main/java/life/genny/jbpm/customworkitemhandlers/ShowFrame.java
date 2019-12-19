@@ -523,12 +523,21 @@ public class ShowFrame implements WorkItemHandler {
 					QDataBaseEntityMessage qdb  = null;
 					
 					JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(),"QDB_"+groupCode,userToken.getToken());
-					
-					if ("ok".equals(json.getString("status"))) {
+					Boolean ok = false;
+					if (json!=null) {
+						ok = "ok".equals(json.getString("status"));
+					} 
+					if (ok) {
 						qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
-						qdb.setToken(userToken.getToken());
-						VertxUtils.writeMsg("webcmds",JsonUtils.toJson(qdb));
-					} else {
+						if (qdb != null ) {
+							qdb.setToken(userToken.getToken());
+							VertxUtils.writeMsg("webcmds",JsonUtils.toJson(qdb));
+						} else {
+							ok = false;
+						}
+					} 
+					
+					if (!ok) {
 						DropdownUtils dropDownUtils = new DropdownUtils();
 						dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items")
 							.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%").setSourceCode(groupCode)
