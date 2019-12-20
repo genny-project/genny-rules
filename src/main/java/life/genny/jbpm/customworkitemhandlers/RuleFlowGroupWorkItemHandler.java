@@ -219,7 +219,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			FactHandle factHandle =  newKieSession.insert(output);
 			FactHandle answersToSaveHandle =  newKieSession.insert(answersToSave);
 			FactHandle beUtilsHandle = newKieSession.insert(beUtils);
-			FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtilsUtils);
+			FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
 			FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 			
 			List<FactHandle> allowables = new ArrayList<FactHandle>();
