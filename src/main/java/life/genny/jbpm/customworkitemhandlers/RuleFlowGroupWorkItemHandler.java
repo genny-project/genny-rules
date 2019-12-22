@@ -86,8 +86,15 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			for (EntityAttribute ea : capabilities) {
 				String modeString = ea.getValue();
 				CapabilityMode mode = CapabilityMode.getMode(modeString);
-				Allowed allowed = new Allowed(ea.getAttributeCode().substring(4),mode);
-				allowable.add(allowed);
+				// This is my cunning switch statement that takes into consideration the priority order of the modes... (note, no breaks and it relies upon the fall through)
+				switch (mode) {
+				case DELETE: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.DELETE));
+				case ADD: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.ADD));
+				case EDIT: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.EDIT));
+				case VIEW: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.VIEW));
+				case NONE: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.NONE));
+				}
+
 			}
 		}
 	}
@@ -151,7 +158,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			FactHandle answersToSaveHandle =  newKieSession.insert(answersToSave);
 			FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 			FactHandle beUtilsHandle = newKieSession.insert(beUtils);
-			FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtilsUtils);
+			FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
 			
 			List<FactHandle> allowables = new ArrayList<FactHandle>();
 			// get User capabilities
