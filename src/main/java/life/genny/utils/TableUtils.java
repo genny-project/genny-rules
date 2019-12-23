@@ -65,7 +65,14 @@ public class TableUtils {
 	public TableUtils(BaseEntityUtils beUtils) {
 		this.beUtils = beUtils;
 	}
-
+	
+	public void performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode,
+			Answer answer) {
+		
+		beUtils.setGennyToken(userToken);
+		this.performSearch(serviceToken, searchBarCode, answer);
+	}
+	
 	public void performSearch(GennyToken serviceToken, final String searchBarCode,
 			Answer answer) {
 		beUtils.setServiceToken(serviceToken);
@@ -87,6 +94,7 @@ public class TableUtils {
 		// anything
 		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
 		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
+		//searchBeMsg.setToken(serviceToken.getToken());
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
 
 		Map<String, String> columns = getTableColumns(searchBE);
@@ -105,12 +113,13 @@ public class TableUtils {
 
 	public  SearchEntity getSessionSearch(final String searchCode) {
 		String sessionSearchCode = searchCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
-		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", sessionSearchCode, SearchEntity.class,
-				beUtils.getGennyToken().getToken());
-
-		if (searchBE == null) {
-			searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
-		}
+//		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", sessionSearchCode, SearchEntity.class,
+//				beUtils.getGennyToken().getToken());
+//
+//		if (searchBE == null) {
+//			searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
+//		}
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
@@ -172,20 +181,17 @@ public class TableUtils {
 					"PRI_SEARCH_HISTORY", newHistoryString);
 			beUtils.saveAnswer(history);
 			log.info("Search History for " + beUtils.getGennyToken().getUserCode() + " = " + searchHistory.toString());
-		} else {
-			// so grab the latest search history
-			if (!searchHistory.isEmpty()) {
-				searchBarString = searchHistory.get(0);
-			} else {
-				searchBarString = ""; // fetch everything
-			}
+		} 
+		if(searchBarString != null){
+			searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
 		}
-		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
 		/*
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
 		 */
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
+				beUtils.getGennyToken().getToken());
+		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
 		return searchBE;
@@ -581,7 +587,7 @@ public class TableUtils {
 //				log.error
 //			}
 			resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-					jsonSearchBE, beUtils.getGennyToken().getToken());
+					jsonSearchBE, beUtils.getServiceToken().getToken());
 			final BaseEntity[] items = new BaseEntity[0];
 			final String parentCode = "GRP_ROOT";
 			final String linkCode = "LINK";
