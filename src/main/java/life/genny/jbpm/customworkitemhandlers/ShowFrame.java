@@ -63,6 +63,7 @@ import static org.mentaregex.Regex.*;
 
 public class ShowFrame implements WorkItemHandler {
 
+	
 	public ShowFrame() {
 	}
 
@@ -342,11 +343,20 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				// find any select Attributes, find their selection Baseentities and send
+				GennyToken serviceToken = null;
+				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
+				if (serviceTokenStr == null) {
+					log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
+					return;
+				} else {
+					serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
+				}
+				
 				String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
 				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
 					for (String dropdownCode : dropdownCodes) {
 						dropdownCode = dropdownCode.replaceAll("\"", "");
-						sendSelectionItems(dropdownCode, userToken);
+						sendSelectionItems(dropdownCode, serviceToken);
 					}
 				}
 
@@ -518,7 +528,7 @@ public class ShowFrame implements WorkItemHandler {
 
 	private static void sendSelectionItems(String attributeCode, GennyToken userToken) {
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
-		DropdownUtils dropDownUtils = new DropdownUtils();
+		DropdownUtils dropDownUtils = new DropdownUtils(userToken);
 		
 		try {
 			if (attribute != null) {

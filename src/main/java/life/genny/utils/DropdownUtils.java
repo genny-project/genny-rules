@@ -28,8 +28,20 @@ public class DropdownUtils implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	private SearchEntity searchEntity;
+	private GennyToken serviceToken;
+	
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+	
+	public DropdownUtils (GennyToken serviceToken)
+	{
+		this.serviceToken = serviceToken;
+	}
+	
+	public DropdownUtils ()
+	{
+	
+	}
 	
 	public SearchEntity setNewSearch(String code, String name) {
 		
@@ -74,7 +86,7 @@ public class DropdownUtils implements Serializable {
 		String token = gennyToken.getToken();
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-				jsonSearchBE, token);
+				jsonSearchBE, serviceToken.getToken());
 
 		QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
 
