@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,11 +25,18 @@ import org.kie.internal.runtime.StatefulKnowledgeSession;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
+import life.genny.qwanda.attribute.EntityAttribute;
+import life.genny.qwanda.datatype.Allowed;
+import life.genny.qwanda.datatype.CapabilityMode;
+import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.rule.RuleDetails;
 import life.genny.rules.QRules;
 
 import life.genny.rules.RulesLoader;
+import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.CapabilityUtils;
 import life.genny.utils.OutputParam;
+import life.genny.utils.VertxUtils;
 
 public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
@@ -55,6 +63,41 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	Map<String,Object> items = workItem.getParameters();
 	
     GennyToken serviceToken = (GennyToken) items.get("serviceToken");
+    
+    GennyToken userToken = (GennyToken) items.get("userToken");
+    if (userToken==null) {
+    	userToken = serviceToken;
+    }
+    BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+    CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
+    String userCode = userToken.getUserCode();
+    BaseEntity user = beUtils.getBaseEntityByCode(userCode);
+	List<EntityAttribute> roles = user.findPrefixEntityAttributes("PRI_IS_");
+	List<Allowed> allowable = new ArrayList<Allowed>();
+	for (EntityAttribute role : roles) { // should store in cached map
+		Boolean value = role.getValue();
+		if (value) {
+			String roleBeCode = "ROL_" + role.getAttributeCode().substring("PRI_IS_".length());
+			BaseEntity roleBE = VertxUtils.readFromDDT(userToken.getRealm(), roleBeCode, userToken.getToken());
+			if (roleBE == null) {
+				continue;
+			}
+			List<EntityAttribute> capabilities = user.findPrefixEntityAttributes("PRM_");
+			for (EntityAttribute ea : capabilities) {
+				String modeString = ea.getValue();
+				CapabilityMode mode = CapabilityMode.getMode(modeString);
+				// This is my cunning switch statement that takes into consideration the priority order of the modes... (note, no breaks and it relies upon the fall through)
+				switch (mode) {
+				case DELETE: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.DELETE));
+				case ADD: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.ADD));
+				case EDIT: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.EDIT));
+				case VIEW: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.VIEW));
+				case NONE: allowable.add(new Allowed(ea.getAttributeCode().substring(4),CapabilityMode.NONE));
+				}
+
+			}
+		}
+	}
     
     String ruleFlowGroup= (String) items.get("ruleFlowGroup");
     
@@ -114,7 +157,17 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			FactHandle factHandle =  newKieSession.insert(output);
 			FactHandle answersToSaveHandle =  newKieSession.insert(answersToSave);
 			FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
+			FactHandle beUtilsHandle = newKieSession.insert(beUtils);
+			FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
 			
+			List<FactHandle> allowables = new ArrayList<FactHandle>();
+			// get User capabilities
+			  // first get User Roles
+				
+			  // get each capability from each Role and add to allowables
+			for (Allowed allow : allowable) {
+				allowables.add(newKieSession.insert(allow));
+			}
 
 			
 			/* Setting focus to rule-flow group */ 
@@ -137,7 +190,14 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	    	newKieSession.retract(ruleDetailsHandle);
 	    	newKieSession.retract(factHandle);
 	    	newKieSession.retract(answersToSaveHandle);
+	    	newKieSession.retract(beUtilsHandle);
+	    	newKieSession.retract(capabilityUtilsHandle);
 	    	newKieSession.retract(kieSessionHandle);	    	// don't dispose
+	    	
+	    	for (FactHandle allow : allowables) {
+	    		newKieSession.retract(allow);
+	    	}
+	    	
 	    	newKieSession.dispose();
 
 		} else {
@@ -165,9 +225,18 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			/* INserting facts to save the output result*/
 			FactHandle factHandle =  newKieSession.insert(output);
 			FactHandle answersToSaveHandle =  newKieSession.insert(answersToSave);
+			FactHandle beUtilsHandle = newKieSession.insert(beUtils);
+			FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
 			FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
-			// inject kieSession
 			
+			List<FactHandle> allowables = new ArrayList<FactHandle>();
+			// get User capabilities
+
+			// inject kieSession
+			for (Allowed allow : allowable) {
+				allowables.add(newKieSession.insert(allow));
+			}
+
 			
 			/* Setting focus to rule-flow group */
 	    	newKieSession.getAgenda().getAgendaGroup( ruleFlowGroup ).setFocus();
@@ -181,7 +250,14 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	    	newKieSession.retract(ruleDetailsHandle);
 	    	newKieSession.retract(factHandle);
 	    	newKieSession.retract(answersToSaveHandle);
+	    	newKieSession.retract(beUtilsHandle);
+	    	newKieSession.retract(capabilityUtilsHandle);
 	    	newKieSession.retract(kieSessionHandle);
+	    	
+	    	for (FactHandle allow : allowables) {
+	    		newKieSession.retract(allow);
+	    	}
+
 	    	newKieSession.dispose();
 		}    	
     }
