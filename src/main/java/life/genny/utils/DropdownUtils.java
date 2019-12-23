@@ -53,24 +53,35 @@ public class DropdownUtils implements Serializable {
 		
 		this.searchEntity = sbe;
 	}
+
+	public QDataBaseEntityMessage  sendSearchResults( String parentCode, String linkCode, String linkValue,
+			GennyToken userToken) throws IOException {
+		QDataBaseEntityMessage msg = null;
+		if (this.serviceToken == null) {
+			return this.sendSearchResults( parentCode, linkCode, linkValue, false,  false, userToken, userToken);
+		} else{
+			return this.sendSearchResults( parentCode, linkCode, linkValue, false,  false, userToken, this.serviceToken);
+		}
+	}
+
 	
 	public QDataBaseEntityMessage  sendSearchResults( String parentCode, String linkCode, String linkValue,
-			GennyToken gennyToken) throws IOException {
+			GennyToken userToken, GennyToken serviceToken) throws IOException {
 		
-		return this.sendSearchResults( parentCode, linkCode, linkValue, false,  false, gennyToken);
+		return this.sendSearchResults( parentCode, linkCode, linkValue, false,  false, userToken, serviceToken);
 	}
 	
 	public QDataBaseEntityMessage sendSearchResults( String parentCode, String linkCode, String linkValue,
-			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken gennyToken) throws IOException {
+			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, GennyToken serviceToken) throws IOException {
 		
 		QDataBaseEntityMessage beMessage = getSearchResults(this.searchEntity,parentCode, linkCode, linkValue,replace,
-															shouldDeleteLinkedBaseEntities,gennyToken);
+															shouldDeleteLinkedBaseEntities,userToken, serviceToken);
 		if(beMessage == null) {
 			
 			log.error("Warning: no results from search " + this.searchEntity.getCode());
 			
 		}else {
-			
+			beMessage.setToken(userToken.getToken());
 			/* Writing to Vert.x EventBus*/
 			writeToVertx("webcmds", beMessage);
 		}
@@ -81,9 +92,9 @@ public class DropdownUtils implements Serializable {
 	 * Get Search results. Returns  QDataBaseEntityMessage
 	 */
 	private QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
-			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken gennyToken) throws IOException {
+			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, GennyToken serviceToken) throws IOException {
 		
-		String token = gennyToken.getToken();
+		String token = userToken.getToken();
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 				jsonSearchBE, serviceToken.getToken());
@@ -100,7 +111,7 @@ public class DropdownUtils implements Serializable {
 			msg.setShouldDeleteLinkedBaseEntities(shouldDeleteLinkedBaseEntities);
 
 			/* Linking child baseEntity to the parent baseEntity*/
-			QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue,gennyToken);
+			QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue,userToken);
 			return beMessage;
 			
 		} else {

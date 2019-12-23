@@ -356,7 +356,7 @@ public class ShowFrame implements WorkItemHandler {
 				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
 					for (String dropdownCode : dropdownCodes) {
 						dropdownCode = dropdownCode.replaceAll("\"", "");
-						sendSelectionItems(dropdownCode, serviceToken);
+						sendSelectionItems(dropdownCode, userToken,serviceToken);
 					}
 				}
 
@@ -526,9 +526,9 @@ public class ShowFrame implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	private static void sendSelectionItems(String attributeCode, GennyToken userToken) {
+	private static void sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken) {
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
-		DropdownUtils dropDownUtils = new DropdownUtils(userToken);
+		DropdownUtils dropDownUtils = new DropdownUtils(serviceToken);
 		
 		try {
 			if (attribute != null) {
@@ -554,7 +554,7 @@ public class ShowFrame implements WorkItemHandler {
 							/* This is for dynamically generated items*/
 							SearchEntity sbe = JsonUtils.fromJson( searchBe.getString( "value" ), SearchEntity.class );
 							dropDownUtils.setSearch( sbe );
-							dropDownUtils.sendSearchResults( groupCode, "LNK_CORE", "ITEMS", userToken );
+							dropDownUtils.sendSearchResults( groupCode, "LNK_CORE", "ITEMS", userToken , serviceToken);
 							
 						}else {
 						
@@ -579,7 +579,7 @@ public class ShowFrame implements WorkItemHandler {
 									.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%").setSourceCode(groupCode)
 									.setPageStart(0).setPageSize(10000);
 								
-								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken);
+								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, serviceToken);
 								VertxUtils.writeCachedJson(userToken.getRealm(), "QDB_" + groupCode,JsonUtils.toJson(qdb),userToken.getToken());
 							}
 						}
