@@ -36,11 +36,7 @@ public class DropdownUtils implements Serializable {
 	{
 		this.serviceToken = serviceToken;
 	}
-	
-	public DropdownUtils ()
-	{
-	
-	}
+
 	
 	public SearchEntity setNewSearch(String code, String name) {
 		
@@ -116,7 +112,7 @@ public class DropdownUtils implements Serializable {
 	
 	private double getWeight(BaseEntity be, String parentCode) {
 		
-		double weight =0.0;
+		double weight =1.0;
 		
 		try {
 			Set<EntityEntity> entities = be.getLinks();
@@ -126,15 +122,11 @@ public class DropdownUtils implements Serializable {
 				if(entity.getLink().getSourceCode().equals(parentCode)) {
 					
 					weight = entity.getLink().getWeight();
-					
-				}else {
-					
-					weight = 1.0;
+					break;
 				}
 			}
 		}catch(Exception e){
 			
-			weight = 1.0;
 			//e.printStackTrace();
 		}
 		
@@ -158,14 +150,14 @@ public class DropdownUtils implements Serializable {
 			
 			for (BaseEntity be : beMsg.getItems()) {
 				
-				if(sortByWeight) {
+				/*if(sortByWeight) {
 					
 					index = getWeight(be,parentCode);
 					
 				}else{
 					
 					index++;
-				}
+				}*/
 				
 				EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
 	
@@ -177,6 +169,7 @@ public class DropdownUtils implements Serializable {
 	
 				/* adding child link to set of links */
 				childLinks.add(ee);
+				index++;
 	
 			}
 	
