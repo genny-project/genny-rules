@@ -576,7 +576,7 @@ public class ShowFrame implements WorkItemHandler {
 							} else {
 								
 								dropDownUtils.setNewSearch( "Dropdown", "Fetch Dropdown Items" )
-									.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%").setSourceCode(groupCode)
+									.setSourceCode(groupCode)
 									.setPageStart(0).setPageSize(10000);
 								
 								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, serviceToken);
