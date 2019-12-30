@@ -22,7 +22,6 @@ import life.genny.qwandautils.QwandaUtils;
 
 public class DropdownUtils implements Serializable {
 	
-
 	/**
 	 * 
 	 */
@@ -53,29 +52,24 @@ public class DropdownUtils implements Serializable {
 		
 		this.searchEntity = sbe;
 	}
-
+	
 	public QDataBaseEntityMessage  sendSearchResults( String parentCode, String linkCode, String linkValue,
 			GennyToken userToken) throws IOException {
-		QDataBaseEntityMessage msg = null;
-		if (this.serviceToken == null) {
-			return this.sendSearchResults( parentCode, linkCode, linkValue, false,  false, userToken, userToken);
-		} else{
-			return this.sendSearchResults( parentCode, linkCode, linkValue, false,  false, userToken, this.serviceToken);
-		}
+		
+		return this.sendSearchResults( parentCode, linkCode, linkValue, userToken, false);
 	}
-
 	
 	public QDataBaseEntityMessage  sendSearchResults( String parentCode, String linkCode, String linkValue,
-			GennyToken userToken, GennyToken serviceToken) throws IOException {
-		
-		return this.sendSearchResults( parentCode, linkCode, linkValue, false,  false, userToken, serviceToken);
+			GennyToken userToken,Boolean sortByWeight) throws IOException {
+
+			return this.sendSearchResults( parentCode, linkCode, linkValue, false, false, userToken, sortByWeight);
 	}
-	
-	public QDataBaseEntityMessage sendSearchResults( String parentCode, String linkCode, String linkValue,
-			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, GennyToken serviceToken) throws IOException {
+
+	private QDataBaseEntityMessage sendSearchResults( String parentCode, String linkCode, String linkValue,
+			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight) throws IOException {
 		
 		QDataBaseEntityMessage beMessage = getSearchResults(this.searchEntity,parentCode, linkCode, linkValue,replace,
-															shouldDeleteLinkedBaseEntities,userToken, serviceToken);
+															shouldDeleteLinkedBaseEntities,userToken, this.serviceToken, sortByWeight);
 		if(beMessage == null) {
 			
 			log.error("Warning: no results from search " + this.searchEntity.getCode());
@@ -92,7 +86,7 @@ public class DropdownUtils implements Serializable {
 	 * Get Search results. Returns  QDataBaseEntityMessage
 	 */
 	private QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
-			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, GennyToken serviceToken) throws IOException {
+			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, GennyToken serviceToken, Boolean sortByWeight) throws IOException {
 		
 		String token = userToken.getToken();
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
@@ -109,9 +103,9 @@ public class DropdownUtils implements Serializable {
 			msg.setLinkValue(linkValue);
 			msg.setReplace(replace);
 			msg.setShouldDeleteLinkedBaseEntities(shouldDeleteLinkedBaseEntities);
-
+			
 			/* Linking child baseEntity to the parent baseEntity*/
-			QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue,userToken);
+			QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue,userToken,sortByWeight);
 			return beMessage;
 			
 		} else {
@@ -120,21 +114,58 @@ public class DropdownUtils implements Serializable {
 		}
 	}
 	
+	private double getWeight(BaseEntity be, String parentCode) {
+		
+		double weight =0.0;
+		
+		try {
+			Set<EntityEntity> entities = be.getLinks();
+			
+			for(EntityEntity entity : entities ) {
+				
+				if(entity.getLink().getSourceCode().equals(parentCode)) {
+					
+					weight = entity.getLink().getWeight();
+					
+				}else {
+					
+					weight = 1.0;
+				}
+			}
+		}catch(Exception e){
+			
+			weight = 1.0;
+			//e.printStackTrace();
+		}
+		
+		return weight;
+	}
+	
 	/*
 	 * Setting dynamic links between parents and child. ie. linking DropDown items to the DropDown field.
 	 */
 	private QDataBaseEntityMessage setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
-			String linkValue, GennyToken gennyToken) {
+			String linkValue, GennyToken gennyToken, Boolean sortByWeight) {
 		
 		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);
 		if(parentBe != null) {
+			
 			Set<EntityEntity> childLinks = new HashSet<>();
-			double index = 0.0;
+			double index = -1.0;
 	
 			/* creating a dumb attribute for linking the search results to the parent */
-			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
-	
+			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));	
+			
 			for (BaseEntity be : beMsg.getItems()) {
+				
+				if(sortByWeight) {
+					
+					index = getWeight(be,parentCode);
+					
+				}else{
+					
+					index++;
+				}
 				
 				EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
 	
@@ -147,7 +178,6 @@ public class DropdownUtils implements Serializable {
 				/* adding child link to set of links */
 				childLinks.add(ee);
 	
-				index++;
 			}
 	
 			parentBe.setLinks(childLinks);
