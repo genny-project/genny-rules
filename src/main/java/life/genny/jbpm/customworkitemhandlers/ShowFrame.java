@@ -554,7 +554,7 @@ public class ShowFrame implements WorkItemHandler {
 							/* This is for dynamically generated items*/
 							SearchEntity sbe = JsonUtils.fromJson( searchBe.getString( "value" ), SearchEntity.class );
 							dropDownUtils.setSearch( sbe );
-							dropDownUtils.sendSearchResults( groupCode, "LNK_CORE", "ITEMS", userToken , serviceToken);
+							dropDownUtils.sendSearchResults( groupCode, "LNK_CORE", "ITEMS", userToken, false);
 							
 						}else {
 						
@@ -576,10 +576,10 @@ public class ShowFrame implements WorkItemHandler {
 							} else {
 								
 								dropDownUtils.setNewSearch( "Dropdown", "Fetch Dropdown Items" )
-									.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "SEL_%").setSourceCode(groupCode)
+									.setSourceCode(groupCode)
 									.setPageStart(0).setPageSize(10000);
 								
-								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, serviceToken);
+								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true);
 								VertxUtils.writeCachedJson(userToken.getRealm(), "QDB_" + groupCode,JsonUtils.toJson(qdb),userToken.getToken());
 							}
 						}
