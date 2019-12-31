@@ -398,17 +398,20 @@ public class ShowFrame implements WorkItemHandler {
 
 		String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
 
-		log.info("ShowFrame: Setting outgoing Asks to have " + sourceCode + ":" + targetCode);
+	
 		if (sourceCode != null) { // user
 			jsonStr = jsonStr.replaceAll("PER_SOURCE", sourceCode);
 		} else {
 			jsonStr = jsonStr.replaceAll("PER_SOURCE", userToken.getUserCode());
+			sourceCode = userToken.getUserCode();
 		}
 		if (targetCode != null) { // user
 			jsonStr = jsonStr.replaceAll("PER_TARGET", targetCode);
 		} else {
 			jsonStr = jsonStr.replaceAll("PER_TARGET", userToken.getUserCode());
+			targetCode = userToken.getUserCode();
 		}
+		log.info("ShowFrame: Setting outgoing Asks to have " + sourceCode + ":" + targetCode);
 		return jsonStr;
 	}
 
