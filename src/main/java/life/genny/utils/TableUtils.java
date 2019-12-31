@@ -715,7 +715,7 @@ public class TableUtils {
 					new DataType("Text", searchValidationList, "Text"));
 
 			/* Initialize Column Header Ask group */
-			Question columnHeaderQuestion = new Question("QUE_" + attributeCode + "_GRP", attributeName, tableCellAttribute,
+			Question columnHeaderQuestion = new Question("QUE_" + attributeCode + "_GRP", attributeName, questionAttribute,
 					true);
 			Ask columnHeaderAsk = new Ask(columnHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 
@@ -730,8 +730,8 @@ public class TableUtils {
 
 			/* adding label-sort & search asks to header-ask Group */
 			List<Ask> tableColumnChildAsks = new ArrayList<>();
-			tableColumnChildAsks.add(columnSortAsk);
-			tableColumnChildAsks.add(columnSearchAsk);
+			/* tableColumnChildAsks.add(columnSortAsk); */
+			/* tableColumnChildAsks.add(columnSearchAsk); */
 
 			/* Convert List to Array */
 			Ask[] tableColumnChildAsksArray = tableColumnChildAsks.toArray(new Ask[0]);
@@ -1009,9 +1009,17 @@ public class TableUtils {
 						String attributeCode = column.getKey();
 						String attributeName = column.getValue();
 						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
+						
+						Question childQuestion = null;
+						
+						if(attributeCode.equals("PRI_EVENT")){
+							childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr, true);
 
-						Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
-								true);
+						}else{
+							childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr, true);
+
+						}
+
 						Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 
 						/* add the entityAttribute ask to list */
