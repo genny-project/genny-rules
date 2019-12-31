@@ -140,6 +140,7 @@ public class DropdownUtils implements Serializable {
 			String linkValue, GennyToken gennyToken, Boolean sortByWeight) {
 		
 		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);
+	
 		if(parentBe != null) {
 			
 			Set<EntityEntity> childLinks = new HashSet<>();
@@ -150,11 +151,10 @@ public class DropdownUtils implements Serializable {
 			
 			for (BaseEntity be : beMsg.getItems()) {
 				
-				/*if(sortByWeight) {*/
-				if(false) {
+				if(sortByWeight) {				
 					
-					index = getWeight(be,parentCode);
-					
+					childLinks = parentBe.getLinks();
+					break;
 				}else{
 					
 					index++;
