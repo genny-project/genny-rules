@@ -150,14 +150,15 @@ public class DropdownUtils implements Serializable {
 			
 			for (BaseEntity be : beMsg.getItems()) {
 				
-				/*if(sortByWeight) {
+				/*if(sortByWeight) {*/
+				if(false) {
 					
 					index = getWeight(be,parentCode);
 					
 				}else{
 					
 					index++;
-				}*/
+				}
 				
 				EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
 	
@@ -169,7 +170,6 @@ public class DropdownUtils implements Serializable {
 	
 				/* adding child link to set of links */
 				childLinks.add(ee);
-				index++;
 	
 			}
 	
