@@ -1010,6 +1010,7 @@ public class TableUtils {
 						String attributeName = column.getValue();
 						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
 						
+						if (attr != null) {
 						Question childQuestion = null;
 						
 						if(attributeCode.equals("PRI_EVENT")){
@@ -1024,6 +1025,9 @@ public class TableUtils {
 
 						/* add the entityAttribute ask to list */
 						childAskList.add(childAsk);
+						} else {
+							log.error("Attribute : "+attributeCode+" DOES NOT EXIST IN AttributeMap");
+						}
 
 					}
 
