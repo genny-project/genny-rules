@@ -181,7 +181,7 @@ public class RulesLoader {
 
 	public static List<String> activeRealms = new ArrayList<String>();
 
-	public static Boolean rulesChanged = true || (!GennySettings.detectRuleChanges);
+	public static Boolean rulesChanged = false || (!GennySettings.detectRuleChanges);
 	// public static Boolean rulesChanged = true;
 
 	public static void shutdown() {
