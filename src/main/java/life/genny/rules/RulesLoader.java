@@ -227,7 +227,12 @@ public class RulesLoader {
 		}.getType();
 		ars = ars.replaceAll("\\\"", "\"");
 		activeRealms = JsonUtils.fromJson(ars, listType);
-		realms = new HashSet<>(activeRealms);
+		if (activeRealms == null) {
+			realms = new HashSet<>();
+			log.error("NO ACTIVE REALMS");
+		} else {
+			realms = new HashSet<>(activeRealms);
+		}
 
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
 		log.info("LOADED ALL RULES");
