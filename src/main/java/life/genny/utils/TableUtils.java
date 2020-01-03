@@ -120,6 +120,7 @@ public class TableUtils {
 //			searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
 //		}
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
+		
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
@@ -136,10 +137,12 @@ public class TableUtils {
 	}
 
 	private SearchEntity processSearchString(Answer answer, final String searchBarCode) {
+		
 		/* Perform a search bar search */
 		String searchBarString = null;
 		if (answer != null) {
 			searchBarString = answer.getValue();
+			
 			// Clean up search Text
 			searchBarString = searchBarString.trim();
 			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
@@ -185,6 +188,7 @@ public class TableUtils {
 		if(searchBarString != null){
 			searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
 		}
+		
 		/*
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
@@ -214,7 +218,6 @@ public class TableUtils {
 		// create virtual context
 
 		// Now link the FRM_TABLE_HEADER to that new Question
-
 		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
 
 		QDataBaseEntityMessage msg2 = changeQuestion(searchBE, "FRM_TABLE_HEADER", headerAsk,
@@ -234,7 +237,6 @@ public class TableUtils {
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg2));
 
 		// Set the table title
-
 		sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(), searchBE.getCode(),
 				"SCH_TITLE", beUtils.getGennyToken());
 
@@ -333,7 +335,7 @@ public class TableUtils {
 		CTX_THM_TABLE_BORDER.setDataType("Table Row Group");
 
 		DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
-
+		
 		List<Context> contexts = new ArrayList<Context>();
 		contexts.add(new Context(ContextType.THEME,
 				new BaseEntity("THM_WIDTH_100_PERCENT_NO_INHERIT", "THM_WIDTH_100_PERCENT_NO_INHERIT"),
@@ -350,7 +352,11 @@ public class TableUtils {
 				VisualControlType.VCL_WRAPPER, 1.0));
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT", "THM_TABLE_CONTENT"),
 				VisualControlType.GROUP, 1.0));
-
+		
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+		
+			
 		for (Context x : contexts) {
 			x.setDataType("Table Row Group");
 		}
@@ -901,10 +907,13 @@ public class TableUtils {
 
 				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
 						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
-						.question(ask.getQuestionCode()).addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType)
+						.question(ask.getQuestionCode())
+						.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType)
 						.weight(1.0).end().addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableRowDataType)
 						.vcl(VisualControlType.GROUP).weight(1.0).end().addTheme("THM_TABLE_ROW", serviceToken)
-						.dataType(tableRowDataType).weight(1.0).end().addTheme("THM_TABLE_CONTENT", serviceToken)
+						.dataType(tableRowDataType).weight(1.0).end()
+						.addTheme("THM_TABLE_CONTENT_BORDER", serviceToken).dataType(tableRowDataType).vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
+		                .addTheme("THM_TABLE_CONTENT", serviceToken)
 						.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
 						.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
 
@@ -931,6 +940,8 @@ public class TableUtils {
 						.vcl(VisualControlType.GROUP_WRAPPER).end().addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).weight(2.0)
 						.end().addTheme("THM_TABLE_HEADER_CELL_WRAPPER", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
 						.addTheme("THM_TABLE_HEADER_CELL_GROUP_LABEL", serviceToken).vcl(VisualControlType.GROUP_LABEL).end()
+		                .addTheme("THM_TABLE_HEADER_FONT", serviceToken).vcl(VisualControlType.INPUT_FIELD).weight(1.0).end()
+		                .addTheme("THM_TABLE_HEADER_JUSTIFY_CONTENT", serviceToken).vcl(VisualControlType.INPUT_WRAPPER).dataType(tableCellDataType).weight(1.0).end()
 						.addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end().end().build();
 
 			}
