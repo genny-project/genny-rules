@@ -136,7 +136,7 @@ public class DropdownUtils implements Serializable {
 	/*
 	 * Setting dynamic links between parents and child. ie. linking DropDown items to the DropDown field.
 	 */
-	private QDataBaseEntityMessage setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
+	QDataBaseEntityMessage setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
 			String linkValue, GennyToken gennyToken, Boolean sortByWeight) {
 		
 		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);

@@ -49,6 +49,7 @@ import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
+import life.genny.utils.TaskUtils;
 import life.genny.utils.VertxUtils;
 
 public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
@@ -149,12 +150,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 					BaseEntity be = beUtils.getBaseEntityByCode(answer.getTargetCode());
 					try {
-						Attribute attribute = RulesUtils.getAttribute("PRI_ADDRESS_FULL",userToken.getToken());
+						Attribute attribute = RulesUtils.getAttribute("PRI_ADDRESS_FULL", userToken.getToken());
 						answer.setAttribute(attribute);
 						be.addAnswer(answer);
 						QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be);
 						msg.setToken(userToken.getToken());
-						VertxUtils.writeMsg("webcmds",JsonUtils.toJson(msg));
+						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 					} catch (BadDataException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -212,8 +213,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 			HashMap<String, Object> taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
 					.unmarshall(c.getContent(), null);
-			ConcurrentHashMap<String,Object> taskAsks = new ConcurrentHashMap<String,Object>(taskAsks2);
-			
+			ConcurrentHashMap<String, Object> taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+
 			formCode = (String) taskAsks.get("FORM_CODE");
 			targetCode = (String) taskAsks.get("TARGET_CODE");
 			// Loop through all the answers check their validity and save them.
@@ -270,8 +271,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						}
 					}
 				}
-				
-				
+
 				log.info(callingWorkflow + " Saving " + validAnswers.size() + " Valid Answers ...");
 
 				if (validAnswers.size() > 0) {
@@ -316,9 +316,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						if (ask.getAsk().getAttributeCode().startsWith("QQQ_QUESTION_GROUP_BUT")) {
 							isNowTriggered = true;
 						}
-						if ((ask.getAsk().getAttributeCode()
-								.equals("PRI_SUBMIT") && (ask.getAnswered())/* ||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT") */)
-								) {
+						if ((ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")
+								&& (ask.getAnswered())/* ||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT") */)) {
 							log.info(callingWorkflow + " PRI_SUBMIT detected ");
 							hackTrigger = true;
 						}
@@ -368,7 +367,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		}
 
 		answerMap2.keySet().removeAll(answerMap.keySet());
-		
+
 		if (validAnswersExist) {
 			// Check that the form answer is allowed
 			// ugly hack
@@ -382,7 +381,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 			if ((!uglySkip) && (!answerMap2.values().isEmpty())) { // don't save submit button
 				synchronized (this) {
-					log.info("processAnswers: Saving Answers :"+answerMap2.values());
+					log.info("processAnswers: Saving Answers :" + answerMap2.values());
 					beUtils.saveAnswers(new ArrayList<>(answerMap2.values()));
 				}
 			}
@@ -390,7 +389,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		// synchronized (this) {
 		// Now complete the tasks if done
-		
+
 		for (TaskSummary taskSummary : tasks) {
 			Map<String, Object> results = taskAskMap.get(taskSummary);
 			if (results != null) {
@@ -406,8 +405,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				}
 				results.put("taskid", iTask.getId());
 				taskService.complete(iTask.getId(), realm + "+" + userCode, results);
-
-				//kSession.signalEvent("closeTask", facts);
+				TaskUtils.sendTaskAskItems(userToken);
+				// kSession.signalEvent("closeTask", facts);
 				output = new OutputParam();
 				if ("NONE".equals(formCode)) {
 					output.setTypeOfResult("NONE");
