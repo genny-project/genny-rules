@@ -935,16 +935,7 @@ public class TableUtils {
 				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
 						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
 						.question(ask.getQuestionCode()) // QUE_TEST_TABLE_HEADER_GRP
-<<<<<<< HEAD
-						.addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP_WRAPPER).end()
-                  .addTheme("THM_TABLE_BORDER", serviceToken).dataType(tableCellDataType).end()
-                  .addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end()
-                  .addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableCellDataType).vcl(VisualControlType.GROUP).weight(1.0).end()
-                  .addTheme("THM_TABLE_ROW", serviceToken).dataType(tableCellDataType).weight(1.0).end()
-                  .addTheme("THM_TABLE_CONTENT", serviceToken).vcl(VisualControlType.GROUP).end()	
-                  .addTheme("THM_TABLE_ROW_CELL", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
-						.end().build();
-=======
+
 						.addTheme("THM_QUESTION_GRP_LABEL", serviceToken).vcl(VisualControlType.GROUP).dataType(tableCellDataType)
 						.end().addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP).end()
 						.addTheme("THM_TABLE_ROW_CELL", serviceToken).dataType(tableCellDataType)
@@ -954,7 +945,7 @@ public class TableUtils {
 		                .addTheme("THM_TABLE_HEADER_FONT", serviceToken).vcl(VisualControlType.INPUT_FIELD).weight(1.0).end()
 		                .addTheme("THM_TABLE_HEADER_JUSTIFY_CONTENT", serviceToken).vcl(VisualControlType.INPUT_WRAPPER).dataType(tableCellDataType).weight(1.0).end()
 						.addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end().end().build();
->>>>>>> d9643698681b706dcb3c3b685d848e1d64ba638f
+
 
 			}
 
