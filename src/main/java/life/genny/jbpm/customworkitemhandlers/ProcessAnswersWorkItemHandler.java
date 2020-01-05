@@ -418,7 +418,27 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		}
 
 		resultMap.put("output", output);
-		manager.completeWorkItem(workItem.getId(), resultMap);
+		// check if result has nulls in it
+		for (String key : resultMap.keySet()) {
+			if (key == null) {
+				log.error("processAnswers: BAD NULL KEY IN RESULT SET");
+			}
+			else if (resultMap.get(key)==null){
+				log.error("processAnswers: BAD NULL MAP ENTRY IN RESULT SET for KEY = "+key);
+			} else if (resultMap.get(key) instanceof OutputParam) {
+				OutputParam o = (OutputParam)resultMap.get(key);
+				Map<String,String> map = o.getAttributeTargetCodeMap();
+				if (map == null) {
+					log.error("processAnswers: BAD NULL KEY IN OUTPUT PARAM MAP");
+					o.setAttributeTargetCodeMap(new HashMap<String,String>());
+				} else {
+					log.info("processAnswers: resultMap OPutputParam seems fine");
+				}
+			} else {
+				log.info("processAnswers: resultMap  seems fine");
+			}
+		}
+		manager.completeWorkItem(workItem.getId(), null/*resultMap*/);
 
 		return;
 
