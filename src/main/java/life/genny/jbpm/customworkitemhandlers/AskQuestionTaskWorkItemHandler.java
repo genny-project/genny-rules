@@ -69,6 +69,7 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.SessionFacts;
+import life.genny.utils.TaskUtils;
 
 public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHandler {
 
@@ -196,6 +197,9 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	         
                 sendTaskSignal(userToken, task, callingWorkflow); // TODO, watch the timing as the workitem may not be ready if the target tries to do stuff.
 
+              //  TaskUtils.sendTaskMenuItems(userToken);
+                TaskUtils.sendTaskAskItems(userToken);
+                
 	        } catch (Exception e) {
 	            if (action.equals(OnErrorAction.ABORT)) {
 	                manager.abortWorkItem(workItem.getId());

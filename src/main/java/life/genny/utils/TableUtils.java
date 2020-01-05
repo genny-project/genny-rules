@@ -65,7 +65,14 @@ public class TableUtils {
 	public TableUtils(BaseEntityUtils beUtils) {
 		this.beUtils = beUtils;
 	}
-
+	
+	public void performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode,
+			Answer answer) {
+		
+		beUtils.setGennyToken(userToken);
+		this.performSearch(serviceToken, searchBarCode, answer);
+	}
+	
 	public void performSearch(GennyToken serviceToken, final String searchBarCode,
 			Answer answer) {
 		beUtils.setServiceToken(serviceToken);
@@ -87,6 +94,7 @@ public class TableUtils {
 		// anything
 		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
 		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
+		//searchBeMsg.setToken(serviceToken.getToken());
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
 
 		Map<String, String> columns = getTableColumns(searchBE);
@@ -105,12 +113,14 @@ public class TableUtils {
 
 	public  SearchEntity getSessionSearch(final String searchCode) {
 		String sessionSearchCode = searchCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
-		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", sessionSearchCode, SearchEntity.class,
-				beUtils.getGennyToken().getToken());
-
-		if (searchBE == null) {
-			searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
-		}
+//		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", sessionSearchCode, SearchEntity.class,
+//				beUtils.getGennyToken().getToken());
+//
+//		if (searchBE == null) {
+//			searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
+//		}
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
+		
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
@@ -127,10 +137,12 @@ public class TableUtils {
 	}
 
 	private SearchEntity processSearchString(Answer answer, final String searchBarCode) {
+		
 		/* Perform a search bar search */
 		String searchBarString = null;
 		if (answer != null) {
 			searchBarString = answer.getValue();
+			
 			// Clean up search Text
 			searchBarString = searchBarString.trim();
 			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
@@ -172,20 +184,18 @@ public class TableUtils {
 					"PRI_SEARCH_HISTORY", newHistoryString);
 			beUtils.saveAnswer(history);
 			log.info("Search History for " + beUtils.getGennyToken().getUserCode() + " = " + searchHistory.toString());
-		} else {
-			// so grab the latest search history
-			if (!searchHistory.isEmpty()) {
-				searchBarString = searchHistory.get(0);
-			} else {
-				searchBarString = ""; // fetch everything
-			}
+		} 
+		if(searchBarString != null){
+			searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
 		}
-		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
+		
 		/*
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
 		 */
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
+				beUtils.getGennyToken().getToken());
+		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
 		return searchBE;
@@ -208,7 +218,6 @@ public class TableUtils {
 		// create virtual context
 
 		// Now link the FRM_TABLE_HEADER to that new Question
-
 		Set<QDataAskMessage> askMsgs = new HashSet<QDataAskMessage>();
 
 		QDataBaseEntityMessage msg2 = changeQuestion(searchBE, "FRM_TABLE_HEADER", headerAsk,
@@ -228,7 +237,6 @@ public class TableUtils {
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg2));
 
 		// Set the table title
-
 		sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(), searchBE.getCode(),
 				"SCH_TITLE", beUtils.getGennyToken());
 
@@ -327,7 +335,7 @@ public class TableUtils {
 		CTX_THM_TABLE_BORDER.setDataType("Table Row Group");
 
 		DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
-
+		
 		List<Context> contexts = new ArrayList<Context>();
 		contexts.add(new Context(ContextType.THEME,
 				new BaseEntity("THM_WIDTH_100_PERCENT_NO_INHERIT", "THM_WIDTH_100_PERCENT_NO_INHERIT"),
@@ -344,7 +352,11 @@ public class TableUtils {
 				VisualControlType.VCL_WRAPPER, 1.0));
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT", "THM_TABLE_CONTENT"),
 				VisualControlType.GROUP, 1.0));
-
+		
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+		
+			
 		for (Context x : contexts) {
 			x.setDataType("Table Row Group");
 		}
@@ -581,7 +593,7 @@ public class TableUtils {
 //				log.error
 //			}
 			resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-					jsonSearchBE, beUtils.getGennyToken().getToken());
+					jsonSearchBE, beUtils.getServiceToken().getToken());
 			final BaseEntity[] items = new BaseEntity[0];
 			final String parentCode = "GRP_ROOT";
 			final String linkCode = "LINK";
@@ -709,7 +721,7 @@ public class TableUtils {
 					new DataType("Text", searchValidationList, "Text"));
 
 			/* Initialize Column Header Ask group */
-			Question columnHeaderQuestion = new Question("QUE_" + attributeCode + "_GRP", attributeName, tableCellAttribute,
+			Question columnHeaderQuestion = new Question("QUE_" + attributeCode + "_GRP", attributeName, questionAttribute,
 					true);
 			Ask columnHeaderAsk = new Ask(columnHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 
@@ -724,8 +736,8 @@ public class TableUtils {
 
 			/* adding label-sort & search asks to header-ask Group */
 			List<Ask> tableColumnChildAsks = new ArrayList<>();
-			tableColumnChildAsks.add(columnSortAsk);
-			tableColumnChildAsks.add(columnSearchAsk);
+			/* tableColumnChildAsks.add(columnSortAsk); */
+			/* tableColumnChildAsks.add(columnSearchAsk); */
 
 			/* Convert List to Array */
 			Ask[] tableColumnChildAsksArray = tableColumnChildAsks.toArray(new Ask[0]);
@@ -895,10 +907,13 @@ public class TableUtils {
 
 				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
 						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
-						.question(ask.getQuestionCode()).addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType)
+						.question(ask.getQuestionCode())
+						.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType)
 						.weight(1.0).end().addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableRowDataType)
 						.vcl(VisualControlType.GROUP).weight(1.0).end().addTheme("THM_TABLE_ROW", serviceToken)
-						.dataType(tableRowDataType).weight(1.0).end().addTheme("THM_TABLE_CONTENT", serviceToken)
+						.dataType(tableRowDataType).weight(1.0).end()
+						.addTheme("THM_TABLE_CONTENT_BORDER", serviceToken).dataType(tableRowDataType).vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
+		                .addTheme("THM_TABLE_CONTENT", serviceToken)
 						.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
 						.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
 
@@ -920,6 +935,7 @@ public class TableUtils {
 				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
 						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
 						.question(ask.getQuestionCode()) // QUE_TEST_TABLE_HEADER_GRP
+<<<<<<< HEAD
 						.addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP_WRAPPER).end()
                   .addTheme("THM_TABLE_BORDER", serviceToken).dataType(tableCellDataType).end()
                   .addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end()
@@ -928,6 +944,17 @@ public class TableUtils {
                   .addTheme("THM_TABLE_CONTENT", serviceToken).vcl(VisualControlType.GROUP).end()	
                   .addTheme("THM_TABLE_ROW_CELL", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
 						.end().build();
+=======
+						.addTheme("THM_QUESTION_GRP_LABEL", serviceToken).vcl(VisualControlType.GROUP).dataType(tableCellDataType)
+						.end().addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP).end()
+						.addTheme("THM_TABLE_ROW_CELL", serviceToken).dataType(tableCellDataType)
+						.vcl(VisualControlType.GROUP_WRAPPER).end().addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).weight(2.0)
+						.end().addTheme("THM_TABLE_HEADER_CELL_WRAPPER", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
+						.addTheme("THM_TABLE_HEADER_CELL_GROUP_LABEL", serviceToken).vcl(VisualControlType.GROUP_LABEL).end()
+		                .addTheme("THM_TABLE_HEADER_FONT", serviceToken).vcl(VisualControlType.INPUT_FIELD).weight(1.0).end()
+		                .addTheme("THM_TABLE_HEADER_JUSTIFY_CONTENT", serviceToken).vcl(VisualControlType.INPUT_WRAPPER).dataType(tableCellDataType).weight(1.0).end()
+						.addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end().end().build();
+>>>>>>> d9643698681b706dcb3c3b685d848e1d64ba638f
 
 			}
 
@@ -1005,13 +1032,25 @@ public class TableUtils {
 						String attributeCode = column.getKey();
 						String attributeName = column.getValue();
 						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
+						
+						if (attr != null) {
+						Question childQuestion = null;
+						
+						if(attributeCode.equals("PRI_EVENT")){
+							childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr, true);
 
-						Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
-								true);
+						}else{
+							childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr, true);
+
+						}
+
 						Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 
 						/* add the entityAttribute ask to list */
 						childAskList.add(childAsk);
+						} else {
+							log.error("Attribute : "+attributeCode+" DOES NOT EXIST IN AttributeMap");
+						}
 
 					}
 

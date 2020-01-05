@@ -181,7 +181,7 @@ public class RulesLoader {
 
 	public static List<String> activeRealms = new ArrayList<String>();
 
-	public static Boolean rulesChanged = true || (!GennySettings.detectRuleChanges);
+	public static Boolean rulesChanged = false || (!GennySettings.detectRuleChanges);
 	// public static Boolean rulesChanged = true;
 
 	public static void shutdown() {
@@ -227,7 +227,12 @@ public class RulesLoader {
 		}.getType();
 		ars = ars.replaceAll("\\\"", "\"");
 		activeRealms = JsonUtils.fromJson(ars, listType);
-		realms = new HashSet<>(activeRealms);
+		if (activeRealms == null) {
+			realms = new HashSet<>();
+			log.error("NO ACTIVE REALMS");
+		} else {
+			realms = new HashSet<>(activeRealms);
+		}
 
 		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
 		log.info("LOADED ALL RULES");
