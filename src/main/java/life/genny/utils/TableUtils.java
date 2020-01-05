@@ -918,14 +918,16 @@ public class TableUtils {
 						"");
 
 				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
+						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
 						.question(ask.getQuestionCode()) // QUE_TEST_TABLE_HEADER_GRP
-						.addTheme("THM_QUESTION_GRP_LABEL", serviceToken).vcl(VisualControlType.GROUP).dataType(tableCellDataType)
-						.end().addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP).end()
-						.addTheme("THM_TABLE_ROW_CELL", serviceToken).dataType(tableCellDataType)
-						.vcl(VisualControlType.GROUP_WRAPPER).end().addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).weight(2.0)
-						.end().addTheme("THM_TABLE_HEADER_CELL_WRAPPER", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
-						.addTheme("THM_TABLE_HEADER_CELL_GROUP_LABEL", serviceToken).vcl(VisualControlType.GROUP_LABEL).end()
-						.addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end().end().build();
+						.addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP_WRAPPER).end()
+                  .addTheme("THM_TABLE_BORDER", serviceToken).dataType(tableCellDataType).end()
+                  .addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end()
+                  .addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableCellDataType).vcl(VisualControlType.GROUP).weight(1.0).end()
+                  .addTheme("THM_TABLE_ROW", serviceToken).dataType(tableCellDataType).weight(1.0).end()
+                  .addTheme("THM_TABLE_CONTENT", serviceToken).vcl(VisualControlType.GROUP).end()	
+                  .addTheme("THM_TABLE_ROW_CELL", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
+						.end().build();
 
 			}
 
