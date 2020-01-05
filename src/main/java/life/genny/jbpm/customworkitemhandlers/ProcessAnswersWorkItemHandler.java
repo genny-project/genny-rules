@@ -394,9 +394,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			Map<String, Object> results = taskAskMap.get(taskSummary);
 			if (results != null) {
 				InternalTask iTask = (InternalTask) taskService.getTaskById(taskSummary.getId());
-				System.out.println(callingWorkflow + " closing task with status " + iTask.getTaskData().getStatus());
-				log.info("####### processAnswers! sessionId=" + iTask.getTaskData().getProcessSessionId()
-						+ " with status " + iTask.getTaskData().getStatus());
+				log.info(callingWorkflow + " CLOSING task with status " + iTask.getTaskData().getStatus());
+//				log.info("####### processAnswers! sessionId=" + iTask.getTaskData().getProcessSessionId()
+//						+ " with status " + iTask.getTaskData().getStatus());
 
 				KieSession kSession = kieSessionMap.get(iTask.getId());
 				if (kSession == null) {
@@ -405,7 +405,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				}
 				results.put("taskid", iTask.getId());
 				taskService.complete(iTask.getId(), realm + "+" + userCode, results);
-				TaskUtils.sendTaskAskItems(userToken);
+			//	TaskUtils.sendTaskAskItems(userToken);
 				// kSession.signalEvent("closeTask", facts);
 				output = new OutputParam();
 				if ("NONE".equals(formCode)) {
