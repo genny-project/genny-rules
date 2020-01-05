@@ -432,13 +432,27 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					log.error("processAnswers: BAD NULL KEY IN OUTPUT PARAM MAP");
 					o.setAttributeTargetCodeMap(new HashMap<String,String>());
 				} else {
+					boolean ok = true;
+					for (String okey : map.keySet()) {
+						if (okey == null) {
+							ok = false;
+							log.error("processAnswers : BAD NULL KEY IN RESULT SET - OutputParam map ");
+						} else if (map.get(key)==null){
+							log.error("processAnswers : BAD NULL KEY IN RESULT SET VALUE - OutputParam map - key= "+okey);
+							ok = false;
+						}
+					}
+					if (ok) {
+						log.error("processAnswers :  OutputParam map is ok");
+					}
+					
 					log.info("processAnswers: resultMap OPutputParam seems fine");
 				}
 			} else {
 				log.info("processAnswers: resultMap  seems fine");
 			}
 		}
-		manager.completeWorkItem(workItem.getId(), null/*resultMap*/);
+		manager.completeWorkItem(workItem.getId(), resultMap);
 
 		return;
 
