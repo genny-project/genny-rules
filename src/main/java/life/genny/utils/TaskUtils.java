@@ -19,15 +19,21 @@ import org.kie.api.task.model.TaskSummary;
 
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.Context;
+import life.genny.qwanda.ContextList;
+import life.genny.qwanda.ContextType;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
 import life.genny.qwanda.TaskAsk;
+import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
+import life.genny.qwanda.validation.Validation;
+import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 
@@ -160,8 +166,9 @@ public class TaskUtils {
 				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getName());
 				item.setRealm(userToken.getRealm());
 				item.setIndex(index++);
-				Attribute questionDraftItemAttribute = new Attribute("QQQ_DRAFT_ITEM", "link",
-						new DataType(String.class));
+				// Attribute questionDraftItemAttribute = new Attribute("QQQ_DRAFT_ITEM", "link",
+				// 		new DataType(String.class));
+				Attribute questionDraftItemAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 
 				Question question = new Question("QUE_TASK-" + task.getId(), task.getName(), questionDraftItemAttribute,
 						true);
@@ -172,6 +179,31 @@ public class TaskUtils {
 			}
 		}
 
+		/* add the contextList to QUE_DRAFTS_GRP */
+		Context contextDropdownItem = new Context(ContextType.THEME, new BaseEntity("THM_DROPDOWN_ITEM", "THM_DROPDOWN_ITEM"),
+				VisualControlType.VCL);
+		contextDropdownItem.setDataType("Form Submit Cancel");
+
+		List<Context> contexts = new ArrayList<Context>();
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DROPDOWN_ICON_HIDE", "THM_DROPDOWN_ICON_HIDE")));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_BACKGROUND_NONE", "THM_BACKGROUND_NONE"),
+				VisualControlType.GROUP, 2.0));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DROPDOWN_BEHAVIOUR_GENNY", "THM_DROPDOWN_BEHAVIOUR_GENNY"),
+				VisualControlType.GROUP));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DROPDOWN_HEADER_WRAPPER_GENNY", "THM_DROPDOWN_HEADER_WRAPPER_GENNY")));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DROPDOWN_GROUP_LABEL_GENNY", "THM_DROPDOWN_GROUP_LABEL_GENNY")));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DROPDOWN_CONTENT_WRAPPER_GENNY", "THM_DROPDOWN_CONTENT_WRAPPER_GENNY"),
+				VisualControlType.GROUP_CONTENT_WRAPPER));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_PROJECT_COLOR_SURFACE", "THM_PROJECT_COLOR_SURFACE"),
+				VisualControlType.GROUP_CONTENT_WRAPPER));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_BOX_SHADOW_SM", "THM_BOX_SHADOW_SM"),
+				VisualControlType.GROUP_CONTENT_WRAPPER));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DROPDOWN_VCL_GENNY", "THM_DROPDOWN_VCL_GENNY"),
+				VisualControlType.VCL));
+		contexts.add(contextDropdownItem);
+
+		ContextList contextList = new ContextList(contexts);
+
 		/* converting childAsks list to array */
 		Ask[] childAsArr = taskAskItemList.stream().toArray(Ask[]::new);
 		/* Get the on-the-fly question attribute */
@@ -180,13 +212,15 @@ public class TaskUtils {
 		/* Generate ask for the baseentity */
 		Question parentQuestion = new Question("QUE_DRAFTS_GRP", "Drafts", questionAttribute, true);
 		Ask parentAsk = new Ask(parentQuestion, userToken.getUserCode(), userToken.getUserCode());
+		
+		/* setting the contextList to the the question */
+		parentAsk.setContextList(contextList);
 
 		/* setting weight to parent ask */
 		parentAsk.setWeight(1.0);
 
 		/* set all the childAsks to parentAsk */
 		parentAsk.setChildAsks(childAsArr);
-
 
 		QDataAskMessage askMsg = new QDataAskMessage(parentAsk);
 		askMsg.setToken(userToken.getToken());
