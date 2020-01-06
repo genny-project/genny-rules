@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -73,7 +74,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
     String userCode = userToken.getUserCode();
     BaseEntity user = beUtils.getBaseEntityByCode(userCode);
 	List<EntityAttribute> roles = user.findPrefixEntityAttributes("PRI_IS_");
-	List<Allowed> allowable = new ArrayList<Allowed>();
+	List<Allowed> allowable = new CopyOnWriteArrayList<Allowed>();
 	for (EntityAttribute role : roles) { // should store in cached map
 		Boolean value = role.getValue();
 		if (value) {

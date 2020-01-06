@@ -3,27 +3,23 @@ package life.genny.jbpm.customworkitemhandlers;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.drools.core.ClassObjectFilter;
 import org.drools.core.process.instance.impl.WorkItemImpl;
 import org.jbpm.process.core.timer.DateTimeUtils;
-import org.jbpm.services.task.exception.PermissionDeniedException;
 import org.jbpm.services.task.impl.util.HumanTaskHandlerHelper;
 import org.jbpm.services.task.utils.ContentMarshallerHelper;
 import org.jbpm.services.task.utils.OnErrorAction;
-import org.jbpm.services.task.utils.TaskFluent;
 import org.jbpm.services.task.wih.NonManagedLocalHTWorkItemHandler;
 import org.jbpm.services.task.wih.util.PeopleAssignmentHelper;
 import org.kie.api.KieBase;
@@ -36,9 +32,6 @@ import org.kie.api.runtime.process.CaseData;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.kie.api.task.TaskService;
-import org.kie.api.task.model.Attachment;
-import org.kie.api.task.model.Content;
-import org.kie.api.task.model.Group;
 import org.kie.api.task.model.I18NText;
 import org.kie.api.task.model.OrganizationalEntity;
 import org.kie.api.task.model.PeopleAssignments;
@@ -48,10 +41,7 @@ import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.runtime.manager.context.EmptyContext;
 import org.kie.internal.task.api.InternalTaskService;
 import org.kie.internal.task.api.TaskModelProvider;
-import org.kie.internal.task.api.model.AccessType;
 import org.kie.internal.task.api.model.ContentData;
-import org.kie.internal.task.api.model.InternalAttachment;
-import org.kie.internal.task.api.model.InternalContent;
 import org.kie.internal.task.api.model.InternalI18NText;
 import org.kie.internal.task.api.model.InternalOrganizationalEntity;
 import org.kie.internal.task.api.model.InternalTask;
@@ -65,7 +55,6 @@ import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.JsonUtils;
-
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.SessionFacts;
@@ -365,7 +354,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
         }
         
         if (questionCode != null) {
-            List<I18NText> names = new ArrayList<I18NText>();
+            List<I18NText> names = new CopyOnWriteArrayList<I18NText>();
             I18NText text = TaskModelProvider.getFactory().newI18NText();
             ((InternalI18NText) text).setLanguage(locale);
             ((InternalI18NText) text).setText(questionCode);
@@ -390,7 +379,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             description = questionCode;//question.getName();
         }
         
-        List<I18NText> descriptions = new ArrayList<I18NText>();
+        List<I18NText> descriptions = new CopyOnWriteArrayList<I18NText>();
         I18NText descText = TaskModelProvider.getFactory().newI18NText();
         ((InternalI18NText) descText).setLanguage(locale);
         ((InternalI18NText) descText).setText(description);
@@ -399,7 +388,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
         
         task.setDescription(description);
         
-        List<I18NText> subjects = new ArrayList<I18NText>();
+        List<I18NText> subjects = new CopyOnWriteArrayList<I18NText>();
         I18NText subjectText = TaskModelProvider.getFactory().newI18NText();
         ((InternalI18NText) subjectText).setLanguage(locale);
         ((InternalI18NText) subjectText).setText(comment);
