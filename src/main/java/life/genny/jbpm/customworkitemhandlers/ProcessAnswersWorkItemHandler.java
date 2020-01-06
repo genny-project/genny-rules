@@ -208,9 +208,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				log.error("*************** Task content is NULL *********** ABORTING");
 				return;
 			}
-			HashMap<String, Object> taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
+			HashMap<String, Object> taskAsks2 = null;
+			ConcurrentHashMap<String, Object> taskAsks  = null;
+			synchronized (this) {
+			taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
 					.unmarshall(c.getContent(), null);
-			ConcurrentHashMap<String, Object> taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+				
+			taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+			}
 
 			formCode = (String) taskAsks.get("FORM_CODE");
 			targetCode = (String) taskAsks.get("TARGET_CODE");
