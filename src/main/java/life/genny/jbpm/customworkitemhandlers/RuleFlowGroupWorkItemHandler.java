@@ -23,6 +23,7 @@ import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
+import life.genny.model.OutputParam2;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
@@ -223,6 +224,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 			}
 			
+//			OutputParam output2 = new OutputParam2();
+//			FactHandle output2Fact = newKieSession.insert(output2);
+			
 			/* INserting facts to save the output result*/
 			FactHandle factHandle =  newKieSession.insert(output);
 			FactHandle answersToSaveHandle =  newKieSession.insert(answersToSave);
@@ -244,8 +248,13 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	    	
 	    	newKieSession.fireAllRules();
 	    	
+//	    	output2 = (OutputParam) newKieSession.getObject(output2Fact);
 	    	output = (OutputParam) newKieSession.getObject(factHandle);
 	    	answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
+//	    	// HACK
+//	    	if (!output2.getResultCode().equalsIgnoreCase("DUMMY")) {
+//	    		output = output2;
+//	    	}
 	    	resultMap.put("output", output);
 	    	resultMap.put("answersToSave",answersToSave);
 	    	newKieSession.retract(ruleDetailsHandle);

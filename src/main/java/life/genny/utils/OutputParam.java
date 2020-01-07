@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class OutputParam implements Serializable,Comparable {
+public class OutputParam implements Serializable,Comparable<OutputParam> {
 	  /**
 	 * This class is used by RuleFlowGroupWorkItemHandler to store the output result of the Rule Task.
 	 */
@@ -219,7 +219,7 @@ public class OutputParam implements Serializable,Comparable {
 	}
 
 	@Override
-	public int compareTo(Object o) {
+	public int compareTo(OutputParam o) {
 		if (this == o)
 			return 0;
 		if (o == null)

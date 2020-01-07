@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -44,7 +46,7 @@ public class GetProcessesUsingVariable implements WorkItemHandler {
 
     public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
         log.info("Executing GetProcessesUsingVariable handler. Requested PrcoessId By : " + workItem.getProcessInstanceId());
-        final Map<String,Object> resultMap = new HashMap<String,Object>();
+        final Map<String,Object> resultMap = new ConcurrentHashMap<String,Object>();
         
         /* Configuring query Service and registering query statement */
          
@@ -75,8 +77,9 @@ public class GetProcessesUsingVariable implements WorkItemHandler {
 			Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstancesByVariable",ProcessInstanceQueryMapper.get(), ctx,
 														QueryParam.equalsTo(variableName, variableValue));	
 			
-			List<Long> resultArray = instances.stream().map(d -> d.getId()).collect(Collectors.toList());
+			List<Long> resultArray = new CopyOnWriteArrayList<Long>(instances.stream().map(d -> d.getId()).collect(Collectors.toList()));
 			OutputParam output = new OutputParam();
+			
 			output.setResult(resultArray);
 			
 			resultMap.put("output", output);
