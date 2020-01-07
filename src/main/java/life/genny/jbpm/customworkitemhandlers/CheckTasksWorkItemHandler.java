@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.persistence.EntityManager;
 
@@ -74,8 +75,8 @@ public class CheckTasksWorkItemHandler implements WorkItemHandler {
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 
 		/* resultMap is used to map the result Value to the output parameters */
-		final Map<String, Object> resultMap = new HashMap<String, Object>();
-		Map<TaskSummary, Map<String, Object>> taskAskMap = new HashMap<TaskSummary, Map<String, Object>>();
+		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
+		Map<TaskSummary, Map<String, Object>> taskAskMap = new ConcurrentHashMap<TaskSummary, Map<String, Object>>();
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
@@ -92,7 +93,7 @@ public class CheckTasksWorkItemHandler implements WorkItemHandler {
 		}
 
 		// Extract all the current questions from all the users Tasks
-		List<Status> statuses = new ArrayList<Status>();
+		List<Status> statuses = new CopyOnWriteArrayList<Status>();
 		statuses.add(Status.Ready);
 		// statuses.add(Status.Completed);
 		// statuses.add(Status.Created);
@@ -169,7 +170,7 @@ public class CheckTasksWorkItemHandler implements WorkItemHandler {
 			HashMap<String, Object> taskAsksMap) {
 		ContentData content = null;
 		Object contentObject = null;
-		contentObject = new HashMap<String, Object>(taskAsksMap);
+		contentObject = new ConcurrentHashMap<String, Object>(taskAsksMap);
 		if (contentObject != null) {
 			Environment env = null;
 			if (session != null) {

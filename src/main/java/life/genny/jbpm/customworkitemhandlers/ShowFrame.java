@@ -543,7 +543,7 @@ public class ShowFrame implements WorkItemHandler {
 			if (attribute != null) {
 
 				DataType dt = attribute.getDataType();
-				log.info("DATATYPE IS " + dt);
+				//log.info("DATATYPE IS " + dt);
 
 				List<Validation> vl = dt.getValidationList();
 
@@ -577,7 +577,7 @@ public class ShowFrame implements WorkItemHandler {
 							if ("null".equals(json.getString("value"))) {
 
 								throw new IllegalArgumentException(
-										val.getCode() + " groupCode has Illegal Group Code : " + groupCode);
+										val.getCode() + " groupCode has Illegal Group Code : [" + groupCode+"] dataType=["+dt+"] for attributeCode:["+attributeCode+"]");
 
 							} else if ("ok".equals(json.getString("status"))) {
 

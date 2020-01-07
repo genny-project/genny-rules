@@ -1,12 +1,11 @@
 package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.persistence.EntityManager;
 
@@ -39,7 +38,6 @@ import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.Attribute;
-import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
@@ -48,7 +46,6 @@ import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
-import life.genny.utils.SessionFacts;
 import life.genny.utils.TaskUtils;
 import life.genny.utils.VertxUtils;
 
@@ -106,7 +103,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		}
 
 		// Extract all the current questions from all the users Tasks
-		List<Status> statuses = new ArrayList<Status>();
+		List<Status> statuses = new CopyOnWriteArrayList<Status>();
 		statuses.add(Status.Ready);
 		// statuses.add(Status.Completed);
 		// statuses.add(Status.Created);
@@ -134,7 +131,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		Map<String, Answer> answerMap2 = new ConcurrentHashMap<String, Answer>();
 		Boolean exitOut = false;
 		Boolean submitDetected = false;
-		List<Answer> answersToSave2 = new ArrayList<>(answersToSave.getAnswers());
+		List<Answer> answersToSave2 = new CopyOnWriteArrayList<>(answersToSave.getAnswers());
 		for (Answer answer : answersToSave2) {
 			Boolean validAnswer = validate(answer, userToken);
 			// Quick and dirty ...
@@ -168,7 +165,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		}
 		if ((!validAnswersExist) || exitOut || (answerMap2.isEmpty())) {
 			log.error(callingWorkflow + " exiting out early due to no valid answers nor pri_submit");
-			output.setResult("NONE");
+			output.setResultCode("NONE");
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
 			return;
@@ -196,7 +193,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (kSession == null) {
 				log.error("Cannot find session to restore for ksid=" + task.getTaskData().getProcessSessionId());
 				log.error(callingWorkflow + " exiting out early due to nokSession");
-				output.setResult("NONE");
+				output.setResultCode("NONE");
 				resultMap.put("output", output);
 				manager.completeWorkItem(workItem.getId(), resultMap);
 				return;
@@ -211,15 +208,20 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				log.error("*************** Task content is NULL *********** ABORTING");
 				return;
 			}
-			HashMap<String, Object> taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
+			HashMap<String, Object> taskAsks2 = null;
+			ConcurrentHashMap<String, Object> taskAsks  = null;
+			synchronized (this) {
+			taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
 					.unmarshall(c.getContent(), null);
-			ConcurrentHashMap<String, Object> taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+				
+			taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+			}
 
 			formCode = (String) taskAsks.get("FORM_CODE");
 			targetCode = (String) taskAsks.get("TARGET_CODE");
 			// Loop through all the answers check their validity and save them.
-			List<Answer> validAnswers = new ArrayList<Answer>();
-			List<TaskAsk> taskAsksProcessed = new ArrayList<TaskAsk>();
+			List<Answer> validAnswers = new CopyOnWriteArrayList<Answer>();
+			List<TaskAsk> taskAsksProcessed = new CopyOnWriteArrayList<TaskAsk>();
 
 			if (!answerMap2.isEmpty()) {
 				answerMap.putAll(answerMap2);
@@ -382,7 +384,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if ((!uglySkip) && (!answerMap2.values().isEmpty())) { // don't save submit button
 				synchronized (this) {
 					log.info("processAnswers: Saving Answers :" + answerMap2.values());
-					beUtils.saveAnswers(new ArrayList<>(answerMap2.values()));
+					beUtils.saveAnswers(new CopyOnWriteArrayList<>(answerMap2.values()));
 				}
 			}
 		}
@@ -405,7 +407,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				}
 				results.put("taskid", iTask.getId());
 				taskService.complete(iTask.getId(), realm + "+" + userCode, results);
-			//	TaskUtils.sendTaskAskItems(userToken);
+				TaskUtils.sendTaskAskItems(userToken);
 				// kSession.signalEvent("closeTask", facts);
 				output = new OutputParam();
 				if ("NONE".equals(formCode)) {
@@ -452,7 +454,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				log.info("processAnswers: resultMap  seems fine");
 			}
 		}
-		manager.completeWorkItem(workItem.getId(), resultMap);
+		kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
+	//	manager.completeWorkItem(workItem.getId(), resultMap);
 
 		return;
 

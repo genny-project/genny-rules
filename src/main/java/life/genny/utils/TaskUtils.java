@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.logging.log4j.Logger;
 import org.jbpm.services.task.utils.ContentMarshallerHelper;
@@ -17,17 +18,24 @@ import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
 
+import life.genny.model.OutputParam2;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.Context;
+import life.genny.qwanda.ContextList;
+import life.genny.qwanda.ContextType;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
 import life.genny.qwanda.TaskAsk;
+import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
+import life.genny.qwanda.validation.Validation;
+import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 
@@ -147,6 +155,7 @@ public class TaskUtils {
 	}
 
 	public static void sendTaskAskItems(GennyToken userToken) {
+
 		List<Ask> taskAskItemList = new ArrayList<Ask>();
 		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
 		if ((taskSummarys != null) && (!taskSummarys.isEmpty())) {
@@ -160,7 +169,10 @@ public class TaskUtils {
 				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getName());
 				item.setRealm(userToken.getRealm());
 				item.setIndex(index++);
-				Attribute questionDraftItemAttribute = new Attribute("QQQ_DRAFT_ITEM", "link",
+				// Attribute questionDraftItemAttribute = new Attribute("QQQ_DRAFT_ITEM",
+				// "link",
+				// new DataType(String.class));
+				Attribute questionDraftItemAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
 						new DataType(String.class));
 
 				Question question = new Question("QUE_TASK-" + task.getId(), task.getName(), questionDraftItemAttribute,
@@ -172,6 +184,37 @@ public class TaskUtils {
 			}
 		}
 
+		/* add the contextList to QUE_DRAFTS_GRP */
+		Context contextDropdownItem = new Context(ContextType.THEME,
+				new BaseEntity("THM_DROPDOWN_ITEM", "THM_DROPDOWN_ITEM"), VisualControlType.VCL);
+		contextDropdownItem.setDataType("Form Submit Cancel");
+
+		List<Context> contexts = new ArrayList<Context>();
+		contexts.add(
+				new Context(ContextType.THEME, new BaseEntity("THM_DROPDOWN_ICON_HIDE", "THM_DROPDOWN_ICON_HIDE")));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_BACKGROUND_NONE", "THM_BACKGROUND_NONE"),
+				VisualControlType.GROUP, 2.0));
+		contexts.add(new Context(ContextType.THEME,
+				new BaseEntity("THM_DROPDOWN_BEHAVIOUR_GENNY", "THM_DROPDOWN_BEHAVIOUR_GENNY"),
+				VisualControlType.GROUP));
+		contexts.add(new Context(ContextType.THEME,
+				new BaseEntity("THM_DROPDOWN_HEADER_WRAPPER_GENNY", "THM_DROPDOWN_HEADER_WRAPPER_GENNY")));
+		contexts.add(new Context(ContextType.THEME,
+				new BaseEntity("THM_DROPDOWN_GROUP_LABEL_GENNY", "THM_DROPDOWN_GROUP_LABEL_GENNY")));
+		contexts.add(new Context(ContextType.THEME,
+				new BaseEntity("THM_DROPDOWN_CONTENT_WRAPPER_GENNY", "THM_DROPDOWN_CONTENT_WRAPPER_GENNY"),
+				VisualControlType.GROUP_CONTENT_WRAPPER));
+		contexts.add(
+				new Context(ContextType.THEME, new BaseEntity("THM_PROJECT_COLOR_SURFACE", "THM_PROJECT_COLOR_SURFACE"),
+						VisualControlType.GROUP_CONTENT_WRAPPER));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_BOX_SHADOW_SM", "THM_BOX_SHADOW_SM"),
+				VisualControlType.GROUP_CONTENT_WRAPPER));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DROPDOWN_VCL_GENNY", "THM_DROPDOWN_VCL_GENNY"),
+				VisualControlType.VCL));
+		contexts.add(contextDropdownItem);
+
+		ContextList contextList = new ContextList(contexts);
+
 		/* converting childAsks list to array */
 		Ask[] childAsArr = taskAskItemList.stream().toArray(Ask[]::new);
 		/* Get the on-the-fly question attribute */
@@ -181,12 +224,14 @@ public class TaskUtils {
 		Question parentQuestion = new Question("QUE_DRAFTS_GRP", "Drafts", questionAttribute, true);
 		Ask parentAsk = new Ask(parentQuestion, userToken.getUserCode(), userToken.getUserCode());
 
+		/* setting the contextList to the the question */
+		parentAsk.setContextList(contextList);
+
 		/* setting weight to parent ask */
 		parentAsk.setWeight(1.0);
 
 		/* set all the childAsks to parentAsk */
 		parentAsk.setChildAsks(childAsArr);
-
 
 		QDataAskMessage askMsg = new QDataAskMessage(parentAsk);
 		askMsg.setToken(userToken.getToken());
@@ -195,5 +240,51 @@ public class TaskUtils {
 		Integer length = sendingMsg.length();
 		VertxUtils.writeMsg("webcmds", sendingMsg);
 
+	}
+
+	public static OutputParam getTaskOutputParam(GennyToken userToken, Long taskId) {
+		OutputParam output = new OutputParam();
+		log.info("getTaskOutputParam: taskId=" + taskId);
+		// Make sure that only valid taskIds are looked at
+		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
+		Boolean found = false;
+		for (TaskSummary ts : taskSummarys) {
+			Long tsId = ts.getId();
+			if (tsId.equals(taskId)) {
+				found = true;
+				break;
+			}
+		}
+		log.info("getTaskOutputParam: found=" + found);
+		if (found) {
+			TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+			Task task = taskService.getTaskById(taskId);
+			String formCode = task.getFormName();
+			output.setFormCode(formCode, "FRM_CONTENT");
+			output.setTaskId(taskId);
+			Long docId = task.getTaskData().getDocumentContentId();
+			Content c = taskService.getContentById(docId);
+			if (c == null) {
+				log.error("*************** Task content is NULL *********** ABORTING");
+				return output;
+			}
+			HashMap<String, Object> taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
+					.unmarshall(c.getContent(), null);
+			ConcurrentHashMap<String, Object> taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+
+			// Now find the formcode and set up the attribute:targetCode map
+			for (String key : taskAsks.keySet()) {
+				if (taskAsks.get(key) instanceof String) {
+					continue;
+				}
+				TaskAsk ask = (TaskAsk) taskAsks.get(key);
+				String attributeCode = ask.getAsk().getAttributeCode();
+				String targetCode = ask.getAsk().getTargetCode();
+				output.getAttributeTargetCodeMap().put(attributeCode, targetCode);
+			}
+		} else {
+			log.error("taskId supplied is not allowed or valid for the user");
+		}
+		return output;
 	}
 }
