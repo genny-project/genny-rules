@@ -264,19 +264,19 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //	    	if (!output2.getResultCode().equalsIgnoreCase("DUMMY")) {
 //	    		output = output2;
 //	    	}
-
-//				QEventMessage msg = (QEventMessage) items.get("message");
-//				if (msg != null) {
 //
-//					JsonObject cachedOutputJson = VertxUtils.readCachedJson(userToken.getRealm(),
-//							"OUTPUT:" + msg.getData().getCode(), userToken.getToken());
-//					if (cachedOutputJson.getString("status").equalsIgnoreCase("ok")) {
-//						OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("status"), OutputParam.class);
-//						if (o != null) {
-//							output = o;
-//						}
-//					}
-//				}
+				QEventMessage msg = (QEventMessage) items.get("message");
+				if (msg != null) {
+
+					JsonObject cachedOutputJson = VertxUtils.readCachedJson(userToken.getRealm(),
+							"OUTPUT:" + msg.getData().getCode(), userToken.getToken());
+					if (cachedOutputJson.getString("status").equalsIgnoreCase("ok")) {
+						OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("status"), OutputParam.class);
+						if (o != null) {
+							output = o;
+						}
+					}
+				}
 
 				resultMap.put("output", output);
 				resultMap.put("answersToSave", answersToSave);
