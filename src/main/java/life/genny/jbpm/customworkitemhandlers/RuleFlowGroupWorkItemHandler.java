@@ -271,7 +271,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					JsonObject cachedOutputJson = VertxUtils.readCachedJson(userToken.getRealm(),
 							"OUTPUT:" + msg.getData().getCode(), userToken.getToken());
 					if (cachedOutputJson.getString("status").equalsIgnoreCase("ok")) {
-						OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("status"), OutputParam.class);
+						OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("value"), OutputParam.class);
 						if (o != null) {
 							output = o;
 						}

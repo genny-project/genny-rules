@@ -452,13 +452,13 @@ public class ShowFrame implements WorkItemHandler {
 					userToken.getToken());
 
 			if (askMsgs2Str == null) {
-				log.info("SHowFrame 455 DDT = " + GennySettings.ddtUrl);
-//				try {
-//					askMsgs2Str = QwandaUtils.apiGet(
-//							GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS",
-//							userToken.getToken());
-//					JsonObject json = new JsonObject(askMsgs2Str);
-//					askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
+				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl+ " with rootFrameCode = "+rootFrameCode);
+				try {
+					askMsgs2Str = QwandaUtils.apiGet(
+							GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS",
+							userToken.getToken());
+					JsonObject json = new JsonObject(askMsgs2Str);
+					askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
 				if (askMsgs2Str == null) {
 					log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode
 							+ "_ASKS");
@@ -486,14 +486,14 @@ public class ShowFrame implements WorkItemHandler {
 						log.error(rootFrame + " is not in cache");
 					}
 				}
-//				} catch (ClientProtocolException e) {
-//
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
+				} catch (ClientProtocolException e) {
+
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 
 			}
 		}
