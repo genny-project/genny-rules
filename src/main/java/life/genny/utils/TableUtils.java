@@ -297,7 +297,7 @@ public class TableUtils {
 		List<Ask> rowAsks = new ArrayList<Ask>();
 		TableData tableData = generateTableAsks(searchBE);
 
-		Ask headerAsk = getMyHeaderAsk(searchBE);
+		Ask headerAsk = getHeaderAsk(searchBE);
 
 		List<Context> headerContexts = new ArrayList<Context>();
 		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_HEADER_FONT", "THM_TABLE_HEADER_FONT"),
@@ -1031,7 +1031,7 @@ public class TableUtils {
 		return themeBe;
 	}
 
-	public Ask getMyHeaderAsk(SearchEntity searchBe){
+	public Ask getHeaderAsk(SearchEntity searchBe){
 		/* get table columns */
 		Map<String, String> columns = getTableColumns(searchBe);
 		List<Ask> asks = new ArrayList<Ask>();
