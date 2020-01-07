@@ -80,7 +80,7 @@ public class GetProcessesUsingVariable implements WorkItemHandler {
 			List<Long> resultArray = new CopyOnWriteArrayList<Long>(instances.stream().map(d -> d.getId()).collect(Collectors.toList()));
 			OutputParam output = new OutputParam();
 			
-			output.setResult(resultArray);
+			output.setLongList(resultArray);
 			
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);

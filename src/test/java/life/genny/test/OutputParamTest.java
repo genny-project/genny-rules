@@ -5,12 +5,26 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.javamoney.moneta.Money;
 import org.junit.Test;
 
+import com.google.gson.Gson;
+
 import life.genny.model.OutputParamTreeSet;
+import life.genny.qwanda.DateTimeDeserializer;
+import life.genny.qwanda.MoneyDeserializer;
+import life.genny.qwanda.datatype.LocalDateConverter;
+import life.genny.qwandautils.JsonUtils;
 import life.genny.utils.OutputParam;
 
 public class OutputParamTest {
+
+	
 	@Test
 	public void outputParamEqualsTest()
 	{
@@ -42,6 +56,24 @@ public class OutputParamTest {
 		set.add(o2);
 		// 
 		
+		
+	}
+	
+	@Test
+	public void outputParamJsonTest()
+	{
+		OutputParam o = new OutputParam();
+		o.setFormCode("FRM_APP", "FRM_ROOT");
+		o.setTaskId(2L);
+		Map<String,String> map = new ConcurrentHashMap<String,String>();
+		map.put("PRI_NAME", "PER_USER1");
+		map.put("PRI_LASTNAME", "PER_USER1");
+		o.setAttributeTargetCodeMap(map);
+		
+		System.out.println(o);
+		String json = JsonUtils.toJson(o);
+		System.out.println(json);
+
 		
 	}
 	

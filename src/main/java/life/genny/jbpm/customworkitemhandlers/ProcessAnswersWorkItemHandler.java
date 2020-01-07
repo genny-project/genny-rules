@@ -165,7 +165,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		}
 		if ((!validAnswersExist) || exitOut || (answerMap2.isEmpty())) {
 			log.error(callingWorkflow + " exiting out early due to no valid answers nor pri_submit");
-			output.setResult("NONE");
+			output.setResultCode("NONE");
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
 			return;
@@ -193,7 +193,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (kSession == null) {
 				log.error("Cannot find session to restore for ksid=" + task.getTaskData().getProcessSessionId());
 				log.error(callingWorkflow + " exiting out early due to nokSession");
-				output.setResult("NONE");
+				output.setResultCode("NONE");
 				resultMap.put("output", output);
 				manager.completeWorkItem(workItem.getId(), resultMap);
 				return;
@@ -454,7 +454,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				log.info("processAnswers: resultMap  seems fine");
 			}
 		}
-		manager.completeWorkItem(workItem.getId(), resultMap);
+		kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
+	//	manager.completeWorkItem(workItem.getId(), resultMap);
 
 		return;
 

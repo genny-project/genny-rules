@@ -1,24 +1,37 @@
 package life.genny.utils;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import com.google.gson.annotations.Expose;
 
 
-public class OutputParam implements Serializable,Comparable<OutputParam> {
+public class OutputParam implements Serializable,Comparable<Object> {
 	  /**
 	 * This class is used by RuleFlowGroupWorkItemHandler to store the output result of the Rule Task.
 	 */
 	private static final long serialVersionUID = 1L;
+	@Expose
 	private Object result;
+	@Expose
 	private Integer level=0;
 
+	@Expose
 	private String typeOfResult="ERROR";  // FRAME_CODE or LIFECYCLE
+	@Expose
 	private String resultCode = "DUMMY";
+	@Expose
 	private String targetCode = "DUMMY";
-	
+	@Expose
 	private Long taskId = -1L;
-	
+	@Expose
+	private List<Long> longList = new ArrayList<Long>();
+
+	@Expose
 	private Map<String,String> attributeTargetCodeMap = new ConcurrentHashMap<String,String>();
 
 	public OutputParam()
@@ -98,13 +111,13 @@ public class OutputParam implements Serializable,Comparable<OutputParam> {
 		this.typeOfResult = typeOfResult;
 	}
 
-	public Object getResult() {
-		return result;
-	}
-	
-	public void setResult(Object result) {
-		this.result = result;
-	}
+//	public Object getResult() {
+//		return result;
+//	}
+//	
+//	public void setResult(Object result) {
+//		this.result = result;
+//	}
 
 	
 	
@@ -156,6 +169,23 @@ public class OutputParam implements Serializable,Comparable<OutputParam> {
 	 */
 	public void setAttributeTargetCodeMap(Map<String, String> attributeTargetCodeMap) {
 		this.attributeTargetCodeMap = attributeTargetCodeMap;
+	}
+
+	
+	
+	
+	/**
+	 * @return the longList
+	 */
+	public List<Long> getLongList() {
+		return longList;
+	}
+
+	/**
+	 * @param longList the longList to set
+	 */
+	public void setLongList(List<Long> longList) {
+		this.longList = longList;
 	}
 
 	@Override
@@ -219,7 +249,7 @@ public class OutputParam implements Serializable,Comparable<OutputParam> {
 	}
 
 	@Override
-	public int compareTo(OutputParam o) {
+	public int compareTo(Object o) {
 		if (this == o)
 			return 0;
 		if (o == null)
