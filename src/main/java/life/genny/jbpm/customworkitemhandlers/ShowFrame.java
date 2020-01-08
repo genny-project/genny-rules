@@ -452,45 +452,34 @@ public class ShowFrame implements WorkItemHandler {
 					userToken.getToken());
 
 			if (askMsgs2Str == null) {
-				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl+ " with rootFrameCode = "+rootFrameCode);
-				try {
-					log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode
-							+ "_ASKS");
-					String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
-							userToken.getToken());
-					Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
-					if (rootFrame != null) {
-						if (rootFrame.getCode().startsWith("FRM_QUE_")) {
+				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl + " with rootFrameCode = " + rootFrameCode);
+				log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode + "_ASKS");
+				String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
+						userToken.getToken());
+				Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
+				if (rootFrame != null) {
+					if (rootFrame.getCode().startsWith("FRM_QUE_")) {
 
-							FrameUtils2.toMessage2(rootFrame, userToken, "PER_SOURCE", "PER_TARGET");
-						} else {
-							Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
-							FrameUtils2.toMessage(rootFrame, userToken, contextListMap, "PER_SERVICE", "PER_SERVICE",
-									true);
-
-							// FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
-						}
-						askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
-								rootFrameCode + "_ASKS", userToken.getToken());
-						if (askMsgs2Str == null) {
-							log.error("Frame ASKS for " + rootFrameCode + " is just not happening...");
-							return new HashSet<QDataAskMessage>();
-						}
+						FrameUtils2.toMessage2(rootFrame, userToken, "PER_SOURCE", "PER_TARGET");
 					} else {
-						log.error(rootFrame + " is not in cache");
+						Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
+						FrameUtils2.toMessage(rootFrame, userToken, contextListMap, "PER_SERVICE", "PER_SERVICE", true);
+
+						// FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
 					}
+					askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
+							rootFrameCode + "_ASKS", userToken.getToken());
+					if (askMsgs2Str == null) {
+						log.error("Frame ASKS for " + rootFrameCode + " is just not happening...");
+						return new HashSet<QDataAskMessage>();
+					}
+				} else {
+					log.error(rootFrame + " is not in cache");
 				}
-//				} catch (ClientProtocolException e) {
-//
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
+
+			}
 
 		}
-		
 
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
@@ -537,7 +526,7 @@ public class ShowFrame implements WorkItemHandler {
 			if (attribute != null) {
 
 				DataType dt = attribute.getDataType();
-				//log.info("DATATYPE IS " + dt);
+				// log.info("DATATYPE IS " + dt);
 
 				List<Validation> vl = dt.getValidationList();
 
@@ -571,7 +560,8 @@ public class ShowFrame implements WorkItemHandler {
 							if ("null".equals(json.getString("value"))) {
 
 								throw new IllegalArgumentException(
-										val.getCode() + " groupCode has Illegal Group Code : [" + groupCode+"] dataType=["+dt+"] for attributeCode:["+attributeCode+"]");
+										val.getCode() + " groupCode has Illegal Group Code : [" + groupCode
+												+ "] dataType=[" + dt + "] for attributeCode:[" + attributeCode + "]");
 
 							} else if ("ok".equals(json.getString("status"))) {
 
