@@ -432,18 +432,49 @@ public class ShowFrame implements WorkItemHandler {
 			log.info("Forcing ASKS to be read from api call to cache");
 //						askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
 //						String.class, userToken.getToken());
-			try {
-				askMsgs2Str = QwandaUtils.apiGet(
-						GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS",
+//			try {
+//				askMsgs2Str = QwandaUtils.apiGet(
+//						GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS",
+//						userToken.getToken());
+//				JsonObject json = new JsonObject(askMsgs2Str);
+//				askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
+//			} catch (ClientProtocolException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+			
+			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS",
+					userToken.getToken());
+
+			if (askMsgs2Str == null) {
+				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl + " with rootFrameCode = " + rootFrameCode);
+				log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode + "_ASKS");
+				String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 						userToken.getToken());
-				JsonObject json = new JsonObject(askMsgs2Str);
-				askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
-			} catch (ClientProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
+				if (rootFrame != null) {
+					if (rootFrame.getCode().startsWith("FRM_QUE_")) {
+
+						FrameUtils2.toMessage2(rootFrame, userToken, "PER_SOURCE", "PER_TARGET");
+					} else {
+						Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
+						FrameUtils2.toMessage(rootFrame, userToken, contextListMap, "PER_SERVICE", "PER_SERVICE", true);
+
+						// FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
+					}
+					askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
+							rootFrameCode + "_ASKS", userToken.getToken());
+					if (askMsgs2Str == null) {
+						log.error("Frame ASKS for " + rootFrameCode + " is just not happening...");
+						return new HashSet<QDataAskMessage>();
+					}
+				} else {
+					log.error(rootFrame + " is not in cache");
+				}
+
 			}
 
 		} else {

@@ -28,6 +28,7 @@ import life.genny.model.OutputParam2;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
+import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.Allowed;
 import life.genny.qwanda.datatype.CapabilityMode;
@@ -41,6 +42,7 @@ import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
 import life.genny.utils.OutputParam;
+import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 
 public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
@@ -75,7 +77,21 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 		CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
 		String userCode = userToken.getUserCode();
-		BaseEntity user = beUtils.getBaseEntityByCode(userCode);
+		BaseEntity user = null;
+		if ((VertxUtils.cachedEnabled)&&("PER_SERVICE".equals(userCode))) {
+			// need to create the server user in cache if not there
+			user = VertxUtils.readFromDDT(userToken.getRealm(), "PER_SERVICE", userToken.getToken());
+			if (user == null) {
+				beUtils.setServiceToken(serviceToken);
+				BaseEntity serviceUser = beUtils.create("PER_SERVICE", "Service User");
+				Attribute roleAttribute = RulesUtils.getAttribute("PRI_IS_ADMIN", serviceToken);
+
+				beUtils.saveAnswer(new Answer(serviceUser,serviceUser,roleAttribute,"TRUE"));
+			}
+		} else {
+			
+		}
+		user = beUtils.getBaseEntityByCode(userCode);
 		List<EntityAttribute> roles = user.findPrefixEntityAttributes("PRI_IS_");
 		List<Allowed> allowable = new CopyOnWriteArrayList<Allowed>();
 		for (EntityAttribute role : roles) { // should store in cached map
