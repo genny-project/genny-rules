@@ -561,7 +561,7 @@ public class ShowFrame implements WorkItemHandler {
 
 				List<Validation> vl = dt.getValidationList();
 
-				if ((vl != null) && (vl.get(0) != null)) {
+				if ((vl != null) && (!vl.isEmpty()) ) {
 
 					Validation val = vl.get(0);
 
