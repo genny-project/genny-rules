@@ -926,20 +926,11 @@ public class TableUtils {
 						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
 						
 						if (attr != null) {
-						Question childQuestion = null;
-						
-						if(attributeCode.equals("PRI_EVENT")){
-							childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr, true);
+							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr, true);
+							Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 
-						}else{
-							childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr, true);
-
-						}
-
-						Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
-
-						/* add the entityAttribute ask to list */
-						childAskList.add(childAsk);
+							/* add the entityAttribute ask to list */
+							childAskList.add(childAsk);
 						} else {
 							log.error("Attribute : "+attributeCode+" DOES NOT EXIST IN AttributeMap");
 						}
