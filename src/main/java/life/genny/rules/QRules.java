@@ -28,6 +28,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -55,7 +57,6 @@ import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
-
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.ContextType;
 import life.genny.qwanda.Layout;
@@ -199,7 +200,7 @@ public class QRules implements Serializable {
 		this.token = userToken.getToken();
 		this.decodedTokenMap = userToken.getAdecodedTokenMap(); 
 		this.set("realm", userToken.getRealm());
-		this.stateMap = new HashMap<String, Boolean>();
+		this.stateMap = new ConcurrentHashMap<String, Boolean>();
 		stateMap.put(DEFAULT_STATE, true);
 		setStarted(false);
 		this.setServiceToken(serviceToken.getToken());
@@ -217,7 +218,7 @@ public class QRules implements Serializable {
 		this.token = token;
 		this.decodedTokenMap = gennyToken.getAdecodedTokenMap(); 
 		this.set("realm", gennyToken.getRealm());
-		this.stateMap = new HashMap<String, Boolean>();
+		this.stateMap = new ConcurrentHashMap<String, Boolean>();
 		stateMap.put(state, true);
 		setStarted(false);
 
@@ -861,7 +862,7 @@ public class QRules implements Serializable {
 	 * TRADITIONAL WAY OF SENDING EMAIL -> send email with recipientArr, NOT direct
 	 * list of emailIds
 	 */
-	public void sendMessage(String[] recipientArray, HashMap<String, String> contextMap, String templateCode,
+	public void sendMessage(String[] recipientArray, Map<String, String> contextMap, String templateCode,
 			QBaseMSGMessageType messageType) {
 
 		/* setting attachmentList as null, to reuse sendMessageMethod and reduce code */
@@ -873,7 +874,7 @@ public class QRules implements Serializable {
 	 * TRADITIONAL WAY OF SENDING EMAIL -> send email with attachments and with
 	 * recipientArr, NOT direct list of emailIds
 	 */
-	public void sendMessage(String[] recipientArray, HashMap<String, String> contextMap, String templateCode,
+	public void sendMessage(String[] recipientArray, Map<String, String> contextMap, String templateCode,
 			QBaseMSGMessageType messageType, List<QBaseMSGAttachment> attachmentList) {
 
 		/* setting "to" as null, to reuse sendMessageMethod and reduce code */
@@ -882,7 +883,7 @@ public class QRules implements Serializable {
 	}
 
 	/* SENDING EMAIL With DIRECT ARRAY OF EMAILIDs and no attachments */
-	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap,
+	public void sendMessage(String[] to, String templateCode, Map<String, String> contextMap,
 			QBaseMSGMessageType messageType) {
 
 		/*
@@ -905,13 +906,13 @@ public class QRules implements Serializable {
 	 *          use any appropriate userEmailId AttributeCode <br>
 	 *          String[] directRecipientEmailIds = { userEmailId }; <br>
 	 *
-	 *          HashMap<String, String> contextMap = new HashMap<>(); <br>
+	 *          HashMap<String, String> contextMap = new ConcurrentHashMap<>(); <br>
 	 *          contextMap.put("USER", userBe); <br>
 	 *
 	 *          rules.sendMessage(directRecipientEmailIds, "MSG_USER_CONTACTED",
 	 *          contextMap, "EMAIL");
 	 */
-	public void sendMessage(String[] to, String templateCode, HashMap<String, String> contextMap,
+	public void sendMessage(String[] to, String templateCode, Map<String, String> contextMap,
 			QBaseMSGMessageType messageType, List<QBaseMSGAttachment> attachmentList) {
 
 		/* setting recipientArr as null, to reuse sendMessageMethod and reduce code */
@@ -920,7 +921,7 @@ public class QRules implements Serializable {
 	}
 
 	// MAIN METHOD FOR SENDMESSAGES
-	public void sendMessage(String[] recipientArray, HashMap<String, String> contextMap, String templateCode,
+	public void sendMessage(String[] recipientArray, Map<String, String> contextMap, String templateCode,
 			QBaseMSGMessageType messageType, List<QBaseMSGAttachment> attachmentList, String[] to) {
 
 		/* unsubscribe link for the template */
@@ -1477,7 +1478,7 @@ public class QRules implements Serializable {
 
 	public void publishData(final BaseEntity be, final String parentCode, final String linkCode,
 			String[] recipientCodes) {
-		List<BaseEntity> beList = new ArrayList<BaseEntity>();
+		List<BaseEntity> beList = new CopyOnWriteArrayList<BaseEntity>();
 		beList.add(be);
 		publishData(beList, parentCode, linkCode, recipientCodes);
 	}
@@ -1691,7 +1692,7 @@ public class QRules implements Serializable {
 			// String realm = realm();
 			String serviceToken = this.getServiceToken();
 			QDataBaseEntityMessage msg = null;
-			List<BaseEntity> beList = new ArrayList<BaseEntity>();
+			List<BaseEntity> beList = new CopyOnWriteArrayList<BaseEntity>();
 			if (bitMaskValue != null) {
 				SearchEntity searchBE = new SearchEntity(drools.getRule().getName(), "Get all BE")
 						.addSort("PRI_CREATED", "Created", SearchEntity.Sort.DESC)
@@ -1995,13 +1996,13 @@ public class QRules implements Serializable {
 
 		// Put this in to stop bad User null error.... TODO
 		if (getUser() == null) {
-			return new ArrayList<Answer>();
+			return new CopyOnWriteArrayList<Answer>();
 		}
 		try {
-			List<Answer> resultAnswers = new ArrayList<Answer>();
+			List<Answer> resultAnswers = new CopyOnWriteArrayList<Answer>();
 
 			Answer[] answers = m.getItems();
-			List<Answer> newAnswerList = new ArrayList<Answer>();
+			List<Answer> newAnswerList = new CopyOnWriteArrayList<Answer>();
 
 			for (Answer answer : answers) {
 
@@ -2018,7 +2019,7 @@ public class QRules implements Serializable {
 
 					println("The Address Json is  :: " + addressDataJson);
 
-					Map<String, String> availableKeys = new HashMap<String, String>();
+					Map<String, String> availableKeys = new ConcurrentHashMap<String, String>();
 					availableKeys.put("full_address", "FULL");
 					availableKeys.put("street_address", "ADDRESS1");
 					availableKeys.put("suburb", "SUBURB");
@@ -2075,7 +2076,7 @@ public class QRules implements Serializable {
 						i++;
 					}
 
-					// ArrayList<Answer> list = new ArrayList<Answer>();
+					// ArrayList<Answer> list = new CopyOnWriteArrayList<Answer>();
 					// for (Answer s : newAnswers) {
 					// if (s != null)
 					// list.add(s);
@@ -2107,7 +2108,7 @@ public class QRules implements Serializable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return new ArrayList<Answer>();
+		return new CopyOnWriteArrayList<Answer>();
 	}
 
 	public void processAnswerMessage(QDataAnswerMessage m) {
@@ -2142,7 +2143,7 @@ public class QRules implements Serializable {
 							counter += 1;
 						}
 					}
-					List<Answer> answers = new ArrayList<Answer>();
+					List<Answer> answers = new CopyOnWriteArrayList<Answer>();
 					answers.add(new Answer(newMessage.getCode(), newMessage.getCode(), "PRI_MESSAGE", text));
 					answers.add(new Answer(newMessage.getCode(), newMessage.getCode(), "PRI_CREATOR", userCode));
 					this.baseEntity.saveAnswers(answers);
@@ -2159,7 +2160,7 @@ public class QRules implements Serializable {
 					QwandaUtils.createLink(chatCode, newMessage.getCode(), "LNK_MESSAGES", "message", 1.0, getToken());// Creating
 
 					/* Sending Messages */
-					HashMap<String, String> contextMap = new HashMap<String, String>();
+					Map<String, String> contextMap = new ConcurrentHashMap<String, String>();
 					contextMap.put("SENDER", userCode);
 					contextMap.put("CONVERSATION", newMessage.getCode());
 
@@ -2257,7 +2258,7 @@ public class QRules implements Serializable {
 			String value = answer.getValue();
 
 			if (attributeCode.equals("PRI_RATING_RAW")) {
-				List<Answer> answerList = new ArrayList<Answer>();
+				List<Answer> answerList = new CopyOnWriteArrayList<Answer>();
 
 				/* Saving PRI_RATING attribute */
 				answerList.add(new Answer(sourceCode, targetCode, "PRI_RATING", value));
@@ -2305,7 +2306,7 @@ public class QRules implements Serializable {
 
 	public List<Answer> processAnswer(QDataAnswerMessage m) {
 
-		List<Answer> answerList = new ArrayList<Answer>(Arrays.asList(m.getItems()));
+		List<Answer> answerList = new CopyOnWriteArrayList<Answer>(Arrays.asList(m.getItems()));
 		;
 		return answerList;
 	}
@@ -2313,7 +2314,7 @@ public class QRules implements Serializable {
 	public void processAnswer2(QDataAnswerMessage m) {
 
 		/* extract answers */
-		List<Answer> answerList = new ArrayList<Answer>();
+		List<Answer> answerList = new CopyOnWriteArrayList<Answer>();
 
 		Answer[] answers2 = m.getItems();
 		for (Answer answer : answers2) {
@@ -2335,7 +2336,7 @@ public class QRules implements Serializable {
 
 	public void startWorkflow(final String id) {
 
-		Map<String, Object> params = new HashMap<String, Object>();
+		Map<String, Object> params = new ConcurrentHashMap<String, Object>();
 		params.put("rules", this);
 
 		startWorkflow(id, params);
@@ -2775,7 +2776,7 @@ public class QRules implements Serializable {
 	}
 
 	public void subscribeUserToBaseEntityAndChildren(String userCode, String beCode, String linkCode) {
-		List<BaseEntity> beList = new ArrayList<BaseEntity>();
+		List<BaseEntity> beList = new CopyOnWriteArrayList<BaseEntity>();
 		BaseEntity parent = this.baseEntity.getBaseEntityByCode(beCode);
 		if (parent != null) {
 			beList = this.baseEntity.getBaseEntitysByParentAndLinkCode(beCode, linkCode, 0, 500, false);
@@ -2836,7 +2837,7 @@ public class QRules implements Serializable {
 
 		BaseEntity currentUser = getUser();
 
-		List<QDataBaseEntityMessage> bulkmsg = new ArrayList<QDataBaseEntityMessage>();
+		List<QDataBaseEntityMessage> bulkmsg = new CopyOnWriteArrayList<QDataBaseEntityMessage>();
 		QDataBaseEntityMessage qMsg;
 
 		SearchEntity sendAllChats = new SearchEntity("SBE_ALLMYCHAT", "All My Chats").addColumn("PRI_TITLE", "Title")
@@ -2855,12 +2856,12 @@ public class QRules implements Serializable {
 		}
 		if (qMsg != null) {
 			List<BaseEntity> conversations = Arrays.asList(qMsg.getItems());
-			List<BaseEntity> userConversations = new ArrayList<BaseEntity>();
+			List<BaseEntity> userConversations = new CopyOnWriteArrayList<BaseEntity>();
 
 			if (conversations != null) {
 				for (BaseEntity convo : conversations) {
 					// Getting list of the users- sender and receiver of the chat
-					List<BaseEntity> users = new ArrayList<BaseEntity>();
+					List<BaseEntity> users = new CopyOnWriteArrayList<BaseEntity>();
 					Set<EntityEntity> chatUsers = convo.getLinks();
 					for (EntityEntity links : chatUsers) {
 						// String linkCode = links.getLink().getAttributeCode();
@@ -2908,7 +2909,7 @@ public class QRules implements Serializable {
 		Answer verificationCodeAns = new Answer(userCode, userCode, "PRI_VERIFICATION_CODE", verificationCode);
 		this.baseEntity.saveAnswer(verificationCodeAns);
 
-		HashMap<String, String> contextMap = new HashMap<String, String>();
+		Map<String, String> contextMap = new ConcurrentHashMap<String, String>();
 		contextMap.put("USER", userCode);
 
 		println("The String Array is ::" + Arrays.toString(recipients));
@@ -3382,7 +3383,7 @@ public class QRules implements Serializable {
 		}
 		Map<String, String> map = VertxUtils.getMap(this.realm(), keyPrefix, parentCode);
 		if (map == null) {
-			map = new HashMap<String, String>();
+			map = new ConcurrentHashMap<String, String>();
 		}
 		map.put(be.getCode(), JsonUtils.toJson(be));
 		VertxUtils.writeCachedJson(realm(), be.getCode(), JsonUtils.toJson(be));
@@ -3393,7 +3394,7 @@ public class QRules implements Serializable {
 		// Add this be to the static
 		Map<String, String> map = VertxUtils.getMap(this.realm(), keyPrefix, parentCode);
 		if (map == null) {
-			map = new HashMap<String, String>();
+			map = new ConcurrentHashMap<String, String>();
 		}
 		return map;
 	}
@@ -3452,9 +3453,9 @@ public class QRules implements Serializable {
 
 				// Now work out sums
 				boolean first = true;
-				Map<String, Object> sums = new HashMap<String, Object>(); // store the column sums
-				Map<String, DataType> dtypes = new HashMap<String, DataType>();
-				Map<String, Attribute> attributes = new HashMap<String, Attribute>();
+				Map<String, Object> sums = new ConcurrentHashMap<String, Object>(); // store the column sums
+				Map<String, DataType> dtypes = new ConcurrentHashMap<String, DataType>();
+				Map<String, Attribute> attributes = new ConcurrentHashMap<String, Attribute>();
 
 				for (BaseEntity row : msg.getItems()) {
 					if (first) {
@@ -3591,7 +3592,7 @@ public class QRules implements Serializable {
 		String serviceToken = getServiceToken();
 		QDataBaseEntityMessage results = getSearchResults(searchBE, serviceToken);
 		if (results == null) {
-			results = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
+			results = new QDataBaseEntityMessage(new CopyOnWriteArrayList<BaseEntity>());
 
 		}
 		return results;
@@ -3605,11 +3606,11 @@ public class QRules implements Serializable {
 		QDataBaseEntityMessage msg = getSearchResults(searchBE, token);
 		if (msg != null) {
 			if (msg.getItems() != null) {
-				return new ArrayList<>(Arrays.asList(msg.getItems()));
+				return new CopyOnWriteArrayList<>(Arrays.asList(msg.getItems()));
 			}
 		}
 
-		return new ArrayList<>();
+		return new CopyOnWriteArrayList<>();
 	}
 
 	/*
@@ -3653,7 +3654,7 @@ public class QRules implements Serializable {
 	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, final String token) throws IOException {
 		if (token == null) {
 			log.error("TOKEN IS NULL!!! in getSearchResults");
-			return new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
+			return new QDataBaseEntityMessage(new CopyOnWriteArrayList<BaseEntity>());
 		}
 		log.info("The search BE is :: " + JsonUtils.toJson(searchBE));
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
@@ -3751,7 +3752,7 @@ public class QRules implements Serializable {
 		} else {
 			JsonObject columns = new JsonObject();
 			BaseEntity searchBE = this.baseEntity.getBaseEntityByCode(searchBECode);
-			List<EntityAttribute> eaList = new ArrayList<>();
+			List<EntityAttribute> eaList = new CopyOnWriteArrayList<>();
 
 			for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 				if (ea.getAttributeCode().startsWith("COL_")) {
@@ -3828,7 +3829,7 @@ public class QRules implements Serializable {
 
 		/* get the roles of the current user */
 		Set<EntityAttribute> currentUserAttr = getUser().getBaseEntityAttributes();
-		List<String> rolesOfCurrentUser = new ArrayList<>();
+		List<String> rolesOfCurrentUser = new CopyOnWriteArrayList<>();
 		for (EntityAttribute ea : currentUserAttr) {
 			if (ea.getAttributeCode().startsWith("PRI_IS_") && ea.getValueBoolean()) {
 				rolesOfCurrentUser.add(ea.getAttributeCode());
@@ -3852,7 +3853,7 @@ public class QRules implements Serializable {
 		Ask treeAsk = generateQuestionsForTree(root.getCode(), expandableBe, rolesOfCurrentUser);
 
 		/* setting all the default treeview-themes to the parent ask */
-		List<BaseEntity> defaultTreeViewThemes = new ArrayList<>();
+		List<BaseEntity> defaultTreeViewThemes = new CopyOnWriteArrayList<>();
 		defaultTreeViewThemes.add(treeviewMarginTheme);
 		defaultTreeViewThemes.add(treeviewWidthTheme);
 		defaultTreeViewThemes.add(treeviewDefaultTheme);
@@ -3958,7 +3959,7 @@ public class QRules implements Serializable {
 	private List<BaseEntity> getFilteredKidsOfParent(BaseEntity parent, List<BaseEntity> kids,
 			List<String> rolesOfCurrentUser) {
 
-		List<BaseEntity> newKidsList = new ArrayList<>();
+		List<BaseEntity> newKidsList = new CopyOnWriteArrayList<>();
 
 		for (BaseEntity kid : kids) {
 
@@ -4136,7 +4137,7 @@ public class QRules implements Serializable {
 						if (rolesObj != null) {
 
 							/* List of answers to save for the roles */
-							List<Answer> answers = new ArrayList<>();
+							List<Answer> answers = new CopyOnWriteArrayList<>();
 
 							/* Convert to iteratable */
 							ArrayList roles = (ArrayList) rolesObj;
@@ -4434,7 +4435,7 @@ public class QRules implements Serializable {
 	}
 
 	public QDataBaseEntityMessage getMappedBEs(final String parentCode) {
-		List<BaseEntity> searches = new ArrayList<BaseEntity>();
+		List<BaseEntity> searches = new CopyOnWriteArrayList<BaseEntity>();
 		Map<String, String> searchBes = getMap("GRP", parentCode);
 		for (String searchBeCode : searchBes.keySet()) {
 			String searchJson = searchBes.get(searchBeCode);
@@ -4496,8 +4497,8 @@ public class QRules implements Serializable {
 			BaseEntity user = getUser();
 			if (user != null) {
 				QDataBaseEntityMessage msg;
-				// List<String> grpCodes = new ArrayList<String>();
-				List<BaseEntity> searchEntityList = new ArrayList<BaseEntity>();
+				// List<String> grpCodes = new CopyOnWriteArrayList<String>();
+				List<BaseEntity> searchEntityList = new CopyOnWriteArrayList<BaseEntity>();
 				if (grpCode.equalsIgnoreCase("GRP_REPORTS")) {
 					for (EntityAttribute ea : user.getBaseEntityAttributes()) {
 						// loop through all the "PRI_IS_" attributes
@@ -4611,7 +4612,7 @@ public class QRules implements Serializable {
 				QPaymentsErrorResponse.class);
 
 		StringBuilder errorMessage = new StringBuilder();
-		List<Map<String, Object>> errorMapList = new ArrayList<Map<String, Object>>();
+		List<Map<String, Object>> errorMapList = new CopyOnWriteArrayList<Map<String, Object>>();
 		errorMapList.add(errorResponse.getError());
 		errorMapList.add(errorResponse.getErrors());
 
@@ -5070,7 +5071,7 @@ public class QRules implements Serializable {
 				QReleasePayment paymentResponseObj = JsonUtils.fromJson(paymentResponse, QReleasePayment.class);
 				String depositReferenceId = paymentResponseObj.getId();
 
-				List<Answer> answers = new ArrayList<Answer>();
+				List<Answer> answers = new CopyOnWriteArrayList<Answer>();
 
 				/* Adding Release Payment Done status */
 				Answer paymentDoneAns = new Answer(buyerBe.getCode(), begBe.getCode(), "PRI_IS_RELEASE_PAYMENT_DONE",
@@ -5220,7 +5221,7 @@ public class QRules implements Serializable {
 			if (jsonFull != null) {
 				String[] fullAddress = jsonFull.split(",");
 				String city = fullAddress[1];
-				List<Answer> answers = new ArrayList<Answer>();
+				List<Answer> answers = new CopyOnWriteArrayList<Answer>();
 				answers.add(new Answer(beCode, beCode, "PRI_ADDRESS_CITY", city));
 				answers.add(new Answer(beCode, beCode, "PRI_ADDRESS_SUBURB", city));
 				this.baseEntity.saveAnswers(answers);
@@ -5235,7 +5236,7 @@ public class QRules implements Serializable {
 	public void generateCapabilities() {
 
 		/* get all capabilities existing */
-		List<Attribute> existingCapability = new ArrayList<Attribute>();
+		List<Attribute> existingCapability = new CopyOnWriteArrayList<Attribute>();
 		for (String existingAttributeCode : RulesUtils.attributeMap.keySet()) {
 			if (existingAttributeCode.startsWith("CAP_")) {
 				existingCapability.add(RulesUtils.attributeMap.get(existingAttributeCode));
@@ -5243,7 +5244,7 @@ public class QRules implements Serializable {
 		}
 
 		/* Force these capabilities to exist */
-		List<Attribute> capabilityManifest = new ArrayList<Attribute>();
+		List<Attribute> capabilityManifest = new CopyOnWriteArrayList<Attribute>();
 
 		String proj_realm = GennySettings.mainrealm;
 		String token = RulesUtils.generateServiceToken(proj_realm, getToken());
@@ -5397,7 +5398,7 @@ public class QRules implements Serializable {
 		BaseEntity note = this.baseEntity.create(this.getUser().getCode(), "NOT", "NOTE");
 
 		/* we save the note attributes */
-		List<Answer> answers = new ArrayList<>();
+		List<Answer> answers = new CopyOnWriteArrayList<>();
 		answers.add(new Answer(getUser().getCode(), note.getCode(), "PRI_CREATED_DATE", getCurrentLocalDateTime()));
 		answers.add(new Answer(getUser().getCode(), note.getCode(), "PRI_CREATOR_CODE", getUser().getCode()));
 		answers.add(new Answer(getUser().getCode(), note.getCode(), "PRI_CREATOR_NAME", getUser().getName()));
@@ -5637,7 +5638,7 @@ public class QRules implements Serializable {
 
 	static public List<Tuple2<BaseEntity, Double>> score(BaseEntity sourceBaseEntity, List<BaseEntity> targets,
 			int resultSize) {
-		List<Tuple2<BaseEntity, Double>> results = new ArrayList<Tuple2<BaseEntity, Double>>();
+		List<Tuple2<BaseEntity, Double>> results = new CopyOnWriteArrayList<Tuple2<BaseEntity, Double>>();
 
 		Double lowestScore = -10000000.0; // pretty low bar!
 		Tuple2<BaseEntity, Double> lowest = null;
@@ -5694,7 +5695,7 @@ public class QRules implements Serializable {
 	}
 
 	public ContextList createTheme(List<Context> contexts) {
-		List<Context> themeContexts = new ArrayList<>();
+		List<Context> themeContexts = new CopyOnWriteArrayList<>();
 
 		for (Context context : contexts) {
 			themeContexts.add(context);
@@ -5750,14 +5751,14 @@ public class QRules implements Serializable {
 	public List<Ask> generateQuestions(SearchEntity search, String targetCode) {
 
 		/* initialize an empty ask list */
-		List<Ask> askList = new ArrayList<>();
+		List<Ask> askList = new CopyOnWriteArrayList<>();
 
 		/* get table columns from search */
 		Map<String, String> columns = this.getTableColumns(search);
 
 		if (columns != null) {
 			/* get the list of baseentities from search */
-			List<BaseEntity> bes = new ArrayList<>();
+			List<BaseEntity> bes = new CopyOnWriteArrayList<>();
 			try {
 				bes = this.getSearchResultsAsList(search, true);
 				if (bes != null && bes.isEmpty() == false) {
@@ -5805,7 +5806,7 @@ public class QRules implements Serializable {
 						this.baseEntity.addAttributes(be);
 
 						/* initialize child ask list */
-						List<Ask> childAskList = new ArrayList<>();
+						List<Ask> childAskList = new CopyOnWriteArrayList<>();
 
 						for (Map.Entry<String, String> column : columns.entrySet()) {
 
@@ -5831,7 +5832,7 @@ public class QRules implements Serializable {
 								Question deleteQues = new Question("QUE_DELETE_" + be.getCode(), "Delete",
 										actionAttribute, true);
 
-								List<Ask> actionChildAsks = new ArrayList<>();
+								List<Ask> actionChildAsks = new CopyOnWriteArrayList<>();
 
 								Ask viewAsk = new Ask(viewQues, this.getUser().getCode(), be.getCode());
 								Ask editAsk = new Ask(editQues, this.getUser().getCode(), be.getCode());
@@ -5966,7 +5967,7 @@ public class QRules implements Serializable {
 								Ask lNameAsk = new Ask(lNameQues, targetCode, be.getCode());
 
 								/* link asks */
-								List<Ask> nameChildAsks = new ArrayList<>();
+								List<Ask> nameChildAsks = new CopyOnWriteArrayList<>();
 								nameChildAsks.add(fNameAsk);
 								nameChildAsks.add(lNameAsk);
 								Ask[] nameChildAsksArr = nameChildAsks.stream().toArray(Ask[]::new);
@@ -5986,7 +5987,7 @@ public class QRules implements Serializable {
 								Ask addressAsk = new Ask(addressQues, targetCode, be.getCode());
 
 								/* link asks */
-								List<Ask> cardCentreChildAsks = new ArrayList<>();
+								List<Ask> cardCentreChildAsks = new CopyOnWriteArrayList<>();
 								cardCentreChildAsks.add(nameGrpAsk);
 								cardCentreChildAsks.add(emailAsk);
 								cardCentreChildAsks.add(mobileAsk);
@@ -6015,7 +6016,7 @@ public class QRules implements Serializable {
 								cardRightGrpAsk.setChildAsks(optionsAskArr);
 
 								/* link asks */
-								List<Ask> cardMainGrpAskChildAsks = new ArrayList<>();
+								List<Ask> cardMainGrpAskChildAsks = new CopyOnWriteArrayList<>();
 								cardMainGrpAskChildAsks.add(cardLeftGrpAsk);
 								cardMainGrpAskChildAsks.add(cardCentreGrpAsk);
 								cardMainGrpAskChildAsks.add(cardRightGrpAsk);
@@ -6023,7 +6024,7 @@ public class QRules implements Serializable {
 								Ask[] cardMainGrpAskChildAsksArr = cardMainGrpAskChildAsks.stream().toArray(Ask[]::new);
 
 								/* link asks */
-								List<Ask> cardSecondaryGrpAskChildAsks = new ArrayList<>();
+								List<Ask> cardSecondaryGrpAskChildAsks = new CopyOnWriteArrayList<>();
 								cardSecondaryGrpAskChildAsks.add(cardLeftGrpAsk);
 								cardSecondaryGrpAskChildAsks.add(cardCentreGrpAsk);
 								cardSecondaryGrpAskChildAsks.add(cardRightGrpAsk);
@@ -6146,7 +6147,7 @@ public class QRules implements Serializable {
 	}
 
 	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode) {
-		List<BaseEntity> themeList = new ArrayList<>();
+		List<BaseEntity> themeList = new CopyOnWriteArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, VisualControlType.VCL_INPUT);
 	}
@@ -6157,14 +6158,14 @@ public class QRules implements Serializable {
 
 	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode,
 			VisualControlType visualControlType) {
-		List<BaseEntity> themeList = new ArrayList<>();
+		List<BaseEntity> themeList = new CopyOnWriteArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType);
 	}
 
 	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode,
 			VisualControlType visualControlType, Double weight) {
-		List<BaseEntity> themeList = new ArrayList<>();
+		List<BaseEntity> themeList = new CopyOnWriteArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType, weight);
 	}
@@ -6187,7 +6188,7 @@ public class QRules implements Serializable {
 	public Ask createVirtualContext(Ask ask, List<BaseEntity> themes, ContextType linkCode,
 			VisualControlType visualControlType, Double weight) {
 
-		List<Context> completeContext = new ArrayList<>();
+		List<Context> completeContext = new CopyOnWriteArrayList<>();
 
 		for (BaseEntity theme : themes) {
 			Context context = new Context(linkCode, theme, visualControlType, weight);
@@ -6202,14 +6203,14 @@ public class QRules implements Serializable {
 		if (contextList != null) {
 			List<Context> contexts = contextList.getContexts();
 			if (contexts.isEmpty()) {
-				contexts = new ArrayList<>();
+				contexts = new CopyOnWriteArrayList<>();
 				contexts.addAll(completeContext);
 			} else {
 				contexts.addAll(completeContext);
 			}
 			contextList = new ContextList(contexts);
 		} else {
-			List<Context> contexts = new ArrayList<>();
+			List<Context> contexts = new CopyOnWriteArrayList<>();
 			contexts.addAll(completeContext);
 			contextList = new ContextList(contexts);
 		}
@@ -6219,7 +6220,7 @@ public class QRules implements Serializable {
 
 	public Map<String, String> getTableColumns(SearchEntity searchBe) {
 
-		Map<String, String> columns = new HashMap<>();
+		Map<String, String> columns = new ConcurrentHashMap<>();
 
 		String searchString = JsonUtils.toJson(searchBe);
 		JsonObject searchJson = new JsonObject(searchString);
@@ -6243,11 +6244,11 @@ public class QRules implements Serializable {
 
 	public Ask generateTableHeaderAsks(SearchEntity searchBe) {
 
-		List<Ask> asks = new ArrayList<>();
+		List<Ask> asks = new CopyOnWriteArrayList<>();
 
 		/* Validation for Search Attribute */
 		Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
-		List<Validation> validations = new ArrayList<>();
+		List<Validation> validations = new CopyOnWriteArrayList<>();
 		validations.add(validation);
 		ValidationList searchValidationList = new ValidationList();
 		searchValidationList.setValidationList(validations);
@@ -6283,7 +6284,7 @@ public class QRules implements Serializable {
 			Ask columnSearchAsk = new Ask(columnSearchQues, this.getUser().getCode(), searchBe.getCode());
 
 			/* adding label-sort & search asks to header-ask Group */
-			List<Ask> tableColumnChildAsks = new ArrayList<>();
+			List<Ask> tableColumnChildAsks = new CopyOnWriteArrayList<>();
 			tableColumnChildAsks.add(columnSortAsk);
 			tableColumnChildAsks.add(columnSearchAsk);
 
@@ -6375,7 +6376,7 @@ public class QRules implements Serializable {
 				createVirtualContext(childAsk, defaultFormThemeBe, ContextType.THEME, VisualControlType.VCL_INPUT);
 				createVirtualContext(childAsk, defaultFormContainerBe, ContextType.THEME, VisualControlType.VCL_INPUT);
 
-				List<Ask> list = new ArrayList<>(Arrays.asList(childAsk.getChildAsks()));
+				List<Ask> list = new CopyOnWriteArrayList<>(Arrays.asList(childAsk.getChildAsks()));
 
 				String questionAttribute = childAsk.getAttributeCode();
 
@@ -6411,7 +6412,7 @@ public class QRules implements Serializable {
 
 	private List<Ask> getFormButtonAsks(String questionAttribute, String sourceCode, String targetCode) {
 
-		List<Ask> formButtonAsks = new ArrayList<>();
+		List<Ask> formButtonAsks = new CopyOnWriteArrayList<>();
 
 		/* get theme for button */
 		BaseEntity buttonThemeBe = ContextUtils.getFormButtonTheme();

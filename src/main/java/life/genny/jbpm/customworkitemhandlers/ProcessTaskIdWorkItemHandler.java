@@ -3,6 +3,7 @@ package life.genny.jbpm.customworkitemhandlers;
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +49,7 @@ public class ProcessTaskIdWorkItemHandler implements WorkItemHandler {
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-		Map<String, Object> resultMap = new HashMap<String, Object>();
+		Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
 
 		String callingWorkflow = (String)workItem.getParameter("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {

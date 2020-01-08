@@ -385,6 +385,8 @@ public class BucketUtils {
 				cardStatusAsk.setTargetCode(app.getTargetCode());
 				
 				cardMainAsk.setTargetCode(app.getTargetCode());
+				cardContentAsk.setTargetCode(app.getTargetCode());
+				cardRightAsk.setTargetCode(app.getTargetCode());
 				
 				// set the image ask read only
 				Ask imageAsk = attributeList.get(1);
