@@ -454,8 +454,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				log.info("processAnswers: resultMap  seems fine");
 			}
 		}
+	if (kieSession != null) {
 		kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
-	//	manager.completeWorkItem(workItem.getId(), resultMap);
+	} else {
+		manager.completeWorkItem(workItem.getId(), resultMap);
+	}
 
 		return;
 
