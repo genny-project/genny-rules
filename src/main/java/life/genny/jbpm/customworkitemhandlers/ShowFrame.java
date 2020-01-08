@@ -454,12 +454,6 @@ public class ShowFrame implements WorkItemHandler {
 			if (askMsgs2Str == null) {
 				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl+ " with rootFrameCode = "+rootFrameCode);
 				try {
-//					askMsgs2Str = QwandaUtils.apiGet(
-//							GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode + "_ASKS",
-//							userToken.getToken());
-//					JsonObject json = new JsonObject(askMsgs2Str);
-//					askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always case
-				if (askMsgs2Str == null) {
 					log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode
 							+ "_ASKS");
 					String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
@@ -495,8 +489,8 @@ public class ShowFrame implements WorkItemHandler {
 //					e.printStackTrace();
 //				}
 
-			}
 		}
+		
 
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
