@@ -653,8 +653,19 @@ public class RulesLoader {
 					if (parser.parse(rs).getRules().size() > 1) {
 						log.error("ERROR!! " + rule._2 + " has more than one rule in it!");
 					}
-					RuleDescr ruleObj = parser.parse(rs).getRules().get(0);
-					processRule(realm, ruleObj, rule);
+					if (parser.parse(rs).getRules().size() == 0) {
+						log.error("ERROR!! " + rule._2 + " has NO Rules in it");
+					} else {
+						RuleDescr ruleObj = null;
+						try {
+						
+							ruleObj = parser.parse(rs).getRules().get(0);
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						processRule(realm, ruleObj, rule);
+					}
 				} catch (NullPointerException e) {
 					log.error("Error with the rules:: " + rule._2 + " -> " + e.getLocalizedMessage());
 
