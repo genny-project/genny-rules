@@ -47,6 +47,7 @@ import org.kie.internal.task.api.model.InternalOrganizationalEntity;
 import org.kie.internal.task.api.model.InternalTask;
 import org.kie.internal.task.api.model.InternalTaskData;
 
+import io.vertx.core.json.JsonObject;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
@@ -55,6 +56,7 @@ import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.message.QDataAskMessage;
+import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
@@ -62,6 +64,7 @@ import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.TaskUtils;
+import life.genny.utils.VertxUtils;
 
 public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHandler {
 
@@ -156,6 +159,13 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             }
             if (!newFields.isEmpty()) {
             	beUtils.saveAnswers(newFields, true);
+            	BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
+            	target.setRealm(userToken.getToken());
+            	QDataBaseEntityMessage msg = new QDataBaseEntityMessage(target);
+            	msg.setToken(userToken.getToken());
+            	String tJson = JsonUtils.toJson(msg);
+            	
+            	VertxUtils.writeMsg("webcmds", tJson);
             }
 
 //            Attachment attach = TaskModelProvider.getFactory().newAttachment();
@@ -242,8 +252,18 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		} else {
 			// add the attribute with default value
 			Attribute newAttribute = RulesUtils.getAttribute(taskAsk.getAsk().getAttributeCode(), userToken.getToken());
-			Answer newField = new Answer(target,target,newAttribute,null);
-			newFields.add(newField);
+			if (newAttribute.dataType.getClassName().contains("Integer")) {
+				if (newAttribute.getDefaultValue()==null) {
+					newAttribute.setDefaultValue("0");
+				}
+			}
+			try {
+				Answer newField = new Answer(target,target,newAttribute,newAttribute.getDefaultValue());
+				newFields.add(newField);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		// don't add questions that are just groups
 		if (!askMsg.getQuestionCode().endsWith("_GRP")) {
