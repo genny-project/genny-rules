@@ -48,8 +48,10 @@ import org.kie.internal.task.api.model.InternalTask;
 import org.kie.internal.task.api.model.InternalTaskData;
 
 import life.genny.models.GennyToken;
+import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.TaskAsk;
+import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.message.QDataAskMessage;
@@ -57,6 +59,7 @@ import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.TaskUtils;
 
@@ -142,13 +145,17 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             // Fetch the questions and set in the task for us to tick off as they get done
             Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
             Map<String,Object> taskAsksMap = new ConcurrentHashMap<String,Object>();
+            List<Answer> newFields = new CopyOnWriteArrayList<Answer>();
             for (QDataAskMessage dataMsg : formSet) {
             	Boolean createOnTrigger = false;
             	for (Ask askMsg : dataMsg.getItems()) {
             		createOnTrigger = askMsg.hasTriggerQuestion();
-            		processAsk(beUtils,task.getFormName(),askMsg,taskAsksMap,userToken,createOnTrigger);
+            		processAsk(beUtils,task.getFormName(),askMsg,taskAsksMap,userToken,createOnTrigger,newFields);
              		
             	}
+            }
+            if (!newFields.isEmpty()) {
+            	beUtils.saveAnswers(newFields, true);
             }
 
 //            Attachment attach = TaskModelProvider.getFactory().newAttachment();
@@ -207,7 +214,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	        } 
 	    }
 	
-	private void processAsk(BaseEntityUtils beUtils, String formName,Ask askMsg, Map<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger) {
+	private void processAsk(BaseEntityUtils beUtils, String formName,Ask askMsg, Map<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger, List<Answer> newFields) {
    		// replace askMesg source and target with required src and target, initially we will use both src and target
 		String json = JsonUtils.toJson(askMsg);
 		json = json.replaceAll("PER_SOURCE", baseEntitySourceCode);
@@ -232,6 +239,11 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			taskAsk.setAnswered(true);
 			EntityAttribute ea = attributeValue.get();
 			taskAsk.setValue(ea.getAsString());
+		} else {
+			// add the attribute with default value
+			Attribute newAttribute = RulesUtils.getAttribute(taskAsk.getAsk().getAttributeCode(), userToken.getToken());
+			Answer newField = new Answer(target,target,newAttribute,null);
+			newFields.add(newField);
 		}
 		// don't add questions that are just groups
 		if (!askMsg.getQuestionCode().endsWith("_GRP")) {
@@ -239,7 +251,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		if ((newMsg.getChildAsks()!=null)&&(newMsg.getChildAsks().length>0)) {
 			for (Ask childAsk : newMsg.getChildAsks()) {
-				processAsk(beUtils,formName,childAsk,taskAsksMap,userToken,createOnTrigger);
+				processAsk(beUtils,formName,childAsk,taskAsksMap,userToken,createOnTrigger,newFields);
 			}
 		}
 		return ;
