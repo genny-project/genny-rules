@@ -4,10 +4,15 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.persistence.EntityManager;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -59,9 +64,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	TaskService taskService;
 	KieSession kieSession;
 	Environment env = null;
+	
+    private static Validator validator ;
 
 	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+	    validator = factory.getValidator();
+
 	}
 
 	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, Environment env,
@@ -69,6 +79,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		this.taskService = taskService;
 		this.env = env;
 		this.wClass = workflowQueryInterface.getCanonicalName();
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+	    validator = factory.getValidator();
+
 	}
 
 	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng,
@@ -77,6 +90,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 		this.taskService = rteng.getTaskService();
 		this.kieSession = kieSession;
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+	    validator = factory.getValidator();
+
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
@@ -355,13 +371,23 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						}
 						synchronized (this) {
 							ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env2);
+							
 							Content content = TaskModelProvider.getFactory().newContent();
 							((InternalContent) content).setContent(contentData.getContent());
+							  Set<ConstraintViolation<Content>> constraintViolations =
+								      validator.validate( content );
+							  if (constraintViolations.size() > 0 ) {
 							em.persist(content);
 							InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
 							InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
 							iTaskData.setDocument(content.getId(), contentData);
 							iTask.setTaskData(iTaskData);
+							  } else {
+								  // Hibernate validation error!
+								  for (ConstraintViolation<Content> constraintViolation : constraintViolations ) {
+									  log.error(constraintViolation.getMessage());
+								  }
+							  }
 						}
 					}
 				}
