@@ -423,6 +423,9 @@ public class RulesLoader {
 			if (ks == null) {
 				log.error("ks is NULL");
 				ks = KieServices.Factory.get();
+			} else {
+				ks = null; // clear
+				ks = KieServices.Factory.get();
 			}
 
 			final KieFileSystem kfs = ks.newKieFileSystem();
@@ -1227,8 +1230,10 @@ public class RulesLoader {
 		log.info("Rules Count for " + realm + " = " + rulesCount);
 
 		// set up kie conf
-		ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-		ksconf.setOption(TimedRuleExecutionOption.YES);
+		if (ksconf==null)  {
+			ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+			ksconf.setOption(TimedRuleExecutionOption.YES);
+		}
 
 	}
 
