@@ -64,13 +64,13 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	TaskService taskService;
 	KieSession kieSession;
 	Environment env = null;
-	
-    private static Validator validator ;
+
+	private static Validator validator;
 
 	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-	    validator = factory.getValidator();
+		validator = factory.getValidator();
 
 	}
 
@@ -80,7 +80,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		this.env = env;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-	    validator = factory.getValidator();
+		validator = factory.getValidator();
 
 	}
 
@@ -91,7 +91,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		this.taskService = rteng.getTaskService();
 		this.kieSession = kieSession;
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-	    validator = factory.getValidator();
+		validator = factory.getValidator();
 
 	}
 
@@ -225,12 +225,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				return;
 			}
 			HashMap<String, Object> taskAsks2 = null;
-			ConcurrentHashMap<String, Object> taskAsks  = null;
+			ConcurrentHashMap<String, Object> taskAsks = null;
 			synchronized (this) {
-			taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper
-					.unmarshall(c.getContent(), null);
-				
-			taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+				taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
+
+				taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
 			}
 
 			formCode = (String) taskAsks.get("FORM_CODE");
@@ -371,23 +370,22 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						}
 						synchronized (this) {
 							ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env2);
-							
+
 							Content content = TaskModelProvider.getFactory().newContent();
 							((InternalContent) content).setContent(contentData.getContent());
-							  Set<ConstraintViolation<Content>> constraintViolations =
-								      validator.validate( content );
-							  if (constraintViolations.size() > 0 ) {
-							em.persist(content);
-							InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
-							InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
-							iTaskData.setDocument(content.getId(), contentData);
-							iTask.setTaskData(iTaskData);
-							  } else {
-								  // Hibernate validation error!
-								  for (ConstraintViolation<Content> constraintViolation : constraintViolations ) {
-									  log.error(constraintViolation.getMessage());
-								  }
-							  }
+							Set<ConstraintViolation<Content>> constraintViolations = validator.validate(content);
+							if (constraintViolations.size() == 0) {
+								em.persist(content);
+								InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
+								InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
+								iTaskData.setDocument(content.getId(), contentData);
+								iTask.setTaskData(iTaskData);
+							} else {
+								// Hibernate validation error!
+								for (ConstraintViolation<Content> constraintViolation : constraintViolations) {
+									log.error(constraintViolation.getMessage());
+								}
+							}
 						}
 					}
 				}
@@ -450,41 +448,41 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		for (String key : resultMap.keySet()) {
 			if (key == null) {
 				log.error("processAnswers: BAD NULL KEY IN RESULT SET");
-			}
-			else if (resultMap.get(key)==null){
-				log.error("processAnswers: BAD NULL MAP ENTRY IN RESULT SET for KEY = "+key);
+			} else if (resultMap.get(key) == null) {
+				log.error("processAnswers: BAD NULL MAP ENTRY IN RESULT SET for KEY = " + key);
 			} else if (resultMap.get(key) instanceof OutputParam) {
-				OutputParam o = (OutputParam)resultMap.get(key);
-				Map<String,String> map = o.getAttributeTargetCodeMap();
+				OutputParam o = (OutputParam) resultMap.get(key);
+				Map<String, String> map = o.getAttributeTargetCodeMap();
 				if (map == null) {
 					log.error("processAnswers: BAD NULL KEY IN OUTPUT PARAM MAP");
-					o.setAttributeTargetCodeMap(new HashMap<String,String>());
+					o.setAttributeTargetCodeMap(new HashMap<String, String>());
 				} else {
 					boolean ok = true;
 					for (String okey : map.keySet()) {
 						if (okey == null) {
 							ok = false;
 							log.error("processAnswers : BAD NULL KEY IN RESULT SET - OutputParam map ");
-						} else if (map.get(key)==null){
-							log.error("processAnswers : BAD NULL KEY IN RESULT SET VALUE - OutputParam map - key= "+okey);
+						} else if (map.get(key) == null) {
+							log.error("processAnswers : BAD NULL KEY IN RESULT SET VALUE - OutputParam map - key= "
+									+ okey);
 							ok = false;
 						}
 					}
 					if (ok) {
 						log.error("processAnswers :  OutputParam map is ok");
 					}
-					
+
 					log.info("processAnswers: resultMap OPutputParam seems fine");
 				}
 			} else {
 				log.info("processAnswers: resultMap  seems fine");
 			}
 		}
-	if (kieSession != null) {
-		kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
-	} else {
-		manager.completeWorkItem(workItem.getId(), resultMap);
-	}
+		if (kieSession != null) {
+			kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
+		} else {
+			manager.completeWorkItem(workItem.getId(), resultMap);
+		}
 
 		return;
 
