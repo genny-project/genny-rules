@@ -181,7 +181,9 @@ public class RulesLoader {
 
 	public static List<String> activeRealms = new ArrayList<String>();
 
-	public static Boolean rulesChanged = true || (!GennySettings.detectRuleChanges);
+	public static Boolean rulesChanged = GennySettings.detectRuleChanges;
+	
+	public static Boolean persistRules = GennySettings.persistRules;
 	// public static Boolean rulesChanged = true;
 
 	public static void shutdown() {
@@ -1368,6 +1370,9 @@ public class RulesLoader {
 
 	private static Boolean processRule(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {
 		Boolean ret = false;
+		if (!persistRules) {
+			return false;
+		}
 		// Determine what rules have changed via their hash .... and if so then clear
 		// their cache and db entries
 		Map<String, String> realmTokenMap = new HashMap<String, String>();
