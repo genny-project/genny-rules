@@ -17,7 +17,7 @@
 	<properties>
 
 		<genny-verticle.version>${project.version}</genny-verticle.version>
-		<kie.version>7.30.0.Final</kie.version>
+		<kie.version>7.31.0.Final</kie.version>
 		<vertx.version>3.5.4</vertx.version>
 		<hazelcast.version>3.8.2</hazelcast.version>
 		<javax-cache.version>1.1.0</javax-cache.version>
@@ -369,7 +369,25 @@
 			<artifactId>menta-regex</artifactId>
 			<version>0.9.5</version>
 		</dependency>
-
+		<dependency>
+			<groupId>life.genny</groupId>
+			<artifactId>bootxport</artifactId>
+			<version>${version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.commons</groupId>
+					<artifactId>commons-compress</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>life.genny</groupId>
+					<artifactId>qwanda-utils</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>javax.persistence</groupId>
+					<artifactId>persistence-api</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 	</dependencies>
 
 	<build>

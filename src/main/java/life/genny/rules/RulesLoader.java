@@ -182,7 +182,7 @@ public class RulesLoader {
 	public static List<String> activeRealms = new ArrayList<String>();
 
 	public static Boolean rulesChanged = GennySettings.detectRuleChanges;
-	
+
 	public static Boolean persistRules = GennySettings.persistRules;
 	// public static Boolean rulesChanged = true;
 
@@ -296,7 +296,7 @@ public class RulesLoader {
 						if ((activeRealms.stream().anyMatch(fileprj::equals))
 								|| ("prj_genny".equalsIgnoreCase(fileName))) {
 							localRealm = fileName.substring("prj_".length()).toLowerCase(); // extract realm name
-							log.info("LocalRealm changed to "+localRealm);
+							log.info("LocalRealm changed to " + localRealm);
 						} else {
 							continue;
 						}
@@ -600,7 +600,7 @@ public class RulesLoader {
 				// addHandlers(kieSession);
 				kieSession.addEventListener(logger);
 				kieSession.addEventListener(new GennyAgendaEventListener());
-			  
+
 				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
 						new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
 				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
@@ -650,37 +650,42 @@ public class RulesLoader {
 				}
 			}
 			if (rule._2.endsWith(".drl")) {
-				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
-				Resource rs = ks.getResources().newReaderResource(new StringReader(rule._3));
-				kfs.write(inMemoryDrlFileName, rs.setResourceType(ResourceType.DRL));
-				DrlParser parser = new DrlParser();
-				try {
-					if (parser.parse(rs).getRules().size() > 1) {
-						log.error("ERROR!! " + rule._2 + " has more than one rule in it!");
-					}
-					if (parser.parse(rs).getRules().size() == 0) {
-						log.error("ERROR!! " + rule._2 + " has NO Rules in it");
-					} else {
-						RuleDescr ruleObj = null;
-						try {
-						
-							ruleObj = parser.parse(rs).getRules().get(0);
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+				if (rule._3 == null) {
+					log.error(rule + " has null file text");
+
+				} else {
+					final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
+					Resource rs = ks.getResources().newReaderResource(new StringReader(rule._3));
+					kfs.write(inMemoryDrlFileName, rs.setResourceType(ResourceType.DRL));
+					DrlParser parser = new DrlParser();
+					try {
+						if (parser.parse(rs).getRules().size() > 1) {
+							log.error("ERROR!! " + rule._2 + " has more than one rule in it!");
 						}
-						processRule(realm, ruleObj, rule);
+						if (parser.parse(rs).getRules().size() == 0) {
+							log.error("ERROR!! " + rule._2 + " has NO Rules in it");
+						} else {
+							RuleDescr ruleObj = null;
+							try {
+
+								ruleObj = parser.parse(rs).getRules().get(0);
+							} catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							processRule(realm, ruleObj, rule);
+						}
+					} catch (NullPointerException e) {
+						log.error("Error with the rules:: " + rule._2 + " -> " + e.getLocalizedMessage());
+
 					}
-				} catch (NullPointerException e) {
-					log.error("Error with the rules:: " + rule._2 + " -> " + e.getLocalizedMessage());
 
-				}
-
-				catch (DroolsParserException e) {
-					log.error("BAD RULE : " + rule._2 + " -> " + e.getLocalizedMessage());
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					catch (DroolsParserException e) {
+						log.error("BAD RULE : " + rule._2 + " -> " + e.getLocalizedMessage());
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			} else if (rule._2.endsWith(".bpmn")) {
 				// final String inMemoryDrlFileName = "src/main/resources/" + rule._2;
@@ -737,7 +742,7 @@ public class RulesLoader {
 			if (GennySettings.useSingleton) { // TODO
 				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getId());
-				  kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
 			} else {
 				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getId());
@@ -751,7 +756,15 @@ public class RulesLoader {
 				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
 						new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
 				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
-						new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService));  // the env should be the same for all kieSessions
+						new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the
+																															// env
+																															// should
+																															// be
+																															// the
+																															// same
+																															// for
+																															// all
+																															// kieSessions
 				kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
 						new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
@@ -873,7 +886,7 @@ public class RulesLoader {
 					else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
 
 						/* Running init_project workflow */
-						log.info("initProject Events! with facts="+facts);
+						log.info("initProject Events! with facts=" + facts);
 						kieSession.signalEvent("initProject", facts);
 					} else {
 						log.info("Invalid Events coming in");
@@ -1232,7 +1245,7 @@ public class RulesLoader {
 		log.info("Rules Count for " + realm + " = " + rulesCount);
 
 		// set up kie conf
-		if (ksconf==null)  {
+		if (ksconf == null) {
 			ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 			ksconf.setOption(TimedRuleExecutionOption.YES);
 		}
@@ -1492,11 +1505,11 @@ public class RulesLoader {
 			String token = tokenObj.getString("value");
 			realmTokenMap.put(realm, token);
 		}
-		
+
 		if ("init_project.bpmn".equals(filename)) {
 			log.info("DETECTED INIT_PROJECT");
 		}
-		
+
 		// get kie type
 		String ext = filename.substring(filename.lastIndexOf(".") + 1);
 		String kieType = ext.toUpperCase();
