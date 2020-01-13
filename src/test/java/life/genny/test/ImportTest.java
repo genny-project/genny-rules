@@ -36,26 +36,23 @@ public class ImportTest {
 		 fieldMapping.put("Postcode".toLowerCase(), "PRI_IMPORT_POSTCODE");
 
 		 
-		Integer count = importGoogleDoc("1eDovA5TB24lUBc8ddohxAuFzMdLZ-_xkJdCf7Bs_sak",fieldMapping);
+		Integer count = importGoogleDoc("1eDovA5TB24lUBc8ddohxAuFzMdLZ-_xkJdCf7Bs_sak","Sheet1",fieldMapping);
 		
 
 	}
 	
-	public Integer importGoogleDoc(final String id, Map<String,String> fieldMapping)
+	public Integer importGoogleDoc(final String id, String sheetName,Map<String,String> fieldMapping)
 	{		
 		log.info("Importing "+id);
 		Integer count = 0;
 		   try {
 			   GoogleImportService gs = GoogleImportService.getInstance();
 			    XlsxImport xlsImport = new XlsxImportOnline(gs.getService());
-		//	    Realm realm = new Realm(xlsImport,id);
-//			    realm.getDataUnits().stream()
-//			        .forEach(data -> System.out.println(data.questions.size()));
 			    Set<String> keys = new HashSet<String>();
 			    for (String field : fieldMapping.keySet()) {
 			    	keys.add(field);
 			    }
-			      Map<String, Map<String,String>> mapData = xlsImport.mappingRawToHeaderAndValuesFmt(id, "Sheet1", keys);
+			      Map<String, Map<String,String>> mapData = xlsImport.mappingRawToHeaderAndValuesFmt(id, sheetName, keys);
 			      Integer rowIndex = 0;
 			      for (Map<String,String> row : mapData.values()) 
 			      {
