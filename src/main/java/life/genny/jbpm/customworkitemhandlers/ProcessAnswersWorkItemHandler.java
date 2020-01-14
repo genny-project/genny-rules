@@ -96,7 +96,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-		System.out.println("PROCESS ANSWERS *************************");
+		String callingWorkflow = (String) items.get("callingWorkflow");
+		if (StringUtils.isBlank(callingWorkflow)) {
+			callingWorkflow = "";
+		}
+
+		System.out.println(callingWorkflow+" PROCESS ANSWERS WorkItem Handler *************************");
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
 		Map<TaskSummary, ConcurrentHashMap<String, Object>> taskAskMap = new ConcurrentHashMap<TaskSummary, ConcurrentHashMap<String, Object>>();
@@ -113,10 +118,6 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
 
 		Answers answersToSave = (Answers) items.get("answersToSave");
-		String callingWorkflow = (String) items.get("callingWorkflow");
-		if (StringUtils.isBlank(callingWorkflow)) {
-			callingWorkflow = "";
-		}
 
 		// Extract all the current questions from all the users Tasks
 		List<Status> statuses = new CopyOnWriteArrayList<Status>();
@@ -140,7 +141,6 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		List<TaskSummary> tasks = taskService.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
 		log.info("Tasks=" + tasks);
-
 		// Quick answer validation
 		Boolean validAnswersExist = false;
 		Map<String, Answer> answerMap = new ConcurrentHashMap<String, Answer>();
