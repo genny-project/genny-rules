@@ -403,7 +403,7 @@ public class BucketUtils {
 				cardCentreAsk.setChildAsks(cardCentreChildAsks);
 				cardCentreAsk.setTargetCode(app.getTargetCode());
 
-				Ask[] cardBottomChildAsks = { attributeList.get(6), attributeList.get(7), attributeList.get(8), attributeList.get(9) };
+				Ask[] cardBottomChildAsks = { attributeList.get(6), attributeList.get(7), attributeList.get(8) };
 				cardBottomAsk.setReadonly(true);
 				cardBottomAsk.setChildAsks(cardBottomChildAsks);
 				cardBottomAsk.setTargetCode(app.getTargetCode());
@@ -698,10 +698,11 @@ public class BucketUtils {
 
 	}
 
-	public void sendCards(Frame3 FRM_BUCKET_CONTENT, GennyToken userToken) {
+	public void sendCards(Frame3 FRM_BUCKET_CONTENT, GennyToken userToken, GennyToken serviceToken) {
 		
 		/* initialize beUtils */
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		beUtils.setServiceToken(serviceToken);
 
 		/* initialize bucketUtils */
 		BucketUtils bucketUtils = new BucketUtils(beUtils);
@@ -755,16 +756,19 @@ public class BucketUtils {
 			/* loop through the s */
 			for (SearchEntity searchBe : searchBeList) {
 
+				System.out.println("inside search loop  ::");
 				String code = searchBe.getCode().split("SBE_")[1];
+				System.out.println("code  ::" +code );
 
 				/* get the attributes from searchObj */
 				Map<String, String> columns = searchUtils.getTableColumns(searchBe);
 
 				/* fetch the search results */
-				QDataBaseEntityMessage msg = searchUtils.fetchSearchResults(searchBe, beUtils.getGennyToken());
+				QDataBaseEntityMessage msg = searchUtils.fetchSearchResults(searchBe, serviceToken);
 
 				/* get the application counts */
 				long totalResults = msg.getItems().length;
+				System.out.println("items in bucket " + code + " is :: " + totalResults );
 
 				/* also update the searchBe with the attribute */
 				Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBe.getCode(),
@@ -825,6 +829,8 @@ public class BucketUtils {
 
 			/* Send asks */
 			for (QDataAskMessage askMsg : askSet) {
+				
+				System.out.println("Cards in the bucket :: " + askMsg.getItems()[0].getName() + " are  :: " + askMsg.getItems()[0].getChildAsks().length);
 
 				askMsg.setToken(userToken.getToken());
 
