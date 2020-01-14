@@ -96,7 +96,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-		String callingWorkflow = (String) items.get("callingWorkflow");
+		String callingWorkflow = (String) workItem.getParameter("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
