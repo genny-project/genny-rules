@@ -79,7 +79,7 @@ public class SearchUtils {
 		String resultJson;
 		try {
 			resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-					jsonSearchBE, gennyToken.getToken());
+					jsonSearchBE, beUtils.getServiceToken().getToken());
 			final BaseEntity[] items = new BaseEntity[0];
 			final String parentCode = "GRP_ROOT";
 			final String linkCode = "LINK";
