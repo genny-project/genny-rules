@@ -439,7 +439,7 @@ public class RulesLoader {
 				}
 			}
 
-			if (rulesChanged || true) {
+			if (rulesChanged ) {
 				log.info("Theme and Frame Rules CHANGED. RUNNING init frames...");
 			} else {
 				log.info("Theme and Frame Rules DID NOT CHANGE. NOT RUNNING init frames...");
@@ -1259,7 +1259,7 @@ public class RulesLoader {
 	public void triggerStartupRules(final String realm, final String rulesDir) {
 		log.info("Triggering Startup Rules for all " + realm);
 		QEventMessage msg = new QEventMessage("EVT_MSG", "INIT_STARTUP");
-		msg.getData().setValue(rulesChanged ? "RULES_CHANGED" : "NO_RULES_CHANGED");
+		msg.getData().setValue((rulesChanged||true) ? "RULES_CHANGED" : "NO_RULES_CHANGED");
 		initMsg("Event:INIT_STARTUP", realm, msg);
 		// rulesChanged = false;
 
