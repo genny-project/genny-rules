@@ -439,7 +439,7 @@ public class RulesLoader {
 				}
 			}
 
-			if (rulesChanged) {
+			if (rulesChanged || true) {
 				log.info("Theme and Frame Rules CHANGED. RUNNING init frames...");
 			} else {
 				log.info("Theme and Frame Rules DID NOT CHANGE. NOT RUNNING init frames...");
