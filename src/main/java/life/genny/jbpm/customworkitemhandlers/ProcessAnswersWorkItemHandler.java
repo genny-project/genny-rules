@@ -408,6 +408,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if ((!uglySkip) && (!answerMap2.values().isEmpty())) { // don't save submit button
 				synchronized (this) {
 					log.info("processAnswers: Saving Answers :" + answerMap2.values());
+					
 					beUtils.saveAnswers(new CopyOnWriteArrayList<>(answerMap2.values()));
 				}
 			}
