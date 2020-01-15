@@ -285,10 +285,7 @@ public class BucketUtils {
 	}
 
 	/* returns a card template */
-	public Ask getCardTemplate(GennyToken serviceToken) {
-
-		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
-		BucketUtils bucketUtils = new BucketUtils(beUtils);
+	public Ask getCardTemplate() {
 
 		String sourceCode = "PER_SERVICE", targetCode = "PER_SERVICE";
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
@@ -358,66 +355,66 @@ public class BucketUtils {
 	}
 
 	/* implements a template ask to the supplied askList */
-	public List<Ask> implementCardTemplate(List<Ask> askList, Ask templateAsk, Map<String, ContextList> contextListMap) {
+	public List<Ask> implementCardTemplate(List<Ask> askList, Ask tempAsk, Map<String, ContextList> contextListMap) {
 
-		Ask[] templateAsks = templateAsk.getChildAsks();
-		ContextList contextList = templateAsk.getContextList();
-		
+		ContextList contextList = tempAsk.getContextList();
 		List<Context> cardContext = contextListMap.get("QUE_CARD_APPLICATION_TEMPLATE_GRP").getContextList();
 
-		Ask cardStatusAsk = templateAsks[0];
-		Ask cardMainAsk = templateAsks[1];
-		Ask cardContentAsk = cardMainAsk.getChildAsks()[0];
-		Ask cardLeftAsk = cardContentAsk.getChildAsks()[0];
-		Ask cardCentreAsk = cardContentAsk.getChildAsks()[1];
-		Ask cardRightAsk = cardContentAsk.getChildAsks()[2];
-		Ask cardBottomAsk = cardMainAsk.getChildAsks()[1];
-		
-
 		for (Ask app : askList) {
+			  	
+			Ask templateAsk = getCardTemplate();
+			Ask[] templateAsks = templateAsk.getChildAsks();
+		
+			Ask cardStatusAsk = templateAsks[0];
+			Ask cardMainAsk = templateAsks[1];
+			Ask cardContentAsk = cardMainAsk.getChildAsks()[0];
+			Ask cardLeftAsk = cardContentAsk.getChildAsks()[0];
+			Ask cardCentreAsk = cardContentAsk.getChildAsks()[1];
+			Ask cardRightAsk = cardContentAsk.getChildAsks()[2];
+			Ask cardBottomAsk = cardMainAsk.getChildAsks()[1];
 
-				Ask[] attributeArr = app.getChildAsks();
+			Ask[] attributeArr = app.getChildAsks();
 
-				List<Ask> attributeList = new ArrayList<Ask>(Arrays.asList(attributeArr));
+			List<Ask> attributeList = new ArrayList<Ask>(Arrays.asList(attributeArr));
 
-				Ask[] cardStatusChildAsks = { attributeList.get(0) };
-				cardStatusAsk.setChildAsks(cardStatusChildAsks);
-				cardStatusAsk.setTargetCode(app.getTargetCode());
-				
-				cardMainAsk.setTargetCode(app.getTargetCode());
-				cardContentAsk.setTargetCode(app.getTargetCode());
-				cardRightAsk.setTargetCode(app.getTargetCode());
-				
-				// set the image ask read only
-				Ask imageAsk = attributeList.get(1);
-				imageAsk.setReadonly(true);
+			Ask[] cardStatusChildAsks = { attributeList.get(0) };
+			cardStatusAsk.setChildAsks(cardStatusChildAsks);
+			cardStatusAsk.setTargetCode(app.getTargetCode());
+			
+			cardMainAsk.setTargetCode(app.getTargetCode());
+			cardContentAsk.setTargetCode(app.getTargetCode());
+			cardRightAsk.setTargetCode(app.getTargetCode());
+			
+			// set the image ask read only
+			Ask image = attributeList.get(1);
+			image.setReadonly(true);
+			
+			Ask[] cardLeftChildAsks = { image };
+			cardLeftAsk.setReadonly(true);
+			cardLeftAsk.setChildAsks(cardLeftChildAsks);
+			cardLeftAsk.setTargetCode(app.getTargetCode());
 
-				Ask[] cardLeftChildAsks = { imageAsk };
-				cardLeftAsk.setReadonly(true);
-				cardLeftAsk.setChildAsks(cardLeftChildAsks);
-				cardLeftAsk.setTargetCode(app.getTargetCode());
+			Ask[] cardCentreChildAsks = { attributeList.get(2), attributeList.get(3), attributeList.get(4),
+							attributeList.get(5) };
+			cardCentreAsk.setReadonly(true);
+			cardCentreAsk.setChildAsks(cardCentreChildAsks);
+			cardCentreAsk.setTargetCode(app.getTargetCode());
 
-				Ask[] cardCentreChildAsks = { attributeList.get(2), attributeList.get(3), attributeList.get(4),
-								attributeList.get(5) };
-				cardCentreAsk.setReadonly(true);
-				cardCentreAsk.setChildAsks(cardCentreChildAsks);
-				cardCentreAsk.setTargetCode(app.getTargetCode());
+			Ask[] cardBottomChildAsks = { attributeList.get(6), attributeList.get(7), attributeList.get(8) };
+			cardBottomAsk.setReadonly(true);
+			cardBottomAsk.setChildAsks(cardBottomChildAsks);
+			cardBottomAsk.setTargetCode(app.getTargetCode());
 
-				Ask[] cardBottomChildAsks = { attributeList.get(6), attributeList.get(7), attributeList.get(8) };
-				cardBottomAsk.setReadonly(true);
-				cardBottomAsk.setChildAsks(cardBottomChildAsks);
-				cardBottomAsk.setTargetCode(app.getTargetCode());
+			// we create a new ask with all the new groups
+			app.setTargetCode(app.getTargetCode());
+			app.setChildAsks(templateAsks);
 
-				// we create a new ask with all the new groups
-				app.setTargetCode(app.getTargetCode());
-				app.setChildAsks(templateAsks);
-
-				// we set the themes from cardAsk group to the the appAsk
-				app.setContextList(contextList);
-				app.setReadonly(true);
-				
-				/* add the contextList for the cardQuestion */
-				contextListMap.put(app.getQuestionCode(), new ContextList(cardContext));
+			// we set the themes from cardAsk group to the the appAsk
+			app.setContextList(contextList);
+			app.setReadonly(true);
+			
+			/* add the contextList for the cardQuestion */
+			contextListMap.put(app.getQuestionCode(), new ContextList(cardContext));
 
 		}
 		// return the updated askList
@@ -787,7 +784,7 @@ public class BucketUtils {
 						columns, beUtils.getGennyToken().getUserCode());
 				
 				/* get the templat ask for card */
-				Ask templateAsk = bucketUtils.getCardTemplate(userToken);
+				Ask templateAsk = bucketUtils.getCardTemplate();
 
 				/* implement template ask to appAks list */
 				List<Ask> askList = bucketUtils.implementCardTemplate(appAsksList, templateAsk, contextListMap);
@@ -815,6 +812,18 @@ public class BucketUtils {
 						virtualAskMap);
 				msg2.setToken(userToken.getToken());
 				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg2));
+				
+				/* Send asks */
+				for (QDataAskMessage askMsg : askSet) {
+					
+					System.out.println("Cards in the bucket :: " + askMsg.getItems()[0].getName() + " are  :: " + askMsg.getItems()[0].getChildAsks().length);
+
+					askMsg.setToken(userToken.getToken());
+
+					String json = JsonUtils.toJson(askMsg);
+					VertxUtils.writeMsg("webcmds", json);
+
+				}
 
 			}
 
@@ -827,18 +836,7 @@ public class BucketUtils {
 
 			System.out.println("Sending asks from outside the loop");
 
-			/* Send asks */
-			for (QDataAskMessage askMsg : askSet) {
-				
-				System.out.println("Cards in the bucket :: " + askMsg.getItems()[0].getName() + " are  :: " + askMsg.getItems()[0].getChildAsks().length);
-
-				askMsg.setToken(userToken.getToken());
-
-				String json = JsonUtils.toJson(askMsg);
-				VertxUtils.writeMsg("webcmds", json);
-
-			}
-
+			
 			System.out.print("Completed");
 
 		} catch (Exception e) {
