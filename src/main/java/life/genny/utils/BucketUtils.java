@@ -373,6 +373,10 @@ public class BucketUtils {
 			Ask cardRightAsk = cardContentAsk.getChildAsks()[2];
 			Ask cardBottomAsk = cardMainAsk.getChildAsks()[1];
 
+			/* setting the targetCode to options question */
+			Arrays.asList(cardRightAsk.getChildAsks()).forEach((childAsk)-> childAsk.setTargetCode(app.getTargetCode()));
+			
+
 			Ask[] attributeArr = app.getChildAsks();
 
 			List<Ask> attributeList = new ArrayList<Ask>(Arrays.asList(attributeArr));
