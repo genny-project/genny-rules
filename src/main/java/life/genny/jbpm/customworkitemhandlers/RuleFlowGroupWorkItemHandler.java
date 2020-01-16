@@ -61,9 +61,10 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
+
+		try {
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
@@ -310,7 +311,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				newKieSession.dispose();
 			}
 		}
-
+		} catch (Exception e) {
+			log.error(e.getLocalizedMessage());
+		}
 		// notify manager that work item has been completed
 		manager.completeWorkItem(workItem.getId(), resultMap);
 
