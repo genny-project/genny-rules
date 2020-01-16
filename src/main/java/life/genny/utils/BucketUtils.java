@@ -264,6 +264,8 @@ public class BucketUtils {
 					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_EXPANDABLE_ICON),
 					VisualControlType.GROUP_ICON, 1.0));
+			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DISPLAY_VERTICAL),
+					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 			cardBottomContext.add(progressVclInputContext);
 			cardBottomContext.add(progressInputWrapperContext);		
 
@@ -282,6 +284,97 @@ public class BucketUtils {
 		
 		return contextListMap;
 
+	}
+
+		public HashMap<String, Ask[]> getOptionTemplate() {
+		
+		/* iniitialize empty HashMap */
+		HashMap<String, Ask[]> map = new HashMap<String, Ask[]>(); 
+		
+		String sourceCode = "PER_SERVICE", targetCode = "PER_SERVICE";
+		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+
+		/* create childAsks */
+		// view-profile ask
+		Question viewProfileQues = new Question("QUE_VIEW_PROFILE", "View Profile", questionAttribute, true);
+		Ask viewProfileAsk = new Ask(viewProfileQues, sourceCode, targetCode);
+
+		// view-application ask
+		Question viewApplicationQues = new Question("QUE_VIEW_APP", "View Application", questionAttribute, true);
+		Ask viewApplicationAsk = new Ask(viewApplicationQues, sourceCode, targetCode);
+		
+		// reactivate ask
+		Question reactivateQues = new Question("QUE_REACTIVATE_APP", "Reactivate", questionAttribute, true);
+		Ask reactivateAsk = new Ask(reactivateQues, sourceCode, targetCode);
+		
+		// onHold ask
+		Question onHoldQues = new Question("QUE_ON_HOLD_APP", "On Hold", questionAttribute, true);
+		Ask onHoldAsk = new Ask(onHoldQues, sourceCode, targetCode);
+		
+		// delete ask
+		Question deleteQues = new Question("QUE_DELETE_APP", "Delete", questionAttribute, true);
+		Ask deleteAsk = new Ask(deleteQues, sourceCode, targetCode);
+	
+		// withdrawn ask
+		Question withdrawnQues = new Question("QUE_WITHDRAWN_APP", "Withdrawn", questionAttribute, true);
+		Ask withdrawnAsk = new Ask(withdrawnQues, sourceCode, targetCode);
+		
+		// reject ask
+		Question rejectQues = new Question("QUE_REJECT_APP", "Reject", questionAttribute, true);
+		Ask rejectAsk = new Ask(rejectQues, sourceCode, targetCode);
+		
+		// shortlist ask
+		Question shortlistQues = new Question("QUE_SHORTLIST_APP", "Shortlist", questionAttribute, true);
+		Ask shortlistAsk = new Ask(shortlistQues, sourceCode, targetCode);
+		
+		// interview ask
+		Question interviewQues = new Question("QUE_INTERVIEW_APP", "Interview", questionAttribute, true);
+		Ask interviewAsk = new Ask(interviewQues, sourceCode, targetCode);
+		
+		// offer ask
+		Question offerQues = new Question("QUE_OFFER_APP", "offer", questionAttribute, true);
+		Ask offerAsk = new Ask(offerQues, sourceCode, targetCode);
+		
+		// view-internship-offer ask
+		Question viewInternshipOfferQues = new Question("QUE_VIEW_INTERNSHIP_OFFER", "View Internship Offer", questionAttribute, true);
+		Ask viewInternshipOfferAsk = new Ask(viewInternshipOfferQues, sourceCode, targetCode);
+		
+		// view-induction-offer ask
+		Question viewInductionOfferQues = new Question("QUE_VIEW_INDUCTION_OFFER", "View Induction Offer", questionAttribute, true);
+		Ask viewInductionOfferAsk = new Ask(viewInductionOfferQues, sourceCode, targetCode);
+		
+		// finish-internship ask
+		Question finishInternshipQues = new Question("QUE_FINISH_INTERNSHIP", "Finish Internship", questionAttribute, true);
+		Ask finishInternshipAsk = new Ask(finishInternshipQues, sourceCode, targetCode);
+		
+		// logBooks ask
+		Question logbooksQues = new Question("QUE_LOGBOOKS", "Loogbooks", questionAttribute, true);
+		Ask logbooksAsk = new Ask(logbooksQues, sourceCode, targetCode);
+
+		/* createChildAsk array */
+		Ask[] availableAsk= {viewProfileAsk, reactivateAsk, onHoldAsk, deleteAsk, withdrawnAsk};
+		
+		Ask[] appliedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, shortlistAsk};
+
+		Ask[] shortlistedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, interviewAsk};
+
+		Ask[] interviewedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, offerAsk};
+
+		Ask[] offeredAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, viewInternshipOfferAsk};
+		
+		Ask[] placedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, viewInternshipOfferAsk};
+
+		Ask[] inProgressAsk = {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, viewInternshipOfferAsk, viewInductionOfferAsk, finishInternshipAsk, logbooksAsk};
+
+		map.put("AVAILABLE_INTERNS",availableAsk);
+		map.put("APPLIED_APPLICATIONS",appliedAsk);
+		map.put("SHORTLISTED_APPLICATIONS",shortlistedAsk);
+		map.put("INTERVIEWED_APPLICATIONS",interviewedAsk);
+		map.put("OFFERED_APPLICATIONS",offeredAsk);
+		map.put("PLACED_APPLICATIONS",placedAsk);
+		map.put("INPROGRESS_APPLICATIONS",inProgressAsk);
+		
+		return map;
 	}
 
 	/* returns a card template */
@@ -321,17 +414,6 @@ public class BucketUtils {
 						Question cardRightQuestion = new Question("QUE_CARD_RIGHT_GRP", "Card Right", questionAttribute, true);
 						Ask cardRightAsk = new Ask(cardRightQuestion, sourceCode, targetCode);
 
-							// forward ask
-							Question cardForwardQuestion = new Question("QUE_FORWARD", "Forward", questionAttribute, true);
-							Ask cardForwardAsk = new Ask(cardForwardQuestion, sourceCode, targetCode);
-							
-							// backward ask
-							Question cardBackwardQuestion = new Question("QUE_BACKWARD", "Backward", questionAttribute, true);
-							Ask cardBackwardAsk = new Ask(cardBackwardQuestion, sourceCode, targetCode);
-
-							Ask[] cardRightChildAsks = { cardForwardAsk, cardBackwardAsk };
-							cardRightAsk.setChildAsks(cardRightChildAsks);
-
 					Ask[] cardContentChildAsks = { cardLeftAsk, cardCentreAsk, cardRightAsk };
 					cardContentAsk.setChildAsks(cardContentChildAsks);
 
@@ -355,10 +437,14 @@ public class BucketUtils {
 	}
 
 	/* implements a template ask to the supplied askList */
-	public List<Ask> implementCardTemplate(List<Ask> askList, Ask tempAsk, Map<String, ContextList> contextListMap) {
+	public List<Ask> implementCardTemplate(String code, List<Ask> askList, Ask tempAsk, Map<String, ContextList> contextListMap) {
 
 		ContextList contextList = tempAsk.getContextList();
 		List<Context> cardContext = contextListMap.get("QUE_CARD_APPLICATION_TEMPLATE_GRP").getContextList();
+
+		/* get the option menu item asks */
+		Map<String, Ask[]> map = getOptionTemplate();
+		Ask[] optionAsks = map.get(code);
 
 		for (Ask app : askList) {
 			  	
@@ -374,6 +460,7 @@ public class BucketUtils {
 			Ask cardBottomAsk = cardMainAsk.getChildAsks()[1];
 
 			/* setting the targetCode to options question */
+			cardRightAsk.setChildAsks(optionAsks);
 			Arrays.asList(cardRightAsk.getChildAsks()).forEach((childAsk)-> childAsk.setTargetCode(app.getTargetCode()));
 			
 
@@ -791,7 +878,7 @@ public class BucketUtils {
 				Ask templateAsk = bucketUtils.getCardTemplate();
 
 				/* implement template ask to appAks list */
-				List<Ask> askList = bucketUtils.implementCardTemplate(appAsksList, templateAsk, contextListMap);
+				List<Ask> askList = bucketUtils.implementCardTemplate(code, appAsksList, templateAsk, contextListMap);
 
 				/* generate bucketContent asks for each bucket */
 				Ask bucketContentAsk = Ask.clone(FRM_BUCKET_CONTENT_ASK);
