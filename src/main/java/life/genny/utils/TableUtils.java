@@ -259,30 +259,30 @@ public class TableUtils {
 
 		DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
 
-		List<Context> contexts = new ArrayList<Context>();
-		contexts.add(new Context(ContextType.THEME,
-				new BaseEntity("THM_WIDTH_100_PERCENT_NO_INHERIT", "THM_WIDTH_100_PERCENT_NO_INHERIT"),
-				VisualControlType.GROUP_WRAPPER, 1.0));
-		contexts.add(CTX_THM_TABLE_BORDER);
-		contexts.add(
-				new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER", "THM_TABLE_ROW_CONTENT_WRAPPER"),
-						VisualControlType.GROUP, 1.0));
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL", "THM_DISPLAY_HORIZONTAL"),
-				VisualControlType.VCL_DEFAULT, 1.0));
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
-				VisualControlType.VCL_DEFAULT, 1.0));
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL", "THM_TABLE_ROW_CELL"),
-				VisualControlType.VCL_WRAPPER, 1.0));
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT", "THM_TABLE_CONTENT"),
-				VisualControlType.GROUP, 1.0));
+		// List<Context> contexts = new ArrayList<Context>();
+		// contexts.add(new Context(ContextType.THEME,
+		// 		new BaseEntity("THM_WIDTH_100_PERCENT_NO_INHERIT", "THM_WIDTH_100_PERCENT_NO_INHERIT"),
+		// 		VisualControlType.GROUP_WRAPPER, 1.0));
+		// contexts.add(CTX_THM_TABLE_BORDER);
+		// contexts.add(
+		// 		new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER", "THM_TABLE_ROW_CONTENT_WRAPPER"),
+		// 				VisualControlType.GROUP, 1.0));
+		// contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL", "THM_DISPLAY_HORIZONTAL"),
+		// 		VisualControlType.VCL_DEFAULT, 1.0));
+		// contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
+		// 		VisualControlType.VCL_DEFAULT, 1.0));
+		// contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL", "THM_TABLE_ROW_CELL"),
+		// 		VisualControlType.VCL_WRAPPER, 1.0));
+		// contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT", "THM_TABLE_CONTENT"),
+		// 		VisualControlType.GROUP, 1.0));
 
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"),
-				VisualControlType.GROUP_WRAPPER, 1.0));
+		// contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"),
+		// 		VisualControlType.GROUP_WRAPPER, 1.0));
 
-		for (Context x : contexts) {
-			x.setDataType("Table Row Group");
-		}
-		ContextList rowsContextList = new ContextList(contexts);
+		// for (Context x : contexts) {
+		// 	x.setDataType("Table Row Group");
+		// }
+		// ContextList rowsContextList = new ContextList(contexts);
 
 		List<BaseEntity> rowList = Arrays.asList(msg.getItems());
 
@@ -312,7 +312,7 @@ public class TableUtils {
 		Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
 				beUtils.getGennyToken().getUserCode());
 		tableResultAsk.setChildAsks(rowAsksArr);
-		tableResultAsk.setContextList(rowsContextList);
+		//tableResultAsk.setContextList(rowsContextList);
 		tableResultAsk.setReadonly(true);
 		tableResultAsk.setRealm(beUtils.getGennyToken().getRealm());
 		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
@@ -805,18 +805,21 @@ public class TableUtils {
 
 				DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
 
-				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
-						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
-						.question(ask.getQuestionCode()).addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken)
-						.vcl(VisualControlType.GROUP_WRAPPER).end().addTheme("THM_TABLE_CONTENT_BORDER", serviceToken)
-						.dataType(tableRowDataType).vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
-						.addTheme("THM_TABLE_BORDER", serviceToken).dataType(tableRowDataType).end()
-						.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType).weight(1.0).end()
-						.addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableRowDataType)
-						.vcl(VisualControlType.GROUP).weight(1.0).end().addTheme("THM_TABLE_ROW", serviceToken)
-						.dataType(tableRowDataType).weight(1.0).end().addTheme("THM_TABLE_CONTENT", serviceToken)
-						.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
-						.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
+//				Frame3 frame = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "",
+//				ask.getQuestionCode(), Frame3.class, beUtils.getServiceToken().getToken());
+
+				// frame = Frame3.builder(ask.getQuestionCode())
+				// 		.addTheme("THM_TABLE_BORDER", serviceToken).end()
+				// 		.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
+				// 		.question(ask.getQuestionCode())
+				// 		.addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP_WRAPPER).end()
+				// 		.addTheme("THM_TABLE_CONTENT_BORDER", serviceToken).dataType(tableRowDataType).vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
+				// 		.addTheme("THM_TABLE_BORDER", serviceToken).dataType(tableRowDataType).end()
+				// 		.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).dataType(tableRowDataType).weight(1.0).end()
+				// 		.addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).dataType(tableRowDataType)vcl(VisualControlType.GROUP).weight(1.0).end()
+				// 		.addTheme("THM_TABLE_ROW", serviceToken).dataType(tableRowDataType).weight(1.0).end()
+				// 		.addTheme("THM_TABLE_CONTENT", serviceToken).vcl(VisualControlType.GROUP).end()
+				// 		.addTheme("THM_TABLE_ROW_CELL", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end().end().build();
 
 			} else {
 
