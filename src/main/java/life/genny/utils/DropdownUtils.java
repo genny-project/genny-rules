@@ -61,7 +61,7 @@ public class DropdownUtils implements Serializable {
 			return this.sendSearchResults( parentCode, linkCode, linkValue, false, false, userToken, sortByWeight);
 	}
 
-	private QDataBaseEntityMessage sendSearchResults( String parentCode, String linkCode, String linkValue,
+	public QDataBaseEntityMessage sendSearchResults( String parentCode, String linkCode, String linkValue,
 			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight) throws IOException {
 		
 		QDataBaseEntityMessage beMessage = getSearchResults(this.searchEntity,parentCode, linkCode, linkValue,replace,
