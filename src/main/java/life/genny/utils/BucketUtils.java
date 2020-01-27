@@ -332,8 +332,12 @@ public class BucketUtils {
 		Ask interviewAsk = new Ask(interviewQues, sourceCode, targetCode);
 		
 		// offer ask
-		Question offerQues = new Question("QUE_OFFER_APP", "offer", questionAttribute, true);
+		Question offerQues = new Question("QUE_OFFER_APP", "Offer", questionAttribute, true);
 		Ask offerAsk = new Ask(offerQues, sourceCode, targetCode);
+		
+		// view-internship-offer ask
+		//Question startInternshipQues = new Question("QUE_START_INTERNSHIP", "Start Internship", questionAttribute, true);
+		//Ask startInternshipAsk = new Ask(startInternshipQues, sourceCode, targetCode);
 		
 		// view-internship-offer ask
 		Question viewInternshipOfferQues = new Question("QUE_VIEW_INTERNSHIP_OFFER", "View Internship Offer", questionAttribute, true);
@@ -348,7 +352,7 @@ public class BucketUtils {
 		Ask finishInternshipAsk = new Ask(finishInternshipQues, sourceCode, targetCode);
 		
 		// logBooks ask
-		Question logbooksQues = new Question("QUE_LOGBOOKS", "Loogbooks", questionAttribute, true);
+		Question logbooksQues = new Question("QUE_LOGBOOKS", "Logbooks", questionAttribute, true);
 		Ask logbooksAsk = new Ask(logbooksQues, sourceCode, targetCode);
 
 		/* createChildAsk array */
