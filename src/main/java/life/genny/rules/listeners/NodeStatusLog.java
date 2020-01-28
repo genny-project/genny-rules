@@ -166,10 +166,11 @@ public class NodeStatusLog extends AbstractAuditLogger {
 					String nodeId = nodeInstance.getNode().getId() + "";
 					GennyToken userToken = (GennyToken) nodeInstance.getVariable("userToken");
 					String realm = userToken.getRealm();
-
 					String userCode = userToken.getUserCode();
+					String workflowBeCode = (String) nodeInstance.getVariable("workflowBeCode");
+					
 					NodeStatus nodeStatus = new NodeStatus(userCode, nodeName, nodeId, realm, processInstanceId, processId,
-							workflowStatus);
+							workflowStatus, workflowBeCode);
 					
 					logger.info(nodeStatus.toString() + " NOT FOUND IN NODESTATUS DB !!");
 					em.persist(nodeStatus);

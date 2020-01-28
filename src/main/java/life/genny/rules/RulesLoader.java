@@ -109,6 +109,7 @@ import life.genny.jbpm.customworkitemhandlers.ProcessAnswersWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ProcessTaskIdWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.GetProcessesUsingVariable;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
+import life.genny.jbpm.customworkitemhandlers.SendSignalToWorkflowWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
 
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
@@ -1200,6 +1201,7 @@ public class RulesLoader {
 		Map<String, WorkItemHandler> handlers = new HashMap<String, WorkItemHandler>();
 		// log.info("Register SendSignal kiesession");
 		handlers.put("SendSignal", new SendSignalWorkItemHandler(RulesLoader.class, runtime));
+		handlers.put("SendSignalByWorkflowBeCode", new SendSignalToWorkflowWorkItemHandler(RulesLoader.class, runtime));
 
 		handlers.put("Awesome", new AwesomeHandler());
 		handlers.put("GetProcessesUsingVariable", new GetProcessesUsingVariable());

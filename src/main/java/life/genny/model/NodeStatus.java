@@ -66,6 +66,10 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
     @Expose
     @Column(nullable=true)
 	private String workflowStatus;
+    @Expose
+    @Column(nullable=true)
+	private String workflowBeCode;
+    
 	
 	private NodeStatus()
 	{
@@ -82,7 +86,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 	 */
 	
 	public NodeStatus(String userCode, String nodeName, String nodeId, String realm, Long processInstanceId,
-			String processId, String workflowStatus) {
+			String processId, String workflowStatus, String workflowBeCode) {
 
 		this.id = processInstanceId;
 		this.userCode = userCode;
@@ -92,6 +96,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		this.processInstanceId = processInstanceId;
 		this.processId = processId;
 		this.workflowStatus = workflowStatus;
+		this.workflowBeCode = workflowBeCode;
 	}
 
 	/**
@@ -164,6 +169,20 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		this.workflowStatus = workFlowStatus;
 	}
 	
+	/**
+	 * @return the workflowBeCode
+	 */
+	public String getWorkflowBeCode() {
+		return workflowBeCode;
+	}
+	
+	/**
+	 * @return the workflowBeCode
+	 */
+	public void setWorkflowBeCode(String workflowBeCode) {
+		this.workflowBeCode = workflowBeCode;
+	}
+	
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
@@ -173,6 +192,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 				+ (nodeId != null ? "nodeId=" + nodeId + ", " : "") + (status != null ? "status=" + status + ", " : "")
 				+ (realm != null ? "realm=" + realm + ", " : "") + (processId != null ? "processId=" + processId : "")
 				+ (workflowStatus != null ? "workflowCode=" + workflowStatus : "")
+				+ (workflowBeCode != null ? "workflowBeCode=" + workflowBeCode : "")
 				+ "]";
 	}
 
@@ -208,6 +228,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		result = prime * result + ((status == null) ? 0 : status.hashCode());
 		result = prime * result + ((userCode == null) ? 0 : userCode.hashCode());
 		result = prime * result + ((workflowStatus == null) ? 0 : workflowStatus.hashCode());
+		result = prime * result + ((workflowBeCode == null) ? 0 : workflowBeCode.hashCode());
 		return result;
 	}
 
@@ -257,6 +278,11 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 			if (other.workflowStatus != null)
 				return false;
 		} else if (!workflowStatus.equals(other.workflowStatus))
+			return false;
+		if (workflowBeCode == null) {
+			if (other.workflowBeCode != null)
+				return false;
+		} else if (!workflowBeCode.equals(other.workflowBeCode))
 			return false;
 		return true;
 	}

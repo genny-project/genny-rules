@@ -245,8 +245,9 @@ public class JbpmInitListener /* extends WorkingMemoryLogger*/ implements Proces
 		String nodeId = nodeInstance.getNode().getId()+"";
 		GennyToken userToken = (GennyToken)nodeInstance.getVariable("userToken");
 		String userCode = userToken.getUserCode();
+		String workflowBeCode = (String)nodeInstance.getVariable("workflowBeCode");
 		NodeStatus nodeStatus = new NodeStatus(userCode, nodeName, nodeId, realm, processInstanceId,
-				processId, workflowCode);
+				processId, workflowCode, workflowBeCode);
 		
 		}
 	}
