@@ -1301,6 +1301,16 @@ public class RulesLoader {
 		return instances.stream().map(d -> d.getId()).findFirst();
 
 	}
+	
+	public static Optional<Long> getProcessIdByWorkflowBeCode(String workflowBeCode) {
+		// Do pagination here
+		QueryContext ctx = new QueryContext(0, 100);
+		Collection<ProcessInstanceDesc> instances = queryService.query("getAllNodeStatuses",
+				ProcessInstanceQueryMapper.get(), ctx, QueryParam.equalsTo("workflowBeCode", workflowBeCode));
+		return instances.stream().map(d -> d.getId()).findFirst();
+
+	}
+
 
 	private static QueryService queryService;
 	private static KieServiceConfigurator serviceConfigurator;
@@ -1375,6 +1385,15 @@ public class RulesLoader {
 		} catch (QueryAlreadyRegisteredException e) {
 			log.warn(query.getName() + " is already registered");
 		}
+		
+		SqlQueryDefinition query2 = new SqlQueryDefinition("getAllNodeStatuses", "java:jboss/datasources/gennyDS");
+		query.setExpression("select * from NodeStatus");
+		try {
+			queryService.registerQuery(query2);
+		} catch (QueryAlreadyRegisteredException e) {
+			log.warn(query2.getName() + " is already registered");
+		}
+
 		System.out.println("Finished init");
 	}
 
