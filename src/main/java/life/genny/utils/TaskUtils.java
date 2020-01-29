@@ -182,6 +182,20 @@ public class TaskUtils {
 				/* add the entityAttribute ask to list */
 				taskAskItemList.add(childAsk);
 			}
+			
+			// Now send a Clear Tasks  menu item
+			BaseEntity clearItems = new BaseEntity("MEN_CLEAR_ITEMS","Clear All Tasks");
+			clearItems.setRealm(userToken.getRealm());
+			clearItems.setIndex(index++);
+			Attribute questionDraftItemAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
+					new DataType(String.class));
+
+			Question question = new Question("QUE_CLEAR_TASKS", "Clear All Tasks", questionDraftItemAttribute,
+					true);
+			Ask childAsk = new Ask(question, userToken.getUserCode(), userToken.getUserCode());
+
+			/* add the entityAttribute ask to list */
+			taskAskItemList.add(childAsk);
 		}
 
 		/* add the contextList to QUE_DRAFTS_GRP */

@@ -1386,13 +1386,13 @@ public class RulesLoader {
 			log.warn(query.getName() + " is already registered");
 		}
 		
-		SqlQueryDefinition query2 = new SqlQueryDefinition("getAllNodeStatuses", "java:jboss/datasources/gennyDS");
-		query.setExpression("select * from NodeStatus");
-		try {
-			queryService.registerQuery(query2);
-		} catch (QueryAlreadyRegisteredException e) {
-			log.warn(query2.getName() + " is already registered");
-		}
+//		SqlQueryDefinition query2 = new SqlQueryDefinition("getAllNodeStatuses", "java:jboss/datasources/gennyDS");
+//		query.setExpression("select * from NodeStatus");
+//		try {
+//			queryService.registerQuery(query2);
+//		} catch (QueryAlreadyRegisteredException e) {
+//			log.warn(query2.getName() + " is already registered");
+//		}
 
 		System.out.println("Finished init");
 	}
