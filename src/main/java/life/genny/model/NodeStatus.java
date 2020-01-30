@@ -98,7 +98,33 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		this.workflowStatus = workflowStatus;
 		this.workflowBeCode = workflowBeCode;
 	}
+	
+	public NodeStatus(Long id, 
+    	      Date date,
+    	      String nodeId,
+    	      String nodeName,
+    	      String processId,
+    	      Long processInstanceId,
+    	      String realm,
+    	      String status,
+    	      String userCode,
+    	      String workflowStatus,
+    	      String workflowBeCode
+    	      ) {
 
+		
+		this.id = id;
+		this.date = date;
+		this.nodeId = nodeId;
+		this.nodeName = nodeName;
+		this.processId = processId;
+		this.processInstanceId = processInstanceId;
+		this.realm = realm;
+		this.status = status;
+		this.userCode = userCode;
+		this.workflowStatus = workflowStatus;
+		this.workflowBeCode = workflowBeCode;
+	}
 	/**
 	 * @return the status
 	 */
