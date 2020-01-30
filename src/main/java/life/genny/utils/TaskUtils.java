@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,6 +18,7 @@ import org.kie.api.task.model.Content;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.model.OutputParam2;
 import life.genny.models.GennyToken;
@@ -166,7 +168,7 @@ public class TaskUtils {
 			for (TaskSummary ts : taskSummarys) {
 				// We send an Ask to the frontend that contains the task items
 				Task task = RulesLoader.taskServiceMap.get(userToken.getRealm()).getTaskById(ts.getId());
-				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getName());
+				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
 				item.setRealm(userToken.getRealm());
 				item.setIndex(index++);
 				// Attribute questionDraftItemAttribute = new Attribute("QQQ_DRAFT_ITEM",
@@ -301,4 +303,21 @@ public class TaskUtils {
 		}
 		return output;
 	}
+	
+	public static void clearAllTasks(GennyToken userToken)
+	{
+		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+
+		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
+		for (TaskSummary ts : taskSummarys) {
+			Long tsId = ts.getId();
+			Map<String,Object> results = new HashMap<String,Object>();
+			results.put("taskid", tsId);
+			results.put("status", "aborted");
+			taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+			log.info("Aborted Task "+tsId);
+		}
+		sendTaskAskItems(userToken) ;
+	}
+	
 }

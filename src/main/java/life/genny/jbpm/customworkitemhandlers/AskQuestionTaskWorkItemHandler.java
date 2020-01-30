@@ -51,6 +51,7 @@ import io.vertx.core.json.JsonObject;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.Question;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
@@ -372,6 +373,9 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			callingWorkflow = "";
 		}
 	
+		JsonObject jsonQ = VertxUtils.readCachedJson(userToken.getRealm(), questionCode, userToken.getToken());
+		 Question q =JsonUtils.fromJson(jsonQ.getString("value"), Question.class);
+		
 //		JsonObject questionObj = VertxUtils.readCachedJson(userToken.getRealm(),
 //				questionCode,userToken.getToken());
 //		String questionStr = questionObj.getString("value");
@@ -408,7 +412,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
         
         String description = (String) workItem.getParameter("Description");
         if (description == null) {
-            description = questionCode;//question.getName();
+            description = q.getName();//question.getName();
         }
         
         List<I18NText> descriptions = new CopyOnWriteArrayList<I18NText>();
