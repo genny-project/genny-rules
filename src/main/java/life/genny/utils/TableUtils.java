@@ -265,15 +265,15 @@ public class TableUtils {
 		DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
 		
 		List<Context> contexts = new ArrayList<Context>();
-		contexts.add(new Context(ContextType.THEME,
-				new BaseEntity("THM_WIDTH_100_PERCENT_NO_INHERIT", "THM_WIDTH_100_PERCENT_NO_INHERIT"),
-				VisualControlType.GROUP_WRAPPER, 1.0));
-		contexts.add(CTX_THM_TABLE_BORDER);
+		// contexts.add(new Context(ContextType.THEME,
+		// 		new BaseEntity("THM_WIDTH_100_PERCENT_NO_INHERIT", "THM_WIDTH_100_PERCENT_NO_INHERIT"),
+		// 		VisualControlType.GROUP_WRAPPER, 1.0));
+		//contexts.add(CTX_THM_TABLE_BORDER);
 		contexts.add(
 				new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER", "THM_TABLE_ROW_CONTENT_WRAPPER"),
-						VisualControlType.GROUP, 1.0));
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL", "THM_DISPLAY_HORIZONTAL"),
-				VisualControlType.VCL_DEFAULT, 1.0));
+						VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		// contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL", "THM_DISPLAY_HORIZONTAL"),
+		// 		VisualControlType.VCL_DEFAULT, 1.0));
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
 				VisualControlType.VCL_DEFAULT, 1.0));
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL", "THM_TABLE_ROW_CELL"),
@@ -282,6 +282,8 @@ public class TableUtils {
 				VisualControlType.GROUP, 1.0));
 		
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_WIDTH_100_PERCENT_NO_INHERIT", "THM_WIDTH_100_PERCENT_NO_INHERIT"),
 				VisualControlType.GROUP_WRAPPER, 1.0));
 		
 		
@@ -474,7 +476,7 @@ public class TableUtils {
 			tests.add(createTestCompany("Scam University", "0705020319", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
 
-			for (Integer pageIndex = pageStart; pageIndex < (pageStart + pageSize); pageIndex++) {
+			for (Integer pageIndex = pageStart; pageIndex < (pageStart + pageSize); pageIndex++) {	
 				if (pageIndex < tests.size()) {
 					results.add(tests.get(pageIndex));
 				}
@@ -810,51 +812,50 @@ public class TableUtils {
 
 				DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
 
-				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
+				frame = Frame3.builder(ask.getQuestionCode())
+						.addTheme("THM_TABLE_BORDER", serviceToken).end()
 						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
 						.question(ask.getQuestionCode())
-						.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken)
-						//.dataType(tableRowDataType)
-						.weight(1.0).end().addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken)
-						//.dataType(tableRowDataType)
-						.vcl(VisualControlType.GROUP).weight(1.0).end().addTheme("THM_TABLE_ROW", serviceToken)
-						//.dataType(tableRowDataType)
-						.weight(1.0).end()
-						.addTheme("THM_TABLE_CONTENT_BORDER", serviceToken)
-						//.dataType(tableRowDataType)
-						.vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
-		                .addTheme("THM_TABLE_CONTENT", serviceToken)
-						.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
-						.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
+							//.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).weight(1.0).end()
+							.addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken).vcl(VisualControlType.GROUP_CONTENT_WRAPPER).weight(1.0).end()
+							.addTheme("THM_TABLE_ROW", serviceToken).weight(1.0).end()
+							.addTheme("THM_TABLE_CONTENT_BORDER", serviceToken).vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
+							.addTheme("THM_TABLE_CONTENT", serviceToken).vcl(VisualControlType.GROUP).end()
+							.addTheme("THM_TABLE_ROW_CELL", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
+							.addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
+						.end()
+						.build();
 
-			} else {
+			} 
+			// else {
 
-				System.out.println("it's a FRM_TABLE_HEADER");
+			// 	System.out.println("it's a FRM_TABLE_HEADER");
 
-				Validation tableCellValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
+			// 	Validation tableCellValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
 
-				List<Validation> tableCellValidations = new ArrayList<>();
-				tableCellValidations.add(tableCellValidation);
+			// 	List<Validation> tableCellValidations = new ArrayList<>();
+			// 	tableCellValidations.add(tableCellValidation);
 
-				ValidationList tableCellValidationList = new ValidationList();
-				tableCellValidationList.setValidationList(tableCellValidations);
+			// 	ValidationList tableCellValidationList = new ValidationList();
+			// 	tableCellValidationList.setValidationList(tableCellValidations);
 
-				DataType tableCellDataType = new DataType("DTT_TABLE_CELL_GRP", tableCellValidationList, "Table Cell Group",
-						"");
+			// 	DataType tableCellDataType = new DataType("DTT_TABLE_CELL_GRP", tableCellValidationList, "Table Cell Group",
+			// 			"");
 
-				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
-						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
-						.question(ask.getQuestionCode()) // QUE_TEST_TABLE_HEADER_GRP
-						.addTheme("THM_QUESTION_GRP_LABEL", serviceToken).vcl(VisualControlType.GROUP).dataType(tableCellDataType)
-						.end().addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP).end()
-						.addTheme("THM_TABLE_ROW_CELL", serviceToken).dataType(tableCellDataType)
-						.vcl(VisualControlType.GROUP_WRAPPER).end().addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).weight(2.0)
-						.end().addTheme("THM_TABLE_HEADER_CELL_WRAPPER", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
-						.addTheme("THM_TABLE_HEADER_CELL_GROUP_LABEL", serviceToken).vcl(VisualControlType.GROUP_LABEL).end()
-						.addTheme("THM_TABLE_HEADER_FONT", serviceToken).vcl(VisualControlType.INPUT_FIELD).dataType(priEvent.getDataType()).end()
-						.addTheme("THM_TABLE_HEADER_JUSTIFY_CONTENT", serviceToken).vcl(VisualControlType.INPUT_WRAPPER).dataType(priEvent.getDataType()).end()
-						.addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end().end().build();
-			}
+			// 	frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
+			// 			.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
+			// 			.question(ask.getQuestionCode()) // QUE_TEST_TABLE_HEADER_GRP
+			// 			.addTheme("THM_QUESTION_GRP_LABEL", serviceToken).vcl(VisualControlType.GROUP).dataType(tableCellDataType)
+			// 			.end().addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP).end()
+			// 			.addTheme("THM_TABLE_ROW_CELL", serviceToken).dataType(tableCellDataType)
+			// 			.vcl(VisualControlType.VCL_WRAPPER).end().addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).weight(2.0)
+			// 			.end().addTheme("THM_TABLE_HEADER_CELL_WRAPPER", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
+			// 			.addTheme("THM_TABLE_HEADER_CELL_GROUP_LABEL", serviceToken).vcl(VisualControlType.GROUP_LABEL).end()
+			// 			.addTheme("THM_TABLE_HEADER_FONT", serviceToken).vcl(VisualControlType.INPUT_FIELD).dataType(priEvent.getDataType()).end()
+			// 			.addTheme("THM_TABLE_HEADER_JUSTIFY_CONTENT", serviceToken).vcl(VisualControlType.INPUT_WRAPPER).dataType(priEvent.getDataType()).end()
+			// 			.addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end().end().build();
+			// 			.addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP_WRAPPER).dataType(tableCellDataType).weight(1.0).end().end().build();
+			// }
 
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
