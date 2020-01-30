@@ -80,7 +80,7 @@ public class TaskUtils {
 			for (TaskSummary ts : taskSummarys) {
 				// We send an Ask to the frontend that contains the task items
 				Task task = taskService.getTaskById(ts.getId());
-				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getName());
+				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(),  task.getDescription());
 				item.setRealm(userToken.getRealm());
 				item.setIndex(index++);
 				taskItems.add(item);
@@ -320,7 +320,8 @@ public class TaskUtils {
 			
 			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
 				taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
-				taskService.fail(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+			//	taskService.fail(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+				taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
 			} else {
 				// maybe only abort if there is no data in the tasks? So if a task is not reserved then it has some data in it!
 			//	taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
