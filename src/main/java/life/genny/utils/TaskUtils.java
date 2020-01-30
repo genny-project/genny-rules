@@ -311,10 +311,20 @@ public class TaskUtils {
 		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
 		for (TaskSummary ts : taskSummarys) {
 			Long tsId = ts.getId();
+			Task task = taskService.getTaskById(tsId);
 			Map<String,Object> results = new HashMap<String,Object>();
 			results.put("taskid", tsId);
 			results.put("status", "aborted");
-			taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+
+		
+			
+			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
+				//taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
+				taskService.fail(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+			} else {
+				// maybe only abort if there is no data in the tasks? So if a task is not reserved then it has some data in it!
+			//	taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+			}
 			log.info("Aborted Task "+tsId);
 		}
 		sendTaskAskItems(userToken) ;
