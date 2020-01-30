@@ -319,7 +319,7 @@ public class TaskUtils {
 		
 			
 			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
-				//taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
+				taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
 				taskService.fail(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
 			} else {
 				// maybe only abort if there is no data in the tasks? So if a task is not reserved then it has some data in it!
