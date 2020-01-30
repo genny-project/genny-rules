@@ -28,7 +28,8 @@ import com.google.gson.annotations.Expose;
 
 @Table(name = "nodestatus", indexes = {@Index(name = "IDX_NStat_nodeId", columnList = "nodeId"),
         @Index(name = "IDX_NStat_realm", columnList = "realm"),
-        @Index(name = "IDX_NStat_pId", columnList = "processId")})
+        @Index(name = "IDX_NStat_wfs", columnList = "workflowStage"),
+        @Index(name = "IDX_NStat_wfc", columnList = "workflowBeCode")})
 //@SequenceGenerator(name="nodeStatusIdSeq", sequenceName="NODE_STATUS_LOG_ID_SEQ", allocationSize=1)
 
 
