@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -118,6 +119,7 @@ import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
 import life.genny.jbpm.customworkitemhandlers.ShowFrames;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalWorkItemHandler;
+import life.genny.model.NodeStatus;
 import life.genny.jbpm.customworkitemhandlers.JMSSendTaskWorkItemHandler;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
@@ -137,6 +139,7 @@ import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
 import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.NodeStatusQueryMapper;
 import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
@@ -1305,9 +1308,18 @@ public class RulesLoader {
 	public static Optional<Long> getProcessIdByWorkflowBeCode(String realm,String workflowBeCode) {
 		// Do pagination here
 		QueryContext ctx = new QueryContext(0, 100);
-		Collection<ProcessInstanceDesc> instances = queryService.query("getAllNodeStatuses2",
-				ProcessInstanceQueryMapper.get(), ctx, QueryParam.equalsTo("workflowBeCode", workflowBeCode),QueryParam.equalsTo("realm", realm));
+		Collection<NodeStatus> instances = queryService.query("getAllNodeStatuses2",
+				NodeStatusQueryMapper.get(), ctx, QueryParam.equalsTo("workflowBeCode", workflowBeCode),QueryParam.equalsTo("realm", realm));
 		return instances.stream().map(d -> d.getId()).findFirst();
+
+	}
+
+	public static List<String> getWorkflowBeCodeByWorkflowStage(String realm,String workflowStage) {
+		// Do pagination here
+		QueryContext ctx = new QueryContext(0, 100);
+		Collection<NodeStatus> instances = queryService.query("getAllNodeStatuses2",
+				NodeStatusQueryMapper.get(), ctx, QueryParam.equalsTo("workflowStage", workflowStage),QueryParam.equalsTo("realm", realm));
+		return instances.stream().map(d -> d.getWorkflowBeCode()).collect(Collectors.toList());
 
 	}
 

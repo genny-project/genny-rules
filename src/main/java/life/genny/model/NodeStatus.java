@@ -65,7 +65,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 	private String processId;
     @Expose
     @Column(nullable=true)
-	private String workflowStatus;
+	private String workflowStage;
     @Expose
     @Column(nullable=true)
 	private String workflowBeCode;
@@ -86,7 +86,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 	 */
 	
 	public NodeStatus(String userCode, String nodeName, String nodeId, String realm, Long processInstanceId,
-			String processId, String workflowStatus, String workflowBeCode) {
+			String processId, String workflowStage, String workflowBeCode) {
 
 		this.id = processInstanceId;
 		this.userCode = userCode;
@@ -95,7 +95,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		this.realm = realm;
 		this.processInstanceId = processInstanceId;
 		this.processId = processId;
-		this.workflowStatus = workflowStatus;
+		this.workflowStage = workflowStage;
 		this.workflowBeCode = workflowBeCode;
 	}
 	
@@ -108,7 +108,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
     	      String realm,
     	      String status,
     	      String userCode,
-    	      String workflowStatus,
+    	      String workflowStage,
     	      String workflowBeCode
     	      ) {
 
@@ -122,7 +122,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		this.realm = realm;
 		this.status = status;
 		this.userCode = userCode;
-		this.workflowStatus = workflowStatus;
+		this.workflowStage = workflowStage;
 		this.workflowBeCode = workflowBeCode;
 	}
 	/**
@@ -184,15 +184,15 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 	/**
 	 * @return the workflowCode
 	 */
-	public String getWorkflowStatus() {
-		return workflowStatus;
+	public String getWorkflowStage() {
+		return workflowStage;
 	}
 	
 	/**
 	 * @return the workflowCode
 	 */
-	public void setWorkflowStatus(String workFlowStatus) {
-		this.workflowStatus = workFlowStatus;
+	public void setWorkflowStage(String workFlowStage) {
+		this.workflowStage = workFlowStage;
 	}
 	
 	/**
@@ -217,7 +217,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		return "NodeStatus [" + (userCode != null ? "userCode=" + userCode + ", " : "")
 				+ (nodeId != null ? "nodeId=" + nodeId + ", " : "") + (status != null ? "status=" + status + ", " : "")
 				+ (realm != null ? "realm=" + realm + ", " : "") + (processId != null ? "processId=" + processId : "")
-				+ (workflowStatus != null ? "workflowCode=" + workflowStatus : "")
+				+ (workflowStage != null ? "workflowStage=" + workflowStage : "")
 				+ (workflowBeCode != null ? "workflowBeCode=" + workflowBeCode : "")
 				+ "]";
 	}
@@ -253,7 +253,7 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 		result = prime * result + ((realm == null) ? 0 : realm.hashCode());
 		result = prime * result + ((status == null) ? 0 : status.hashCode());
 		result = prime * result + ((userCode == null) ? 0 : userCode.hashCode());
-		result = prime * result + ((workflowStatus == null) ? 0 : workflowStatus.hashCode());
+		result = prime * result + ((workflowStage == null) ? 0 : workflowStage.hashCode());
 		result = prime * result + ((workflowBeCode == null) ? 0 : workflowBeCode.hashCode());
 		return result;
 	}
@@ -300,10 +300,10 @@ public class NodeStatus implements Serializable, AuditEvent, org.kie.api.runtime
 				return false;
 		} else if (!userCode.equals(other.userCode))
 			return false;
-		if (workflowStatus == null) {
-			if (other.workflowStatus != null)
+		if (workflowStage == null) {
+			if (other.workflowStage != null)
 				return false;
-		} else if (!workflowStatus.equals(other.workflowStatus))
+		} else if (!workflowStage.equals(other.workflowStage))
 			return false;
 		if (workflowBeCode == null) {
 			if (other.workflowBeCode != null)
