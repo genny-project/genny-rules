@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -109,6 +110,7 @@ import life.genny.jbpm.customworkitemhandlers.ProcessAnswersWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ProcessTaskIdWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.GetProcessesUsingVariable;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
+import life.genny.jbpm.customworkitemhandlers.SendSignalToWorkflowWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
 
 import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
@@ -117,6 +119,7 @@ import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
 import life.genny.jbpm.customworkitemhandlers.ShowFrames;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalWorkItemHandler;
+import life.genny.model.NodeStatus;
 import life.genny.jbpm.customworkitemhandlers.JMSSendTaskWorkItemHandler;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
@@ -136,6 +139,7 @@ import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
 import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.NodeStatusQueryMapper;
 import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
@@ -1200,6 +1204,7 @@ public class RulesLoader {
 		Map<String, WorkItemHandler> handlers = new HashMap<String, WorkItemHandler>();
 		// log.info("Register SendSignal kiesession");
 		handlers.put("SendSignal", new SendSignalWorkItemHandler(RulesLoader.class, runtime));
+		handlers.put("SendSignalByWorkflowBeCode", new SendSignalToWorkflowWorkItemHandler(RulesLoader.class, runtime));
 
 		handlers.put("Awesome", new AwesomeHandler());
 		handlers.put("GetProcessesUsingVariable", new GetProcessesUsingVariable());
@@ -1299,6 +1304,25 @@ public class RulesLoader {
 		return instances.stream().map(d -> d.getId()).findFirst();
 
 	}
+	
+	public static Optional<Long> getProcessIdByWorkflowBeCode(String realm,String workflowBeCode) {
+		// Do pagination here
+		QueryContext ctx = new QueryContext(0, 100);
+		Collection<NodeStatus> instances = queryService.query("getAllNodeStatuses2",
+				NodeStatusQueryMapper.get(), ctx, QueryParam.equalsTo("workflowBeCode", workflowBeCode),QueryParam.equalsTo("realm", realm));
+		return instances.stream().map(d -> d.getId()).findFirst();
+
+	}
+
+	public static List<String> getWorkflowBeCodeByWorkflowStage(String realm,String workflowStage) {
+		// Do pagination here
+		QueryContext ctx = new QueryContext(0, 100);
+		Collection<NodeStatus> instances = queryService.query("getAllNodeStatuses2",
+				NodeStatusQueryMapper.get(), ctx, QueryParam.equalsTo("workflowStage", workflowStage),QueryParam.equalsTo("realm", realm));
+		return instances.stream().map(d -> d.getWorkflowBeCode()).collect(Collectors.toList());
+
+	}
+
 
 	private static QueryService queryService;
 	private static KieServiceConfigurator serviceConfigurator;
@@ -1373,6 +1397,17 @@ public class RulesLoader {
 		} catch (QueryAlreadyRegisteredException e) {
 			log.warn(query.getName() + " is already registered");
 		}
+		
+		SqlQueryDefinition query2 = new SqlQueryDefinition("getAllNodeStatuses2", "java:jboss/datasources/gennyDS");
+//		query2.setExpression("select  new life.genny.model.NodeStatus( ns.id,ns.date,ns.nodeId,ns.nodeName,ns.processId,ns.processInstanceId,ns.realm,ns.status,ns.userCode,ns.workflowStatus,ns.workflowBeCode) from NodeStatus ns where ns.realm= 'internmatch' and ns.workflowBeCode=: workflowBeCode");
+		query2.setExpression("select  * from nodestatus");
+
+		try {
+			queryService.registerQuery(query2);
+		} catch (QueryAlreadyRegisteredException e) {
+			log.warn(query2.getName() + " is already registered");
+		}
+
 		System.out.println("Finished init");
 	}
 

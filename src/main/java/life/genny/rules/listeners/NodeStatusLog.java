@@ -135,9 +135,9 @@ public class NodeStatusLog extends AbstractAuditLogger {
 		((NodeInstanceImpl) event.getNodeInstance()).getMetaData().put("NodeInstanceLog", log);
 		Date eventDate = event.getEventDate();
 		
-		String workflowStatus = (String) event.getNodeInstance().getVariable("workflowStatus");
+		String workflowStage = (String) event.getNodeInstance().getVariable("workflowStage");
 		
-		if (workflowStatus != null) {
+		if (workflowStage != null) {
 			
 			org.kie.api.runtime.process.ProcessInstance processInstance = event.getProcessInstance();
 			Long processInstanceId = processInstance.getId();
@@ -150,10 +150,10 @@ public class NodeStatusLog extends AbstractAuditLogger {
 				NodeStatus record = em.find(NodeStatus.class,processInstanceId );
 				if( record != null) {
 					
-					if( record.getWorkflowStatus() != workflowStatus) {
+					if( record.getWorkflowStage() != workflowStage) {
 						
 						logger.info(" UDATING " + record.toString() + " ENTRY IN NODESTATUS DB");
-						record.setWorkflowStatus(workflowStatus);
+						record.setWorkflowStage(workflowStage);
 						em.flush();	
 					}
 					
@@ -166,10 +166,11 @@ public class NodeStatusLog extends AbstractAuditLogger {
 					String nodeId = nodeInstance.getNode().getId() + "";
 					GennyToken userToken = (GennyToken) nodeInstance.getVariable("userToken");
 					String realm = userToken.getRealm();
-
 					String userCode = userToken.getUserCode();
+					String workflowBeCode = (String) nodeInstance.getVariable("workflowBeCode");
+					
 					NodeStatus nodeStatus = new NodeStatus(userCode, nodeName, nodeId, realm, processInstanceId, processId,
-							workflowStatus);
+							workflowStage, workflowBeCode);
 					
 					logger.info(nodeStatus.toString() + " NOT FOUND IN NODESTATUS DB !!");
 					em.persist(nodeStatus);

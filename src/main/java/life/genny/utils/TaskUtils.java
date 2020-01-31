@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,6 +18,7 @@ import org.kie.api.task.model.Content;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.model.OutputParam2;
 import life.genny.models.GennyToken;
@@ -78,7 +80,7 @@ public class TaskUtils {
 			for (TaskSummary ts : taskSummarys) {
 				// We send an Ask to the frontend that contains the task items
 				Task task = taskService.getTaskById(ts.getId());
-				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getName());
+				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(),  task.getDescription());
 				item.setRealm(userToken.getRealm());
 				item.setIndex(index++);
 				taskItems.add(item);
@@ -166,7 +168,7 @@ public class TaskUtils {
 			for (TaskSummary ts : taskSummarys) {
 				// We send an Ask to the frontend that contains the task items
 				Task task = RulesLoader.taskServiceMap.get(userToken.getRealm()).getTaskById(ts.getId());
-				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getName());
+				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
 				item.setRealm(userToken.getRealm());
 				item.setIndex(index++);
 				// Attribute questionDraftItemAttribute = new Attribute("QQQ_DRAFT_ITEM",
@@ -182,6 +184,20 @@ public class TaskUtils {
 				/* add the entityAttribute ask to list */
 				taskAskItemList.add(childAsk);
 			}
+			
+			// Now send a Clear Tasks  menu item
+			BaseEntity clearItems = new BaseEntity("MEN_CLEAR_ITEMS","Clear All Tasks");
+			clearItems.setRealm(userToken.getRealm());
+			clearItems.setIndex(index++);
+			Attribute questionDraftItemAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
+					new DataType(String.class));
+
+			Question question = new Question("QUE_CLEAR_TASKS", "Clear All Tasks", questionDraftItemAttribute,
+					true);
+			Ask childAsk = new Ask(question, userToken.getUserCode(), userToken.getUserCode());
+
+			/* add the entityAttribute ask to list */
+			taskAskItemList.add(childAsk);
 		}
 
 		/* add the contextList to QUE_DRAFTS_GRP */
@@ -287,4 +303,32 @@ public class TaskUtils {
 		}
 		return output;
 	}
+	
+	public static void clearAllTasks(GennyToken userToken)
+	{
+		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+
+		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
+		for (TaskSummary ts : taskSummarys) {
+			Long tsId = ts.getId();
+			Task task = taskService.getTaskById(tsId);
+			Map<String,Object> results = new HashMap<String,Object>();
+			results.put("taskid", tsId);
+			results.put("status", "aborted");
+
+		
+			
+			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
+				taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
+			//	taskService.fail(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+				taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+			} else {
+				// maybe only abort if there is no data in the tasks? So if a task is not reserved then it has some data in it!
+			//	taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+			}
+			log.info("Aborted Task "+tsId);
+		}
+		sendTaskAskItems(userToken) ;
+	}
+	
 }
