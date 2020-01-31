@@ -177,7 +177,7 @@ public class TaskUtils {
 				Attribute questionDraftItemAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
 						new DataType(String.class));
 
-				Question question = new Question("QUE_TASK-" + task.getId(), task.getName(), questionDraftItemAttribute,
+				Question question = new Question("QUE_TASK-" + task.getId(), task.getDescription(), questionDraftItemAttribute,
 						true);
 				Ask childAsk = new Ask(question, userToken.getUserCode(), userToken.getUserCode());
 
