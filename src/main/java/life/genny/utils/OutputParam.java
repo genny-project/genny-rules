@@ -19,7 +19,10 @@ public class OutputParam implements Serializable,Comparable<Object> {
 	private Object result;
 	@Expose
 	private Integer level=0;
-
+	@Expose 
+	private String askSourceCode;
+	@Expose 
+	private String askTargetCode;
 	@Expose
 	private String typeOfResult="ERROR";  // FRAME_CODE or LIFECYCLE
 	@Expose
@@ -61,6 +64,34 @@ public class OutputParam implements Serializable,Comparable<Object> {
 		this.level = 0;
 	}
 	
+	/**
+	 * @return the askSourceCode
+	 */
+	public String getAskSourceCode() {
+		return askSourceCode;
+	}
+
+	/**
+	 * @param askSourceCode the askSourceCode to set
+	 */
+	public void setAskSourceCode(String askSourceCode) {
+		this.askSourceCode = askSourceCode;
+	}
+
+	/**
+	 * @return the askTargteCode
+	 */
+	public String getAskTargetCode() {
+		return askTargetCode;
+	}
+
+	/**
+	 * @param askTargteCode the askTargteCode to set
+	 */
+	public void setAskTargetCode(String askTargetCode) {
+		this.askTargetCode = askTargetCode;
+	}
+
 	public void setLifeCycle( final String workflowId, final String targetCode) {
 		this.resultCode = workflowId;
 		this.typeOfResult = "LIFECYCLE";

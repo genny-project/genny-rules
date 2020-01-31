@@ -300,8 +300,12 @@ public class ShowFrame implements WorkItemHandler {
 						targetCode = taskAsk.getAsk().getTargetCode();
 					}
 				}
+			} else {
+				sourceCode = output.getAskSourceCode();
+				targetCode = output.getAskTargetCode();
 			}
 		}
+		
 		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
 
 		// System.out.println("Sending Asks");
