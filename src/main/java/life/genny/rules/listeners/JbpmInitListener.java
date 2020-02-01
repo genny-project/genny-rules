@@ -374,9 +374,18 @@ public class JbpmInitListener /* extends WorkingMemoryLogger */ implements Proce
 	private void persist(Object entity) {
 		EntityManager em = getEntityManager();
 		UserTransaction ut = joinTransaction(em);
-		em.persist(entity);
+		try {
+			em.persist(entity);
+		} catch (Exception e) {
+			log.error("JbpmInitListener persist :"+entity);
+		}
+
 		if (!sharedEM) {
-			flush(em, ut);
+			try {
+				flush(em, ut);
+			} catch (Exception e) {
+				log.error("JbpmInitListener flush :"+entity);
+			}
 		}
 	}
 
@@ -441,7 +450,11 @@ public class JbpmInitListener /* extends WorkingMemoryLogger */ implements Proce
 	 * @param ut The (user) transaction.
 	 */
 	private static void flush(EntityManager em, UserTransaction ut) {
-		em.flush(); // This saves any changes made
+		try {
+			flush(em, ut);
+		} catch (Exception e) {
+			log.error("JbpmInitListener lush issue :");
+		}
 		em.clear(); // This makes sure that any returned entities are no longer attached to this
 					// entity manager/persistence context
 		em.close(); // and this closes the entity manager

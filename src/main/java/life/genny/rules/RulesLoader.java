@@ -25,6 +25,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
+import javax.transaction.Transactional;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
@@ -723,7 +724,8 @@ public class RulesLoader {
 		}
 		return ret;
 	}
-
+	
+	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
 	public void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
 		int rulesFired = 0;
 		String msg_code = "";
@@ -859,7 +861,11 @@ public class RulesLoader {
 								// kieSession.signalEvent("DT_"+session_state, facts);
 								log.info("SignalEvent -> 'data' for " + facts.getUserToken().getUserCode() + ":"
 										+ processId);
-								kieSession.signalEvent("data", facts, processId);
+								try {
+									kieSession.signalEvent("data", facts, processId);
+								} catch (Exception e) {
+									log.error("Error in data signal :"+facts+":"+e.getLocalizedMessage());
+								}
 
 							}
 

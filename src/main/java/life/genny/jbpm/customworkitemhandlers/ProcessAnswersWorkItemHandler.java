@@ -96,6 +96,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
+		
 		String callingWorkflow = (String) workItem.getParameter("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
@@ -109,6 +110,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
 		Map<Long, KieSession> kieSessionMap = new HashMap<Long, KieSession>();
+		Map<Long,Boolean> mandatoryDoneMap = new ConcurrentHashMap<Long,Boolean>();
+
 		OutputParam output = (OutputParam) items.get("output");
 		GennyToken userToken = (GennyToken) items.get("userToken");
 		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
@@ -189,7 +192,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		for (TaskSummary taskSummary : tasks) {
 			Boolean hackTrigger = false; // used for debugging and testing trigger
-
+			mandatoryDoneMap.put(taskSummary.getId(), false);
 			Task task = taskService.getTaskById(taskSummary.getId());
 			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
 				taskService.start(taskSummary.getId(), realm + "+" + userCode); // start!
@@ -305,6 +308,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					Boolean allMandatoryTicked = true;
 					Boolean isCreateOnTrigger = false;
 					Boolean isNowTriggered = false;
+					mandatoryDoneMap.put(taskSummary.getId(), true);  // set as default true to be falsified if a mandatory field not answered
 					for (String key : taskAsks.keySet()) {
 
 						if (taskAsks.get(key) instanceof String) {
@@ -320,6 +324,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						if (ask.getAsk().getMandatory()) {
 							if (!ask.getAnswered()) {
 								allMandatoryTicked = false;
+								mandatoryDoneMap.put(taskSummary.getId(), false);
 							}
 						}
 						if (ask.getCreateOnTrigger()) {
@@ -337,6 +342,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 								&& (ask.getAnswered())/* ||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT") */)) {
 							log.info(callingWorkflow + " PRI_SUBMIT detected ");
 							hackTrigger = true;
+							isNowTriggered = true;
 						}
 //						if ((ask.getAsk().getAttributeCode().equals("PRI_ADDRESS_FULL")) && (ask.getAnswered())) {
 //							log.info(callingWorkflow+" PRI_FULL_ADDRESS detected and is answered");
@@ -346,14 +352,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						log.info(callingWorkflow + " TASK-ASK:" + ask);
 					}
 					// check all the tasks to see if any are completed and if so then complete them!
-					if ((allMandatoryTicked && isNowTriggered) || hackTrigger) {
+					if ((mandatoryDoneMap.get(taskSummary.getId()) && isNowTriggered) && hackTrigger) {
 						if (isCreateOnTrigger) {
 							// Okay, so grab the temporary target BE and make it the final target BE!
 							log.info(callingWorkflow + " Creating actual Target BE from Temporary BE for "
 									+ task.getFormName());
 						}
 						// Now complete the Task!!
-						log.info(callingWorkflow + " Completed TASK " + task.getFormName());
+						log.info(callingWorkflow + " Completed TASK " + task.getFormName()+"  hackTrigger = "+(hackTrigger?"TRUE":"FALSE"));
 						taskAskMap.put(taskSummary, taskAsks);
 					}
 					Map<String, Object> results = taskAskMap.get(taskSummary);
@@ -432,16 +438,27 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							+ iTask.getTaskData().getProcessSessionId());
 				}
 				results.put("taskid", iTask.getId());
-				taskService.complete(iTask.getId(), realm + "+" + userCode, results);
-				TaskUtils.sendTaskAskItems(userToken);
-				// kSession.signalEvent("closeTask", facts);
-				output = new OutputParam();
-				if ("NONE".equals(formCode)) {
-					output.setTypeOfResult("NONE");
+				results.put("userToken", userToken);  /* save the latest userToken that actually completes the form */
+				results.put("serviceToken", serviceToken);  /* save the latest userToken that actually completes the form */
+
+				if (mandatoryDoneMap.get(taskSummary.getId())) {
+					taskService.complete(iTask.getId(), realm + "+" + userCode, results);
+					TaskUtils.sendTaskAskItems(userToken);
+					// kSession.signalEvent("closeTask", facts);
+					output = new OutputParam();
+					if ("NONE".equals(formCode)) {
+						output.setTypeOfResult("NONE");
+					} else {
+						output.setTypeOfResult("FORMCODE");
+					}
+					output.setFormCode(formCode, targetCode);
+
 				} else {
-					output.setTypeOfResult("FORMCODE");
+					// kSession.signalEvent("closeTask", facts);
+					output = new OutputParam();
+					output.setTypeOfResult("NONE");
+					output.setFormCode("NONE", "NONE");
 				}
-				output.setFormCode(formCode, targetCode);
 			}
 		}
 
