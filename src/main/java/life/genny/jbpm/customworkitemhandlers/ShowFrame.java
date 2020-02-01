@@ -339,7 +339,7 @@ public class ShowFrame implements WorkItemHandler {
 					QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(besToSend);
 					beMsg.setToken(userToken.getToken());
 					beMsg.setReplace(true);
-					VertxUtils.writeMsg("webdata", JsonUtils.toJson(beMsg));
+					VertxUtils.writeMsg("webdata", JsonUtils.toJsonWithNulls(beMsg));
 
 				}
 

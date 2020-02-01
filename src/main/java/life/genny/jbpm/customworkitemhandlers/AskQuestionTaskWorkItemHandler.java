@@ -164,7 +164,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             	target.setRealm(userToken.getToken());
             	QDataBaseEntityMessage msg = new QDataBaseEntityMessage(target);
             	msg.setToken(userToken.getToken());
-            	String tJson = JsonUtils.toJson(msg);
+            	String tJson = JsonUtils.toJsonWithNulls(msg);
             	
             	VertxUtils.writeMsg("webcmds", tJson);
             }
