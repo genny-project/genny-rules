@@ -387,6 +387,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 			if (mandatoryDoneMap.get(taskSummary.getId())) {
 				log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for "+task.getName());
+			} else {
+				log.info("processAnswers: NOT ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for "+task.getName());
 			}
 		}
 
