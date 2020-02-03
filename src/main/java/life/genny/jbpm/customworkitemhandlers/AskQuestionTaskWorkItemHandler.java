@@ -258,6 +258,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 					newAttribute.setDefaultValue("0");
 				}
 			}
+			if (newAttribute.dataType.getClassName().contains("String")) {
+				if (newAttribute.getDefaultValue()==null) {
+					newAttribute.setDefaultValue("");
+				}
+			}
+
 			try {
 				Answer newField = new Answer(target,target,newAttribute,newAttribute.getDefaultValue());
 				newFields.add(newField);

@@ -103,6 +103,26 @@ public class TaskUtils {
 		}
 	}
 
+	
+	public static Map<String,Object> getTaskAsks(String realm, Long taskId)
+	{
+		TaskService taskService = RulesLoader.taskServiceMap.get(realm);
+		Task task = taskService.getTaskById(taskId);
+		Long docId = task.getTaskData().getDocumentContentId();
+		Content c = taskService.getContentById(docId);
+		if (c == null) {
+			log.error("*************** Task content is NULL *********** ABORTING");
+			return new ConcurrentHashMap<String,Object>();
+		}
+		HashMap<String, Object> taskAsks2 = null;
+		ConcurrentHashMap<String, Object> taskAsks = null;
+			taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
+			taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+
+		return taskAsks;
+	}
+	
+	
 	/*
 	 * Setting dynamic links between parents and child. ie. linking DropDown items
 	 * to the DropDown field.

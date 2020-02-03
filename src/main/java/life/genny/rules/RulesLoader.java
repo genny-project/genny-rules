@@ -864,7 +864,8 @@ public class RulesLoader {
 								try {
 									kieSession.signalEvent("data", facts, processId);
 								} catch (Exception e) {
-									log.error("Error in data signal :"+facts+":"+e.getLocalizedMessage());
+									log.error("Error in data signal :"+facts);
+									e.printStackTrace();
 								}
 
 							}
