@@ -105,7 +105,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		System.out.println(callingWorkflow+" PROCESS ANSWERS WorkItem Handler *************************");
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
-		Map<TaskSummary, Map<String, Object>> taskAskMap = new ConcurrentHashMap<TaskSummary, Map<String, Object>>();
+		Map<TaskSummary, ConcurrentHashMap<String, Object>> taskAskMap = new ConcurrentHashMap<TaskSummary, ConcurrentHashMap<String, Object>>();
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
@@ -117,20 +117,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
 		String formCode = "NONE";
 		String targetCode = "NONE";
-		String firstField = "";
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
 
 		Answers answersToSave = (Answers) items.get("answersToSave");
-		
-		if (answersToSave == null) {
-			output = new OutputParam();
-			output.setTypeOfResult("NONE");
-			output.setFormCode("NONE", "NONE");
-			resultMap.put("output", output);
-			manager.completeWorkItem(workItem.getId(), resultMap);
-			return;
-		}
 
 		// Extract all the current questions from all the users Tasks
 		List<Status> statuses = new CopyOnWriteArrayList<Status>();
@@ -160,6 +150,17 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		Map<String, Answer> answerMap2 = new ConcurrentHashMap<String, Answer>();
 		Boolean exitOut = false;
 		Boolean submitDetected = false;
+		
+		if (answersToSave == null) {
+			output = new OutputParam();
+			output.setTypeOfResult("NONE");
+			output.setFormCode("NONE", "NONE");
+			resultMap.put("output", output);
+			manager.completeWorkItem(workItem.getId(), resultMap);
+			return;
+		}
+		
+		
 		List<Answer> answersToSave2 = new CopyOnWriteArrayList<>(answersToSave.getAnswers());
 		for (Answer answer : answersToSave2) {
 			Boolean validAnswer = validate(answer, userToken);
@@ -230,8 +231,20 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				log.info("Found session to restore for ksid=" + task.getTaskData().getProcessSessionId());
 			}
 			kieSessionMap.put(task.getId(), kSession);
-			Map<String, Object> taskAsks = TaskUtils.getTaskAsks(realm, task.getId());
-			
+
+			Long docId = task.getTaskData().getDocumentContentId();
+			Content c = taskService.getContentById(docId);
+			if (c == null) {
+				log.error("*************** Task content is NULL *********** ABORTING");
+				return;
+			}
+			HashMap<String, Object> taskAsks2 = null;
+			ConcurrentHashMap<String, Object> taskAsks = null;
+			synchronized (this) {
+				taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
+
+				taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+			}
 
 			formCode = (String) taskAsks.get("FORM_CODE");
 			targetCode = (String) taskAsks.get("TARGET_CODE");
@@ -396,8 +409,6 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 			if (mandatoryDoneMap.get(taskSummary.getId())) {
 				log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for "+task.getName());
-			} else {
-				log.info("processAnswers: NOT ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for "+task.getName());
 			}
 		}
 

@@ -67,10 +67,13 @@ public class DropdownUtils implements Serializable {
 		QDataBaseEntityMessage beMessage = getSearchResults(this.searchEntity,parentCode, linkCode, linkValue,replace,
 															shouldDeleteLinkedBaseEntities,userToken, this.serviceToken, sortByWeight);
 		
-		beMessage.setToken(userToken.getToken());
-		/* Writing to Vert.x EventBus*/
-		writeToVertx("webcmds", beMessage);
-		
+		if (beMessage != null) {
+			beMessage.setToken(userToken.getToken());
+			/* Writing to Vert.x EventBus*/
+			writeToVertx("webcmds", beMessage);
+		} else {
+			log.error("Could not retrieve Search Results for parentCode "+parentCode+" and linkCode "+linkCode+" and linkValue "+linkValue);
+		}
 		return beMessage;
 	}
 	

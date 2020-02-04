@@ -52,6 +52,7 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 
 		Object payload = (Object) items.get("payloadObject");
 		GennyToken userToken = (GennyToken) items.get("userToken");
+		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
 		String signalCode = (String) items.get("signalCode");
 		String callingWorkflow = (String)items.get("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {
@@ -60,7 +61,7 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 		Long processId = null;
 
 		
-		SessionFacts sessionFacts = new SessionFacts(userToken,userToken,payload);
+		SessionFacts sessionFacts = new SessionFacts(serviceToken,userToken,payload);
 
 		if (processId == null) {
 			Method m;

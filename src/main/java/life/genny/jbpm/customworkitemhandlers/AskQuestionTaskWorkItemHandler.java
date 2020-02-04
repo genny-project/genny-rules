@@ -164,7 +164,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             	target.setRealm(userToken.getToken());
             	QDataBaseEntityMessage msg = new QDataBaseEntityMessage(target);
             	msg.setToken(userToken.getToken());
-            	String tJson = JsonUtils.toJsonWithNulls(msg);
+            	String tJson = JsonUtils.toJson(msg);
             	
             	VertxUtils.writeMsg("webcmds", tJson);
             }
@@ -258,12 +258,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 					newAttribute.setDefaultValue("0");
 				}
 			}
-			if (newAttribute.dataType.getClassName().contains("String")) {
-				if (newAttribute.getDefaultValue()==null) {
-					newAttribute.setDefaultValue(" ");
-				}
-			}
-
 			try {
 				Answer newField = new Answer(target,target,newAttribute,newAttribute.getDefaultValue());
 				newFields.add(newField);

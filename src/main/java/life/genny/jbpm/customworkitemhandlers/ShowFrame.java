@@ -56,7 +56,6 @@ import life.genny.utils.FrameUtils2;
 import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
-import life.genny.utils.TaskUtils;
 import life.genny.utils.VertxUtils;
 import life.genny.models.FramePosition;
 
@@ -280,17 +279,25 @@ public class ShowFrame implements WorkItemHandler {
 
 		if ((output != null)) {
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
-				
-				taskAsks = TaskUtils.getTaskAsks(userToken.getRealm(), output.getTaskId());
+				taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+				task = taskService.getTaskById(output.getTaskId());
+				// Now get the TaskAsk that relates to this specific Ask
+				// assume that all attributes have the same source and target
+				Long docId = task.getTaskData().getDocumentContentId();
+				Content c = taskService.getContentById(docId);
+				if (c == null) {
+					log.error("*************** Task content is NULL *********** ABORTING");
+					return;
+				}
+				taskAsks = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
 				for (String key : taskAsks.keySet()) {
 					Object obj = taskAsks.get(key);
 					if (obj instanceof TaskAsk) { // This gets around my awful formcode values
 						TaskAsk taskAsk = (TaskAsk) taskAsks.get(key);
-						//String attributeStr = taskAsk.getAsk().getAttributeCode();
+						String attributeStr = taskAsk.getAsk().getAttributeCode();
 						// attributeTaskAskMap.put(attributeStr,taskAsk);
 						sourceCode = taskAsk.getAsk().getSourceCode();
 						targetCode = taskAsk.getAsk().getTargetCode();
-						break; // TODO, this is assuming only a single pair
 					}
 				}
 			}
