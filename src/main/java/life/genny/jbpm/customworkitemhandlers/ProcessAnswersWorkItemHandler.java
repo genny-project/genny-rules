@@ -122,6 +122,15 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
 
 		Answers answersToSave = (Answers) items.get("answersToSave");
+		
+		if (answersToSave == null) {
+			output = new OutputParam();
+			output.setTypeOfResult("NONE");
+			output.setFormCode("NONE", "NONE");
+			resultMap.put("output", output);
+			manager.completeWorkItem(workItem.getId(), resultMap);
+			return;
+		}
 
 		// Extract all the current questions from all the users Tasks
 		List<Status> statuses = new CopyOnWriteArrayList<Status>();

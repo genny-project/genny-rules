@@ -239,7 +239,7 @@ public class ShowFrame implements WorkItemHandler {
 					FRM_MSG.setReplace(true);
 
 					// Minify
-					String payload = JsonUtils.toJsonWithNulls(FRM_MSG);
+					String payload = JsonUtils.toJson(FRM_MSG);
 					JSONObject js = new JSONObject(payload);
 					String payload2 = js.toString();
 					if (payload2 != null) {
