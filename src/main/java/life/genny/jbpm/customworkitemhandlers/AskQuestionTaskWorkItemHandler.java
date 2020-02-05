@@ -162,9 +162,20 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             	beUtils.saveAnswers(newFields, true);
             	BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
             	target.setRealm(userToken.getToken());
+            	
+            	for (Answer ans : newFields) {
+            		String attributeCode = ans.getAttributeCode();
+            		Boolean hasAttribute =  target.containsEntityAttribute(attributeCode);
+            		if (!hasAttribute) {
+            			// create a dummy 
+            			
+            		}
+            		
+            	}
+            	
             	QDataBaseEntityMessage msg = new QDataBaseEntityMessage(target);
             	msg.setToken(userToken.getToken());
-            	String tJson = JsonUtils.toJson(msg);
+            	String tJson = JsonUtils.toJsonWithNulls(msg);
             	
             	VertxUtils.writeMsg("webcmds", tJson);
             }
@@ -193,14 +204,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	            long taskId = ((InternalTaskService) this.getTaskService()).addTask(task, content);
 	            if (isAutoClaim(this.getKsession(), workItem, task)) {
 	            	 this.getTaskService().claim(taskId, (String) workItem.getParameter("SwimlaneActorId"));
-
 	            }
-	            
-	            
-	     
+	            	            
 	           // ((InternalContent)content).setContent(ContentMarshallerHelper.marshallContent(task, payload, null));
-	           // taskData.getAttachments().add(attach);
-	                  
+	           // taskData.getAttachments().add(attach);	                  
 	         
                 sendTaskSignal(userToken, task, callingWorkflow); // TODO, watch the timing as the workitem may not be ready if the target tries to do stuff.
 
