@@ -460,12 +460,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					TaskUtils.sendTaskAskItems(userToken);
 					// kSession.signalEvent("closeTask", facts);
 					output = new OutputParam();
-					if ("NONE".equals(formCode)) {
+//					if ("NONE".equals(formCode)) {
 						output.setTypeOfResult("NONE");
-					} else {
-						output.setTypeOfResult("FORMCODE");
-					}
-					output.setFormCode(formCode, targetCode);
+//					} else {
+//						output.setTypeOfResult("FORMCODE");
+//					}
+//					output.setFormCode(formCode, targetCode);
 
 				} else {
 					// kSession.signalEvent("closeTask", facts);
