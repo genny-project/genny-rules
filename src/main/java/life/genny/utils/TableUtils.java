@@ -106,7 +106,38 @@ public class TableUtils {
 
 		showTableContent(serviceToken,  searchBE, msg, columns);
 
+		sendTableContexts();
+
 		showTableFooter(searchBE);
+
+	}
+
+	public void sendTableContexts(){
+		
+		System.out.println("Sending contexts for table");
+		
+		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class,
+				beUtils.getServiceToken().getToken());
+		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class,
+				beUtils.getServiceToken().getToken());
+		
+		BaseEntity THM_ICON_BE = this.getThemeBe(THM_ICON);
+		BaseEntity THM_ICON_ONLY_BE = this.getThemeBe(THM_ICON_ONLY);
+		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
+		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
+
+		List<QDataBaseEntityMessage> msgList = new ArrayList<QDataBaseEntityMessage>();
+		msgList.add(new QDataBaseEntityMessage(THM_ICON_ONLY_BE));
+		msgList.add(new QDataBaseEntityMessage(THM_ICON_BE));
+		msgList.add(new QDataBaseEntityMessage(ICN_VIEW));
+		msgList.add(new QDataBaseEntityMessage(ICN_ADD));
+		
+		/* set token and publish the msg */
+		msgList.forEach((msg)->{
+			msg.setToken(beUtils.getGennyToken().getToken());
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((msg)));
+		});
+	
 
 	}
 
@@ -378,7 +409,7 @@ public class TableUtils {
 	}
 
 	public TableData generateTableAsks(SearchEntity searchBe) {
-
+		
 		List<QDataBaseEntityMessage> themeMsgList = new ArrayList<QDataBaseEntityMessage>();
 
 		Ask tableHeaderAsk = generateTableHeaderAsk(searchBe, themeMsgList);
@@ -906,6 +937,24 @@ public class TableUtils {
 		/* initialize an empty ask list */
 		List<Ask> askList = new ArrayList<>();
 		TableUtils tableUtils = new TableUtils(beUtils);
+		
+		/* get the themes */
+		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class,
+				beUtils.getServiceToken().getToken());
+		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class,
+				beUtils.getServiceToken().getToken());
+		
+				/* get the sort icon */
+		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
+		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
+
+		List<Context> viewContextList = new ArrayList<>();
+		viewContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
+		viewContextList.add(new Context(ContextType.ICON, ICN_VIEW, VisualControlType.VCL_ICON, 1.0));
+		
+		List<Context> applyContextList = new ArrayList<>();
+		applyContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
+		applyContextList.add(new Context(ContextType.ICON, ICN_ADD, VisualControlType.VCL_ICON, 1.0));
 
 		if (columns != null) {
 			if (bes != null && bes.isEmpty() == false) {
@@ -929,6 +978,21 @@ public class TableUtils {
 							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr, true);
 							Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 
+							/* switch case to add icons  */							
+							switch (attr.getCode()) {
+								case "PRI_EVENT_VIEW":
+									System.out.println("attribute code is PRI_EVENT_VIEW attaching the context now");
+									childAsk.setContextList(new ContextList(viewContextList));
+									break;
+								case "PRI_EVENT_APPLY":
+									System.out.println("attribute code is PRI_EVENT_APPLY attaching the context now");
+									childAsk.setContextList(new ContextList(applyContextList));
+									break;
+							
+								default:
+									break;
+							}
+							
 							/* add the entityAttribute ask to list */
 							childAskList.add(childAsk);
 						} else {
@@ -1002,25 +1066,6 @@ public class TableUtils {
 
 	}
 	
-	public BaseEntity getThemeBe(Theme theme) {
-
-		BaseEntity themeBe = null;
-		themeBe = theme.getBaseEntity();
-		if (theme.getAttributes() != null) {
-			for (ThemeAttribute themeAttribute : theme.getAttributes()) {
-
-				try {
-					themeBe.addAttribute(new EntityAttribute(themeBe,
-							new Attribute(themeAttribute.getCode(), themeAttribute.getCode(), new DataType("DTT_THEME")), 1.0,
-							themeAttribute.getJson()));
-				} catch (BadDataException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-		return themeBe;
-	}
 
 	public Ask getHeaderAsk(SearchEntity searchBe){
 		/* get table columns */
@@ -1054,6 +1099,26 @@ public class TableUtils {
 		
 
 		return headerAsk;
+	}
+
+	/* returns baseentity of a theme */
+	public BaseEntity getThemeBe(Theme theme) {
+
+		BaseEntity themeBe = null;
+		themeBe = theme.getBaseEntity();
+		if (theme.getAttributes() != null) {
+			for (ThemeAttribute themeAttribute : theme.getAttributes()) {
+
+				try {
+					themeBe.addAttribute(new EntityAttribute(themeBe, new Attribute(themeAttribute.getCode(),
+							themeAttribute.getCode(), new DataType("DTT_THEME")), 1.0, themeAttribute.getJson()));
+				} catch (BadDataException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		return themeBe;
 	}
 
 }
