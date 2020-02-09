@@ -4,6 +4,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -43,6 +44,7 @@ import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
@@ -333,9 +335,25 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							continue;
 						}
 						if (ask.getAsk().getMandatory()) {
+							
 							if (!ask.getAnswered()) {
-								allMandatoryTicked = false;
-								mandatoryDoneMap.put(taskSummary.getId(), false);
+								// check if already in Be, shouldn't happen but has! wheree value in be but not picked up in form
+								BaseEntity be = beUtils.getBaseEntityByCode(ask.getAsk().getTargetCode());
+								String attributeCode = ask.getAsk().getAttributeCode();
+								Optional<EntityAttribute> optEa = be.findEntityAttribute(attributeCode);
+								if (optEa.isPresent()) {
+									EntityAttribute ea = optEa.get();
+									if (StringUtils.isBlank(ea.getAsString())) {
+										allMandatoryTicked = false;
+										mandatoryDoneMap.put(taskSummary.getId(), false);
+									} else {
+										ask.setAnswered(true);
+										ask.setValue(ea.getAsString());
+									}
+								} else {
+									allMandatoryTicked = false;
+									mandatoryDoneMap.put(taskSummary.getId(), false);
+								}
 							}
 						}
 						if (ask.getCreateOnTrigger()) {
