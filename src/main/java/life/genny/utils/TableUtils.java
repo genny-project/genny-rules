@@ -103,7 +103,7 @@ public class TableUtils {
 		 */
 
 		/*QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg);*/
-
+		System.out.println("calling showTableContent");
 		showTableContent(serviceToken,  searchBE, msg, columns);
 
 		sendTableContexts();
@@ -120,13 +120,17 @@ public class TableUtils {
 				beUtils.getServiceToken().getToken());
 		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class,
 				beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_HEADER_FONT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_HEADER_FONT", Theme.class,
+				beUtils.getServiceToken().getToken());
 		
 		BaseEntity THM_ICON_BE = this.getThemeBe(THM_ICON);
 		BaseEntity THM_ICON_ONLY_BE = this.getThemeBe(THM_ICON_ONLY);
+		BaseEntity THM_TABLE_HEADER_FONT_BE = this.getThemeBe(THM_TABLE_HEADER_FONT);
 		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
 		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
 
 		List<QDataBaseEntityMessage> msgList = new ArrayList<QDataBaseEntityMessage>();
+		msgList.add(new QDataBaseEntityMessage(THM_TABLE_HEADER_FONT_BE));
 		msgList.add(new QDataBaseEntityMessage(THM_ICON_ONLY_BE));
 		msgList.add(new QDataBaseEntityMessage(THM_ICON_BE));
 		msgList.add(new QDataBaseEntityMessage(ICN_VIEW));
@@ -281,6 +285,8 @@ public class TableUtils {
 			QDataBaseEntityMessage msg,
 			Map<String, String> columns) {
 
+				System.out.println("inside showTableContent");
+
 		Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
 
 		List<Validation> tableRowValidations = new ArrayList<>();
@@ -290,21 +296,27 @@ public class TableUtils {
 		tableRowValidationList.setValidationList(tableRowValidations);
 
 		Context CTX_THM_TABLE_BORDER = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_BORDER", "THM_TABLE_BORDER"), VisualControlType.GROUP, 1.0);
+				new BaseEntity("THM_TABLE_BORDER", "THM_TABLE_BORDER"), VisualControlType.GROUP_WRAPPER, 1.0);
 		CTX_THM_TABLE_BORDER.setDataType("Table Row Group");
 
 		DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
 		
+		Context horizontalContext = new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL", "THM_DISPLAY_HORIZONTAL"),
+				VisualControlType.VCL_DEFAULT, 1.0);
+		horizontalContext.setDataType("Table Header Group");
+
+		Context tableRowContentWrapperContext = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER", "THM_TABLE_ROW_CONTENT_WRAPPER"),
+						VisualControlType.GROUP, 1.0);
+		tableRowContentWrapperContext.setDataType("Table Row Group");
+
+
 		List<Context> contexts = new ArrayList<Context>();
 		contexts.add(new Context(ContextType.THEME,
 				new BaseEntity("THM_WIDTH_100_PERCENT_NO_INHERIT", "THM_WIDTH_100_PERCENT_NO_INHERIT"),
 				VisualControlType.GROUP_WRAPPER, 1.0));
 		contexts.add(CTX_THM_TABLE_BORDER);
-		contexts.add(
-				new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER", "THM_TABLE_ROW_CONTENT_WRAPPER"),
-						VisualControlType.GROUP, 1.0));
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL", "THM_DISPLAY_HORIZONTAL"),
-				VisualControlType.VCL_DEFAULT, 1.0));
+		contexts.add(tableRowContentWrapperContext);
+		contexts.add(horizontalContext);
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
 				VisualControlType.VCL_DEFAULT, 1.0));
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL", "THM_TABLE_ROW_CELL"),
@@ -315,16 +327,19 @@ public class TableUtils {
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"),
 				VisualControlType.GROUP_WRAPPER, 1.0));
 		
-		
 			
-		for (Context x : contexts) {
-			x.setDataType("Table Row Group");
-		}
+		System.out.println("outside loop before the loop");
+
+		// for (Context x : contexts) {
+		// 	System.out.println("setting contexts inside the loop");
+		// 	x.setDataType("Table Row Group");
+		// }
+		
 		ContextList rowsContextList = new ContextList(contexts);
 		
+		/* get the baseentity results */
 		List<BaseEntity> rowList = Arrays.asList(msg.getItems());
 
-		/* Wt aadddddddddddddddddddddd*/
 		List<Ask> rowAsks = new ArrayList<Ask>();
 		TableData tableData = generateTableAsks(searchBE);
 
@@ -355,8 +370,12 @@ public class TableUtils {
 		tableResultAsk.setContextList(rowsContextList);
 		tableResultAsk.setReadonly(true);
 		tableResultAsk.setRealm(beUtils.getGennyToken().getRealm());
+		
 		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
 		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
+
+		/* send the frame FRM_TABLE_CONTENT */
+		System.out.println("*************** Sending the FRM_TABLE_CONTENT msg after toMessage ***************");
 
 		QDataBaseEntityMessage msg3 = changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk, serviceToken,
 				beUtils.getGennyToken(), tableResultAskMsgs);
@@ -364,6 +383,8 @@ public class TableUtils {
 		msg3.setReplace(true);
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
 
+		/* send the results questionGroup */
+		System.out.println("*************** Sending the QUE_TABLE_RESULTS_GRP askMsg ***************");
 		QDataAskMessage askMsg = new QDataAskMessage(tableResultAsk);
 		askMsg.setToken(beUtils.getGennyToken().getToken());
 		askMsg.setReplace(true);
@@ -829,63 +850,71 @@ public class TableUtils {
 		
 		try {
 
-			if (ask.getQuestionCode().equals("FRM_TABLE_CONTENT")) {
+			//if (ask.getQuestionCode().equals("QUE_TABLE_RESULTS_GRP")) {
 
-				Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
+				System.out.println("getting the FRM_TABLE_CONTENT from cache");
 
-				List<Validation> tableRowValidations = new ArrayList<>();
-				tableRowValidations.add(tableRowValidation);
+				frame = VertxUtils.getObject(serviceToken.getRealm(), "",
+					frameCode, Frame3.class, serviceToken.getToken());
 
-				ValidationList tableRowValidationList = new ValidationList();
-				tableRowValidationList.setValidationList(tableRowValidations);
+				// Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
 
-				DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
+				// List<Validation> tableRowValidations = new ArrayList<>();
+				// tableRowValidations.add(tableRowValidation);
 
-				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
-						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
-						.question(ask.getQuestionCode())
-						.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken)
-						//.dataType(tableRowDataType)
-						.weight(1.0).end().addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken)
-						//.dataType(tableRowDataType)
-						.vcl(VisualControlType.GROUP).weight(1.0).end().addTheme("THM_TABLE_ROW", serviceToken)
-						//.dataType(tableRowDataType)
-						.weight(1.0).end()
-						.addTheme("THM_TABLE_CONTENT_BORDER", serviceToken)
-						//.dataType(tableRowDataType)
-						.vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
-		                .addTheme("THM_TABLE_CONTENT", serviceToken)
-						.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
-						.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
+				// ValidationList tableRowValidationList = new ValidationList();
+				// tableRowValidationList.setValidationList(tableRowValidations);
 
-			} else {
+				// DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
 
-				System.out.println("it's a FRM_TABLE_HEADER");
+				// frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
+				// 		.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
+				// 		.question(ask.getQuestionCode())
+				// 		.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken)
+				// 		//.dataType(tableRowDataType)
+				// 		.weight(1.0).end().addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken)
+				// 		//.dataType(tableRowDataType)
+				// 		.vcl(VisualControlType.GROUP).weight(1.0).end().addTheme("THM_TABLE_ROW", serviceToken)
+				// 		//.dataType(tableRowDataType)
+				// 		.weight(1.0).end()
+				// 		.addTheme("THM_TABLE_CONTENT_BORDER", serviceToken)
+				// 		//.dataType(tableRowDataType)
+				// 		.vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
+		    //             .addTheme("THM_TABLE_CONTENT", serviceToken)
+				// 		.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
+				// 		.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
 
-				Validation tableCellValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
+		//	} 
+			// if (ask.getQuestionCode().equals("FRM_TABLE_CONTENT")) {
 
-				List<Validation> tableCellValidations = new ArrayList<>();
-				tableCellValidations.add(tableCellValidation);
+			// 	Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
 
-				ValidationList tableCellValidationList = new ValidationList();
-				tableCellValidationList.setValidationList(tableCellValidations);
+			// 	List<Validation> tableRowValidations = new ArrayList<>();
+			// 	tableRowValidations.add(tableRowValidation);
 
-				DataType tableCellDataType = new DataType("DTT_TABLE_CELL_GRP", tableCellValidationList, "Table Cell Group",
-						"");
+			// 	ValidationList tableRowValidationList = new ValidationList();
+			// 	tableRowValidationList.setValidationList(tableRowValidations);
 
-				frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
-						.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
-						.question(ask.getQuestionCode()) // QUE_TEST_TABLE_HEADER_GRP
-						.addTheme("THM_QUESTION_GRP_LABEL", serviceToken).vcl(VisualControlType.GROUP).dataType(tableCellDataType)
-						.end().addTheme("THM_WIDTH_100_PERCENT_NO_INHERIT", serviceToken).vcl(VisualControlType.GROUP).end()
-						.addTheme("THM_TABLE_ROW_CELL", serviceToken).dataType(tableCellDataType)
-						.vcl(VisualControlType.GROUP_WRAPPER).end().addTheme("THM_DISPLAY_HORIZONTAL", serviceToken).weight(2.0)
-						.end().addTheme("THM_TABLE_HEADER_CELL_WRAPPER", serviceToken).vcl(VisualControlType.VCL_WRAPPER).end()
-						.addTheme("THM_TABLE_HEADER_CELL_GROUP_LABEL", serviceToken).vcl(VisualControlType.GROUP_LABEL).end()
-						.addTheme("THM_TABLE_HEADER_FONT", serviceToken).vcl(VisualControlType.INPUT_FIELD).dataType(priEvent.getDataType()).end()
-						.addTheme("THM_TABLE_HEADER_JUSTIFY_CONTENT", serviceToken).vcl(VisualControlType.INPUT_WRAPPER).dataType(priEvent.getDataType()).end()
-						.addTheme("THM_DISPLAY_VERTICAL", serviceToken).dataType(tableCellDataType).weight(1.0).end().end().build();
-			}
+			// 	DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
+
+			// 	frame = Frame3.builder(ask.getQuestionCode()).addTheme("THM_TABLE_BORDER", serviceToken).end()
+			// 			.addTheme("THM_TABLE_CONTENT_CENTRE", ThemePosition.CENTRE, serviceToken).end()
+			// 			.question(ask.getQuestionCode())
+			// 			.addTheme("THM_DISPLAY_HORIZONTAL", serviceToken)
+			// 			//.dataType(tableRowDataType)
+			// 			.weight(1.0).end().addTheme("THM_TABLE_ROW_CONTENT_WRAPPER", serviceToken)
+			// 			//.dataType(tableRowDataType)
+			// 			.vcl(VisualControlType.GROUP).weight(1.0).end().addTheme("THM_TABLE_ROW", serviceToken)
+			// 			//.dataType(tableRowDataType)
+			// 			.weight(1.0).end()
+			// 			.addTheme("THM_TABLE_CONTENT_BORDER", serviceToken)
+			// 			//.dataType(tableRowDataType)
+			// 			.vcl(VisualControlType.GROUP_WRAPPER).weight(1.0).end()
+		  //               .addTheme("THM_TABLE_CONTENT", serviceToken)
+			// 			.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
+			// 			.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
+
+			// } 
 
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -1004,15 +1033,17 @@ public class TableUtils {
 					/* converting childAsks list to array */
 					Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
 
-					/* Get the on-the-fly question attribute */
-					Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
-
-					Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
-							new DataType(String.class));
+					// Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+					
+					// Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
+					// 		new DataType(String.class));
+					
+					/* Get the attribute */
+					Attribute tableRowAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_ROW");
 
 					/* Generate ask for the baseentity */
 					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
-							questionTableRowAttribute, true);
+							tableRowAttribute, true);
 					Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
 
 					/* setting weight to parent ask */
@@ -1068,14 +1099,17 @@ public class TableUtils {
 	
 
 	public Ask getHeaderAsk(SearchEntity searchBe){
+		
 		/* get table columns */
 		Map<String, String> columns = getTableColumns(searchBe);
 		List<Ask> asks = new ArrayList<Ask>();
-		Attribute nameAttr = RulesUtils.attributeMap.get("PRI_EVENT");
-		Attribute questionAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
-		Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
-							new DataType(String.class));
 		
+		/* get the required attributes */
+		Attribute nameAttr = RulesUtils.attributeMap.get("PRI_EVENT");
+		Attribute tableHeaderAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_HEADER");
+		
+		// Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
+		// 					new DataType(String.class));
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
 
@@ -1091,12 +1125,12 @@ public class TableUtils {
 
 		Ask[] childAsksArr = asks.toArray(new Ask[0]);
 
-
-		Question headerAskQues = new Question("QUE_TABLE_GRP", searchBe.getName(), questionTableRowAttribute, true);
+		/* generate header ask */
+		Question headerAskQues = new Question("QUE_TABLE_GRP", searchBe.getName(), tableHeaderAttribute, true);
 		Ask headerAsk =  new Ask(headerAskQues, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
+
 		headerAsk.setChildAsks(childAsksArr);
 		headerAsk.setName(searchBe.getName());
-		
 
 		return headerAsk;
 	}
