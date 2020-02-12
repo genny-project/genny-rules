@@ -33,6 +33,7 @@ import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.Allowed;
 import life.genny.qwanda.datatype.CapabilityMode;
 import life.genny.qwanda.entity.BaseEntity;
+import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwanda.rule.RuleDetails;
 import life.genny.qwandautils.JsonUtils;
@@ -61,17 +62,34 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
+		
+		
+		/* items used to save the extracted input parameters from the custom task */
+		Map<String, Object> items = workItem.getParameters();
+		GennyToken userToken = (GennyToken) items.get("userToken");
+		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
+		String ruleFlowGroup = (String) items.get("ruleFlowGroup");
+		String callingWorkflow = (String) items.get("callingWorkflow");
+
+		System.out.println(callingWorkflow + ":pid" + workItem.getProcessInstanceId() + " Running rule flow group "
+				+ ruleFlowGroup);
+
+		final Map<String, Object> resultMap = executeRules(serviceToken,userToken,items,ruleFlowGroup,callingWorkflow);
+		
+		// notify manager that work item has been completed
+		manager.completeWorkItem(workItem.getId(), resultMap);
+
+	}
+
+	/**
+	 * @param workItem
+	 * @return
+	 */
+	public Map<String, Object> executeRules(GennyToken serviceToken, GennyToken userToken, Map<String, Object> items,String ruleFlowGroup, String callingWorkflow) {
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
 
 		try {
-
-		/* items used to save the extracted input parameters from the custom task */
-		Map<String, Object> items = workItem.getParameters();
-
-		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
-
-		GennyToken userToken = (GennyToken) items.get("userToken");
 		if (userToken == null) {
 			userToken = serviceToken;
 		}
@@ -127,9 +145,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			}
 		}
 
-		String ruleFlowGroup = (String) items.get("ruleFlowGroup");
 
-		String callingWorkflow = (String) items.get("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
@@ -145,8 +161,6 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 			// log.info("serviceToken = "+serviceToken.getCode());
 			// log.info("Running rule flow group "+ruleFlowGroup);
-			System.out.println(callingWorkflow + ":pid" + workItem.getProcessInstanceId() + " Running rule flow group "
-					+ ruleFlowGroup);
 
 			// System.out.println("ProcessInstanceId = "+workItem.getProcessInstanceId());
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
@@ -189,6 +203,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 				FactHandle beUtilsHandle = newKieSession.insert(beUtils);
 				FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
+				
+				QBulkMessage payload = new QBulkMessage();
+				FactHandle payloadHandle = newKieSession.insert(payload);
 
 				List<FactHandle> allowables = new ArrayList<FactHandle>();
 				// get User capabilities
@@ -214,6 +231,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				/* saving result from rule-task in map */
 				output = (OutputParam) newKieSession.getObject(factHandle);
 				answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
+				resultMap.put("payload", payload);
+				
 				resultMap.put("output", output);
 				resultMap.put("answersToSave", answersToSave);
 				newKieSession.retract(ruleDetailsHandle);
@@ -222,6 +241,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				newKieSession.retract(beUtilsHandle);
 				newKieSession.retract(capabilityUtilsHandle);
 				newKieSession.retract(kieSessionHandle); // don't dispose
+				newKieSession.retract(payloadHandle);
+				
 
 				for (FactHandle allow : allowables) {
 					newKieSession.retract(allow);
@@ -260,6 +281,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				FactHandle beUtilsHandle = newKieSession.insert(beUtils);
 				FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
 				FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
+				
+				QBulkMessage payload = new QBulkMessage();
+				FactHandle payloadHandle = newKieSession.insert(payload);
 
 				List<FactHandle> allowables = new ArrayList<FactHandle>();
 				// get User capabilities
@@ -297,12 +321,15 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 				resultMap.put("output", output);
 				resultMap.put("answersToSave", answersToSave);
+				resultMap.put("payload", payload);
+				
 				newKieSession.retract(ruleDetailsHandle);
 				newKieSession.retract(factHandle);
 				newKieSession.retract(answersToSaveHandle);
 				newKieSession.retract(beUtilsHandle);
 				newKieSession.retract(capabilityUtilsHandle);
 				newKieSession.retract(kieSessionHandle);
+				newKieSession.retract(payloadHandle);
 
 				for (FactHandle allow : allowables) {
 					newKieSession.retract(allow);
@@ -314,9 +341,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		} catch (Exception e) {
 			log.error(e.getLocalizedMessage());
 		}
-		// notify manager that work item has been completed
-		manager.completeWorkItem(workItem.getId(), resultMap);
-
+		return resultMap;
 	}
 
 	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
