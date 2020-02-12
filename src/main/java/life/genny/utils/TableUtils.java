@@ -128,6 +128,7 @@ public class TableUtils {
 		Theme THM_TABLE_CONTENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_CONTENT", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_BORDER", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_WIDTH_100_PERCENT", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_FOOTER_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_FOOTER_BORDER", Theme.class, beUtils.getServiceToken().getToken());
 
 		/* get the icons */
 		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
@@ -146,6 +147,7 @@ public class TableUtils {
 		BaseEntity THM_TABLE_CONTENT_BE = this.getThemeBe(THM_TABLE_CONTENT);
 		BaseEntity THM_TABLE_BORDER_BE = this.getThemeBe(THM_TABLE_BORDER);
 		BaseEntity THM_WIDTH_100_PERCENT_BE = this.getThemeBe(THM_WIDTH_100_PERCENT);
+		BaseEntity THM_TABLE_FOOTER_BORDER_BE = this.getThemeBe(THM_TABLE_FOOTER_BORDER);
 
 		List<BaseEntity> themes = new ArrayList<BaseEntity>();
 		themes.add(THM_ICON_BE);
@@ -159,6 +161,7 @@ public class TableUtils {
 		themes.add(THM_TABLE_ROW_CELL_BE);
 		themes.add(THM_TABLE_CONTENT_BE);
 		themes.add(THM_TABLE_BORDER_BE);
+		themes.add(THM_WIDTH_100_PERCENT_BE);
 		themes.add(THM_WIDTH_100_PERCENT_BE);
 
 		/* also add the icon BE to the list */
