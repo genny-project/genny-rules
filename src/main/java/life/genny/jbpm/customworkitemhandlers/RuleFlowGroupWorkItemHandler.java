@@ -231,6 +231,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				/* saving result from rule-task in map */
 				output = (OutputParam) newKieSession.getObject(factHandle);
 				answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
+				payload = (QBulkMessage) newKieSession.getObject(payloadHandle);
 				resultMap.put("payload", payload);
 				
 				resultMap.put("output", output);
@@ -321,6 +322,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 				resultMap.put("output", output);
 				resultMap.put("answersToSave", answersToSave);
+				payload = (QBulkMessage) newKieSession.getObject(payloadHandle);
 				resultMap.put("payload", payload);
 				
 				newKieSession.retract(ruleDetailsHandle);
