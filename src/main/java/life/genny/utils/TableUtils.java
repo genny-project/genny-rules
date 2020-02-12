@@ -64,14 +64,14 @@ public class TableUtils {
 	public TableUtils(BaseEntityUtils beUtils) {
 		this.beUtils = beUtils;
 	}
-	
+
 	public void performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode,
 			Answer answer) {
-		
+
 		beUtils.setGennyToken(userToken);
 		this.performSearch(serviceToken, searchBarCode, answer);
 	}
-	
+
 	public void performSearch(GennyToken serviceToken, final String searchBarCode,
 			Answer answer) {
 		beUtils.setServiceToken(serviceToken);
@@ -105,43 +105,72 @@ public class TableUtils {
 		/*QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg);*/
 		System.out.println("calling showTableContent");
 		showTableContent(serviceToken,  searchBE, msg, columns);
-
+		System.out.println("calling sendTableContexts");
 		sendTableContexts();
-
 		showTableFooter(searchBE);
 
 	}
 
 	public void sendTableContexts(){
-		
+
 		System.out.println("Sending contexts for table");
-		
-		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class,
-				beUtils.getServiceToken().getToken());
-		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class,
-				beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_HEADER_FONT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_HEADER_FONT", Theme.class,
-				beUtils.getServiceToken().getToken());
-		
-		BaseEntity THM_ICON_BE = this.getThemeBe(THM_ICON);
-		BaseEntity THM_ICON_ONLY_BE = this.getThemeBe(THM_ICON_ONLY);
-		BaseEntity THM_TABLE_HEADER_FONT_BE = this.getThemeBe(THM_TABLE_HEADER_FONT);
+
+		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_HEADER_FONT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_HEADER_FONT", Theme.class, beUtils.getServiceToken().getToken());
+
+		Theme THM_TABLE_CONTENT_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_CONTENT_BORDER", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_DISPLAY_HORIZONTAL", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CONTENT_WRAPPER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CONTENT_WRAPPER", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_WIDTH_100_PERCENT_NO_INHERIT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_WIDTH_100_PERCENT_NO_INHERIT", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_CONTENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_CONTENT", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_BORDER", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_WIDTH_100_PERCENT", Theme.class, beUtils.getServiceToken().getToken());
+
+		/* get the icons */
 		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
 		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
 
-		List<QDataBaseEntityMessage> msgList = new ArrayList<QDataBaseEntityMessage>();
-		msgList.add(new QDataBaseEntityMessage(THM_TABLE_HEADER_FONT_BE));
-		msgList.add(new QDataBaseEntityMessage(THM_ICON_ONLY_BE));
-		msgList.add(new QDataBaseEntityMessage(THM_ICON_BE));
-		msgList.add(new QDataBaseEntityMessage(ICN_VIEW));
-		msgList.add(new QDataBaseEntityMessage(ICN_ADD));
-		
-		/* set token and publish the msg */
-		msgList.forEach((msg)->{
-			msg.setToken(beUtils.getGennyToken().getToken());
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((msg)));
-		});
-	
+		/* get the themes */
+		BaseEntity THM_ICON_BE = this.getThemeBe(THM_ICON);
+		BaseEntity THM_ICON_ONLY_BE = this.getThemeBe(THM_ICON_ONLY);
+		BaseEntity THM_TABLE_HEADER_FONT_BE = this.getThemeBe(THM_TABLE_HEADER_FONT);
+		BaseEntity THM_TABLE_CONTENT_BORDER_BE = this.getThemeBe(THM_TABLE_CONTENT_BORDER);
+		BaseEntity THM_DISPLAY_HORIZONTAL_BE = this.getThemeBe(THM_DISPLAY_HORIZONTAL);
+		BaseEntity THM_TABLE_ROW_CONTENT_WRAPPER_BE = this.getThemeBe(THM_TABLE_ROW_CONTENT_WRAPPER);
+		BaseEntity THM_WIDTH_100_PERCENT_NO_INHERIT_BE = this.getThemeBe(THM_WIDTH_100_PERCENT_NO_INHERIT);
+		BaseEntity THM_TABLE_ROW_BE = this.getThemeBe(THM_TABLE_ROW);
+		BaseEntity THM_TABLE_ROW_CELL_BE = this.getThemeBe(THM_TABLE_ROW_CELL);
+		BaseEntity THM_TABLE_CONTENT_BE = this.getThemeBe(THM_TABLE_CONTENT);
+		BaseEntity THM_TABLE_BORDER_BE = this.getThemeBe(THM_TABLE_BORDER);
+		BaseEntity THM_WIDTH_100_PERCENT_BE = this.getThemeBe(THM_WIDTH_100_PERCENT);
+
+		List<BaseEntity> themes = new ArrayList<BaseEntity>();
+		themes.add(THM_ICON_BE);
+		themes.add(THM_ICON_ONLY_BE);
+		themes.add(THM_TABLE_HEADER_FONT_BE);
+		themes.add(THM_TABLE_CONTENT_BORDER_BE);
+		themes.add(THM_DISPLAY_HORIZONTAL_BE);
+		themes.add(THM_TABLE_ROW_CONTENT_WRAPPER_BE);
+		themes.add(THM_WIDTH_100_PERCENT_NO_INHERIT_BE);
+		themes.add(THM_TABLE_ROW_BE);
+		themes.add(THM_TABLE_ROW_CELL_BE);
+		themes.add(THM_TABLE_CONTENT_BE);
+		themes.add(THM_TABLE_BORDER_BE);
+		themes.add(THM_WIDTH_100_PERCENT_BE);
+
+		/* also add the icon BE to the list */
+		themes.add(ICN_VIEW);
+		themes.add(ICN_ADD);
+
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(themes);
+		msg.setToken(beUtils.getGennyToken().getToken());
+		System.out.println("**************** Sending all the themes and icons now ********************");
+		VertxUtils.writeMsg("webcmds",JsonUtils.toJson(msg));
+		System.out.println("**************** Sent all the themes and icons ********************");
+
 
 	}
 
@@ -149,7 +178,7 @@ public class TableUtils {
 		String sessionSearchCode = searchCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
 
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class, beUtils.getGennyToken().getToken());
-		
+
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
@@ -166,12 +195,12 @@ public class TableUtils {
 	}
 
 	private SearchEntity processSearchString(Answer answer, final String searchBarCode) {
-		
+
 		/* Perform a search bar search */
 		String searchBarString = null;
 		if (answer != null) {
 			searchBarString = answer.getValue();
-			
+
 			// Clean up search Text
 			searchBarString = searchBarString.trim();
 			searchBarString = searchBarString.replaceAll("[^a-zA-Z0-9\\ ]", "");
@@ -213,11 +242,11 @@ public class TableUtils {
 					"PRI_SEARCH_HISTORY", newHistoryString);
 			beUtils.saveAnswer(history);
 			log.info("Search History for " + beUtils.getGennyToken().getUserCode() + " = " + searchHistory.toString());
-		} 
+		}
 		if(searchBarString != null){
 			searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE, "%" + searchBarString + "%");
 		}
-		
+
 		/*
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
@@ -296,11 +325,11 @@ public class TableUtils {
 		tableRowValidationList.setValidationList(tableRowValidations);
 
 		Context CTX_THM_TABLE_BORDER = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_BORDER", "THM_TABLE_BORDER"), VisualControlType.GROUP_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"), VisualControlType.GROUP_WRAPPER, 1.0);
 		CTX_THM_TABLE_BORDER.setDataType("Table Row Group");
 
 		DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
-		
+
 		Context horizontalContext = new Context(ContextType.THEME, new BaseEntity("THM_DISPLAY_HORIZONTAL", "THM_DISPLAY_HORIZONTAL"),
 				VisualControlType.VCL_DEFAULT, 1.0);
 		horizontalContext.setDataType("Table Header Group");
@@ -308,6 +337,10 @@ public class TableUtils {
 		Context tableRowContentWrapperContext = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER", "THM_TABLE_ROW_CONTENT_WRAPPER"),
 						VisualControlType.GROUP, 1.0);
 		tableRowContentWrapperContext.setDataType("Table Row Group");
+
+		Context tableRowContext = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
+				VisualControlType.GROUP_WRAPPER, 1.0);
+		tableRowContext.setDataType("Table Row Group");
 
 
 		List<Context> contexts = new ArrayList<Context>();
@@ -317,26 +350,25 @@ public class TableUtils {
 		contexts.add(CTX_THM_TABLE_BORDER);
 		contexts.add(tableRowContentWrapperContext);
 		contexts.add(horizontalContext);
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
-				VisualControlType.VCL_DEFAULT, 1.0));
+		contexts.add(tableRowContext);
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL", "THM_TABLE_ROW_CELL"),
 				VisualControlType.VCL_WRAPPER, 1.0));
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT", "THM_TABLE_CONTENT"),
 				VisualControlType.GROUP, 1.0));
-		
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"),
-				VisualControlType.GROUP_WRAPPER, 1.0));
-		
-			
+
+		// contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"),
+		// 		VisualControlType.GROUP_WRAPPER, 1.0));
+
+
 		System.out.println("outside loop before the loop");
 
 		// for (Context x : contexts) {
 		// 	System.out.println("setting contexts inside the loop");
 		// 	x.setDataType("Table Row Group");
 		// }
-		
+
 		ContextList rowsContextList = new ContextList(contexts);
-		
+
 		/* get the baseentity results */
 		List<BaseEntity> rowList = Arrays.asList(msg.getItems());
 
@@ -348,12 +380,18 @@ public class TableUtils {
 		List<Context> headerContexts = new ArrayList<Context>();
 		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_HEADER_FONT", "THM_TABLE_HEADER_FONT"),
 		VisualControlType.INPUT_FIELD, 1.0));
+		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_BORDER", "THM_TABLE_BORDER"),
+		VisualControlType.GROUP_WRAPPER, 1.0));
+		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_WIDTH_100_PERCENT", "THM_WIDTH_100_PERCENT"),
+		VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
+		VisualControlType.GROUP_WRAPPER, 1.0));
 		headerAsk.setContextList(new ContextList(headerContexts));
 
 		rowAsks.add(headerAsk);
 		rowAsks.addAll(generateQuestions( rowList, columns,
 				beUtils.getGennyToken().getUserCode()));
-		
+
 
 		/* converting rowAsks list to array */
 		Ask[] rowAsksArr = rowAsks.stream().toArray(Ask[]::new);
@@ -370,7 +408,7 @@ public class TableUtils {
 		tableResultAsk.setContextList(rowsContextList);
 		tableResultAsk.setReadonly(true);
 		tableResultAsk.setRealm(beUtils.getGennyToken().getRealm());
-		
+
 		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
 		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
 
@@ -430,7 +468,7 @@ public class TableUtils {
 	}
 
 	public TableData generateTableAsks(SearchEntity searchBe) {
-		
+
 		List<QDataBaseEntityMessage> themeMsgList = new ArrayList<QDataBaseEntityMessage>();
 
 		Ask tableHeaderAsk = generateTableHeaderAsk(searchBe, themeMsgList);
@@ -847,7 +885,7 @@ public class TableUtils {
 			GennyToken serviceToken, GennyToken userToken, Set<QDataAskMessage> askMsgs) {
 		Frame3 frame = null;
 		Attribute priEvent = RulesUtils.attributeMap.get("PRI_EVENT");
-		
+
 		try {
 
 			//if (ask.getQuestionCode().equals("QUE_TABLE_RESULTS_GRP")) {
@@ -884,7 +922,7 @@ public class TableUtils {
 				// 		.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
 				// 		.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
 
-		//	} 
+		//	}
 			// if (ask.getQuestionCode().equals("FRM_TABLE_CONTENT")) {
 
 			// 	Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
@@ -914,7 +952,7 @@ public class TableUtils {
 			// 			.vcl(VisualControlType.GROUP).end().addTheme("THM_TABLE_ROW_CELL", serviceToken)
 			// 			.vcl(VisualControlType.VCL_WRAPPER).end().end().build();
 
-			// } 
+			// }
 
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
@@ -966,13 +1004,13 @@ public class TableUtils {
 		/* initialize an empty ask list */
 		List<Ask> askList = new ArrayList<>();
 		TableUtils tableUtils = new TableUtils(beUtils);
-		
+
 		/* get the themes */
 		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class,
 				beUtils.getServiceToken().getToken());
 		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class,
 				beUtils.getServiceToken().getToken());
-		
+
 				/* get the sort icon */
 		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
 		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
@@ -980,7 +1018,7 @@ public class TableUtils {
 		List<Context> viewContextList = new ArrayList<>();
 		viewContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
 		viewContextList.add(new Context(ContextType.ICON, ICN_VIEW, VisualControlType.VCL_ICON, 1.0));
-		
+
 		List<Context> applyContextList = new ArrayList<>();
 		applyContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
 		applyContextList.add(new Context(ContextType.ICON, ICN_ADD, VisualControlType.VCL_ICON, 1.0));
@@ -1002,12 +1040,12 @@ public class TableUtils {
 						String attributeCode = column.getKey();
 						String attributeName = column.getValue();
 						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
-						
+
 						if (attr != null) {
 							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr, true);
 							Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 
-							/* switch case to add icons  */							
+							/* switch case to add icons  */
 							switch (attr.getCode()) {
 								case "PRI_EVENT_VIEW":
 									System.out.println("attribute code is PRI_EVENT_VIEW attaching the context now");
@@ -1017,11 +1055,11 @@ public class TableUtils {
 									System.out.println("attribute code is PRI_EVENT_APPLY attaching the context now");
 									childAsk.setContextList(new ContextList(applyContextList));
 									break;
-							
+
 								default:
 									break;
 							}
-							
+
 							/* add the entityAttribute ask to list */
 							childAskList.add(childAsk);
 						} else {
@@ -1034,10 +1072,10 @@ public class TableUtils {
 					Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
 
 					// Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
-					
+
 					// Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
 					// 		new DataType(String.class));
-					
+
 					/* Get the attribute */
 					Attribute tableRowAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_ROW");
 
@@ -1096,18 +1134,18 @@ public class TableUtils {
 		}
 
 	}
-	
+
 
 	public Ask getHeaderAsk(SearchEntity searchBe){
-		
+
 		/* get table columns */
 		Map<String, String> columns = getTableColumns(searchBe);
 		List<Ask> asks = new ArrayList<Ask>();
-		
+
 		/* get the required attributes */
 		Attribute nameAttr = RulesUtils.attributeMap.get("PRI_EVENT");
 		Attribute tableHeaderAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_HEADER");
-		
+
 		// Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
 		// 					new DataType(String.class));
 
