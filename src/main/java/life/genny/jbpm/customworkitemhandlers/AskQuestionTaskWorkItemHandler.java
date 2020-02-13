@@ -71,114 +71,112 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
-	
 
 	RuntimeEngine runtimeEngine;
 	String wClass;
 	String baseEntitySourceCode = null;
 	String baseEntityTargetCode = null;
-	
-    public AskQuestionTaskWorkItemHandler() {
-    	super();
-    }
-    
-    public <R> AskQuestionTaskWorkItemHandler(Class<R> workflowQueryInterface,KieSession ksession, TaskService taskService) {
-    	super(ksession,taskService);
-    	this.wClass = workflowQueryInterface.getCanonicalName();
-     }
+
+	public AskQuestionTaskWorkItemHandler() {
+		super();
+	}
+
+	public <R> AskQuestionTaskWorkItemHandler(Class<R> workflowQueryInterface, KieSession ksession,
+			TaskService taskService) {
+		super(ksession, taskService);
+		this.wClass = workflowQueryInterface.getCanonicalName();
+	}
 
 	public <R> AskQuestionTaskWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
-	public <R> AskQuestionTaskWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng, KieSession session) {
-		super(session,rteng.getTaskService());
+	public <R> AskQuestionTaskWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng,
+			KieSession session) {
+		super(session, rteng.getTaskService());
 		this.runtimeEngine = rteng;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
+
 	public <R> AskQuestionTaskWorkItemHandler(Class<R> workflowQueryInterface, RuntimeEngine rteng) {
-		super(rteng.getKieSession(),rteng.getTaskService());
+		super(rteng.getKieSession(), rteng.getTaskService());
 		this.runtimeEngine = rteng;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 	}
 
-	
-	   @Override
-	    public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-			GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
-			
-			if (this.runtimeEngine==null) {
-				this.runtimeEngine = RulesLoader.runtimeManager.getRuntimeEngine(EmptyContext.get()); 
+	@Override
+	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
+		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
+
+		if (this.runtimeEngine == null) {
+			this.runtimeEngine = RulesLoader.runtimeManager.getRuntimeEngine(EmptyContext.get());
+		}
+
+		String callingWorkflow = (String) workItem.getParameter("callingWorkflow");
+		if (StringUtils.isBlank(callingWorkflow)) {
+			callingWorkflow = "";
+		}
+
+		baseEntitySourceCode = userToken.getUserCode();
+		BaseEntity baseEntitySource = (BaseEntity) workItem.getParameter("baseEntitySource");
+		if (baseEntitySource != null) {
+			baseEntitySourceCode = baseEntitySource.getCode();
+		}
+
+		baseEntityTargetCode = userToken.getUserCode();
+		BaseEntity baseEntityTarget = (BaseEntity) workItem.getParameter("baseEntityTarget");
+		if (baseEntityTarget != null) {
+			baseEntityTargetCode = baseEntityTarget.getCode();
+		}
+
+		String formCode = (String) workItem.getParameter("formCode");
+		String targetCode = (String) workItem.getParameter("targetCode");
+
+		if (formCode == null) {
+			formCode = "FRM_QUE_TAB_VIEW";
+		}
+
+		if (targetCode == null) {
+			targetCode = "FRM_CONTENT";
+		}
+
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+
+		Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
+
+		// Fetch the questions and set in the task for us to tick off as they get done
+		Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
+		Map<String, Object> taskAsksMap = new ConcurrentHashMap<String, Object>();
+		List<Answer> newFields = new CopyOnWriteArrayList<Answer>();
+		for (QDataAskMessage dataMsg : formSet) {
+			Boolean createOnTrigger = false;
+			for (Ask askMsg : dataMsg.getItems()) {
+				createOnTrigger = askMsg.hasTriggerQuestion();
+				processAsk(beUtils, task.getFormName(), askMsg, taskAsksMap, userToken, createOnTrigger, newFields);
+
 			}
-			
-			String callingWorkflow = (String)workItem.getParameter("callingWorkflow");
-			if (StringUtils.isBlank(callingWorkflow)) {
-				callingWorkflow = "";
+		}
+		if (!newFields.isEmpty()) {
+			beUtils.saveAnswers(newFields, true);
+			BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
+			target.setRealm(userToken.getToken());
+
+			for (Answer ans : newFields) {
+				String attributeCode = ans.getAttributeCode();
+				Boolean hasAttribute = target.containsEntityAttribute(attributeCode);
+				if (!hasAttribute) {
+					// create a dummy
+
+				}
+
 			}
 
-			baseEntitySourceCode = userToken.getUserCode();
-			BaseEntity baseEntitySource = (BaseEntity)workItem.getParameter("baseEntitySource");
-			if (baseEntitySource != null) {
-				baseEntitySourceCode = baseEntitySource.getCode();
-			}
+			QDataBaseEntityMessage msg = new QDataBaseEntityMessage(target);
+			msg.setToken(userToken.getToken());
+			String tJson = JsonUtils.toJson(msg);
 
-			baseEntityTargetCode = userToken.getUserCode();
-			BaseEntity baseEntityTarget = (BaseEntity)workItem.getParameter("baseEntityTarget");
-			if (baseEntityTarget != null) {
-				baseEntityTargetCode = baseEntityTarget.getCode();
-			}
-			
-			String formCode = (String)workItem.getParameter("formCode");
-			String targetCode = (String)workItem.getParameter("targetCode");
-			
-			
-			
-			if (formCode == null) {
-				formCode = "FRM_QUE_TAB_VIEW";
-			}
-
-			if (targetCode == null) {
-				targetCode = "FRM_CONTENT";
-			}
-
-			BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-
-	        Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
-	        
-	        
-            // Fetch the questions and set in the task for us to tick off as they get done
-            Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
-            Map<String,Object> taskAsksMap = new ConcurrentHashMap<String,Object>();
-            List<Answer> newFields = new CopyOnWriteArrayList<Answer>();
-            for (QDataAskMessage dataMsg : formSet) {
-            	Boolean createOnTrigger = false;
-            	for (Ask askMsg : dataMsg.getItems()) {
-            		createOnTrigger = askMsg.hasTriggerQuestion();
-            		processAsk(beUtils,task.getFormName(),askMsg,taskAsksMap,userToken,createOnTrigger,newFields);
-             		
-            	}
-            }
-            if (!newFields.isEmpty()) {
-            	beUtils.saveAnswers(newFields, true);
-            	BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
-            	target.setRealm(userToken.getToken());
-            	
-            	for (Answer ans : newFields) {
-            		String attributeCode = ans.getAttributeCode();
-            		Boolean hasAttribute =  target.containsEntityAttribute(attributeCode);
-            		if (!hasAttribute) {
-            			// create a dummy 
-            			
-            		}
-            		
-            	}
-            	
-            	QDataBaseEntityMessage msg = new QDataBaseEntityMessage(target);
-            	msg.setToken(userToken.getToken());
-            	String tJson = JsonUtils.toJson(msg);
-            	
-            	VertxUtils.writeMsg("webcmds", tJson);
-            }
+			VertxUtils.writeMsg("webcmds", tJson);
+		}
 
 //            Attachment attach = TaskModelProvider.getFactory().newAttachment();
 //            ((InternalAttachment)attach).setAccessType(AccessType.Inline);
@@ -189,70 +187,76 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 //            byte[] byteArray = SerializationUtils.serialize(taskAsksMap);
 //            ((InternalContent)content2).setContent(byteArray);
 
-            // Now tuck the intended after complete formcode into taskAsksMap
-            taskAsksMap.put("FORM_CODE", formCode);            
-            taskAsksMap.put("TARGET_CODE",targetCode);
+		// Now tuck the intended after complete formcode into taskAsksMap
+		taskAsksMap.put("FORM_CODE", formCode);
+		taskAsksMap.put("TARGET_CODE", targetCode);
 //            InternalTask iTask = (InternalTask) task;
 //			InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
 //            iTaskData.setTaskOutputVariables(new HashMap<String,Object>());
 //            task.getTaskData().getTaskOutputVariables().put("FORM_CODE", formCode);
 //            task.getTaskData().getTaskOutputVariables().put("TARGET_CODE", targetCode);
-	        
-	        ContentData content = createTaskContentBasedOnWorkItemParams(this.getKsession(),  taskAsksMap);
 
-	        try {
-	            long taskId = ((InternalTaskService) this.getTaskService()).addTask(task, content);
-	            if (isAutoClaim(this.getKsession(), workItem, task)) {
-	            	 this.getTaskService().claim(taskId, (String) workItem.getParameter("SwimlaneActorId"));
-	            }
-	            	            
-	           // ((InternalContent)content).setContent(ContentMarshallerHelper.marshallContent(task, payload, null));
-	           // taskData.getAttachments().add(attach);	                  
-	         
-                sendTaskSignal(userToken, task, callingWorkflow); // TODO, watch the timing as the workitem may not be ready if the target tries to do stuff.
+		ContentData content = createTaskContentBasedOnWorkItemParams(this.getKsession(), taskAsksMap);
 
-              //  TaskUtils.sendTaskMenuItems(userToken);
-                TaskUtils.sendTaskAskItems(userToken);
-                
-	        } catch (Exception e) {
-	            if (action.equals(OnErrorAction.ABORT)) {
-	                manager.abortWorkItem(workItem.getId());
-	            } else if (action.equals(OnErrorAction.RETHROW)) {
-	                if (e instanceof RuntimeException) {
-	                    throw (RuntimeException) e;
-	                } else {
-	                    throw new RuntimeException(e);
-	                }
-	            } else if (action.equals(OnErrorAction.LOG)) {
-	                StringBuilder logMsg = new StringBuilder();
-	                logMsg.append(new Date()).append(": Error when creating task on task server for work item id ").append(workItem.getId());
-	                logMsg.append(". Error reported by task server: ").append(e.getMessage());
-	                log.error(logMsg.toString(), e);
-	            }
-	        } 
-	    }
-	
-	private void processAsk(BaseEntityUtils beUtils, String formName,Ask askMsg, Map<String, Object> taskAsksMap, GennyToken userToken, Boolean createOnTrigger, List<Answer> newFields) {
-   		// replace askMesg source and target with required src and target, initially we will use both src and target
+		try {
+			long taskId = ((InternalTaskService) this.getTaskService()).addTask(task, content);
+			if (isAutoClaim(this.getKsession(), workItem, task)) {
+				this.getTaskService().claim(taskId, (String) workItem.getParameter("SwimlaneActorId"));
+			}
+
+			// ((InternalContent)content).setContent(ContentMarshallerHelper.marshallContent(task,
+			// payload, null));
+			// taskData.getAttachments().add(attach);
+
+			sendTaskSignal(userToken, task, callingWorkflow); // TODO, watch the timing as the workitem may not be ready
+																// if the target tries to do stuff.
+
+			// TaskUtils.sendTaskMenuItems(userToken);
+			TaskUtils.sendTaskAskItems(userToken);
+
+		} catch (Exception e) {
+			if (action.equals(OnErrorAction.ABORT)) {
+				manager.abortWorkItem(workItem.getId());
+			} else if (action.equals(OnErrorAction.RETHROW)) {
+				if (e instanceof RuntimeException) {
+					throw (RuntimeException) e;
+				} else {
+					throw new RuntimeException(e);
+				}
+			} else if (action.equals(OnErrorAction.LOG)) {
+				StringBuilder logMsg = new StringBuilder();
+				logMsg.append(new Date()).append(": Error when creating task on task server for work item id ")
+						.append(workItem.getId());
+				logMsg.append(". Error reported by task server: ").append(e.getMessage());
+				log.error(logMsg.toString(), e);
+			}
+		}
+	}
+
+	private void processAsk(BaseEntityUtils beUtils, String formName, Ask askMsg, Map<String, Object> taskAsksMap,
+			GennyToken userToken, Boolean createOnTrigger, List<Answer> newFields) {
+		// replace askMesg source and target with required src and target, initially we
+		// will use both src and target
 		String json = JsonUtils.toJson(askMsg);
 		json = json.replaceAll("PER_SOURCE", baseEntitySourceCode);
 		json = json.replaceAll("PER_TARGET", baseEntityTargetCode);
 		json = json.replaceAll("PER_SERVICE", baseEntitySourceCode);
 		Ask newMsg = JsonUtils.fromJson(json, Ask.class);
-		String key = baseEntitySourceCode+":"+baseEntityTargetCode+":"+newMsg.getAttributeCode();
+		String key = baseEntitySourceCode + ":" + baseEntityTargetCode + ":" + newMsg.getAttributeCode();
 		// work out whether an Ask has already got a value for that attribute
 		Boolean answered = false;
-		
+
 		Boolean isTableRow = false;
-		// TODO, if the question is a submit then 
-		
+		// TODO, if the question is a submit then
+
 		Boolean formTrigger = newMsg.getFormTrigger();
-		TaskAsk taskAsk = new TaskAsk(newMsg,formName, answered, isTableRow, formTrigger, createOnTrigger);
-		
+		TaskAsk taskAsk = new TaskAsk(newMsg, formName, answered, isTableRow, formTrigger, createOnTrigger);
+
 		// Check if already answered ...
 		BaseEntity target = beUtils.getBaseEntityByCode(newMsg.getTargetCode());
-		Optional<EntityAttribute> attributeValue =  target.findEntityAttribute(taskAsk.getAsk().getAttributeCode());
-		//Optional<String> value = target.getValue(taskAsk.getAsk().getAttributeCode());
+		Optional<EntityAttribute> attributeValue = target.findEntityAttribute(taskAsk.getAsk().getAttributeCode());
+		// Optional<String> value =
+		// target.getValue(taskAsk.getAsk().getAttributeCode());
 		if (attributeValue.isPresent()) {
 			taskAsk.setAnswered(true);
 			EntityAttribute ea = attributeValue.get();
@@ -261,12 +265,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			// add the attribute with default value
 			Attribute newAttribute = RulesUtils.getAttribute(taskAsk.getAsk().getAttributeCode(), userToken.getToken());
 			if (newAttribute.dataType.getClassName().contains("Integer")) {
-				if (newAttribute.getDefaultValue()==null) {
+				if (newAttribute.getDefaultValue() == null) {
 					newAttribute.setDefaultValue("0");
 				}
 			}
 			try {
-				Answer newField = new Answer(target,target,newAttribute,newAttribute.getDefaultValue());
+				Answer newField = new Answer(target, target, newAttribute, newAttribute.getDefaultValue());
 				newFields.add(newField);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -277,12 +281,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (!askMsg.getQuestionCode().endsWith("_GRP")) {
 			taskAsksMap.put(key, taskAsk);
 		}
-		if ((newMsg.getChildAsks()!=null)&&(newMsg.getChildAsks().length>0)) {
+		if ((newMsg.getChildAsks() != null) && (newMsg.getChildAsks().length > 0)) {
 			for (Ask childAsk : newMsg.getChildAsks()) {
-				processAsk(beUtils,formName,childAsk,taskAsksMap,userToken,createOnTrigger,newFields);
+				processAsk(beUtils, formName, childAsk, taskAsksMap, userToken, createOnTrigger, newFields);
 			}
 		}
-		return ;
+		return;
 	}
 
 	/**
@@ -292,55 +296,50 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	 */
 	private void sendTaskSignal(GennyToken userToken, Task task, String callingWorkflow) {
 		Long targetProcessId = null;
-		
 
-		
 		QEventMessage taskMsg = new QEventMessage("EVT_MSG", "TASK");
-		taskMsg.getData().setValue(task.getId()+"");
+		taskMsg.getData().setValue(task.getId() + "");
 		taskMsg.setToken(userToken.getToken());
-		
-		
-		
-		SessionFacts sessionFacts = new SessionFacts(userToken,userToken,taskMsg); // Let the userSession know that there is a question Waiting
 
-			Method m;
-			Optional<Long> processIdBysessionId = Optional.empty();
-			try {
-				Class<?> cls = Class.forName(this.wClass); // needs filtering.
-				m = cls.getDeclaredMethod("getProcessIdBySessionId", String.class);
-				String param = userToken.getSessionCode(); 
-				processIdBysessionId =  (Optional<Long>) m.invoke(null, (Object) param);
+		SessionFacts sessionFacts = new SessionFacts(userToken, userToken, taskMsg); // Let the userSession know that
+																						// there is a question Waiting
 
-			} catch (NoSuchMethodException | SecurityException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InvocationTargetException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
-			if (hasProcessIdBySessionId) {
-				targetProcessId = processIdBysessionId.get();
-			}
+		Method m;
+		Optional<Long> processIdBysessionId = Optional.empty();
+		try {
+			Class<?> cls = Class.forName(this.wClass); // needs filtering.
+			m = cls.getDeclaredMethod("getProcessIdBySessionId", String.class);
+			String param = userToken.getSessionCode();
+			processIdBysessionId = (Optional<Long>) m.invoke(null, (Object) param);
 
+		} catch (NoSuchMethodException | SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
+		if (hasProcessIdBySessionId) {
+			targetProcessId = processIdBysessionId.get();
+		}
 
 		if (targetProcessId != null) {
-			
-		    long taskId = task.getId();
 
-			System.out.println(callingWorkflow+" "+task.getDescription()+" Sending Question Code  " + task.getFormName() + " to processId " +targetProcessId
-					+ " for target user " + userToken.getUserCode()+" using TASK "+taskId);
+			long taskId = task.getId();
 
-
+			System.out.println(callingWorkflow + " " + task.getDescription() + " Sending Question Code  "
+					+ task.getFormName() + " to processId " + targetProcessId + " for target user "
+					+ userToken.getUserCode() + " using TASK " + taskId);
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 
@@ -349,14 +348,14 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			if (this.runtimeEngine != null) {
 
 				newKieSession = (StatefulKnowledgeSession) this.runtimeEngine.getKieSession();
-				//newKieSession.signalEvent("IS_"+userToken.getSessionCode(), sessionFacts);
+				// newKieSession.signalEvent("IS_"+userToken.getSessionCode(), sessionFacts);
 				newKieSession.signalEvent("internalSignal", sessionFacts, targetProcessId);
 			} else {
 
 				KieBase kieBase = RulesLoader.getKieBaseCache().get(userToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, null);
 
-				//newKieSession.signalEvent("IS_"+userToken.getSessionCode(), sessionFacts);
+				// newKieSession.signalEvent("IS_"+userToken.getSessionCode(), sessionFacts);
 				newKieSession.signalEvent("internalSignal", sessionFacts, targetProcessId);
 
 				newKieSession.dispose();
@@ -365,165 +364,183 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 	}
 
+	@Override
+	protected Task createTaskBasedOnWorkItemParams(KieSession session, WorkItem workItem) {
+		InternalTask task = (InternalTask) TaskModelProvider.getFactory().newTask();
 
-
-    @Override
-    protected Task createTaskBasedOnWorkItemParams(KieSession session, WorkItem workItem) {
-        InternalTask task = (InternalTask) TaskModelProvider.getFactory().newTask();
-        
-        CaseData caseFile = null;
+		CaseData caseFile = null;
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
-		String userCode = userToken.getRealm()+"+"+userToken.getUserCode();
+		String userCode = userToken.getRealm() + "+" + userToken.getUserCode();
 		String questionCode = (String) workItem.getParameter("questionCode");
-		String callingWorkflow = (String)workItem.getParameter("callingWorkflow");
+		String callingWorkflow = (String) workItem.getParameter("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
-	
-		JsonObject jsonQ = VertxUtils.readCachedJson(userToken.getRealm(), questionCode, userToken.getToken());
-		 Question q =JsonUtils.fromJson(jsonQ.getString("value"), Question.class);
-		
+
+		Question q = null;
+		Integer retry = 4;
+		while (retry >= 0) { // Sometimes q is read properly from cache
+			JsonObject jsonQ = VertxUtils.readCachedJson(userToken.getRealm(), questionCode, userToken.getToken());
+			q = JsonUtils.fromJson(jsonQ.getString("value"), Question.class);
+			if (q == null) {
+				retry--;
+				
+			} else {
+				break;
+			}
+
+		}
+		if (q == null)
+		{
+			log.error("CANNOT READ "+questionCode+" from cache!!! Aborting (after having tried 4 times");
+//			return null;
+		}
+
 //		JsonObject questionObj = VertxUtils.readCachedJson(userToken.getRealm(),
 //				questionCode,userToken.getToken());
 //		String questionStr = questionObj.getString("value");
 //		Question question = JsonUtils.fromJson(questionStr, Question.class);
-		
-		 workItem.getParameters().put("SwimlaneActorId",userCode);
-		 workItem.getParameters().put("ActorId",userCode);
-        
-        String locale = (String) workItem.getParameter("Locale");
-        if (locale == null) {
-            locale = "en-AU";
-        }
-        
-        if (questionCode != null) {
-            List<I18NText> names = new CopyOnWriteArrayList<I18NText>();
-            I18NText text = TaskModelProvider.getFactory().newI18NText();
-            ((InternalI18NText) text).setLanguage(locale);
-            ((InternalI18NText) text).setText(questionCode);
-            names.add(text);
-            task.setNames(names);
-        }
-        task.setName(questionCode);
-        // this should be replaced by FormName filled by designer
-        // TaskName shouldn't be trimmed if we are planning to use that for the task lists
-        String formName = "FRM_"+questionCode; //(String) workItem.getParameter(questionCode); 
-        if(formName != null){
-            task.setFormName(formName);
-        }
-        
-        String comment = (String) workItem.getParameter("Comment");
-        if (comment == null) {
-            comment = "";
-        }
-        
-        String description = (String) workItem.getParameter("Description");
-        if (description == null) {
-            description = q.getName();//question.getName();
-        }
-        
-        List<I18NText> descriptions = new CopyOnWriteArrayList<I18NText>();
-        I18NText descText = TaskModelProvider.getFactory().newI18NText();
-        ((InternalI18NText) descText).setLanguage(locale);
-        ((InternalI18NText) descText).setText(description);
-        descriptions.add(descText);
-        task.setDescriptions(descriptions);
-        
-        task.setDescription(description);
-        
-        List<I18NText> subjects = new CopyOnWriteArrayList<I18NText>();
-        I18NText subjectText = TaskModelProvider.getFactory().newI18NText();
-        ((InternalI18NText) subjectText).setLanguage(locale);
-        ((InternalI18NText) subjectText).setText(comment);
-        subjects.add(subjectText);
-        task.setSubjects(subjects);
-        
-        task.setSubject(comment);
-        
-        String priorityString = (String) workItem.getParameter("Priority");
-        int priority = 0;
-        if (priorityString != null) {
-            try {
-                priority = new Integer(priorityString);
-            } catch (NumberFormatException e) {
-                // do nothing
-            }
-        }
-        task.setPriority(priority);
-        
-        InternalTaskData taskData = (InternalTaskData) TaskModelProvider.getFactory().newTaskData();        
-        taskData.setWorkItemId(workItem.getId());
-        taskData.setProcessInstanceId(workItem.getProcessInstanceId());
-        if (session != null) {
-            if (session.getProcessInstance(workItem.getProcessInstanceId()) != null) {
-                taskData.setProcessId(session.getProcessInstance(workItem.getProcessInstanceId()).getProcess().getId());
-                String deploymentId = ((WorkItemImpl) workItem).getDeploymentId();
-                taskData.setDeploymentId(deploymentId);            
-            }
-            if (session instanceof KieSession) {
-                taskData.setProcessSessionId(((KieSession) session).getIdentifier());
-                log.info("####### askQuestion! sessionId="+taskData.getProcessSessionId());
-            }
-            @SuppressWarnings("unchecked")
-            Collection<CaseData> caseFiles = (Collection<CaseData>) session.getObjects(new ClassObjectFilter(CaseData.class));
-            if (caseFiles != null && caseFiles.size() == 1) {
-                caseFile = caseFiles.iterator().next();
-            }
-        }
-        taskData.setSkipable(!"false".equals(workItem.getParameter("Skippable")));
-        //Sub Task Data
-        Long parentId = (Long) workItem.getParameter("ParentId");
-        if (parentId != null) {
-            taskData.setParentId(parentId);
-        }
-        
-        String createdBy = userToken.getUserCode();//(String) workItem.getParameter("CreatedBy");
-        if (createdBy != null && createdBy.trim().length() > 0) {
-        	User user = TaskModelProvider.getFactory().newUser();
-        	((InternalOrganizationalEntity) user).setId(userToken.getRealm()+"+"+createdBy);
-            taskData.setCreatedBy(user);            
-        }
-        String dueDateString = (String) workItem.getParameter("DueDate");
-        Date date = null;
-        if(dueDateString != null && !dueDateString.isEmpty()){
-            if(DateTimeUtils.isPeriod(dueDateString)){
-                Long longDateValue = DateTimeUtils.parseDateAsDuration(dueDateString.substring(1));
-                date = new Date(System.currentTimeMillis() + longDateValue);
-            }else{
-                date = new Date(DateTimeUtils.parseDateTime(dueDateString));
-            }
-        }
-        if(date != null){
-            taskData.setExpirationTime(date);
-        }
-        
-        PeopleAssignmentHelper peopleAssignmentHelper = new PeopleAssignmentHelper(caseFile);
-        peopleAssignmentHelper.handlePeopleAssignments(workItem, task, taskData);
-        
-        PeopleAssignments peopleAssignments = task.getPeopleAssignments();
-        List<OrganizationalEntity> businessAdministrators = peopleAssignments.getBusinessAdministrators();
-        
 
-        task.setTaskData(taskData);
-        task.setDeadlines(HumanTaskHandlerHelper.setDeadlines(workItem.getParameters(), businessAdministrators, session.getEnvironment()));
-  
+		workItem.getParameters().put("SwimlaneActorId", userCode);
+		workItem.getParameters().put("ActorId", userCode);
 
-        return task;
-    }
+		String locale = (String) workItem.getParameter("Locale");
+		if (locale == null) {
+			locale = "en-AU";
+		}
 
+		if (questionCode != null) {
+			List<I18NText> names = new CopyOnWriteArrayList<I18NText>();
+			I18NText text = TaskModelProvider.getFactory().newI18NText();
+			((InternalI18NText) text).setLanguage(locale);
+			((InternalI18NText) text).setText(questionCode);
+			names.add(text);
+			task.setNames(names);
+		}
+		task.setName(questionCode);
+		// this should be replaced by FormName filled by designer
+		// TaskName shouldn't be trimmed if we are planning to use that for the task
+		// lists
+		String formName = "FRM_" + questionCode; // (String) workItem.getParameter(questionCode);
+		if (formName != null) {
+			task.setFormName(formName);
+		}
 
-    protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session,  Map<String,Object> taskAsksMap) {
-        ContentData content = null;
-        Object contentObject = null;
-            contentObject = new ConcurrentHashMap<String, Object>(taskAsksMap);
-         if (contentObject != null) {
-            Environment env = null;
-            if(session != null){
-                env = session.getEnvironment();
-            }
-           
-            content = ContentMarshallerHelper.marshal(null, contentObject, env);
-        }
-        return content;
-    }
+		String comment = (String) workItem.getParameter("Comment");
+		if (comment == null) {
+			comment = "";
+		}
+
+		String description = (String) workItem.getParameter("Description");
+		if (description == null) {
+			if (q!=null) {
+				description = q.getName();// question.getName();
+			} else {
+				description = questionCode;
+			}
+		}
+
+		List<I18NText> descriptions = new CopyOnWriteArrayList<I18NText>();
+		I18NText descText = TaskModelProvider.getFactory().newI18NText();
+		((InternalI18NText) descText).setLanguage(locale);
+		((InternalI18NText) descText).setText(description);
+		descriptions.add(descText);
+		task.setDescriptions(descriptions);
+
+		task.setDescription(description);
+
+		List<I18NText> subjects = new CopyOnWriteArrayList<I18NText>();
+		I18NText subjectText = TaskModelProvider.getFactory().newI18NText();
+		((InternalI18NText) subjectText).setLanguage(locale);
+		((InternalI18NText) subjectText).setText(comment);
+		subjects.add(subjectText);
+		task.setSubjects(subjects);
+
+		task.setSubject(comment);
+
+		String priorityString = (String) workItem.getParameter("Priority");
+		int priority = 0;
+		if (priorityString != null) {
+			try {
+				priority = new Integer(priorityString);
+			} catch (NumberFormatException e) {
+				// do nothing
+			}
+		}
+		task.setPriority(priority);
+
+		InternalTaskData taskData = (InternalTaskData) TaskModelProvider.getFactory().newTaskData();
+		taskData.setWorkItemId(workItem.getId());
+		taskData.setProcessInstanceId(workItem.getProcessInstanceId());
+		if (session != null) {
+			if (session.getProcessInstance(workItem.getProcessInstanceId()) != null) {
+				taskData.setProcessId(session.getProcessInstance(workItem.getProcessInstanceId()).getProcess().getId());
+				String deploymentId = ((WorkItemImpl) workItem).getDeploymentId();
+				taskData.setDeploymentId(deploymentId);
+			}
+			if (session instanceof KieSession) {
+				taskData.setProcessSessionId(((KieSession) session).getIdentifier());
+				log.info("####### askQuestion! sessionId=" + taskData.getProcessSessionId());
+			}
+			@SuppressWarnings("unchecked")
+			Collection<CaseData> caseFiles = (Collection<CaseData>) session
+					.getObjects(new ClassObjectFilter(CaseData.class));
+			if (caseFiles != null && caseFiles.size() == 1) {
+				caseFile = caseFiles.iterator().next();
+			}
+		}
+		taskData.setSkipable(!"false".equals(workItem.getParameter("Skippable")));
+		// Sub Task Data
+		Long parentId = (Long) workItem.getParameter("ParentId");
+		if (parentId != null) {
+			taskData.setParentId(parentId);
+		}
+
+		String createdBy = userToken.getUserCode();// (String) workItem.getParameter("CreatedBy");
+		if (createdBy != null && createdBy.trim().length() > 0) {
+			User user = TaskModelProvider.getFactory().newUser();
+			((InternalOrganizationalEntity) user).setId(userToken.getRealm() + "+" + createdBy);
+			taskData.setCreatedBy(user);
+		}
+		String dueDateString = (String) workItem.getParameter("DueDate");
+		Date date = null;
+		if (dueDateString != null && !dueDateString.isEmpty()) {
+			if (DateTimeUtils.isPeriod(dueDateString)) {
+				Long longDateValue = DateTimeUtils.parseDateAsDuration(dueDateString.substring(1));
+				date = new Date(System.currentTimeMillis() + longDateValue);
+			} else {
+				date = new Date(DateTimeUtils.parseDateTime(dueDateString));
+			}
+		}
+		if (date != null) {
+			taskData.setExpirationTime(date);
+		}
+
+		PeopleAssignmentHelper peopleAssignmentHelper = new PeopleAssignmentHelper(caseFile);
+		peopleAssignmentHelper.handlePeopleAssignments(workItem, task, taskData);
+
+		PeopleAssignments peopleAssignments = task.getPeopleAssignments();
+		List<OrganizationalEntity> businessAdministrators = peopleAssignments.getBusinessAdministrators();
+
+		task.setTaskData(taskData);
+		task.setDeadlines(HumanTaskHandlerHelper.setDeadlines(workItem.getParameters(), businessAdministrators,
+				session.getEnvironment()));
+
+		return task;
+	}
+
+	protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session, Map<String, Object> taskAsksMap) {
+		ContentData content = null;
+		Object contentObject = null;
+		contentObject = new ConcurrentHashMap<String, Object>(taskAsksMap);
+		if (contentObject != null) {
+			Environment env = null;
+			if (session != null) {
+				env = session.getEnvironment();
+			}
+
+			content = ContentMarshallerHelper.marshal(null, contentObject, env);
+		}
+		return content;
+	}
 }
