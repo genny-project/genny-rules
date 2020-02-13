@@ -73,7 +73,7 @@ public class SearchUtils {
 			return msg;
 		}
 		searchBE.setRealm(gennyToken.getRealm());
-		log.info("The search BE is :: " + JsonUtils.toJson(searchBE));
+		//log.info("The search BE is :: " + JsonUtils.toJson(searchBE));
 
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson;
