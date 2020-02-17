@@ -173,7 +173,8 @@ public class NodeStatusLog extends AbstractAuditLogger {
 							workflowStage, workflowBeCode);
 					
 					logger.info(nodeStatus.toString() + " NOT FOUND IN NODESTATUS DB !!");
-					em.persist(nodeStatus);
+					//em.persist(nodeStatus);
+					persist(nodeStatus,event);
 				}
 				
 				

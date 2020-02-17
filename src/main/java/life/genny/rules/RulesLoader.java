@@ -730,16 +730,19 @@ public class RulesLoader {
 			return;
 		}
 
-		KieSession kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
+		KieSession kieSession = null;
 		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
 
 		if (RUNTIME_MANAGER_ON) {
 
 			if (GennySettings.useSingleton) { // TODO
+				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
 				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getId());
 				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
 			} else {
+				RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+				kieSession = runtimeEngine.getKieSession();
 				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getId());
 				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
@@ -852,7 +855,13 @@ public class RulesLoader {
 								log.info("SignalEvent -> 'data' for " + facts.getUserToken().getUserCode() + ":"
 										+ processId);
 								try {
-									kieSession.signalEvent("data", facts, processId);
+									if (facts.getMessage()==null) { log.error("facts.getMessage() is NULL");}
+									else if (facts.getUserToken()==null) { log.error("facts.getUserToken() is NULL");}
+									else if (facts.getServiceToken()==null) { log.error("facts.getServiceToken() is NULL");}
+									else if (processId==null) { log.error("processId is NULL");}
+									else {
+										kieSession.signalEvent("data", facts, processId);
+									}
 								} catch (Exception e) {
 									log.error("Error in data signal :"+facts+":"+e.getLocalizedMessage());
 								}

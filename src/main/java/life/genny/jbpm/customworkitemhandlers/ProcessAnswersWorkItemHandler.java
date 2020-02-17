@@ -219,8 +219,13 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (VertxUtils.cachedEnabled) {
 				kSession = kieSession;
 			} else {
-				kSession = ks.getStoreServices().loadKieSession(task.getTaskData().getProcessSessionId(), kieBase,
+				Long sessionId = task.getTaskData().getProcessSessionId();
+				try {
+				kSession = ks.getStoreServices().loadKieSession(sessionId, kieBase,
 						ksconf, env);
+				} catch (Exception ke) {
+					log.error("kieSession could not be loaded "+sessionId);
+				}
 			}
 			if (kSession == null) {
 				log.error("Cannot find session to restore for ksid=" + task.getTaskData().getProcessSessionId());
