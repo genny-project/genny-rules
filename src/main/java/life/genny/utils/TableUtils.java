@@ -131,6 +131,7 @@ public class TableUtils {
 		Theme THM_TABLE_FOOTER_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_FOOTER_BORDER", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_EVENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_EVENT", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_TEXT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_TEXT", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_TEXT_HEADER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_TEXT_HEADER", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_LANDLINE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_LANDLINE", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_MOBILE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_MOBILE", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_ADDRESS = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_ADDRESS", Theme.class, beUtils.getServiceToken().getToken());
@@ -161,6 +162,7 @@ public class TableUtils {
 		BaseEntity THM_TABLE_FOOTER_BORDER_BE = this.getThemeBe(THM_TABLE_FOOTER_BORDER);
 		BaseEntity THM_TABLE_ROW_CELL_EVENT_BE = this.getThemeBe(THM_TABLE_ROW_CELL_EVENT);
 		BaseEntity THM_TABLE_ROW_CELL_TEXT_BE = this.getThemeBe(THM_TABLE_ROW_CELL_TEXT);
+		BaseEntity THM_TABLE_ROW_CELL_TEXT_HEADER_BE = this.getThemeBe(THM_TABLE_ROW_CELL_TEXT_HEADER);
 		BaseEntity THM_TABLE_ROW_CELL_LANDLINE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_LANDLINE);
 		BaseEntity THM_TABLE_ROW_CELL_MOBILE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_MOBILE);
 		BaseEntity THM_TABLE_ROW_CELL_ADDRESS_BE = this.getThemeBe(THM_TABLE_ROW_CELL_ADDRESS);
@@ -185,6 +187,7 @@ public class TableUtils {
 		themes.add(THM_WIDTH_100_PERCENT_BE);
 		themes.add(THM_TABLE_ROW_CELL_EVENT_BE);
 		themes.add(THM_TABLE_ROW_CELL_TEXT_BE);
+		themes.add(THM_TABLE_ROW_CELL_TEXT_HEADER_BE);
 		themes.add(THM_TABLE_ROW_CELL_LANDLINE_BE);
 		themes.add(THM_TABLE_ROW_CELL_MOBILE_BE);
 		themes.add(THM_TABLE_ROW_CELL_ADDRESS_BE);
@@ -455,7 +458,7 @@ public class TableUtils {
 
 		List<Context> headerContexts = new ArrayList<Context>();
 
-		Context tableRowCellNameHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"),
+		Context tableRowCellNameHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"),
 				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellNameHeader.setDataType("Name Header");
 
@@ -488,7 +491,7 @@ public class TableUtils {
 				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellStatusHeader.setDataType("Status Header");
 
-		Context tableRowCellTextHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"),
+		Context tableRowCellTextHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_TEXT_HEADER", "THM_TABLE_ROW_CELL_TEXT_HEADER"),
 				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellTextHeader.setDataType("Text Header");
 
@@ -1269,7 +1272,7 @@ public class TableUtils {
 		List<Ask> asks = new ArrayList<Ask>();
 
 		/* get the required attributes */
-		Attribute nameAttr = RulesUtils.attributeMap.get("PRI_TEXT");
+		Attribute nameAttr = RulesUtils.attributeMap.get("PRI_TEXT_HEADER");
 		Attribute tableHeaderAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_HEADER");
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
@@ -1286,7 +1289,7 @@ public class TableUtils {
 			}
 
 			/* Initialize Column Header Ask group */
-			Question headerQues = new Question("QUE_" + headerAttr.getCode(), attributeName, headerAttr, true);
+			Question headerQues = new Question("QUE_" + attributeCode, attributeName, headerAttr, true);
 			Ask headerAsk = new Ask(headerQues, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 			asks.add(headerAsk);
 
