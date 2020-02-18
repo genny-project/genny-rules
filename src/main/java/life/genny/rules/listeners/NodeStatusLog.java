@@ -19,6 +19,7 @@ import java.util.Date;
  */
 
 import java.util.List;
+import java.util.Map;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -41,7 +42,9 @@ import org.jbpm.process.audit.JPAWorkingMemoryDbLogger;
 import org.jbpm.process.audit.NodeInstanceLog;
 import org.jbpm.process.audit.ProcessInstanceLog;
 import org.jbpm.process.audit.variable.ProcessIndexerManager;
+import org.jbpm.process.core.context.variable.VariableScope;
 import org.jbpm.process.instance.ProcessInstance;
+import org.jbpm.process.instance.context.variable.VariableScopeInstance;
 import org.jbpm.process.instance.impl.ProcessInstanceImpl;
 import org.jbpm.workflow.instance.NodeInstance;
 import org.jbpm.workflow.instance.impl.NodeInstanceImpl;
@@ -60,7 +63,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import life.genny.model.NodeStatus;
+import life.genny.model.SessionPid;
 import life.genny.models.GennyToken;
+import life.genny.qwandautils.GennySettings;
+import life.genny.utils.SessionFacts;
 
 /**
  * Enables history log via JPA.
@@ -128,39 +134,39 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	@Override
 	@Transactional(dontRollbackOn = { org.hibernate.AssertionFailure.class })
 	public void beforeNodeTriggered(ProcessNodeTriggeredEvent event) {
-		
-		NodeInstanceLog log = (NodeInstanceLog) builder.buildEvent(event);
-		persist(log, event);
-		
-		((NodeInstanceImpl) event.getNodeInstance()).getMetaData().put("NodeInstanceLog", log);
-		Date eventDate = event.getEventDate();
-		
+		if (GennySettings.logWorkflows) {
+			NodeInstanceLog log = (NodeInstanceLog) builder.buildEvent(event);
+			persist(log, event);
+
+			((NodeInstanceImpl) event.getNodeInstance()).getMetaData().put("NodeInstanceLog", log);
+			Date eventDate = event.getEventDate();
+		}
 		String workflowStage = (String) event.getNodeInstance().getVariable("workflowStage");
-		
+
 		if (workflowStage != null) {
-			
+
 			org.kie.api.runtime.process.ProcessInstance processInstance = event.getProcessInstance();
 			Long processInstanceId = processInstance.getId();
-			
+
 			EntityManager em = getEntityManager(event);
-			/* Object tx = joinTransaction(em);*/
+			/* Object tx = joinTransaction(em); */
 
 			try {
-				
-				NodeStatus record = em.find(NodeStatus.class,processInstanceId );
-				if( record != null) {
-					
-					if( record.getWorkflowStage() != workflowStage) {
-						
+
+				NodeStatus record = em.find(NodeStatus.class, processInstanceId);
+				if (record != null) {
+
+					if (record.getWorkflowStage() != workflowStage) {
+
 						logger.info(" UDATING " + record.toString() + " ENTRY IN NODESTATUS DB");
 						record.setWorkflowStage(workflowStage);
-						em.flush();	
+						em.flush();
 					}
-					
-				}else {
-					
-					org.kie.api.runtime.process.NodeInstance nodeInstance = event.getNodeInstance();					
-					
+
+				} else {
+
+					org.kie.api.runtime.process.NodeInstance nodeInstance = event.getNodeInstance();
+
 					String processId = processInstance.getProcessId();
 					String nodeName = nodeInstance.getNodeName();
 					String nodeId = nodeInstance.getNode().getId() + "";
@@ -168,20 +174,19 @@ public class NodeStatusLog extends AbstractAuditLogger {
 					String realm = userToken.getRealm();
 					String userCode = userToken.getUserCode();
 					String workflowBeCode = (String) nodeInstance.getVariable("workflowBeCode");
-					
-					NodeStatus nodeStatus = new NodeStatus(userCode, nodeName, nodeId, realm, processInstanceId, processId,
-							workflowStage, workflowBeCode);
-					
+
+					NodeStatus nodeStatus = new NodeStatus(userCode, nodeName, nodeId, realm, processInstanceId,
+							processId, workflowStage, workflowBeCode);
+
 					logger.info(nodeStatus.toString() + " NOT FOUND IN NODESTATUS DB !!");
-					//em.persist(nodeStatus);
-					persist(nodeStatus,event);
+					// em.persist(nodeStatus);
+					persist(nodeStatus, event);
 				}
-				
-				
+
 			} catch (Exception e) {
 
 				logger.error("Error in persisting nodeStatus");
-				
+
 			}
 		}
 	}
@@ -193,10 +198,13 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	@Override
 	@Transactional(dontRollbackOn = { Exception.class })
 	public void afterVariableChanged(ProcessVariableChangedEvent event) {
+		if (GennySettings.logWorkflows) {
 
-		List<org.kie.api.runtime.manager.audit.VariableInstanceLog> variables = indexManager.index(getBuilder(), event);
-		for (org.kie.api.runtime.manager.audit.VariableInstanceLog log : variables) {
-			persist(log, event);
+			List<org.kie.api.runtime.manager.audit.VariableInstanceLog> variables = indexManager.index(getBuilder(),
+					event);
+			for (org.kie.api.runtime.manager.audit.VariableInstanceLog log : variables) {
+				persist(log, event);
+			}
 		}
 	}
 
@@ -204,34 +212,39 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	@Transactional(dontRollbackOn = { Exception.class })
 
 	public void beforeProcessStarted(ProcessStartedEvent event) {
-		ProcessInstanceLog log = (ProcessInstanceLog) builder.buildEvent(event);
-		persist(log, event);
-		((ProcessInstanceImpl) event.getProcessInstance()).getMetaData().put("ProcessInstanceLog", log);
+		if (GennySettings.logWorkflows) {
+
+			ProcessInstanceLog log = (ProcessInstanceLog) builder.buildEvent(event);
+			persist(log, event);
+			((ProcessInstanceImpl) event.getProcessInstance()).getMetaData().put("ProcessInstanceLog", log);
+		}
 	}
 
 	@Override
 	@Transactional(dontRollbackOn = { Exception.class })
 	public void afterProcessCompleted(ProcessCompletedEvent event) {
-		long processInstanceId = event.getProcessInstance().getId();
-		EntityManager em = getEntityManager(event);
-		Object tx = joinTransaction(em);
+		if (GennySettings.logWorkflows) {
 
-		ProcessInstanceLog log = (ProcessInstanceLog) ((ProcessInstanceImpl) event.getProcessInstance()).getMetaData()
-				.get("ProcessInstanceLog");
-		if (log == null) {
-			List<ProcessInstanceLog> result = em
-					.createQuery(
-							"from ProcessInstanceLog as log where log.processInstanceId = :piId and log.end is null")
-					.setParameter("piId", processInstanceId).getResultList();
-			if (result != null && result.size() != 0) {
-				log = result.get(result.size() - 1);
+			long processInstanceId = event.getProcessInstance().getId();
+			EntityManager em = getEntityManager(event);
+			Object tx = joinTransaction(em);
+
+			ProcessInstanceLog log = (ProcessInstanceLog) ((ProcessInstanceImpl) event.getProcessInstance())
+					.getMetaData().get("ProcessInstanceLog");
+			if (log == null) {
+				List<ProcessInstanceLog> result = em.createQuery(
+						"from ProcessInstanceLog as log where log.processInstanceId = :piId and log.end is null")
+						.setParameter("piId", processInstanceId).getResultList();
+				if (result != null && result.size() != 0) {
+					log = result.get(result.size() - 1);
+				}
 			}
+			if (log != null) {
+				log = (ProcessInstanceLog) builder.buildEvent(event, log);
+				em.merge(log);
+			}
+			leaveTransaction(em, tx);
 		}
-		if (log != null) {
-			log = (ProcessInstanceLog) builder.buildEvent(event, log);
-			em.merge(log);
-		}
-		leaveTransaction(em, tx);
 	}
 
 	@Override
@@ -239,62 +252,70 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	public void afterNodeTriggered(ProcessNodeTriggeredEvent event) {
 		// trigger this to record some of the data (like work item id) after activity
 		// was triggered
-		NodeInstanceLog log = (NodeInstanceLog) ((NodeInstanceImpl) event.getNodeInstance()).getMetaData()
-				.get("NodeInstanceLog");
-		builder.buildEvent(event, log);
+		if (GennySettings.logWorkflows) {
 
+			NodeInstanceLog log = (NodeInstanceLog) ((NodeInstanceImpl) event.getNodeInstance()).getMetaData()
+					.get("NodeInstanceLog");
+			builder.buildEvent(event, log);
+		}
 	}
 
 	@Override
 	@Transactional(dontRollbackOn = { Exception.class })
 
 	public void afterSLAViolated(SLAViolatedEvent event) {
-		EntityManager em = getEntityManager(event);
-		Object tx = joinTransaction(em);
-		if (event.getNodeInstance() != null) {
-			// since node instance is set this is SLA violation for node instance
-			long nodeInstanceId = event.getNodeInstance().getId();
-			long processInstanceId = event.getProcessInstance().getId();
-			NodeInstanceLog log = (NodeInstanceLog) ((NodeInstanceImpl) event.getNodeInstance()).getMetaData()
-					.get("NodeInstanceLog");
-			if (log == null) {
-				List<NodeInstanceLog> result = em.createQuery(
-						"from NodeInstanceLog as log where log.nodeInstanceId = :niId and log.processInstanceId = :piId and log.type = 0")
-						.setParameter("niId", Long.toString(nodeInstanceId)).setParameter("piId", processInstanceId)
-						.getResultList();
-				if (result != null && !result.isEmpty()) {
-					log = result.get(result.size() - 1);
+		if (GennySettings.logWorkflows) {
+
+			EntityManager em = getEntityManager(event);
+			Object tx = joinTransaction(em);
+			if (event.getNodeInstance() != null) {
+				// since node instance is set this is SLA violation for node instance
+				long nodeInstanceId = event.getNodeInstance().getId();
+				long processInstanceId = event.getProcessInstance().getId();
+				NodeInstanceLog log = (NodeInstanceLog) ((NodeInstanceImpl) event.getNodeInstance()).getMetaData()
+						.get("NodeInstanceLog");
+				if (log == null) {
+					List<NodeInstanceLog> result = em.createQuery(
+							"from NodeInstanceLog as log where log.nodeInstanceId = :niId and log.processInstanceId = :piId and log.type = 0")
+							.setParameter("niId", Long.toString(nodeInstanceId)).setParameter("piId", processInstanceId)
+							.getResultList();
+					if (result != null && !result.isEmpty()) {
+						log = result.get(result.size() - 1);
+					}
+				}
+				if (log != null) {
+					log.setSlaCompliance(((NodeInstance) event.getNodeInstance()).getSlaCompliance());
+					em.merge(log);
+				}
+			} else {
+				// SLA violation for process instance
+				long processInstanceId = event.getProcessInstance().getId();
+				ProcessInstanceLog log = (ProcessInstanceLog) ((ProcessInstanceImpl) event.getProcessInstance())
+						.getMetaData().get("ProcessInstanceLog");
+				if (log == null) {
+					List<ProcessInstanceLog> result = em.createQuery(
+							"from ProcessInstanceLog as log where log.processInstanceId = :piId and log.end is null")
+							.setParameter("piId", processInstanceId).getResultList();
+					if (result != null && !result.isEmpty()) {
+						log = result.get(result.size() - 1);
+					}
+				}
+				if (log != null) {
+					log.setSlaCompliance(((ProcessInstance) event.getProcessInstance()).getSlaCompliance());
+					em.merge(log);
 				}
 			}
-			if (log != null) {
-				log.setSlaCompliance(((NodeInstance) event.getNodeInstance()).getSlaCompliance());
-				em.merge(log);
-			}
-		} else {
-			// SLA violation for process instance
-			long processInstanceId = event.getProcessInstance().getId();
-			ProcessInstanceLog log = (ProcessInstanceLog) ((ProcessInstanceImpl) event.getProcessInstance())
-					.getMetaData().get("ProcessInstanceLog");
-			if (log == null) {
-				List<ProcessInstanceLog> result = em.createQuery(
-						"from ProcessInstanceLog as log where log.processInstanceId = :piId and log.end is null")
-						.setParameter("piId", processInstanceId).getResultList();
-				if (result != null && !result.isEmpty()) {
-					log = result.get(result.size() - 1);
-				}
-			}
-			if (log != null) {
-				log.setSlaCompliance(((ProcessInstance) event.getProcessInstance()).getSlaCompliance());
-				em.merge(log);
-			}
+			leaveTransaction(em, tx);
 		}
-		leaveTransaction(em, tx);
 	}
 
 	@Override
 	public void beforeNodeLeft(ProcessNodeLeftEvent event) {
-		NodeInstanceLog log = (NodeInstanceLog) builder.buildEvent(event, null);
-		persist(log, event);
+		if (GennySettings.logWorkflows) {
+
+			NodeInstanceLog log = (NodeInstanceLog) builder.buildEvent(event, null);
+			persist(log, event);
+		}
 	}
 
 	@Override
@@ -303,8 +324,47 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	}
 
 	@Override
+	@Transactional(dontRollbackOn = { org.hibernate.AssertionFailure.class })
 	public void afterProcessStarted(ProcessStartedEvent event) {
+		org.kie.api.runtime.process.ProcessInstance processInstance = event.getProcessInstance();
+		
+		
+		String processName =  (String) event.getProcessInstance().getProcessName();
+		
 
+		if ("userSession".equals(processName)) {
+
+
+			try {
+				//Map<String, Object> variables =  processInstance.getProcess().getMetaData();  
+				VariableScopeInstance variableScope = (VariableScopeInstance) 
+		                   ((org.jbpm.process.instance.ProcessInstance) processInstance)
+		                       .getContextInstance(VariableScope.VARIABLE_SCOPE);
+				String sessionCode = (String)variableScope.getVariable("sessionCode");
+				Long processInstanceId = processInstance.getId();
+				String realm = "internmatch"; //TODO
+				SessionPid sessionPid = new SessionPid(realm,sessionCode,processInstanceId);
+					persist(sessionPid,event);
+//					String processId = processInstance.getProcessId();
+//					String nodeName = nodeInstance.getNodeName();
+//					String nodeId = nodeInstance.getNode().getId() + "";
+//					GennyToken userToken = (GennyToken) nodeInstance.getVariable("userToken");
+//					String realm = userToken.getRealm();
+//					String userCode = userToken.getUserCode();
+//					String workflowBeCode = (String) nodeInstance.getVariable("workflowBeCode");
+//
+//					NodeStatus nodeStatus = new NodeStatus(userCode, nodeName, nodeId, realm, processInstanceId,
+//							processId, processName, workflowBeCode);
+//
+//					persist(nodeStatus, event);
+	
+				logger.info("After Process Started");
+			} catch (Exception e) {
+
+				logger.error("Error in persisting nodeStatus");
+
+			}
+		}
 	}
 
 	@Override

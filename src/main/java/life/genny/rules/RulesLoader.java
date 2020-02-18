@@ -783,7 +783,7 @@ public class RulesLoader {
 
 						Long processId = null;
 
-						Optional<Long> processIdBysessionId = getProcessIdBysessionId(session_state);
+						Optional<Long> processIdBysessionId = getProcessIdBysessionId(serviceToken.getRealm(),session_state);
 
 						/* Check if the process already exist or not */
 						boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
@@ -1315,7 +1315,7 @@ public class RulesLoader {
 
 	}
 
-	public static Optional<Long> getProcessIdBysessionId(String sessionId) {
+	public static Optional<Long> getProcessIdBysessionId2(String sessionId) {
 		// Do pagination here
 		QueryContext ctx = new QueryContext(0, 100);
 		Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstances",
@@ -1324,6 +1324,16 @@ public class RulesLoader {
 		return instances.stream().map(d -> d.getId()).findFirst();
 
 	}
+	public static Optional<Long> getProcessIdBysessionId(String realm,String sessionId) {
+		// Do pagination here
+		QueryContext ctx = new QueryContext(0, 100);
+		Collection<ProcessInstanceDesc> instances = queryService.query("getAllSessionPids",
+				ProcessInstanceQueryMapper.get(), ctx, QueryParam.equalsTo("sessionCode", sessionId)/*,QueryParam.equalsTo("realm", realm)*/);
+
+		return instances.stream().map(d -> d.getId()).findFirst();
+
+	}
+	
 	
 	public static Optional<Long> getProcessIdByWorkflowBeCode(String realm,String workflowBeCode) {
 		// Do pagination here
@@ -1418,6 +1428,15 @@ public class RulesLoader {
 			log.warn(query.getName() + " is already registered");
 		}
 		
+		SqlQueryDefinition query3 = new SqlQueryDefinition("getAllSessionPids", "java:jboss/datasources/gennyDS");
+		query3.setExpression("select * from session_pid");
+		try {
+			queryService.registerQuery(query3);
+		} catch (QueryAlreadyRegisteredException e) {
+			log.warn(query.getName() + " is already registered");
+		}
+
+		
 		SqlQueryDefinition query2 = new SqlQueryDefinition("getAllNodeStatuses2", "java:jboss/datasources/gennyDS");
 //		query2.setExpression("select  new life.genny.model.NodeStatus( ns.id,ns.date,ns.nodeId,ns.nodeName,ns.processId,ns.processInstanceId,ns.realm,ns.status,ns.userCode,ns.workflowStatus,ns.workflowBeCode) from NodeStatus ns where ns.realm= 'internmatch' and ns.workflowBeCode=: workflowBeCode");
 		query2.setExpression("select  * from nodestatus");
@@ -1431,9 +1450,9 @@ public class RulesLoader {
 		System.out.println("Finished init");
 	}
 
-	public static Optional<Long> getProcessIdBySessionId(String sessionId) {
+	public static Optional<Long> getProcessIdBySessionId(String realm,String sessionId) {
 		// TODO Auto-generated method stub
-		return RulesLoader.getProcessIdBysessionId(sessionId);
+		return RulesLoader.getProcessIdBysessionId(realm,sessionId);
 	}
 
 	private static Boolean processRule(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {
