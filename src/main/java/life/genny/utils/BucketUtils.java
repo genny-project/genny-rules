@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
 
@@ -286,12 +287,12 @@ public class BucketUtils {
 
 	}
 
-		public HashMap<String, Ask[]> getOptionTemplate() {
+		public HashMap<String, Ask[]> getOptionTemplate(String targetCode) {
 		
 		/* iniitialize empty HashMap */
 		HashMap<String, Ask[]> map = new HashMap<String, Ask[]>(); 
 		
-		String sourceCode = "PER_SERVICE", targetCode = "PER_SERVICE";
+		String sourceCode = "PER_SERVICE";
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 
 		/* create childAsks */
@@ -446,15 +447,14 @@ public class BucketUtils {
 		ContextList contextList = tempAsk.getContextList();
 		List<Context> cardContext = contextListMap.get("QUE_CARD_APPLICATION_TEMPLATE_GRP").getContextList();
 
-		/* get the option menu item asks */
-		Map<String, Ask[]> map = getOptionTemplate();
-		Ask[] optionAsks = map.get(code);
-
 		for (Ask app : askList) {
-			  	
+			/* get the option menu item asks */
+			Map<String, Ask[]> map = getOptionTemplate(app.getTargetCode());
+			Ask[] optionAsks = map.get(code);
+
 			Ask templateAsk = getCardTemplate();
 			Ask[] templateAsks = templateAsk.getChildAsks();
-		
+			
 			Ask cardStatusAsk = templateAsks[0];
 			Ask cardMainAsk = templateAsks[1];
 			Ask cardContentAsk = cardMainAsk.getChildAsks()[0];
@@ -465,8 +465,6 @@ public class BucketUtils {
 
 			/* setting the targetCode to options question */
 			cardRightAsk.setChildAsks(optionAsks);
-			Arrays.asList(cardRightAsk.getChildAsks()).forEach((childAsk)-> childAsk.setTargetCode(app.getTargetCode()));
-			
 
 			Ask[] attributeArr = app.getChildAsks();
 
