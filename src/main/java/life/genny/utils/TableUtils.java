@@ -129,6 +129,18 @@ public class TableUtils {
 		Theme THM_TABLE_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_BORDER", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_WIDTH_100_PERCENT", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_FOOTER_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_FOOTER_BORDER", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_EVENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_EVENT", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_TEXT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_TEXT", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_TEXT_HEADER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_TEXT_HEADER", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_LANDLINE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_LANDLINE", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_MOBILE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_MOBILE", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_ADDRESS = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_ADDRESS", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_EMAIL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_EMAIL", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_VIEW = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_VIEW", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_APPLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_APPLY", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_STATUS = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_STATUS", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_NAME = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_NAME", Theme.class, beUtils.getServiceToken().getToken());
+		// Theme THM_TABLE_HEADER_CELL_EVENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_HEADER_CELL_EVENT", Theme.class, beUtils.getServiceToken().getToken());
 
 		/* get the icons */
 		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
@@ -148,6 +160,17 @@ public class TableUtils {
 		BaseEntity THM_TABLE_BORDER_BE = this.getThemeBe(THM_TABLE_BORDER);
 		BaseEntity THM_WIDTH_100_PERCENT_BE = this.getThemeBe(THM_WIDTH_100_PERCENT);
 		BaseEntity THM_TABLE_FOOTER_BORDER_BE = this.getThemeBe(THM_TABLE_FOOTER_BORDER);
+		BaseEntity THM_TABLE_ROW_CELL_EVENT_BE = this.getThemeBe(THM_TABLE_ROW_CELL_EVENT);
+		BaseEntity THM_TABLE_ROW_CELL_TEXT_BE = this.getThemeBe(THM_TABLE_ROW_CELL_TEXT);
+		BaseEntity THM_TABLE_ROW_CELL_TEXT_HEADER_BE = this.getThemeBe(THM_TABLE_ROW_CELL_TEXT_HEADER);
+		BaseEntity THM_TABLE_ROW_CELL_LANDLINE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_LANDLINE);
+		BaseEntity THM_TABLE_ROW_CELL_MOBILE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_MOBILE);
+		BaseEntity THM_TABLE_ROW_CELL_ADDRESS_BE = this.getThemeBe(THM_TABLE_ROW_CELL_ADDRESS);
+		BaseEntity THM_TABLE_ROW_CELL_EMAIL_BE = this.getThemeBe(THM_TABLE_ROW_CELL_EMAIL);
+		BaseEntity THM_TABLE_ROW_CELL_VIEW_BE = this.getThemeBe(THM_TABLE_ROW_CELL_VIEW);
+		BaseEntity THM_TABLE_ROW_CELL_APPLY_BE = this.getThemeBe(THM_TABLE_ROW_CELL_APPLY);
+		BaseEntity THM_TABLE_ROW_CELL_STATUS_BE = this.getThemeBe(THM_TABLE_ROW_CELL_STATUS);
+		BaseEntity THM_TABLE_ROW_CELL_NAME_BE = this.getThemeBe(THM_TABLE_ROW_CELL_NAME);
 
 		List<BaseEntity> themes = new ArrayList<BaseEntity>();
 		themes.add(THM_ICON_BE);
@@ -162,11 +185,24 @@ public class TableUtils {
 		themes.add(THM_TABLE_CONTENT_BE);
 		themes.add(THM_TABLE_BORDER_BE);
 		themes.add(THM_WIDTH_100_PERCENT_BE);
-		themes.add(THM_WIDTH_100_PERCENT_BE);
+		themes.add(THM_TABLE_ROW_CELL_EVENT_BE);
+		themes.add(THM_TABLE_ROW_CELL_TEXT_BE);
+		themes.add(THM_TABLE_ROW_CELL_TEXT_HEADER_BE);
+		themes.add(THM_TABLE_ROW_CELL_LANDLINE_BE);
+		themes.add(THM_TABLE_ROW_CELL_MOBILE_BE);
+		themes.add(THM_TABLE_ROW_CELL_ADDRESS_BE);
+		themes.add(THM_TABLE_ROW_CELL_EMAIL_BE);
+		themes.add(THM_TABLE_ROW_CELL_VIEW_BE);
+		themes.add(THM_TABLE_ROW_CELL_APPLY_BE);
+		themes.add(THM_TABLE_ROW_CELL_STATUS_BE);
+		themes.add(THM_TABLE_ROW_CELL_NAME_BE);
 
 		/* also add the icon BE to the list */
 		themes.add(ICN_VIEW);
 		themes.add(ICN_ADD);
+
+		System.out.println("**************** Themes in the list :: "+ themes.size() +" ********************");
+
 
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(themes);
 		msg.setToken(beUtils.getGennyToken().getToken());
@@ -317,7 +353,7 @@ public class TableUtils {
 			QDataBaseEntityMessage msg,
 			Map<String, String> columns) {
 
-				System.out.println("inside showTableContent");
+		System.out.println("inside showTableContent");
 
 		Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
 
@@ -345,6 +381,48 @@ public class TableUtils {
 				VisualControlType.GROUP_WRAPPER, 1.0);
 		tableRowContext.setDataType("Table Row Group");
 
+		Context tableRowCellContext = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL", "THM_TABLE_ROW_CELL"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellContext.setDataType("Event");
+		tableRowCellContext.setWeight(3.0);
+
+		Context tableRowCellName = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellName.setDataType("Name");
+
+		Context tableRowCellLandline = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellLandline.setDataType("Landline");
+
+		Context tableRowCellMobile = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_MOBILE", "THM_TABLE_ROW_CELL_MOBILE"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellMobile.setDataType("Mobile");
+
+		Context tableRowCellAddress = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellAddress.setDataType("Address");
+
+		Context tableRowCellEmail = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_EMAIL", "THM_TABLE_ROW_CELL_EMAIL"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellEmail.setDataType("Email");
+
+		Context tableRowCellView = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellView.setDataType("View");
+		tableRowCellView.setWeight(2.0);
+
+		Context tableRowCellApply = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellApply.setDataType("Apply");
+
+		Context tableRowCellStatus = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellStatus.setDataType("Status");
+
+		Context tableRowCellText = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellText.setDataType("Text");
+
 
 		List<Context> contexts = new ArrayList<Context>();
 		contexts.add(new Context(ContextType.THEME,
@@ -354,21 +432,19 @@ public class TableUtils {
 		contexts.add(tableRowContentWrapperContext);
 		contexts.add(horizontalContext);
 		contexts.add(tableRowContext);
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL", "THM_TABLE_ROW_CELL"),
-				VisualControlType.VCL_WRAPPER, 1.0));
+		contexts.add(tableRowCellName);
+		contexts.add(tableRowCellLandline);
+		contexts.add(tableRowCellMobile);
+		contexts.add(tableRowCellAddress);
+		contexts.add(tableRowCellEmail);
+		contexts.add(tableRowCellView);
+		contexts.add(tableRowCellApply);
+		contexts.add(tableRowCellStatus);
+		contexts.add(tableRowCellText);
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT", "THM_TABLE_CONTENT"),
 				VisualControlType.GROUP, 1.0));
 
-		// contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"),
-		// 		VisualControlType.GROUP_WRAPPER, 1.0));
-
-
 		System.out.println("outside loop before the loop");
-
-		// for (Context x : contexts) {
-		// 	System.out.println("setting contexts inside the loop");
-		// 	x.setDataType("Table Row Group");
-		// }
 
 		ContextList rowsContextList = new ContextList(contexts);
 
@@ -381,6 +457,56 @@ public class TableUtils {
 		Ask headerAsk = getHeaderAsk(searchBE);
 
 		List<Context> headerContexts = new ArrayList<Context>();
+
+		Context tableRowCellNameHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellNameHeader.setDataType("Name Header");
+
+		Context tableRowCellLandlineHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellLandlineHeader.setDataType("Landline Header");
+
+		Context tableRowCellMobileHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_MOBILE", "THM_TABLE_ROW_CELL_MOBILE"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellMobileHeader.setDataType("Mobile Header");
+
+		Context tableRowCellAddressHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellAddressHeader.setDataType("Address Header");
+
+		Context tableRowCellEmailHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_EMAIL", "THM_TABLE_ROW_CELL_EMAIL"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellEmailHeader.setDataType("Email Header");
+
+		Context tableRowCellViewHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellViewHeader.setDataType("View Header");
+		tableRowCellViewHeader.setWeight(2.0);
+
+		Context tableRowCellApplyHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellApplyHeader.setDataType("Apply Header");
+
+		Context tableRowCellStatusHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellStatusHeader.setDataType("Status Header");
+
+		Context tableRowCellTextHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_TEXT_HEADER", "THM_TABLE_ROW_CELL_TEXT_HEADER"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellTextHeader.setDataType("Text Header");
+
+
+		/* newly added contexts to header */
+		headerContexts.add(tableRowCellNameHeader);
+		headerContexts.add(tableRowCellLandlineHeader);
+		headerContexts.add(tableRowCellMobileHeader);
+		headerContexts.add(tableRowCellAddressHeader);
+		headerContexts.add(tableRowCellEmailHeader);
+		headerContexts.add(tableRowCellViewHeader);
+		headerContexts.add(tableRowCellApplyHeader);
+		headerContexts.add(tableRowCellStatusHeader);
+		headerContexts.add(tableRowCellTextHeader);
+
 		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_HEADER_FONT", "THM_TABLE_HEADER_FONT"),
 		VisualControlType.INPUT_FIELD, 1.0));
 		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_BORDER", "THM_TABLE_BORDER"),
@@ -700,7 +826,7 @@ public class TableUtils {
 		Attribute eventAttribute = RulesUtils.attributeMap.get("PRI_SORT");
 		Attribute questionAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
 		Attribute tableCellAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_CELL");
-		Attribute priEvent = RulesUtils.attributeMap.get("PRI_EVENT");
+		Attribute priEvent = RulesUtils.attributeMap.get("PRI_TEXT");
 
 		/* get table columns */
 		Map<String, String> columns = getTableColumns(searchBe);
@@ -1146,22 +1272,31 @@ public class TableUtils {
 		List<Ask> asks = new ArrayList<Ask>();
 
 		/* get the required attributes */
-		Attribute nameAttr = RulesUtils.attributeMap.get("PRI_EVENT");
+		Attribute nameAttr = RulesUtils.attributeMap.get("PRI_TEXT_HEADER");
 		Attribute tableHeaderAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_HEADER");
-
-		// Attribute questionTableRowAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
-		// 					new DataType(String.class));
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
 
 			String attributeCode = column.getKey();
 			String attributeName = column.getValue();
 
-			/* Initialize Column Header Ask group */
-			Question ques = new Question("QUE_" + attributeCode, attributeName, nameAttr, true);
-			Ask ask = new Ask(ques, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
+			Attribute headerAttr;
+			headerAttr = RulesUtils.attributeMap.get(attributeCode + "_HEADER");
+			if(headerAttr == null){
+				System.out.println("Header attribute is null");
+				System.out.println(attributeCode + "_HEADER is null");
+				headerAttr = nameAttr;
+			}
 
-			asks.add(ask);
+			/* Initialize Column Header Ask group */
+			Question headerQues = new Question("QUE_" + attributeCode, attributeName, headerAttr, true);
+			Ask headerAsk = new Ask(headerQues, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
+			asks.add(headerAsk);
+
+			// /* Initialize Column Header Ask group */
+			// Question ques = new Question("QUE_" + attributeCode, attributeName, nameAttr, true);
+			// Ask ask = new Ask(ques, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
+			// asks.add(ask);
 		}
 
 		Ask[] childAsksArr = asks.toArray(new Ask[0]);
