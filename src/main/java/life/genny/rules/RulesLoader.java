@@ -1318,15 +1318,15 @@ public class RulesLoader {
 
 	}
 
-	public static Optional<Long> getProcessIdBysessionId2(String sessionId) {
-		// Do pagination here
-		QueryContext ctx = new QueryContext(0, 100);
-		Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstances",
-				ProcessInstanceQueryMapper.get(), ctx, QueryParam.equalsTo("value", sessionId));
-
-		return instances.stream().map(d -> d.getId()).findFirst();
-
-	}
+//	public static Optional<Long> getProcessIdBysessionId2(String sessionId) {
+//		// Do pagination here
+//		QueryContext ctx = new QueryContext(0, 100);
+//		Collection<ProcessInstanceDesc> instances = queryService.query("getAllProcessInstances",
+//				ProcessInstanceQueryMapper.get(), ctx, QueryParam.equalsTo("value", sessionId));
+//
+//		return instances.stream().map(d -> d.getId()).findFirst();
+//
+//	}
 	public static Optional<Long> getProcessIdBysessionId(String realm,String sessionId) {
 		// Do pagination here
 		QueryContext ctx = new QueryContext(0, 100);
@@ -1426,7 +1426,7 @@ public class RulesLoader {
 			log.warn("No persistence enabled, are you running wildfly-rulesservice?");
 		}
 
-		QueryDefinitionEntity qde = new QueryDefinitionEntity();
+//		QueryDefinitionEntity qde = new QueryDefinitionEntity();
 		configureServices();
 		SqlQueryDefinition query = new SqlQueryDefinition("getAllProcessInstances", "java:jboss/datasources/gennyDS");
 		query.setExpression("select * from VariableInstanceLog");

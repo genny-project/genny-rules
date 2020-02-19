@@ -350,28 +350,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	@Override
 	@Transactional(dontRollbackOn = { org.hibernate.AssertionFailure.class })
 	public void afterProcessStarted(ProcessStartedEvent event) {
-//		org.kie.api.runtime.process.ProcessInstance processInstance = event.getProcessInstance();
-//				
-//		String processName =  (String) event.getProcessInstance().getProcessName();
-//		
-//		if ("userSession".equals(processName)) {
-//			try {
-//				//Map<String, Object> variables =  processInstance.getProcess().getMetaData();  
-//				VariableScopeInstance variableScope = (VariableScopeInstance) 
-//		                   ((org.jbpm.process.instance.ProcessInstance) processInstance)
-//		                       .getContextInstance(VariableScope.VARIABLE_SCOPE);
-//				String sessionCode = (String)variableScope.getVariable("sessionCode");
-//				Long processInstanceId = processInstance.getId();
-//				String realm = "internmatch"; //TODO
-//				SessionPid sessionPid = new SessionPid(realm,sessionCode,processInstanceId);
-//				persist(sessionPid,event);
-//	
-//				logger.info("After Process Started");
-//			} catch (Exception e) {
-//
-//				logger.error("Error in persisting nodeStatus");
-//			}
-//		}
+
 	}
 
 	@Override
