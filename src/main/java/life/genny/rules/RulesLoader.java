@@ -47,6 +47,7 @@ import org.jbpm.services.api.RuntimeDataService;
 import org.jbpm.services.api.UserTaskService;
 import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
+import org.jbpm.services.api.query.QueryNotFoundException;
 import org.jbpm.services.api.query.QueryService;
 import org.jbpm.services.api.query.model.QueryParam;
 import org.jbpm.services.api.utils.KieServiceConfigurator;
@@ -111,6 +112,7 @@ import life.genny.jbpm.customworkitemhandlers.ShowFrames;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
 import life.genny.jbpm.customworkitemhandlers.ThrowSignalWorkItemHandler;
 import life.genny.model.NodeStatus;
+import life.genny.model.SessionPid;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.attribute.Attribute;
@@ -134,6 +136,7 @@ import life.genny.utils.NodeStatusQueryMapper;
 import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
+import life.genny.utils.SessionPidQueryMapper;
 import life.genny.utils.VertxUtils;
 
 public class RulesLoader {
@@ -1327,10 +1330,15 @@ public class RulesLoader {
 	public static Optional<Long> getProcessIdBysessionId(String realm,String sessionId) {
 		// Do pagination here
 		QueryContext ctx = new QueryContext(0, 100);
-		Collection<ProcessInstanceDesc> instances = queryService.query("getAllSessionPids",
-				ProcessInstanceQueryMapper.get(), ctx, QueryParam.equalsTo("sessionCode", sessionId)/*,QueryParam.equalsTo("realm", realm)*/);
+		try {
+			Collection<SessionPid> instances = queryService.query("getAllSessionPids",
+					SessionPidQueryMapper.get(), ctx, QueryParam.equalsTo("sessionCode", sessionId)/*,QueryParam.equalsTo("realm", realm)*/);
 
-		return instances.stream().map(d -> d.getId()).findFirst();
+			return instances.stream().map(d -> d.getProcessInstanceId()).findFirst();
+		} catch (Exception e) {
+			log.warn("No pid found for sessionCode="+sessionId);
+		}
+		return Optional.empty();
 
 	}
 	
@@ -1433,7 +1441,7 @@ public class RulesLoader {
 		try {
 			queryService.registerQuery(query3);
 		} catch (QueryAlreadyRegisteredException e) {
-			log.warn(query.getName() + " is already registered");
+			log.warn(query3.getName() + " is already registered");
 		}
 
 		

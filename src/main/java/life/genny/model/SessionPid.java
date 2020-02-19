@@ -5,8 +5,11 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Index;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -25,22 +28,22 @@ import com.google.gson.annotations.Expose;
 @XmlRootElement
 @XmlAccessorType(value = XmlAccessType.FIELD)
 
-@Table(name = "session_pid", indexes = {@Index(name = "IDX_NStat_SessionIdRealm", columnList = "sessionCode,realm")
+@Table(name = "session_pid", indexes = {@Index(name = "IDX_NStat_SessionCode", columnList = "sessionCode")
 		})
-//@SequenceGenerator(name="nodeStatusIdSeq", sequenceName="NODE_STATUS_LOG_ID_SEQ", allocationSize=1)
+//@SequenceGenerator(name="sessionPidIdSeq", sequenceName="SESSION_PID_ID_SEQ", allocationSize=1)
 
 
 @Entity
-public class SessionPid implements Serializable {
+public class SessionPid implements Serializable/*, AuditEvent, org.kie.api.runtime.manager.audit.NodeInstanceLog */ {
 	
-	/**
+	
+    /**
 	 * 
 	 */
-	
-	private static final long serialVersionUID = 910l;
-	
-    @Id
-    //@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	private long id;
     
     @Temporal(TemporalType.TIMESTAMP)
@@ -209,7 +212,7 @@ public class SessionPid implements Serializable {
 				+ (realm != null ? "realm=" + realm + ", " : "")
 				+ (processInstanceId != null ? "processInstanceId=" + processInstanceId : "") + "]";
 	}
-	
+
 
 	
 }
