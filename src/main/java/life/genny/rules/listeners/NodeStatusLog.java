@@ -158,7 +158,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 
 					if (record.getWorkflowStage() != workflowStage) {
 
-						logger.info(" UDATING " + record.toString() + " ENTRY IN NODESTATUS DB");
+						logger.info(" UPDATING " + record.toString() + " ENTRY IN NODESTATUS DB");
 						record.setWorkflowStage(workflowStage);
 						em.flush();
 					}

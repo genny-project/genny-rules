@@ -415,6 +415,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							((InternalContent) content).setContent(contentData.getContent());
 							Set<ConstraintViolation<Content>> constraintViolations = validator.validate(content);
 							if (constraintViolations.size() == 0) {
+								log.info("ProcessAnswers: Persisting taskContent");
 								em.persist(content);
 								InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
 								InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
