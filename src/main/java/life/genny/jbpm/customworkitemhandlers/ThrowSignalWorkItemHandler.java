@@ -91,9 +91,10 @@ public class ThrowSignalWorkItemHandler implements WorkItemHandler {
 			Optional<Long> processIdBysessionId = Optional.empty();
 			try {
 				Class<?> cls = Class.forName(this.wClass); // needs filtering.
-				m = cls.getDeclaredMethod("getProcessIdBySessionId", String.class);
+				m = cls.getDeclaredMethod("getProcessIdBySessionId", String.class,String.class);
+				String realm = userToken.getRealm();
 				String param = userToken.getSessionCode(); 
-				processIdBysessionId =  (Optional<Long>) m.invoke(null, (Object) param);
+				processIdBysessionId =  (Optional<Long>) m.invoke(null, (Object)realm,(Object) param);
 
 			} catch (NoSuchMethodException | SecurityException e) {
 				// TODO Auto-generated catch block

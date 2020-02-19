@@ -218,6 +218,30 @@ public class NodeStatusLog extends AbstractAuditLogger {
 			persist(log, event);
 			((ProcessInstanceImpl) event.getProcessInstance()).getMetaData().put("ProcessInstanceLog", log);
 		}
+		org.kie.api.runtime.process.ProcessInstance processInstance = event.getProcessInstance();
+		
+		String processName =  (String) event.getProcessInstance().getProcessName();
+		
+		if ("userSession".equals(processName)) {
+			try {
+				//Map<String, Object> variables =  processInstance.getProcess().getMetaData();  
+				VariableScopeInstance variableScope = (VariableScopeInstance) 
+		                   ((org.jbpm.process.instance.ProcessInstance) processInstance)
+		                       .getContextInstance(VariableScope.VARIABLE_SCOPE);
+				SessionFacts sessionFacts = (SessionFacts)variableScope.getVariable("sessionFacts");
+				GennyToken userToken = sessionFacts.getUserToken();
+				Long processInstanceId = processInstance.getId();
+				String sessionCode = userToken.getSessionCode();
+				String realm = userToken.getRealm(); //TODO
+				SessionPid sessionPid = new SessionPid(realm,sessionCode,processInstanceId);
+				persist(sessionPid,event);
+	
+				logger.info("After Process Started");
+			} catch (Exception e) {
+
+				logger.error("Error in persisting nodeStatus");
+			}
+		}
 	}
 
 	@Override
@@ -326,45 +350,28 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	@Override
 	@Transactional(dontRollbackOn = { org.hibernate.AssertionFailure.class })
 	public void afterProcessStarted(ProcessStartedEvent event) {
-		org.kie.api.runtime.process.ProcessInstance processInstance = event.getProcessInstance();
-		
-		
-		String processName =  (String) event.getProcessInstance().getProcessName();
-		
-
-		if ("userSession".equals(processName)) {
-
-
-			try {
-				//Map<String, Object> variables =  processInstance.getProcess().getMetaData();  
-				VariableScopeInstance variableScope = (VariableScopeInstance) 
-		                   ((org.jbpm.process.instance.ProcessInstance) processInstance)
-		                       .getContextInstance(VariableScope.VARIABLE_SCOPE);
-				String sessionCode = (String)variableScope.getVariable("sessionCode");
-				Long processInstanceId = processInstance.getId();
-				String realm = "internmatch"; //TODO
-				SessionPid sessionPid = new SessionPid(realm,sessionCode,processInstanceId);
-					persist(sessionPid,event);
-//					String processId = processInstance.getProcessId();
-//					String nodeName = nodeInstance.getNodeName();
-//					String nodeId = nodeInstance.getNode().getId() + "";
-//					GennyToken userToken = (GennyToken) nodeInstance.getVariable("userToken");
-//					String realm = userToken.getRealm();
-//					String userCode = userToken.getUserCode();
-//					String workflowBeCode = (String) nodeInstance.getVariable("workflowBeCode");
+//		org.kie.api.runtime.process.ProcessInstance processInstance = event.getProcessInstance();
+//				
+//		String processName =  (String) event.getProcessInstance().getProcessName();
+//		
+//		if ("userSession".equals(processName)) {
+//			try {
+//				//Map<String, Object> variables =  processInstance.getProcess().getMetaData();  
+//				VariableScopeInstance variableScope = (VariableScopeInstance) 
+//		                   ((org.jbpm.process.instance.ProcessInstance) processInstance)
+//		                       .getContextInstance(VariableScope.VARIABLE_SCOPE);
+//				String sessionCode = (String)variableScope.getVariable("sessionCode");
+//				Long processInstanceId = processInstance.getId();
+//				String realm = "internmatch"; //TODO
+//				SessionPid sessionPid = new SessionPid(realm,sessionCode,processInstanceId);
+//				persist(sessionPid,event);
+//	
+//				logger.info("After Process Started");
+//			} catch (Exception e) {
 //
-//					NodeStatus nodeStatus = new NodeStatus(userCode, nodeName, nodeId, realm, processInstanceId,
-//							processId, processName, workflowBeCode);
-//
-//					persist(nodeStatus, event);
-	
-				logger.info("After Process Started");
-			} catch (Exception e) {
-
-				logger.error("Error in persisting nodeStatus");
-
-			}
-		}
+//				logger.error("Error in persisting nodeStatus");
+//			}
+//		}
 	}
 
 	@Override

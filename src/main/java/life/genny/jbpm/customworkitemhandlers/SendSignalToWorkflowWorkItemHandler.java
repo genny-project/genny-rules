@@ -68,9 +68,10 @@ public class SendSignalToWorkflowWorkItemHandler implements WorkItemHandler {
 			Optional<Long> processIdBysessionId = Optional.empty();
 			try {
 				Class<?> cls = Class.forName(this.wClass); // needs filtering.
-				m = cls.getDeclaredMethod("getProcessIdByWorkflowBeCode", String.class);
-				String param = workflowBeCode; 
-				processIdBysessionId =  (Optional<Long>) m.invoke(null, (Object) param);
+				m = cls.getDeclaredMethod("getProcessIdByWorkflowBeCode", String.class,String.class);
+				String realm = userToken.getRealm();
+				String param = userToken.getSessionCode(); 
+				processIdBysessionId =  (Optional<Long>) m.invoke(null, (Object)realm,(Object) param);
 
 			} catch (NoSuchMethodException | SecurityException e) {
 				// TODO Auto-generated catch block
