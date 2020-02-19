@@ -133,6 +133,7 @@ public class TableUtils {
 		Theme THM_TABLE_ROW_CELL_TEXT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_TEXT", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_TEXT_HEADER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_TEXT_HEADER", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_LANDLINE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_LANDLINE", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_PHONE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_PHONE", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_MOBILE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_MOBILE", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_ADDRESS = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_ADDRESS", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_EMAIL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL_EMAIL", Theme.class, beUtils.getServiceToken().getToken());
@@ -165,6 +166,7 @@ public class TableUtils {
 		BaseEntity THM_TABLE_ROW_CELL_TEXT_HEADER_BE = this.getThemeBe(THM_TABLE_ROW_CELL_TEXT_HEADER);
 		BaseEntity THM_TABLE_ROW_CELL_LANDLINE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_LANDLINE);
 		BaseEntity THM_TABLE_ROW_CELL_MOBILE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_MOBILE);
+		BaseEntity THM_TABLE_ROW_CELL_PHONE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_PHONE);
 		BaseEntity THM_TABLE_ROW_CELL_ADDRESS_BE = this.getThemeBe(THM_TABLE_ROW_CELL_ADDRESS);
 		BaseEntity THM_TABLE_ROW_CELL_EMAIL_BE = this.getThemeBe(THM_TABLE_ROW_CELL_EMAIL);
 		BaseEntity THM_TABLE_ROW_CELL_VIEW_BE = this.getThemeBe(THM_TABLE_ROW_CELL_VIEW);
@@ -190,6 +192,7 @@ public class TableUtils {
 		themes.add(THM_TABLE_ROW_CELL_TEXT_HEADER_BE);
 		themes.add(THM_TABLE_ROW_CELL_LANDLINE_BE);
 		themes.add(THM_TABLE_ROW_CELL_MOBILE_BE);
+		themes.add(THM_TABLE_ROW_CELL_PHONE_BE);
 		themes.add(THM_TABLE_ROW_CELL_ADDRESS_BE);
 		themes.add(THM_TABLE_ROW_CELL_EMAIL_BE);
 		themes.add(THM_TABLE_ROW_CELL_VIEW_BE);
@@ -398,6 +401,10 @@ public class TableUtils {
 				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellMobile.setDataType("Mobile");
 
+		Context tableRowCellPhone = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellPhone.setDataType("Phone");
+
 		Context tableRowCellAddress = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
 				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellAddress.setDataType("Address");
@@ -435,6 +442,7 @@ public class TableUtils {
 		contexts.add(tableRowCellName);
 		contexts.add(tableRowCellLandline);
 		contexts.add(tableRowCellMobile);
+		contexts.add(tableRowCellPhone);
 		contexts.add(tableRowCellAddress);
 		contexts.add(tableRowCellEmail);
 		contexts.add(tableRowCellView);
@@ -470,6 +478,10 @@ public class TableUtils {
 				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellMobileHeader.setDataType("Mobile Header");
 
+		Context tableRowCellPhoneHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellPhoneHeader.setDataType("Phone Header");
+
 		Context tableRowCellAddressHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
 				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellAddressHeader.setDataType("Address Header");
@@ -500,6 +512,7 @@ public class TableUtils {
 		headerContexts.add(tableRowCellNameHeader);
 		headerContexts.add(tableRowCellLandlineHeader);
 		headerContexts.add(tableRowCellMobileHeader);
+		headerContexts.add(tableRowCellPhoneHeader);
 		headerContexts.add(tableRowCellAddressHeader);
 		headerContexts.add(tableRowCellEmailHeader);
 		headerContexts.add(tableRowCellViewHeader);
