@@ -1446,7 +1446,6 @@ public class RulesLoader {
 
 		
 		SqlQueryDefinition query2 = new SqlQueryDefinition("getAllNodeStatuses2", "java:jboss/datasources/gennyDS");
-//		query2.setExpression("select  new life.genny.model.NodeStatus( ns.id,ns.date,ns.nodeId,ns.nodeName,ns.processId,ns.processInstanceId,ns.realm,ns.status,ns.userCode,ns.workflowStatus,ns.workflowBeCode) from NodeStatus ns where ns.realm= 'internmatch' and ns.workflowBeCode=: workflowBeCode");
 		query2.setExpression("select  * from nodestatus");
 
 		try {
