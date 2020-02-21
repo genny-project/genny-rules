@@ -1630,7 +1630,9 @@ public class RulesLoader {
 				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_TYPE", realmTokenMap.get(realm)), kieType);
 				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_TEXT", realmTokenMap.get(realm)), ruleText);
 				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_NAME", realmTokenMap.get(realm)), name);
-
+			} catch (ClassCastException ee )
+			{
+				log.error("ClassCastException?!? realm="+realm+" realmTokenMap.get(realm)="+realmTokenMap.get(realm));
 			} catch (BadDataException e) {
 				log.error("Bad data");
 			}
