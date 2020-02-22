@@ -120,7 +120,19 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		List<EntityAttribute> roles = user.findPrefixEntityAttributes("PRI_IS_");
 		List<Allowed> allowable = new CopyOnWriteArrayList<Allowed>();
 		for (EntityAttribute role : roles) { // should store in cached map
-			Boolean value = role.getValue();
+			Boolean value = false;
+			if (role.getValue() instanceof Boolean) {
+				value = role.getValue();
+			} else {
+				if (role.getValue() instanceof String) {
+					value = "TRUE".equalsIgnoreCase(role.getValue());
+					System.out.println(callingWorkflow + " Running rule flow group "
+							+ ruleFlowGroup+" #2.5 role value = "+role.getValue());
+				} else {
+					System.out.println(callingWorkflow + " Running rule flow group "
+							+ ruleFlowGroup+" #2.6 role value = "+role.getValue());
+				}
+			}
 			if (value) {
 				String roleBeCode = "ROL_" + role.getAttributeCode().substring("PRI_IS_".length());
 				BaseEntity roleBE = VertxUtils.readFromDDT(userToken.getRealm(), roleBeCode, userToken.getToken());
