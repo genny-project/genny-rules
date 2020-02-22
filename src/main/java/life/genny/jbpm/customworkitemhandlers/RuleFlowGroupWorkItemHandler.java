@@ -286,8 +286,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 				
 				QBulkMessage payload = new QBulkMessage();
-				//FactHandle payloadHandle = newKieSession.insert(payload);
-				newKieSession.setGlobal("payload", payload);
+				FactHandle payloadHandle = newKieSession.insert(payload);
+			//	newKieSession.setGlobal("payload", payload);
 
 				List<FactHandle> allowables = new ArrayList<FactHandle>();
 				// get User capabilities
@@ -305,6 +305,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //	    	output2 = (OutputParam) newKieSession.getObject(output2Fact);
 				output = (OutputParam) newKieSession.getObject(factHandle);
 				answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
+				payload = (QBulkMessage) newKieSession.getObject(payloadHandle);
 //	    	// HACK
 //	    	if (!output2.getResultCode().equalsIgnoreCase("DUMMY")) {
 //	    		output = output2;
@@ -325,7 +326,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 				resultMap.put("output", output);
 				resultMap.put("answersToSave", answersToSave);
-				payload = (QBulkMessage) newKieSession.getGlobal("payload");
+		//		payload = (QBulkMessage) newKieSession.getGlobal("payload");
 				resultMap.put("payload", payload);
 				
 				newKieSession.retract(ruleDetailsHandle);
@@ -334,7 +335,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				newKieSession.retract(beUtilsHandle);
 				newKieSession.retract(capabilityUtilsHandle);
 				newKieSession.retract(kieSessionHandle);
-			//	newKieSession.retract(payloadHandle);
+				newKieSession.retract(payloadHandle);
 
 				for (FactHandle allow : allowables) {
 					newKieSession.retract(allow);
