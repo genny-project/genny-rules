@@ -228,7 +228,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				
 				QBulkMessage payload = new QBulkMessage();
 				newKieSession.setGlobal("payload", payload);
-			/*	FactHandle payloadHandle = newKieSession.insert(payload); */
+			/*	FactHandle payloadHandle = newKieSession.insert(payload);  */
 				System.out.println(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #6");
 				List<FactHandle> allowables = new ArrayList<FactHandle>();
@@ -256,7 +256,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				/* saving result from rule-task in map */
 				output = (OutputParam) newKieSession.getObject(factHandle);
 				answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
-			/*	payload = (QBulkMessage) newKieSession.getObject(payloadHandle); */
+				/* payload = (QBulkMessage) newKieSession.getObject(payloadHandle); */
 				payload = (QBulkMessage) newKieSession.getGlobal("payload");
 				resultMap.put("payload", payload);
 				
