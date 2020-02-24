@@ -256,6 +256,25 @@ public class ShowFrame implements WorkItemHandler {
 
 		}
 	}
+	
+	/**
+	 * @param aask 
+	 * @param callingWorkflow
+	 */
+	private static void checkAskValidation(Ask aask, String callingWorkflow) {
+		if (aask.getAttributeCode().equals("QQQ_QUESTION_GROUP")) {
+			for (Ask childAsk : aask.getChildAsks()) {
+				checkAskValidation(childAsk, callingWorkflow);
+			}
+		} else {
+			for (Validation val : aask.getQuestion().getAttribute().getDataType().getValidationList()) {
+				if (val.getRegex() == null) {
+					log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode() + " == null");
+				}
+			}
+		}
+	}
+	
 
 	/**
 	 * @param rootFrameCode
@@ -312,12 +331,11 @@ public class ShowFrame implements WorkItemHandler {
 		if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
 			for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
 				for (Ask aask : askMsg.getItems()) {
-					for (Validation val : aask.getQuestion().getAttribute().getDataType().getValidationList()) {
-						if (val.getRegex() == null) {
-							log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode() + " == null");
-						}
-
-					}
+					System.out.println("aask: " + aask);
+					
+					/* recursively check validations */
+					checkAskValidation(aask, callingWorkflow);
+					
 				}
 				askMsg.setToken(userToken.getToken());
 
