@@ -184,6 +184,15 @@ public class BucketUtils {
 																	.addAttribute(ThemeAttributeType.PRI_IS_INHERITABLE, false).end()
 																	.build();   
 
+			Theme THM_CARD_STATUS_INPUT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_CARD_STATUS_INPUT_WRAPPER", Theme.class, serviceToken.getToken());
+
+			Theme THM_CARD_THUMBNAIL_VCL_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
+			"THM_CARD_THUMBNAIL_VCL_WRAPPER", Theme.class, serviceToken.getToken());
+
+			Theme THM_CARD_THUMBNAIL_INPUT_PLACEHOLDER = VertxUtils.getObject(serviceToken.getRealm(), "",
+			"THM_CARD_THUMBNAIL_INPUT_PLACEHOLDER", Theme.class, serviceToken.getToken());
+
 
 			/* prepare context for progress bar */
 			Context progressVclInputContext = new Context(ContextType.THEME,
@@ -192,6 +201,20 @@ public class BucketUtils {
 			Context progressInputWrapperContext = new Context(ContextType.THEME,
 					bucketUtils.getThemeBe(THM_PROGRESS_INPUT_WRAPPER), VisualControlType.INPUT_WRAPPER, 1.0);
 			progressInputWrapperContext.setDataType("Progress");
+
+			/* prepare context for status bar */
+			Context statusContext = new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_CARD_STATUS_INPUT_WRAPPER),
+					VisualControlType.INPUT_WRAPPER, 1.0);
+			statusContext.setDataType("Status Color");
+			
+			/* prepare context for image-thumbnail */
+			Context thumbnailVclWrapperContext = new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_CARD_THUMBNAIL_VCL_WRAPPER),
+					VisualControlType.VCL_WRAPPER, 1.0);
+			thumbnailVclWrapperContext.setDataType("ImageUrl");
+			
+			Context thumbnailInputPlaceholderContext = new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_CARD_THUMBNAIL_INPUT_PLACEHOLDER),
+					VisualControlType.INPUT_PLACEHOLDER, 1.0);
+			thumbnailInputPlaceholderContext.setDataType("ImageUrl");
 			
 			/* cardContext */
 			List<Context> cardContext = new ArrayList<>();
@@ -199,6 +222,9 @@ public class BucketUtils {
 					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 			cardContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_CARD),
 					VisualControlType.GROUP_WRAPPER, 1.0));
+			cardContext.add(statusContext);
+			cardContext.add(thumbnailVclWrapperContext);
+			cardContext.add(thumbnailInputPlaceholderContext);
 
 			/* cardStatusContext */
 			List<Context> cardStatusContext = new ArrayList<>();
@@ -659,10 +685,10 @@ public class BucketUtils {
 
 		/* add the contextList to contextMap */
 		contextListMap.put("QUE_BUCKET_HEADER_ROW_ONE_GRP", new ContextList(row1Context));
-		contextListMap.put("QUE_BUCKET_HEADER_ROW_TWO_GRP", new ContextList(row2Context));
 		contextListMap.put("QUE_BUCKET_COUNT", new ContextList(bucketCountContextList));
-		contextListMap.put("QUE_BUCKET_SEARCH", new ContextList(bucketSearchContextList));
-		contextListMap.put("QUE_BUCKET_SORT", new ContextList(bucketSortContextList));
+		// contextListMap.put("QUE_BUCKET_HEADER_ROW_TWO_GRP", new ContextList(row2Context));
+		// contextListMap.put("QUE_BUCKET_SEARCH", new ContextList(bucketSearchContextList));
+		// contextListMap.put("QUE_BUCKET_SORT", new ContextList(bucketSortContextList));
 
 		/* Validation for Search Attribute */
 		Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
@@ -714,7 +740,8 @@ public class BucketUtils {
 		row2Ask.setChildAsks(row2ChildAsks);
 
 		/* set the bucketHeader child asks */
-		Ask[] bucketChildAsks = { row1Ask, row2Ask };
+		//Ask[] bucketChildAsks = { row1Ask, row2Ask };
+		Ask[] bucketChildAsks = { row1Ask }; // NEW
 		bucketHeaderAsk.setChildAsks(bucketChildAsks);
 
 		return bucketHeaderAsk;
