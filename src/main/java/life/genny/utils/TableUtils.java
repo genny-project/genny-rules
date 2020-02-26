@@ -397,7 +397,7 @@ public class TableUtils {
 
 		Context tableRowCellPhone = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellPhone.setDataType("Phone");
+		tableRowCellPhone.setDttCode("DTT_PHONE");
 
 		Context tableRowCellAddress = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
 				VisualControlType.VCL_WRAPPER, 1.0);
