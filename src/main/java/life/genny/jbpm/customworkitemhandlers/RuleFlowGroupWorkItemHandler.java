@@ -98,7 +98,22 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				+ ruleFlowGroup+" #1");
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-		CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
+		CapabilityUtils capabilityUtils = null;
+		if (items.containsKey("capabilityUtils")) {
+			capabilityUtils = (CapabilityUtils)items.get("capabilityUtils");
+		} else {
+			JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "CAPABILITIES", userToken.getToken());
+			if ("OK".equalsIgnoreCase(json.getString("status"))) {
+				String value = json.getString("value");
+				capabilityUtils = JsonUtils.fromJson(value, CapabilityUtils.class);
+				if (capabilityUtils == null) {
+					capabilityUtils = new CapabilityUtils(beUtils);
+				}
+			}else {
+				capabilityUtils = new CapabilityUtils(beUtils);
+			}
+			
+		}
 		String userCode = userToken.getUserCode();
 		BaseEntity user = null;
 		if ((VertxUtils.cachedEnabled)&&("PER_SERVICE".equals(userCode))) {
@@ -139,7 +154,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				if (roleBE == null) {
 					continue;
 				}
-				List<EntityAttribute> capabilities = user.findPrefixEntityAttributes("PRM_");
+				List<EntityAttribute> capabilities = roleBE.findPrefixEntityAttributes("PRM_");
 				for (EntityAttribute ea : capabilities) {
 					String modeString = ea.getValue();
 					CapabilityMode mode = CapabilityMode.getMode(modeString);
@@ -335,6 +350,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //	    	output2 = (OutputParam) newKieSession.getObject(output2Fact);
 				output = (OutputParam) newKieSession.getObject(factHandle);
 				answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
+				capabilityUtils = (CapabilityUtils) newKieSession.getObject(capabilityUtilsHandle);
 //				payload = (QBulkMessage) newKieSession.getObject(payloadHandle);
 //	    	// HACK
 //	    	if (!output2.getResultCode().equalsIgnoreCase("DUMMY")) {
@@ -359,6 +375,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				resultMap.put("answersToSave", answersToSave);
 				payload = (QBulkMessage) newKieSession.getGlobal("payload");
 				resultMap.put("payload", payload);
+				resultMap.put("capabilityUtils",capabilityUtils);
 				
 				newKieSession.retract(ruleDetailsHandle);
 				newKieSession.retract(factHandle);
