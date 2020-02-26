@@ -154,6 +154,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				if (roleBE == null) {
 					continue;
 				}
+				// Add the actual role to capabilities
+				allowable.add(new Allowed(role.getAttributeCode().substring("PRI_IS_".length()), CapabilityMode.VIEW));
+				
 				List<EntityAttribute> capabilities = roleBE.findPrefixEntityAttributes("PRM_");
 				for (EntityAttribute ea : capabilities) {
 					String modeString = ea.getValue();
