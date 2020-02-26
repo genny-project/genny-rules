@@ -12,22 +12,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import org.apache.http.client.ClientProtocolException;
-import org.apache.logging.log4j.Logger;
 
 import com.google.gson.reflect.TypeToken;
 
-import io.vertx.core.json.JsonObject;
+import org.apache.logging.log4j.Logger;
+
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
 import life.genny.models.TableData;
 import life.genny.models.Theme;
 import life.genny.models.ThemeAttribute;
-import life.genny.models.ThemePosition;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
@@ -42,7 +37,6 @@ import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.exception.BadDataException;
-import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
@@ -391,7 +385,7 @@ public class TableUtils {
 
 		Context tableRowCellName = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellName.setDataType("Name");
+		tableRowCellName.setDttCode("DTT_TEXT_NAME");
 
 		Context tableRowCellLandline = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"),
 				VisualControlType.VCL_WRAPPER, 1.0);
@@ -415,16 +409,16 @@ public class TableUtils {
 
 		Context tableRowCellView = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellView.setDataType("View");
+		tableRowCellView.setDttCode("DTT_EVENT_VIEW");
 		tableRowCellView.setWeight(2.0);
 
 		Context tableRowCellApply = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellApply.setDataType("Apply");
+		tableRowCellApply.setDttCode("DTT_EVENT_APPLY");
 
 		Context tableRowCellStatus = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellStatus.setDataType("Status");
+		tableRowCellStatus.setDttCode("DTT_TEXT_STATUS");
 
 		Context tableRowCellText = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"),
 				VisualControlType.VCL_WRAPPER, 1.0);
@@ -468,44 +462,44 @@ public class TableUtils {
 
 		Context tableRowCellNameHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellNameHeader.setDataType("Name Header");
+		tableRowCellNameHeader.setDttCode("DTT_TEXT_NAME_HEADER");
 
 		Context tableRowCellLandlineHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellLandlineHeader.setDataType("Landline Header");
+		tableRowCellLandlineHeader.setDttCode("DTT_LANDLINE_HEADER");
 
 		Context tableRowCellMobileHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_MOBILE", "THM_TABLE_ROW_CELL_MOBILE"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellMobileHeader.setDataType("Mobile Header");
+		tableRowCellMobileHeader.setDttCode("DTT_MOBILE_HEADER");
 
 		Context tableRowCellPhoneHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellPhoneHeader.setDataType("Phone Header");
+		tableRowCellPhoneHeader.setDttCode("DTT_PHONE_HEADER");
 
 		Context tableRowCellAddressHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellAddressHeader.setDataType("Address Header");
+		tableRowCellAddressHeader.setDttCode("DTT_ADDRESS_HEADER");
 
 		Context tableRowCellEmailHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_EMAIL", "THM_TABLE_ROW_CELL_EMAIL"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellEmailHeader.setDataType("Email Header");
+		tableRowCellEmailHeader.setDttCode("DTT_EMAIL_HEADER");
 
 		Context tableRowCellViewHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellViewHeader.setDataType("View Header");
+		tableRowCellViewHeader.setDttCode("DTT_EVENT_VIEW_HEADER");
 		tableRowCellViewHeader.setWeight(2.0);
 
 		Context tableRowCellApplyHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellApplyHeader.setDataType("Apply Header");
+		tableRowCellApplyHeader.setDttCode("DTT_EVENT_APPLY_HEADER");
 
 		Context tableRowCellStatusHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellStatusHeader.setDataType("Status Header");
+		tableRowCellStatusHeader.setDttCode("DTT_TEXT_STATUS_HEADER");
 
 		Context tableRowCellTextHeader = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_TEXT_HEADER", "THM_TABLE_ROW_CELL_TEXT_HEADER"),
 				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellTextHeader.setDataType("Text Header");
+		tableRowCellTextHeader.setDttCode("DTT_TEXT_HEADER");
 
 
 		/* newly added contexts to header */
