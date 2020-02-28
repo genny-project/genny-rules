@@ -71,7 +71,7 @@ public class ShowFrameWIthContextList implements WorkItemHandler {
 
     		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 
-    		System.out.println(": Sending Asks");
+    		log.info(": Sending Asks");
     		for (QDataAskMessage askMsg : askMsgs2) {
 				if ((contextListMap != null) && (!contextListMap.isEmpty())) {
 					for (Ask anAsk : askMsg.getItems()) {

@@ -1,15 +1,25 @@
 package life.genny.model;
 
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
 import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListSet;
+
+import org.apache.logging.log4j.Logger;
 
 import com.github.javaparser.utils.Log;
 
 import life.genny.utils.OutputParam;
 
 public class OutputParamTreeSet implements Serializable {
+	
+	/**
+	 * Stores logger object.
+	 */
+	protected static final Logger log = org.apache.logging.log4j.LogManager
+			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+
 	/**
 	 * 
 	 */
@@ -91,7 +101,7 @@ public class OutputParamTreeSet implements Serializable {
 					// Now check if any existing items already point to that parent and remove them.
 					for (OutputParam x : tree.toArray(new OutputParam[0])) {
 						if (x == null) {
-							System.out.println("An outputparam is null!");
+							log.info("An outputparam is null!");
 						}
 					}
 					if (outputParam != null ) {

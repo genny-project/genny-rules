@@ -338,7 +338,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 			long taskId = task.getId();
 
-			System.out.println(callingWorkflow + " " + task.getDescription() + " Sending Question Code  "
+			log.info(callingWorkflow + " " + task.getDescription() + " Sending Question Code  "
 					+ task.getFormName() + " to processId " + targetProcessId + " for target user "
 					+ userToken.getUserCode() + " using TASK " + taskId);
 

@@ -133,10 +133,10 @@ public class JbpmInitListener /* extends WorkingMemoryLogger */ implements Proce
 
 			if (obj instanceof Long) {
 				process.setVariable("callingProcessId", (Long) obj); // TODO, use a class!
-				System.out.println("FOUND LONG " + (Long) obj);
+				log.info("FOUND LONG " + (Long) obj);
 			} else if (obj instanceof String) {
 				process.setVariable("name", (String) obj);
-				/* System.out.println("FOUND STRING"); */
+				/* log.info("FOUND STRING"); */
 			} else if (obj instanceof QEventMessage) {
 				QEventMessage msg = (QEventMessage) obj;
 				process.setVariable("message", msg);
@@ -153,7 +153,7 @@ public class JbpmInitListener /* extends WorkingMemoryLogger */ implements Proce
 			} else if (obj instanceof GennyToken) {
 				GennyToken gennyToken = (GennyToken) obj;
 				if (("PER_SERVICE".equals(gennyToken.getCode())) || ("serviceToken".equals(gennyToken.getCode()))) {
-					// System.out.println("JbpmListener: serviceToken "+gennyToken.getUserCode()+"
+					// log.info("JbpmListener: serviceToken "+gennyToken.getUserCode()+"
 					// processId="+process.getProcessId()+" -> session_state:
 					// "+gennyToken.getSessionCode());
 					process.setVariable("serviceToken", gennyToken);
@@ -166,12 +166,12 @@ public class JbpmInitListener /* extends WorkingMemoryLogger */ implements Proce
 						process.setVariable("userToken", gennyToken);
 						String processId = process.getProcessId();
 						if (processId.contains("ession")) { // only bother with session type workflows
-							System.out.println("JbpmListener: userToken " + gennyToken.getUserCode() + " processId="
+							log.info("JbpmListener: userToken " + gennyToken.getUserCode() + " processId="
 									+ process.getProcessId() + ":" + process.getId() + " -> session_state: "
 									+ gennyToken.getSessionCode());
 							VertxUtils.writeCachedJson(gennyToken.getRealm(), gennyToken.getSessionCode(),
 									process.getId() + "", gennyToken.getToken());
-							// System.out.println("JbpmListener: userToken "+gennyToken.getUserCode()+"
+							// log.info("JbpmListener: userToken "+gennyToken.getUserCode()+"
 							// processId="+process.getProcessId()+" -> session_state:
 							// "+gennyToken.getSessionCode()+" written to Cache");
 
@@ -191,7 +191,7 @@ public class JbpmInitListener /* extends WorkingMemoryLogger */ implements Proce
 		});
 
 		// event.getKieRuntime().insert(process);
-		// System.out.println("Number of passed objs =" +
+		// log.info("Number of passed objs =" +
 		// event.getKieRuntime().getEntryPoint("DEFAULT").getObjects().size());
 
 		// Now save this session_state to the Cache associated with the processId

@@ -56,6 +56,13 @@ import life.genny.rules.QRules;
 import life.genny.utils.ContextUtils;
 
 public class TableUtilsNew {
+	
+	/**
+	 * Stores logger object.
+	 */
+	protected static final Logger log = org.apache.logging.log4j.LogManager
+			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+
 
 	BaseEntityUtils beUtils = null;
 
@@ -981,13 +988,13 @@ public class TableUtilsNew {
 			}
 
 			/* Send */
-			System.out.println("Sending application entitites");
+			log.info("Sending application entitites");
 
 			QDataBaseEntityMessage appMsg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
 			appMsg.setToken(userToken.getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(appMsg));
 
-			System.out.println("Sending asks from outside the loop");
+			log.info("Sending asks from outside the loop");
 
 			/* Send asks */
 			for (QDataAskMessage askMsg : askSet) {
@@ -1028,7 +1035,7 @@ public class TableUtilsNew {
 
 		}
 
-		System.out.println("the Columns is :: " + columns);
+		log.info("the Columns is :: " + columns);
 		return columns;
 	}
 

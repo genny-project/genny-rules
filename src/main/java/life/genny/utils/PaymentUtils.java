@@ -127,7 +127,7 @@ public class PaymentUtils {
 		final HttpClient client = HttpClientBuilder.create().build();
 
 		/* Log that we are making a request */
-		System.out.println( "http request payments ::" + url );
+		log.info( "http request payments ::" + url );
 
 		/* Create an object to store the http response */
 		HttpResponse response = null;
@@ -208,9 +208,9 @@ public class PaymentUtils {
 		int responseCode = response.getStatusLine().getStatusCode();
 
 		/* Log some information about the response */
-		System.out.println("response code ::"+responseCode);
-		System.out.println("response ::"+response.getStatusLine());
-		System.out.println("response body::"+retJson);
+		log.info("response code ::"+responseCode);
+		log.info("response ::"+response.getStatusLine());
+		log.info("response body::"+retJson);
 
 		/* If the response code isn't a valid one throw an error */
 		if(responseCode > 299) {
@@ -265,7 +265,7 @@ public class PaymentUtils {
 			try {
 				assemblyUserString = PaymentEndpoint.getPaymentsUserById(assemblyUserId, authToken);
 				if(assemblyUserString != null && !assemblyUserString.contains("error")) {
-					System.out.println("assembly user string ::"+assemblyUserString);
+					log.info("assembly user string ::"+assemblyUserString);
 					isExists = true;
 				}
 			} catch (PaymentException e) {
@@ -291,10 +291,10 @@ public class PaymentUtils {
 
 			/* If the date of birth is provided format it correctly */
 			if(dob != null) {
-				System.out.println("dob string ::"+dob);
+				log.info("dob string ::"+dob);
 				DateTimeFormatter assemblyDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 				formattedDOBString = assemblyDateFormatter.format(dob);
-				System.out.println("another formatted dob ::"+formattedDOBString);
+				log.info("another formatted dob ::"+formattedDOBString);
 
 				dob = LocalDate.parse(formattedDOBString, assemblyDateFormatter);
 			}
@@ -407,7 +407,7 @@ public class PaymentUtils {
 				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 				LocalDate date = LocalDate.parse(value.toString(), formatter);
 				String formattedDOBString = assemblyDateFormatter.format(date);
-				System.out.println("another formatted dob ::" + formattedDOBString);
+				log.info("another formatted dob ::" + formattedDOBString);
 				personalInfo.setDob(LocalDate.parse(formattedDOBString, assemblyDateFormatter));
 				break;
 
@@ -635,7 +635,7 @@ public class PaymentUtils {
 		if(begFee != null) {
 
 			Money feeInCents = getRoundedMoneyInCents(begFee);
-			System.out.println("money in in cents ::"+feeInCents);
+			log.info("money in in cents ::"+feeInCents);
 
 			if(feeInCents == null) {
 				throw new IllegalArgumentException("Something went wrong during pricing calculations. Fee for item cannot be empty");
@@ -668,11 +668,11 @@ public class PaymentUtils {
 	/* Returns the payment method for a user and account ID */
 	public static PaymentType getPaymentMethodType(BaseEntity userBe, String accountId) {
 
-		System.out.println("in getPaymentMethodType method");
+		log.info("in getPaymentMethodType method");
 
 		PaymentType paymentType = null;
 		String paymentMethods = userBe.getValue("PRI_USER_PAYMENT_METHODS", null);
-			System.out.println("all payment methods of owners ::"+paymentMethods);
+			log.info("all payment methods of owners ::"+paymentMethods);
 
 		if (paymentMethods != null) {
 
@@ -687,8 +687,8 @@ public class PaymentUtils {
 				QPaymentMethod paymentMethodPojo = gson.fromJson(jsonElement, QPaymentMethod.class);
 
 				String paymentMethodId = paymentMethodPojo.getId();
-				System.out.println("type ::" + paymentMethodPojo.getType());
-				System.out.println("id ::" + paymentMethodId );
+				log.info("type ::" + paymentMethodPojo.getType());
+				log.info("id ::" + paymentMethodId );
 
 				/* Return the payment type when the account id matches with the user payment method */
 				if(accountId.equals(paymentMethodId)) {
@@ -778,7 +778,7 @@ public class PaymentUtils {
 		try {
 			responseString = PaymentEndpoint.updatePaymentsUser(assemblyUserId, JsonUtils.toJson(user),
 					assemblyAuthKey);
-			System.out.println("response string from payments user mobile-number updation ::" + responseString);
+			log.info("response string from payments user mobile-number updation ::" + responseString);
 		} catch (PaymentException e) {
 			log.error("Exception occured during phone updation");
 		}
@@ -810,7 +810,7 @@ public class PaymentUtils {
 
 			if(items != null) {
 				Double itemPrice = items.getAmount();
-				System.out.println("item price ::"+itemPrice);
+				log.info("item price ::"+itemPrice);
 
 				QPaymentsAssemblyUser buyerOwnerInfo = items.getBuyer();
 
@@ -819,7 +819,7 @@ public class PaymentUtils {
 
 					/* compare if item-owner is same as offer-owner */
 					isOwnerEmail = ownerContactInfo.getEmail().equals(ownerEmail);
-					System.out.println("Is email attribute for owner equal ?"+isOwnerEmail);
+					log.info("Is email attribute for owner equal ?"+isOwnerEmail);
 
 				}
 
@@ -830,7 +830,7 @@ public class PaymentUtils {
 
 					/* compare if item-driver is same as offer-driver */
 					isDriverEmail = driverContactInfo.getEmail().equals(driverEmail);
-					System.out.println("Is email attribute for driver equal ?"+isDriverEmail);
+					log.info("Is email attribute for driver equal ?"+isDriverEmail);
 				}
 
 				if(driverPriceIncGST != null) {
@@ -839,11 +839,11 @@ public class PaymentUtils {
 					String str = String.format("%.2f",calculatedItemPriceInCents);
 					calculatedItemPriceInCents = Double.parseDouble(str);
 					/* convert into cents */
-					System.out.println("calculated item price in cents ::"+calculatedItemPriceInCents);
+					log.info("calculated item price in cents ::"+calculatedItemPriceInCents);
 
 					/* compare if item-price is same as offer-price */
 					isPriceEqual = (Double.compare(calculatedItemPriceInCents, itemPrice) == 0);
-					System.out.println("Is price attribute for item equal ?"+isPriceEqual);
+					log.info("Is price attribute for item equal ?"+isPriceEqual);
 				}
 
 			}
@@ -868,13 +868,13 @@ public class PaymentUtils {
 
 		/* Gives the payment method that is selected for payment by owner */
  		String paymentMethodSelected = begBe.getValue("PRI_ACCOUNT_ID", null);
- 		System.out.println("payment method selected ::" + paymentMethodSelected);
+ 		log.info("payment method selected ::" + paymentMethodSelected);
 
  		if(paymentMethodSelected != null) {
 
  			/* give all payment methods of owner */
  			String paymentMethodsOfOwner = ownerBe.getValue("PRI_USER_PAYMENT_METHODS", null);
- 			System.out.println("all payment methods of owners ::"+paymentMethodsOfOwner);
+ 			log.info("all payment methods of owners ::"+paymentMethodsOfOwner);
 
 			if (paymentMethodsOfOwner != null) {
 
@@ -889,9 +889,9 @@ public class PaymentUtils {
 					JsonElement jsonElement = gson.toJsonTree(paymentMethod);
 					QPaymentMethod paymentMethodPojo = gson.fromJson(jsonElement, QPaymentMethod.class);
 
-					System.out.println("type ::" + paymentMethodPojo.getType());
-					System.out.println("number" + paymentMethodPojo.getNumber());
-					System.out.println("id ::" + paymentMethodPojo.getId());
+					log.info("type ::" + paymentMethodPojo.getType());
+					log.info("number" + paymentMethodPojo.getNumber());
+					log.info("id ::" + paymentMethodPojo.getId());
 
 					/*
 					 * if the payment method = payment method selected by owner to make payment, we
@@ -899,7 +899,7 @@ public class PaymentUtils {
 					 */
 					if (paymentMethodSelected.equals(paymentMethodPojo.getId())) {
 
-						System.out.println("payment method selected is same");
+						log.info("payment method selected is same");
 						selectedOwnerPaymentMethod = new QPaymentMethod();
 						selectedOwnerPaymentMethod = paymentMethodPojo;
 					}

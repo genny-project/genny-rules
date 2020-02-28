@@ -295,7 +295,7 @@ public class V7Test {
 				String attributeCode = ea.getAttributeCode();
 				String[] parts = attributeCode.split("_");
 				String questionName = parts[1];
-				System.out.println("questionName    ::   " + questionName);
+				log.info("questionName    ::   " + questionName);
 
 				/* question for column header group */
 				Question columnHeaderQuestion = new Question("QUE_" + ea.getAttributeCode() + "_GRP", questionName, questionAttribute, true);
@@ -478,7 +478,7 @@ public class V7Test {
 
 				/* creating entity entity between table-frame and table-content */
 				entQuestionList.add(entityEntity);
-				System.out.println("index of "+be.getCode()+" is"+be.getIndex());
+				log.info("index of "+be.getCode()+" is"+be.getIndex());
 				Ask[] beAskArr = { beAsk };
 
 				/* Creating AskMessage with complete asks */

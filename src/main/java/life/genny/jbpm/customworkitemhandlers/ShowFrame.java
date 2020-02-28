@@ -340,11 +340,11 @@ public class ShowFrame implements WorkItemHandler {
 		
 		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
 
-		// System.out.println("Sending Asks");
+		// log.info("Sending Asks");
 		if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
 			for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
 				for (Ask aask : askMsg.getItems()) {
-					System.out.println("aask: " + aask);
+					log.info("aask: " + aask);
 					
 					/* recursively check validations */
 					checkAskValidation(aask, callingWorkflow);

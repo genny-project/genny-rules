@@ -1454,7 +1454,7 @@ public class RulesLoader {
 			log.warn(query2.getName() + " is already registered");
 		}
 
-		System.out.println("Finished init");
+		log.info("Finished init");
 	}
 
 	public static Optional<Long> getProcessIdBySessionId(String realm,String sessionId) {

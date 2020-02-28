@@ -66,7 +66,7 @@ package life.genny.test;
 //			    		  rowStr += attributeCode+"="+val + ",";
 //			    	  }
 //			    	  rowIndex++;
-//			    	  System.out.println(rowStr);
+//			    	  log.info(rowStr);
 //			      }
 //			      
 //			    } catch (Exception e1) {

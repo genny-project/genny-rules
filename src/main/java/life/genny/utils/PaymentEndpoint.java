@@ -19,7 +19,7 @@ public class PaymentEndpoint {
 
 		String newpaymentsUserResponse = null;
 		try {
-			System.out.println("Request entity ::"+entityString);
+			log.info("Request entity ::"+entityString);
 			newpaymentsUserResponse = PaymentUtils.apiPostPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/users", entityString, authToken);
 
@@ -48,7 +48,7 @@ public class PaymentEndpoint {
 		String editPaymentResponse = null;
 		try {
 			
-			System.out.println("Request Entity ::"+entityString);
+			log.info("Request Entity ::"+entityString);
 			editPaymentResponse = PaymentUtils.apiPutPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/users/" + paymentsUserId, entityString, authToken);
 		} catch (IOException e) {
@@ -62,7 +62,7 @@ public class PaymentEndpoint {
 		String createCompanyResponse = null;
 
 		try {
-			System.out.println("Request Entity ::"+companyEntityString);
+			log.info("Request Entity ::"+companyEntityString);
 			createCompanyResponse = PaymentUtils.apiPostPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/companies", companyEntityString, authToken);
 		} catch (IOException e) {
@@ -77,7 +77,7 @@ public class PaymentEndpoint {
 		String updateCompanyResponse = null;
 
 		try {
-			System.out.println("Request Entity ::"+companyEntityString);
+			log.info("Request Entity ::"+companyEntityString);
 			updateCompanyResponse = PaymentUtils.apiPutPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/companies/" + companyId, companyEntityString, authToken);
 		} catch (IOException e) {
@@ -93,7 +93,7 @@ public class PaymentEndpoint {
 		String createItemResponse = null;
 		
 		try {
-			System.out.println("Request Entity ::"+itemEntity);
+			log.info("Request Entity ::"+itemEntity);
 			createItemResponse = PaymentUtils.apiPostPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/items",  itemEntity, authToken);
 		} catch (IOException e) {
@@ -107,7 +107,7 @@ public class PaymentEndpoint {
 		String authenticateResponse = null;
 		
 		try {
-			System.out.println("Request Entity ::"+paymentProviderEntity);
+			log.info("Request Entity ::"+paymentProviderEntity);
 			authenticateResponse = PaymentUtils.apiPostPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/tokens",  paymentProviderEntity, authToken);
 		} catch (IOException e) {
@@ -122,7 +122,7 @@ public class PaymentEndpoint {
 		String feeResponse = null;
 		
 		try {
-			System.out.println("Request Entity ::"+feeEntity);
+			log.info("Request Entity ::"+feeEntity);
 			feeResponse = PaymentUtils.apiPostPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/fees",  feeEntity, authToken);
 		} catch (IOException e) {
@@ -137,7 +137,7 @@ public class PaymentEndpoint {
 		String makePaymentResponse = null;
 		
 		try {
-			System.out.println("Request Entity ::"+paymentEntity);
+			log.info("Request Entity ::"+paymentEntity);
 			makePaymentResponse = PaymentUtils.apiPostPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/items/" + paymentItemId + "/payment",  paymentEntity, authToken);
 		} catch (IOException e) {
@@ -152,7 +152,7 @@ public class PaymentEndpoint {
 		String releasePaymentResponse = null;
 		
 		try {
-			System.out.println("Release Payment entity ::"+releaseEntity);
+			log.info("Release Payment entity ::"+releaseEntity);
 			releasePaymentResponse = PaymentUtils.apiPostPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/items/" + paymentItemId + "/release-payment", releaseEntity, authToken);
 		} catch (IOException e) {
@@ -167,7 +167,7 @@ public class PaymentEndpoint {
 		
 		String disbursementResponse = null;
 		try {
-			System.out.println("Request Entity ::"+disburseEntity);
+			log.info("Request Entity ::"+disburseEntity);
 			disbursementResponse = PaymentUtils.apiPutPaymentEntity(
 					paymentServiceUrl + "/" + paymentProvider + "/users/" + paymentsUserId + "/disbursement-account", disburseEntity, authToken);
 		} catch (IOException e) {
@@ -198,7 +198,7 @@ public class PaymentEndpoint {
 		String searchUserResponse = null;
 		
 		try {
-			System.out.println("Request Entity ::"+debitEntity);
+			log.info("Request Entity ::"+debitEntity);
 			searchUserResponse = PaymentUtils.apiPostPaymentEntity(paymentServiceUrl + "/" + paymentProvider + "/payment-authority", debitEntity, authToken);
 		} catch (IOException e) {
 			e.printStackTrace();

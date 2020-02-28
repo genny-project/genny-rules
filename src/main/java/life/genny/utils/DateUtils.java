@@ -1,11 +1,20 @@
 package life.genny.utils;
 
+import java.lang.invoke.MethodHandles;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
+import org.apache.logging.log4j.Logger;
+
 public class DateUtils {
 	
+	/**
+	 * Stores logger object.
+	 */
+	protected static final Logger log = org.apache.logging.log4j.LogManager
+			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+
 	/*
 	 * Returns UTC DateTime 
 	 */
@@ -13,7 +22,7 @@ public class DateUtils {
 		
 		ZonedDateTime now = ZonedDateTime.now( ZoneOffset.UTC );
 		String dateTimeString = now.toString();
-		System.out.println("UTC datetime is ::" + dateTimeString);
+		log.info("UTC datetime is ::" + dateTimeString);
 
 		return dateTimeString;
 	}
@@ -27,7 +36,7 @@ public class DateUtils {
 		ZonedDateTime zdt = ldt.atZone(ZoneOffset.systemDefault());
 		String iso8601DateString = ldt.toString(); // zdt.toString(); MUST USE UMT!!!!
 
-		System.out.println("datetime ::" + iso8601DateString);
+		log.info("datetime ::" + iso8601DateString);
 
 		return iso8601DateString;
 

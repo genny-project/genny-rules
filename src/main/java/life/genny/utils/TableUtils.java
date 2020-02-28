@@ -97,9 +97,9 @@ public class TableUtils {
 		 */
 
 		/*QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg);*/
-		System.out.println("calling showTableContent");
+		log.info("calling showTableContent");
 		showTableContent(serviceToken,  searchBE, msg, columns);
-		System.out.println("calling sendTableContexts");
+		log.info("calling sendTableContexts");
 		sendTableContexts();
 		showTableFooter(searchBE);
 
@@ -107,7 +107,7 @@ public class TableUtils {
 
 	public void sendTableContexts(){
 
-		System.out.println("Sending contexts for table");
+		log.info("Sending contexts for table");
 
 		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class, beUtils.getServiceToken().getToken());
@@ -198,14 +198,14 @@ public class TableUtils {
 		themes.add(ICN_VIEW);
 		themes.add(ICN_ADD);
 
-		System.out.println("**************** Themes in the list :: "+ themes.size() +" ********************");
+		log.info("**************** Themes in the list :: "+ themes.size() +" ********************");
 
 
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(themes);
 		msg.setToken(beUtils.getGennyToken().getToken());
-		System.out.println("**************** Sending all the themes and icons now ********************");
+		log.info("**************** Sending all the themes and icons now ********************");
 		VertxUtils.writeMsg("webcmds",JsonUtils.toJson(msg));
-		System.out.println("**************** Sent all the themes and icons ********************");
+		log.info("**************** Sent all the themes and icons ********************");
 
 
 	}
@@ -350,7 +350,7 @@ public class TableUtils {
 			QDataBaseEntityMessage msg,
 			Map<String, String> columns) {
 
-		System.out.println("inside showTableContent");
+		log.info("inside showTableContent");
 
 		Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
 
@@ -446,7 +446,7 @@ public class TableUtils {
 		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT", "THM_TABLE_CONTENT"),
 				VisualControlType.GROUP, 1.0));
 
-		System.out.println("outside loop before the loop");
+		log.info("outside loop before the loop");
 
 		ContextList rowsContextList = new ContextList(contexts);
 
@@ -549,7 +549,7 @@ public class TableUtils {
 		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
 
 		/* send the frame FRM_TABLE_CONTENT */
-		System.out.println("*************** Sending the FRM_TABLE_CONTENT msg after toMessage ***************");
+		log.info("*************** Sending the FRM_TABLE_CONTENT msg after toMessage ***************");
 
 		QDataBaseEntityMessage msg3 = changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk, serviceToken,
 				beUtils.getGennyToken(), tableResultAskMsgs);
@@ -558,7 +558,7 @@ public class TableUtils {
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
 
 		/* send the results questionGroup */
-		System.out.println("*************** Sending the QUE_TABLE_RESULTS_GRP askMsg ***************");
+		log.info("*************** Sending the QUE_TABLE_RESULTS_GRP askMsg ***************");
 		QDataAskMessage askMsg = new QDataAskMessage(tableResultAsk);
 		askMsg.setToken(beUtils.getGennyToken().getToken());
 		askMsg.setReplace(true);
@@ -1026,7 +1026,7 @@ public class TableUtils {
 
 			//if (ask.getQuestionCode().equals("QUE_TABLE_RESULTS_GRP")) {
 
-				System.out.println("getting the FRM_TABLE_CONTENT from cache");
+				log.info("getting the FRM_TABLE_CONTENT from cache");
 
 				frame = VertxUtils.getObject(serviceToken.getRealm(), "",
 					frameCode, Frame3.class, serviceToken.getToken());
@@ -1184,11 +1184,11 @@ public class TableUtils {
 							/* switch case to add icons  */
 							switch (attr.getCode()) {
 								case "PRI_EVENT_VIEW":
-									System.out.println("attribute code is PRI_EVENT_VIEW attaching the context now");
+									log.info("attribute code is PRI_EVENT_VIEW attaching the context now");
 									childAsk.setContextList(new ContextList(viewContextList));
 									break;
 								case "PRI_EVENT_APPLY":
-									System.out.println("attribute code is PRI_EVENT_APPLY attaching the context now");
+									log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
 									childAsk.setContextList(new ContextList(applyContextList));
 									break;
 
@@ -1290,8 +1290,8 @@ public class TableUtils {
 			Attribute headerAttr;
 			headerAttr = RulesUtils.attributeMap.get(attributeCode + "_HEADER");
 			if(headerAttr == null){
-				System.out.println("Header attribute is null");
-				System.out.println(attributeCode + "_HEADER is null");
+				log.info("Header attribute is null");
+				log.info(attributeCode + "_HEADER is null");
 				headerAttr = nameAttr;
 			}
 

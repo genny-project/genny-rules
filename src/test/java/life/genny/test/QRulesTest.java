@@ -1,11 +1,13 @@
 package life.genny.test;
 
+import java.lang.invoke.MethodHandles;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import io.vavr.Tuple2;
@@ -23,10 +25,17 @@ import life.genny.qwanda.exception.BadDataException;
 import life.genny.rules.QRules;
 
 public class QRulesTest {
+	
+	/**
+	 * Stores logger object.
+	 */
+	protected static final Logger log = org.apache.logging.log4j.LogManager
+			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+
 	//@Test
 	public void scoringTest()
 	{
-		System.out.println("This is a scoring TEst");
+		log.info("This is a scoring TEst");
 		
 		// Create a set of baseentities to test
 		AttributeText favouriteColour = new AttributeText(AttributeText.getDefaultCodePrefix()+"COLOUR","Favourite Colour");
@@ -85,7 +94,7 @@ public class QRulesTest {
 				answerScores.add(answer);
 				scoreIndex++;
 				
-				System.out.println(answer);
+				log.info(answer);
 			}
 			
 	 		

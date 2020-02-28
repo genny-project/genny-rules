@@ -58,7 +58,7 @@ public class ThrowMessageProcessWorkItemHandler implements WorkItemHandler {
     
     Long processId= (Long) items.get("processId");
 
-    	System.out.println("Sending signal Code  "+signalCode+ " to processId "+processId+" for user "+gToken.getUserCode());
+    	log.info("Sending signal Code  "+signalCode+ " to processId "+processId+" for user "+gToken.getUserCode());
     	 
 		KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 

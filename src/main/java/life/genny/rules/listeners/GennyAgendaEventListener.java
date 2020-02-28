@@ -1,5 +1,8 @@
 package life.genny.rules.listeners;
 
+import java.lang.invoke.MethodHandles;
+
+import org.apache.logging.log4j.Logger;
 import org.drools.core.WorkingMemory;
 import org.drools.core.event.ActivationCancelledEvent;
 import org.drools.core.event.ActivationCreatedEvent;
@@ -12,6 +15,12 @@ import org.kie.api.event.rule.RuleFlowGroupDeactivatedEvent;
 import org.kie.api.event.rule.DefaultAgendaEventListener;
 
 public class GennyAgendaEventListener extends DefaultAgendaEventListener{
+
+	/**
+	 * Stores logger object.
+	 */
+	protected static final Logger log = org.apache.logging.log4j.LogManager
+			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 
         public void activationCreated(ActivationCreatedEvent event,
@@ -63,7 +72,7 @@ public class GennyAgendaEventListener extends DefaultAgendaEventListener{
 
                 WorkingMemory workingMemory) {
         	super.afterRuleFlowGroupActivated(event);
-        	System.out.println("Fire All Rules in GennyAgendaEventListener");
+        	log.info("Fire All Rules in GennyAgendaEventListener");
             workingMemory.fireAllRules();
 
         }

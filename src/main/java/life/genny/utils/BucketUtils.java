@@ -57,6 +57,13 @@ import life.genny.rules.QRules;
 import life.genny.utils.ContextUtils;
 
 public class BucketUtils {
+	
+	/**
+	 * Stores logger object.
+	 */
+	protected static final Logger log = org.apache.logging.log4j.LogManager
+			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+
 
 	BaseEntityUtils beUtils = null;
 
@@ -846,9 +853,9 @@ public class BucketUtils {
 			/* loop through the s */
 			for (SearchEntity searchBe : searchBeList) {
 
-				System.out.println("inside search loop  ::");
+				log.info("inside search loop  ::");
 				String code = searchBe.getCode().split("SBE_")[1];
-				System.out.println("code  ::" +code );
+				log.info("code  ::" +code );
 
 				/* get the attributes from searchObj */
 				Map<String, String> columns = searchUtils.getTableColumns(searchBe);
@@ -858,7 +865,7 @@ public class BucketUtils {
 
 				/* get the application counts */
 				long totalResults = msg.getItems().length;
-				System.out.println("items in bucket " + code + " is :: " + totalResults );
+				log.info("items in bucket " + code + " is :: " + totalResults );
 
 				/* also update the searchBe with the attribute */
 				Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBe.getCode(),
@@ -909,7 +916,7 @@ public class BucketUtils {
 				/* Send asks */
 				for (QDataAskMessage askMsg : askSet) {
 					
-					System.out.println("Cards in the bucket :: " + askMsg.getItems()[0].getName() + " are  :: " + askMsg.getItems()[0].getChildAsks().length);
+					log.info("Cards in the bucket :: " + askMsg.getItems()[0].getName() + " are  :: " + askMsg.getItems()[0].getChildAsks().length);
 
 					askMsg.setToken(userToken.getToken());
 
@@ -921,13 +928,13 @@ public class BucketUtils {
 			}
 
 			/* Send */
-			System.out.println("Sending application entitites");
+			log.info("Sending application entitites");
 
 			QDataBaseEntityMessage appMsg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
 			appMsg.setToken(userToken.getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(appMsg));
 
-			System.out.println("Sending asks from outside the loop");
+			log.info("Sending asks from outside the loop");
 
 			
 			System.out.print("Completed");

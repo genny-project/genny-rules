@@ -104,7 +104,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			callingWorkflow = "";
 		}
 
-		System.out.println(callingWorkflow+" PROCESS ANSWERS WorkItem Handler *************************");
+		log.info(callingWorkflow+" PROCESS ANSWERS WorkItem Handler *************************");
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
 		Map<TaskSummary, ConcurrentHashMap<String, Object>> taskAskMap = new ConcurrentHashMap<TaskSummary, ConcurrentHashMap<String, Object>>();

@@ -5,11 +5,13 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.invoke.MethodHandles;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.logging.log4j.Logger;
 import org.javamoney.moneta.Money;
 import org.junit.Test;
 
@@ -23,6 +25,12 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.utils.OutputParam;
 
 public class OutputParamTest {
+
+	/**
+	 * Stores logger object.
+	 */
+	protected static final Logger log = org.apache.logging.log4j.LogManager
+			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	
 	@Test
@@ -70,9 +78,9 @@ public class OutputParamTest {
 		map.put("PRI_LASTNAME", "PER_USER1");
 		o.setAttributeTargetCodeMap(map);
 		
-		System.out.println(o);
+		log.info(o);
 		String json = JsonUtils.toJson(o);
-		System.out.println(json);
+		log.info(json);
 
 		
 	}

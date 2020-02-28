@@ -71,7 +71,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		String ruleFlowGroup = (String) items.get("ruleFlowGroup");
 		String callingWorkflow = (String) items.get("callingWorkflow");
 
-		System.out.println(callingWorkflow + ":pid" + workItem.getProcessInstanceId() + " Running rule flow group "
+		log.info(callingWorkflow + ":pid" + workItem.getProcessInstanceId() + " Running rule flow group "
 				+ ruleFlowGroup);
 
 		final Map<String, Object> resultMap = executeRules(serviceToken,userToken,items,ruleFlowGroup,callingWorkflow);
@@ -94,7 +94,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			userToken = serviceToken;
 		}
 		
-		System.out.println(callingWorkflow + " Running rule flow group "
+		log.info(callingWorkflow + " Running rule flow group "
 				+ ruleFlowGroup+" #1");
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
@@ -129,7 +129,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		} else {
 			
 		}
-		System.out.println(callingWorkflow + " Running rule flow group "
+		log.info(callingWorkflow + " Running rule flow group "
 				+ ruleFlowGroup+" #2");
 		user = beUtils.getBaseEntityByCode(userCode);
 		List<EntityAttribute> roles = user.findPrefixEntityAttributes("PRI_IS_");
@@ -141,10 +141,10 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			} else {
 				if (role.getValue() instanceof String) {
 					value = "TRUE".equalsIgnoreCase(role.getValue());
-					System.out.println(callingWorkflow + " Running rule flow group "
+					log.info(callingWorkflow + " Running rule flow group "
 							+ ruleFlowGroup+" #2.5 role value = "+role.getValue());
 				} else {
-					System.out.println(callingWorkflow + " Running rule flow group "
+					log.info(callingWorkflow + " Running rule flow group "
 							+ ruleFlowGroup+" #2.6 role value = "+role.getValue());
 				}
 			}
@@ -186,7 +186,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			callingWorkflow = "";
 		}
 
-		System.out.println(callingWorkflow + " Running rule flow group "
+		log.info(callingWorkflow + " Running rule flow group "
 				+ ruleFlowGroup+" #3");
 		RuleDetails ruleDetails = new RuleDetails(callingWorkflow, ruleFlowGroup);
 
@@ -200,7 +200,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			// log.info("serviceToken = "+serviceToken.getCode());
 			// log.info("Running rule flow group "+ruleFlowGroup);
 
-			// System.out.println("ProcessInstanceId = "+workItem.getProcessInstanceId());
+			// log.info("ProcessInstanceId = "+workItem.getProcessInstanceId());
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 			// ksconf.setOption(TimedRuleExecutionOption.YES);
 
@@ -214,7 +214,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, RulesLoader.env);
 
 //			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #4");
 				FactHandle ruleDetailsHandle = newKieSession.insert(ruleDetails);
 
@@ -235,7 +235,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 						}
 					}
 				}
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #5");
 				/* INserting facts to save the output result */
 				FactHandle factHandle = newKieSession.insert(output);
@@ -247,7 +247,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				QBulkMessage payload = new QBulkMessage();
 				newKieSession.setGlobal("payload", payload);
 			/*	FactHandle payloadHandle = newKieSession.insert(payload);  */
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #6");
 				List<FactHandle> allowables = new ArrayList<FactHandle>();
 				// get User capabilities
@@ -262,7 +262,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				newKieSession.getAgenda().getAgendaGroup(ruleFlowGroup).setFocus();
 
 				newKieSession.fireAllRules();
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #7");
 //	    	ObjectFilter filter = new ObjectFilter() {
 //	    	    @Override
@@ -288,7 +288,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				newKieSession.retract(kieSessionHandle); // don't dispose
 			/*	newKieSession.retract(payloadHandle); */
 				
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #8");
 				for (FactHandle allow : allowables) {
 					newKieSession.retract(allow);
@@ -300,7 +300,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 				KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
 				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, RulesLoader.env);
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #10a");
 				FactHandle ruleDetailsHandle = newKieSession.insert(ruleDetails);
 
@@ -318,7 +318,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					}
 
 				}
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #11a");
 //			OutputParam output2 = new OutputParam2();
 //			FactHandle output2Fact = newKieSession.insert(output2);
@@ -334,7 +334,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //				FactHandle payloadHandle = newKieSession.insert(payload);
 				newKieSession.setGlobal("payload", payload);
 
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #12a");
 				List<FactHandle> allowables = new ArrayList<FactHandle>();
 				// get User capabilities
@@ -348,7 +348,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				newKieSession.getAgenda().getAgendaGroup(ruleFlowGroup).setFocus();
 
 				newKieSession.fireAllRules();
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 						+ ruleFlowGroup+" #13a");
 //	    	output2 = (OutputParam) newKieSession.getObject(output2Fact);
 				output = (OutputParam) newKieSession.getObject(factHandle);
@@ -359,7 +359,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //	    	if (!output2.getResultCode().equalsIgnoreCase("DUMMY")) {
 //	    		output = output2;
 //	    	}
-				System.out.println(callingWorkflow + " Running rule flow group "
+				log.info(callingWorkflow + " Running rule flow group "
 + ruleFlowGroup+" #14a");
 				QEventMessage msg = (QEventMessage) items.get("message");
 				if (msg != null) {
