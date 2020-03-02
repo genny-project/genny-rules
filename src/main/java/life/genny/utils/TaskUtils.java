@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jbpm.services.task.utils.ContentMarshallerHelper;
 import org.kie.api.task.TaskService;
@@ -20,6 +21,7 @@ import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
+import io.vertx.core.json.JsonObject;
 import life.genny.model.OutputParam2;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
@@ -337,14 +339,64 @@ public class TaskUtils {
 			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
 				taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
 			//	taskService.fail(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
-				taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+				taskService.release(tsId, userToken.getRealm() + "+" + userToken.getUserCode());
 			} else {
 				// maybe only abort if there is no data in the tasks? So if a task is not reserved then it has some data in it!
 			//	taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+				taskService.release(tsId, userToken.getRealm() + "+" + userToken.getUserCode());
+
 			}
 			log.info("Aborted Task "+tsId);
 		}
 		sendTaskAskItems(userToken) ;
+	}
+	
+	public static void clearTaskType(GennyToken userToken, Question q)
+	{
+		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+
+		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
+		for (TaskSummary ts : taskSummarys) {
+			Long tsId = ts.getId();
+			Task task = taskService.getTaskById(tsId);
+			
+			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
+				if (task.getDescription().equalsIgnoreCase(q.getName())) {
+					taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
+					taskService.release(tsId, userToken.getRealm() + "+" + userToken.getUserCode());
+				//	sendTaskAskItems(userToken) ;
+					break;
+				}
+			} 
+			log.info("Aborted Task "+tsId);
+		}
+		
+	}
+	
+	static public Question getQuestion(String questionCode,GennyToken userToken)
+	{
+
+		Question q = null;
+		Integer retry = 4;
+		while (retry >= 0) { // Sometimes q is read properly from cache
+			JsonObject jsonQ = VertxUtils.readCachedJson(userToken.getRealm(), questionCode, userToken.getToken());
+			q = JsonUtils.fromJson(jsonQ.getString("value"), Question.class);
+			if (q == null) {
+				retry--;
+				
+			} else {
+				break;
+			}
+
+		}
+		
+		if (q == null)
+		{
+			log.error("CANNOT READ "+questionCode+" from cache!!! Aborting (after having tried 4 times");
+			return null;
+		} else {
+			return q;
+		}
 	}
 	
 }

@@ -9,17 +9,28 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.TransactionRequiredException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.SystemException;
+import javax.transaction.UserTransaction;
 import javax.validation.ConstraintViolation;
+
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.drools.persistence.api.TransactionManager;
 import org.jbpm.services.task.utils.ContentMarshallerHelper;
 import org.kie.api.KieBase;
 import org.kie.api.KieServices;
+import org.kie.api.event.KieRuntimeEvent;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
 import org.kie.api.runtime.KieSession;
@@ -60,6 +71,15 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+	
+	private static final String[] KNOWN_UT_JNDI_KEYS = new String[] { "UserTransaction", "java:jboss/UserTransaction",
+			System.getProperty("jbpm.ut.jndi.lookup") };
+
+	private boolean isJTA = true;
+	private boolean sharedEM = false;
+
+	private EntityManagerFactory emf;
+
 
 	RuntimeEngine runtimeEngine;
 	String wClass;
@@ -153,12 +173,16 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		Boolean exitOut = false;
 		Boolean submitDetected = false;
 		
-		if (answersToSave == null) {
+		if ((answersToSave == null)||(answersToSave.getAnswers()==null)||(answersToSave.getAnswers().isEmpty())) {
 			output = new OutputParam();
 			output.setTypeOfResult("NONE");
 			output.setFormCode("NONE", "NONE");
 			resultMap.put("output", output);
-			manager.completeWorkItem(workItem.getId(), resultMap);
+			if (kieSession != null) {
+				kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
+			} else {
+				manager.completeWorkItem(workItem.getId(), resultMap);
+			}
 			return;
 		}
 		
@@ -399,8 +423,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					Map<String, Object> results = taskAskMap.get(taskSummary);
 					if ((results == null) && (!hackTrigger)) {
 						// Now save back to Task
-						EntityManager em = (EntityManager) kSession.getEnvironment()
-								.get(EnvironmentName.APP_SCOPED_ENTITY_MANAGER);
+//						EntityManager em = (EntityManager) kSession.getEnvironment()
+//								.get(EnvironmentName.APP_SCOPED_ENTITY_MANAGER);
 						// taskAsks);
 						Object contentObject = null;
 						contentObject = new ConcurrentHashMap<String, Object>(taskAsks);
@@ -408,7 +432,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						if (kSession != null) {
 							env2 = kSession.getEnvironment();
 						}
-						synchronized (this) {
+						//synchronized (this) {
 							ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env2);
 
 							Content content = TaskModelProvider.getFactory().newContent();
@@ -416,10 +440,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							Set<ConstraintViolation<Content>> constraintViolations = validator.validate(content);
 							if (constraintViolations.size() == 0) {
 								log.info("ProcessAnswers: Persisting taskContent");
-								em.persist(content);
+								persist(content,env2);
+								//Object tx = joinTransaction(em);
+								//em.persist(content);
+								//leaveTransaction(em, tx);
 								InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
 								InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
 								iTaskData.setDocument(content.getId(), contentData);
+							//	iTask.setDescription(q.getName()); TODO Add custom task name here
 								iTask.setTaskData(iTaskData);
 							} else {
 								// Hibernate validation error!
@@ -427,7 +455,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 									log.error(constraintViolation.getMessage());
 								}
 							}
-						}
+					//	}
 					}
 				}
 			}
@@ -578,4 +606,186 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		}
 		return content;
 	}
+	
+
+	
+	/**
+	 * This method opens a new transaction, if none is currently running, and joins
+	 * the entity manager/persistence context to that transaction.
+	 * 
+	 * @param em The entity manager we're using.
+	 * @return {@link UserTransaction} If we've started a new transaction, then we
+	 *         return it so that it can be closed.
+	 * @throws NotSupportedException
+	 * @throws SystemException
+	 * @throws Exception             if something goes wrong.
+	 */
+	private Object joinTransaction(EntityManager em) {
+		boolean newTx = false;
+		UserTransaction ut = null;
+
+		if (isJTA) {
+			try {
+				em.joinTransaction();
+			} catch (TransactionRequiredException e) {
+				ut = findUserTransaction();
+				try {
+					if (ut != null && ut.getStatus() == javax.transaction.Status.STATUS_NO_TRANSACTION) {
+						ut.begin();
+						newTx = true;
+						// since new transaction was started em must join it
+						em.joinTransaction();
+					}
+				} catch (Exception ex) {
+					throw new IllegalStateException("Unable to find or open a transaction: " + ex.getMessage(), ex);
+				}
+
+				if (!newTx) {
+					// rethrow TransactionRequiredException if UserTransaction was not found or
+					// started
+					throw e;
+				}
+			}
+
+			if (newTx) {
+				return ut;
+			}
+		}
+//        else { 
+//            EntityTransaction tx = em.getTransaction();
+//            if( ! tx.isActive() ) { 
+//               tx.begin();
+//               return tx;
+//            }
+//        }
+		return null;
+	}
+	
+	protected static UserTransaction findUserTransaction() {
+		InitialContext context = null;
+		try {
+			context = new InitialContext();
+			return (UserTransaction) context.lookup("java:comp/UserTransaction");
+		} catch (NamingException ex) {
+
+			for (String utLookup : KNOWN_UT_JNDI_KEYS) {
+				if (utLookup != null) {
+					try {
+						UserTransaction ut = (UserTransaction) context.lookup(utLookup);
+						return ut;
+					} catch (NamingException e) {
+						log.debug("User Transaction not found in JNDI under {}", utLookup);
+
+					}
+				}
+			}
+			log.warn("No user transaction found under known names");
+			return null;
+		}
+	}
+	
+	/**
+	 * This method closes the entity manager and transaction. It also makes sure
+	 * that any objects associated with the entity manager/persistence context are
+	 * detached.
+	 * </p>
+	 * Obviously, if the transaction returned by the
+	 * {@link #joinTransaction(EntityManager)} method is null, nothing is done with
+	 * the transaction parameter.
+	 * 
+	 * @param em The entity manager.
+	 * @param ut The (user) transaction.
+	 */
+	private void leaveTransaction(EntityManager em, Object transaction) {
+		if (isJTA) {
+			try {
+				if (transaction != null) {
+					// There's a tx running, close it.
+					((UserTransaction) transaction).commit();
+				}
+			} catch (Exception e) {
+				log.error("Unable to commit transaction: ", e);
+			}
+		} else {
+			if (transaction != null) {
+				((EntityTransaction) transaction).commit();
+			}
+		}
+
+		if (!sharedEM) {
+			try {
+				em.flush();
+				em.close();
+			} catch (Exception e) {
+				log.error("Unable to close created EntityManager: {}", e.getMessage(), e);
+			}
+		}
+	}
+
+	/**
+	 * This method persists the entity given to it.
+	 * </p>
+	 * This method also makes sure that the entity manager used for persisting the
+	 * entity, joins the existing JTA transaction.
+	 * 
+	 * @param entity An entity to be persisted.
+	 */
+	private void persist(Object entity, Environment env) {
+		EntityManager em = getEntityManager(env);
+		Object tx = joinTransaction(em);
+		em.persist(entity);
+		leaveTransaction(em, tx);
+	}
+
+	
+	/**
+	 * This method creates a entity manager.
+	 */
+	private EntityManager getEntityManager(Environment env) {
+
+//		Environment env = event.getKieRuntime().getEnvironment();
+
+		/**
+		 * It's important to set the sharedEM flag with _every_ operation otherwise,
+		 * there are situations where: 1. it can be set to "true" 2. something can
+		 * happen 3. the "true" value can no longer apply (I've seen this in debugging
+		 * logs.. )
+		 */
+		sharedEM = false;
+		if (emf != null) {
+			return emf.createEntityManager();
+		} else if (env != null) {
+			EntityManagerFactory emf = (EntityManagerFactory) env.get(EnvironmentName.ENTITY_MANAGER_FACTORY);
+
+			// first check active transaction if it contains entity manager
+			EntityManager em = getEntityManagerFromTransaction(env);
+
+			if (em != null && em.isOpen() && em.getEntityManagerFactory().equals(emf)) {
+				sharedEM = true;
+				return em;
+			}
+			// next check the environment itself
+			em = (EntityManager) env.get(EnvironmentName.CMD_SCOPED_ENTITY_MANAGER);
+			if (em != null) {
+				sharedEM = true;
+				return em;
+			}
+			// lastly use entity manager factory
+			if (emf != null) {
+				return emf.createEntityManager();
+			}
+		}
+		throw new RuntimeException("Could not find or create a new EntityManager!");
+	}
+
+	protected EntityManager getEntityManagerFromTransaction(Environment env) {
+		if (env.get(EnvironmentName.TRANSACTION_MANAGER) instanceof TransactionManager) {
+			TransactionManager txm = (TransactionManager) env.get(EnvironmentName.TRANSACTION_MANAGER);
+			EntityManager em = (EntityManager) txm.getResource(EnvironmentName.CMD_SCOPED_ENTITY_MANAGER);
+			return em;
+		}
+
+		return null;
+	}
+
 }

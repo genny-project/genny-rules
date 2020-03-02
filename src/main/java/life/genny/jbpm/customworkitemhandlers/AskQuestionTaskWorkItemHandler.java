@@ -142,6 +142,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 
+		// remove any empty task that matches the type
+		Question q = null;
+		String questionCode = (String) workItem.getParameter("questionCode");
+		q = TaskUtils.getQuestion(questionCode,userToken);
+		TaskUtils.clearTaskType(userToken, q);
+		
 		Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
 
 		// Fetch the questions and set in the task for us to tick off as they get done
@@ -379,23 +385,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 
 		Question q = null;
-		Integer retry = 4;
-		while (retry >= 0) { // Sometimes q is read properly from cache
-			JsonObject jsonQ = VertxUtils.readCachedJson(userToken.getRealm(), questionCode, userToken.getToken());
-			q = JsonUtils.fromJson(jsonQ.getString("value"), Question.class);
-			if (q == null) {
-				retry--;
-				
-			} else {
-				break;
-			}
-
-		}
-		if (q == null)
-		{
-			log.error("CANNOT READ "+questionCode+" from cache!!! Aborting (after having tried 4 times");
-//			return null;
-		}
+		q = TaskUtils.getQuestion(questionCode,userToken);
 
 //		JsonObject questionObj = VertxUtils.readCachedJson(userToken.getRealm(),
 //				questionCode,userToken.getToken());

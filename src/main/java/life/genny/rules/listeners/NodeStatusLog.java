@@ -136,7 +136,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	public void beforeNodeTriggered(ProcessNodeTriggeredEvent event) {
 		if (GennySettings.logWorkflows) {
 			NodeInstanceLog log = (NodeInstanceLog) builder.buildEvent(event);
-			persist(log, event);
+		//	persist(log, event);
 
 			((NodeInstanceImpl) event.getNodeInstance()).getMetaData().put("NodeInstanceLog", log);
 			Date eventDate = event.getEventDate();
@@ -203,7 +203,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 			List<org.kie.api.runtime.manager.audit.VariableInstanceLog> variables = indexManager.index(getBuilder(),
 					event);
 			for (org.kie.api.runtime.manager.audit.VariableInstanceLog log : variables) {
-				persist(log, event);
+				//persist(log, event);
 			}
 		}
 	}
@@ -215,7 +215,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 		if (GennySettings.logWorkflows) {
 
 			ProcessInstanceLog log = (ProcessInstanceLog) builder.buildEvent(event);
-			persist(log, event);
+			//persist(log, event);
 			((ProcessInstanceImpl) event.getProcessInstance()).getMetaData().put("ProcessInstanceLog", log);
 		}
 		org.kie.api.runtime.process.ProcessInstance processInstance = event.getProcessInstance();
