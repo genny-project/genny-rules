@@ -1,34 +1,6 @@
 package life.genny.jbpm.customworkitemhandlers;
 
-import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.logging.log4j.Logger;
-import org.jbpm.services.task.utils.ContentMarshallerHelper;
-import org.json.JSONObject;
-import org.kie.api.runtime.KieSession;
-import org.kie.api.runtime.process.ProcessInstance;
-import org.kie.api.runtime.process.WorkItem;
-import org.kie.api.runtime.process.WorkItemHandler;
-import org.kie.api.runtime.process.WorkItemManager;
-import org.kie.api.task.TaskService;
-import org.kie.api.task.model.Content;
-import org.kie.api.task.model.Task;
-
 import com.google.gson.reflect.TypeToken;
-
 import io.vertx.core.json.JsonObject;
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
@@ -41,26 +13,30 @@ import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.message.QDataAskMessage;
-import life.genny.qwanda.message.QDataAttributeMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
-import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
-import life.genny.qwandautils.QwandaUtils;
-import life.genny.rules.QRules;
 import life.genny.rules.RulesLoader;
-import life.genny.utils.BaseEntityUtils;
-import life.genny.utils.DropdownUtils;
-import life.genny.utils.FrameUtils2;
-import life.genny.utils.OutputParam;
-import life.genny.utils.RulesUtils;
-import life.genny.utils.SessionFacts;
-import life.genny.utils.VertxUtils;
-import life.genny.models.FramePosition;
+import life.genny.utils.*;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
+import org.jbpm.services.task.utils.ContentMarshallerHelper;
+import org.json.JSONObject;
+import org.kie.api.runtime.process.WorkItem;
+import org.kie.api.runtime.process.WorkItemHandler;
+import org.kie.api.runtime.process.WorkItemManager;
+import org.kie.api.task.TaskService;
+import org.kie.api.task.model.Content;
+import org.kie.api.task.model.Task;
 
-import org.mentaregex.*;
-import static org.mentaregex.Regex.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Type;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.mentaregex.Regex.match;
 
 public class ShowFrame implements WorkItemHandler {
 
@@ -555,11 +531,11 @@ public class ShowFrame implements WorkItemHandler {
 
 		Set<QDataAskMessage> askMsgs2 = null;
 
-		try {
-			log.debug("About to do deserialization!");
-			askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
-		} catch (Exception e) {
-			log.error("Bad Json deserialization ..." + askMsgs2Str);
+		log.debug("About to do deserialization!");
+		askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+		if (askMsgs2 == null) {
+		    // NOTE: Can't convert JSON string to target type, may casued by incorrect replacement
+			// Don't try to print askMsgs2 as it has 20K lines
 			BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 			BaseEntity rule = beUtils.getBaseEntityByCode("RUL_" + rootFrameCode);
 			askMsgs2Str = (String) rule.getValue("PRI_ASKS").get(); // assume always
