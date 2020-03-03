@@ -156,10 +156,16 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				}
 				// Add the actual role to capabilities
 				allowable.add(new Allowed(role.getAttributeCode().substring("PRI_IS_".length()), CapabilityMode.VIEW));
-				
+				log.info(callingWorkflow+" got to here before capabilities");
 				List<EntityAttribute> capabilities = roleBE.findPrefixEntityAttributes("PRM_");
 				for (EntityAttribute ea : capabilities) {
-					String modeString = ea.getValue();
+					String modeString = null;
+					try {
+						modeString = ea.getValue();
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					CapabilityMode mode = CapabilityMode.getMode(modeString);
 					// This is my cunning switch statement that takes into consideration the
 					// priority order of the modes... (note, no breaks and it relies upon the fall
