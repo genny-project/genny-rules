@@ -132,6 +132,7 @@ import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
+import life.genny.utils.FrameUtils2;
 import life.genny.utils.NodeStatusQueryMapper;
 import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
@@ -1488,9 +1489,11 @@ public class RulesLoader {
 
 		if (ruleCode.startsWith("RUL_FRM_")) {
 			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+			FrameUtils2.ruleFires.put(filename.replaceAll("\\.[^.]*$", ""),false); // check if actually fires
 		}
 		if (ruleCode.startsWith("RUL_THM_")) {
 			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+			FrameUtils2.ruleFires.put(filename.replaceAll("\\.[^.]*$", ""),false); // check if actuall fires
 		}
 
 		// get existing rule from cache
