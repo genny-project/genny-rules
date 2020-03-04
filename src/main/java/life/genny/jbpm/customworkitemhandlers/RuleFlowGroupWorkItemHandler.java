@@ -62,8 +62,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-		
-		
+
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
 		GennyToken userToken = (GennyToken) items.get("userToken");
@@ -74,8 +73,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		log.info(callingWorkflow + ":pid" + workItem.getProcessInstanceId() + " Running rule flow group "
 				+ ruleFlowGroup);
 
-		final Map<String, Object> resultMap = executeRules(serviceToken,userToken,items,ruleFlowGroup,callingWorkflow);
-		
+		final Map<String, Object> resultMap = executeRules(serviceToken, userToken, items, ruleFlowGroup,
+				callingWorkflow);
+
 		// notify manager that work item has been completed
 		manager.completeWorkItem(workItem.getId(), resultMap);
 
@@ -85,191 +85,194 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	 * @param workItem
 	 * @return
 	 */
-	public Map<String, Object> executeRules(GennyToken serviceToken, GennyToken userToken, Map<String, Object> items,String ruleFlowGroup, String callingWorkflow) {
+	public Map<String, Object> executeRules(GennyToken serviceToken, GennyToken userToken, Map<String, Object> items,
+			String ruleFlowGroup, String callingWorkflow) {
 		/* resultMap is used to map the result Value to the output parameters */
 		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
 
 		try {
-		if (userToken == null) {
-			userToken = serviceToken;
-		}
-		
-		log.info(callingWorkflow + " Running rule flow group "
-				+ ruleFlowGroup+" #1");
+			if (userToken == null) {
+				userToken = serviceToken;
+			}
 
-		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-		CapabilityUtils capabilityUtils = null;
-		if (items.containsKey("capabilityUtils")) {
-			capabilityUtils = (CapabilityUtils)items.get("capabilityUtils");
-		} else {
-			JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "CAPABILITIES", userToken.getToken());
-			if ("OK".equalsIgnoreCase(json.getString("status"))) {
-				String value = json.getString("value");
-				capabilityUtils = JsonUtils.fromJson(value, CapabilityUtils.class);
-				if (capabilityUtils == null) {
+			log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #1");
+
+			BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+			CapabilityUtils capabilityUtils = null;
+			if (items.containsKey("capabilityUtils")) {
+				capabilityUtils = (CapabilityUtils) items.get("capabilityUtils");
+			} else {
+				JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "CAPABILITIES", userToken.getToken());
+				if ("OK".equalsIgnoreCase(json.getString("status"))) {
+					String value = json.getString("value");
+					capabilityUtils = JsonUtils.fromJson(value, CapabilityUtils.class);
+					if (capabilityUtils == null) {
+						capabilityUtils = new CapabilityUtils(beUtils);
+					}
+				} else {
 					capabilityUtils = new CapabilityUtils(beUtils);
 				}
-			}else {
-				capabilityUtils = new CapabilityUtils(beUtils);
-			}
-			
-		}
-		String userCode = userToken.getUserCode();
-		BaseEntity user = null;
-		if ((VertxUtils.cachedEnabled)&&("PER_SERVICE".equals(userCode))) {
-			// need to create the server user in cache if not there
-			user = VertxUtils.readFromDDT(userToken.getRealm(), "PER_SERVICE", userToken.getToken());
-			if (user == null) {
-				beUtils.setServiceToken(serviceToken);
-				BaseEntity serviceUser = beUtils.create("PER_SERVICE", "Service User");
-				Attribute roleAttribute = RulesUtils.getAttribute("PRI_IS_ADMIN", serviceToken);
 
-				beUtils.saveAnswer(new Answer(serviceUser,serviceUser,roleAttribute,"TRUE"));
 			}
-		} else {
-			
-		}
-		log.info(callingWorkflow + " Running rule flow group "
-				+ ruleFlowGroup+" #2");
-		user = beUtils.getBaseEntityByCode(userCode);
-		List<EntityAttribute> roles = user.findPrefixEntityAttributes("PRI_IS_");
-		List<Allowed> allowable = new CopyOnWriteArrayList<Allowed>();
-		for (EntityAttribute role : roles) { // should store in cached map
-			Boolean value = false;
-			if (role.getValue() instanceof Boolean) {
-				value = role.getValue();
+			String userCode = userToken.getUserCode();
+			BaseEntity user = null;
+			if ((VertxUtils.cachedEnabled) && ("PER_SERVICE".equals(userCode))) {
+				// need to create the server user in cache if not there
+				user = VertxUtils.readFromDDT(userToken.getRealm(), "PER_SERVICE", userToken.getToken());
+				if (user == null) {
+					beUtils.setServiceToken(serviceToken);
+					BaseEntity serviceUser = beUtils.create("PER_SERVICE", "Service User");
+					Attribute roleAttribute = RulesUtils.getAttribute("PRI_IS_ADMIN", serviceToken);
+
+					beUtils.saveAnswer(new Answer(serviceUser, serviceUser, roleAttribute, "TRUE"));
+				}
 			} else {
-				if (role.getValue() instanceof String) {
-					value = "TRUE".equalsIgnoreCase(role.getValue());
-					log.info(callingWorkflow + " Running rule flow group "
-							+ ruleFlowGroup+" #2.5 role value = "+role.getValue());
+
+			}
+			log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2");
+			user = beUtils.getBaseEntityByCode(userCode);
+			List<EntityAttribute> roles = user.findPrefixEntityAttributes("PRI_IS_");
+			List<Allowed> allowable = new CopyOnWriteArrayList<Allowed>();
+			for (EntityAttribute role : roles) { // should store in cached map
+				Boolean value = false;
+				if (role.getValue() instanceof Boolean) {
+					value = role.getValue();
 				} else {
-					log.info(callingWorkflow + " Running rule flow group "
-							+ ruleFlowGroup+" #2.6 role value = "+role.getValue());
+					if (role.getValue() instanceof String) {
+						value = "TRUE".equalsIgnoreCase(role.getValue());
+						log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2.5 role value = "
+								+ role.getValue());
+					} else {
+						log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2.6 role value = "
+								+ role.getValue());
+					}
+				}
+				if (value) {
+					String roleBeCode = "ROL_" + role.getAttributeCode().substring("PRI_IS_".length());
+					BaseEntity roleBE = VertxUtils.readFromDDT(userToken.getRealm(), roleBeCode, userToken.getToken());
+					if (roleBE == null) {
+						continue;
+					}
+					// Add the actual role to capabilities
+					allowable.add(
+							new Allowed(role.getAttributeCode().substring("PRI_IS_".length()), CapabilityMode.VIEW));
+					log.info(callingWorkflow + " got to here before capabilities");
+					List<EntityAttribute> capabilities = roleBE.findPrefixEntityAttributes("PRM_");
+					for (EntityAttribute ea : capabilities) {
+						String modeString = null;
+						Boolean ignore = false;
+						try {
+							Object val = ea.getValue();
+							if (val instanceof Boolean) {
+								log.error("capability attributeCode=" + ea.getAttributeCode() + " is BOOLEAN??????");
+								ignore = true;
+							} else {
+								modeString = ea.getValue();
+							}
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						if (!ignore) {
+							CapabilityMode mode = CapabilityMode.getMode(modeString);
+							// This is my cunning switch statement that takes into consideration the
+							// priority order of the modes... (note, no breaks and it relies upon the fall
+							// through)
+							switch (mode) {
+							case DELETE:
+								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.DELETE));
+							case ADD:
+								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.ADD));
+							case EDIT:
+								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.EDIT));
+							case VIEW:
+								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.VIEW));
+							case NONE:
+								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.NONE));
+							}
+						}
+
+					}
 				}
 			}
-			if (value) {
-				String roleBeCode = "ROL_" + role.getAttributeCode().substring("PRI_IS_".length());
-				BaseEntity roleBE = VertxUtils.readFromDDT(userToken.getRealm(), roleBeCode, userToken.getToken());
-				if (roleBE == null) {
-					continue;
-				}
-				// Add the actual role to capabilities
-				allowable.add(new Allowed(role.getAttributeCode().substring("PRI_IS_".length()), CapabilityMode.VIEW));
-				log.info(callingWorkflow+" got to here before capabilities");
-				List<EntityAttribute> capabilities = roleBE.findPrefixEntityAttributes("PRM_");
-				for (EntityAttribute ea : capabilities) {
-					String modeString = null;
-					try {
-						modeString = ea.getValue();
-					} catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					CapabilityMode mode = CapabilityMode.getMode(modeString);
-					// This is my cunning switch statement that takes into consideration the
-					// priority order of the modes... (note, no breaks and it relies upon the fall
-					// through)
-					switch (mode) {
-					case DELETE:
-						allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.DELETE));
-					case ADD:
-						allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.ADD));
-					case EDIT:
-						allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.EDIT));
-					case VIEW:
-						allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.VIEW));
-					case NONE:
-						allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.NONE));
-					}
 
-				}
+			if (StringUtils.isBlank(callingWorkflow)) {
+				callingWorkflow = "";
 			}
-		}
 
+			log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #3");
+			RuleDetails ruleDetails = new RuleDetails(callingWorkflow, ruleFlowGroup);
 
-		if (StringUtils.isBlank(callingWorkflow)) {
-			callingWorkflow = "";
-		}
+			if (serviceToken == null) {
+				log.error("Must supply serviceToken!");
+			} else if ((!"PER_SERVICE".equals(serviceToken.getCode()))) {
+				log.error(
+						"Must supply an actual serviceToken not a normal token! check PER_SERVICE is the code (and not serviceToken");
+			} else {
 
-		log.info(callingWorkflow + " Running rule flow group "
-				+ ruleFlowGroup+" #3");
-		RuleDetails ruleDetails = new RuleDetails(callingWorkflow, ruleFlowGroup);
+				// log.info("serviceToken = "+serviceToken.getCode());
+				// log.info("Running rule flow group "+ruleFlowGroup);
 
-		if (serviceToken == null) {
-			log.error("Must supply serviceToken!");
-		} else if ((!"PER_SERVICE".equals(serviceToken.getCode()))) {
-			log.error(
-					"Must supply an actual serviceToken not a normal token! check PER_SERVICE is the code (and not serviceToken");
-		} else {
+				// log.info("ProcessInstanceId = "+workItem.getProcessInstanceId());
+				KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+				// ksconf.setOption(TimedRuleExecutionOption.YES);
 
-			// log.info("serviceToken = "+serviceToken.getCode());
-			// log.info("Running rule flow group "+ruleFlowGroup);
+				KieSession newKieSession = null;
 
-			// log.info("ProcessInstanceId = "+workItem.getProcessInstanceId());
-			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-			// ksconf.setOption(TimedRuleExecutionOption.YES);
+				OutputParam output = new OutputParam();
+				Answers answersToSave = new Answers();
 
-			KieSession newKieSession = null;
-
-			OutputParam output = new OutputParam();
-			Answers answersToSave = new Answers();
-
-			if (this.runtimeEngine != null) {
-				KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
-				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, RulesLoader.env);
+				if (this.runtimeEngine != null) {
+					KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
+					newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, RulesLoader.env);
 
 //			newKieSession = (StatefulKnowledgeSession)this.runtimeEngine.getKieSession();
-				log.info(callingWorkflow + " Running rule flow group "
-						+ ruleFlowGroup+" #4");
-				FactHandle ruleDetailsHandle = newKieSession.insert(ruleDetails);
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #4");
+					FactHandle ruleDetailsHandle = newKieSession.insert(ruleDetails);
 
-				/* Inserting all the parameters in the working memory ad a facts */
-				for (String key : items.keySet()) {
-					newKieSession.insert(items.get(key));
-					if (items.get(key) instanceof GennyToken) {
-						GennyToken gToken = (GennyToken) items.get(key);
-						String code = gToken.getCode();
-						if (code == null) {
-							code = gToken.getUserCode();
-						}
-						if (!code.equals("PER_SERVICE")) {
-							/* Generate a QRules */
-							// log.info("Adding rules to facts");
-							QRules rules = new QRules(serviceToken, gToken);
-							newKieSession.insert(rules);
+					/* Inserting all the parameters in the working memory ad a facts */
+					for (String key : items.keySet()) {
+						newKieSession.insert(items.get(key));
+						if (items.get(key) instanceof GennyToken) {
+							GennyToken gToken = (GennyToken) items.get(key);
+							String code = gToken.getCode();
+							if (code == null) {
+								code = gToken.getUserCode();
+							}
+							if (!code.equals("PER_SERVICE")) {
+								/* Generate a QRules */
+								// log.info("Adding rules to facts");
+								QRules rules = new QRules(serviceToken, gToken);
+								newKieSession.insert(rules);
+							}
 						}
 					}
-				}
-				log.info(callingWorkflow + " Running rule flow group "
-						+ ruleFlowGroup+" #5");
-				/* INserting facts to save the output result */
-				FactHandle factHandle = newKieSession.insert(output);
-				FactHandle answersToSaveHandle = newKieSession.insert(answersToSave);
-				FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
-				FactHandle beUtilsHandle = newKieSession.insert(beUtils);
-				FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
-				
-				QBulkMessage payload = new QBulkMessage();
-				newKieSession.setGlobal("payload", payload);
-			/*	FactHandle payloadHandle = newKieSession.insert(payload);  */
-				log.info(callingWorkflow + " Running rule flow group "
-						+ ruleFlowGroup+" #6");
-				List<FactHandle> allowables = new ArrayList<FactHandle>();
-				// get User capabilities
-				// first get User Roles
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #5");
+					/* INserting facts to save the output result */
+					FactHandle factHandle = newKieSession.insert(output);
+					FactHandle answersToSaveHandle = newKieSession.insert(answersToSave);
+					FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
+					FactHandle beUtilsHandle = newKieSession.insert(beUtils);
+					FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
 
-				// get each capability from each Role and add to allowables
-				for (Allowed allow : allowable) {
-					allowables.add(newKieSession.insert(allow));
-				}
+					QBulkMessage payload = new QBulkMessage();
+					newKieSession.setGlobal("payload", payload);
+					/* FactHandle payloadHandle = newKieSession.insert(payload); */
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #6");
+					List<FactHandle> allowables = new ArrayList<FactHandle>();
+					// get User capabilities
+					// first get User Roles
 
-				/* Setting focus to rule-flow group */
-				newKieSession.getAgenda().getAgendaGroup(ruleFlowGroup).setFocus();
+					// get each capability from each Role and add to allowables
+					for (Allowed allow : allowable) {
+						allowables.add(newKieSession.insert(allow));
+					}
 
-				newKieSession.fireAllRules();
-				log.info(callingWorkflow + " Running rule flow group "
-						+ ruleFlowGroup+" #7");
+					/* Setting focus to rule-flow group */
+					newKieSession.getAgenda().getAgendaGroup(ruleFlowGroup).setFocus();
+
+					newKieSession.fireAllRules();
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #7");
 //	    	ObjectFilter filter = new ObjectFilter() {
 //	    	    @Override
 //	    	        public boolean accept( Object object ) {
@@ -277,130 +280,124 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //	    	        }
 //	    	    };
 //	    	Collection<? extends Object> results = newKieSession.getObjects( filter );
-				/* saving result from rule-task in map */
-				output = (OutputParam) newKieSession.getObject(factHandle);
-				answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
-				/* payload = (QBulkMessage) newKieSession.getObject(payloadHandle); */
-				payload = (QBulkMessage) newKieSession.getGlobal("payload");
-				resultMap.put("payload", payload);
-				
-				resultMap.put("output", output);
-				resultMap.put("answersToSave", answersToSave);
-				newKieSession.retract(ruleDetailsHandle);
-				newKieSession.retract(factHandle);
-				newKieSession.retract(answersToSaveHandle);
-				newKieSession.retract(beUtilsHandle);
-				newKieSession.retract(capabilityUtilsHandle);
-				newKieSession.retract(kieSessionHandle); // don't dispose
-			/*	newKieSession.retract(payloadHandle); */
-				
-				log.info(callingWorkflow + " Running rule flow group "
-						+ ruleFlowGroup+" #8");
-				for (FactHandle allow : allowables) {
-					newKieSession.retract(allow);
-				}
+					/* saving result from rule-task in map */
+					output = (OutputParam) newKieSession.getObject(factHandle);
+					answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
+					/* payload = (QBulkMessage) newKieSession.getObject(payloadHandle); */
+					payload = (QBulkMessage) newKieSession.getGlobal("payload");
+					resultMap.put("payload", payload);
 
-				newKieSession.dispose();
+					resultMap.put("output", output);
+					resultMap.put("answersToSave", answersToSave);
+					newKieSession.retract(ruleDetailsHandle);
+					newKieSession.retract(factHandle);
+					newKieSession.retract(answersToSaveHandle);
+					newKieSession.retract(beUtilsHandle);
+					newKieSession.retract(capabilityUtilsHandle);
+					newKieSession.retract(kieSessionHandle); // don't dispose
+					/* newKieSession.retract(payloadHandle); */
 
-			} else {
-
-				KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
-				newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, RulesLoader.env);
-				log.info(callingWorkflow + " Running rule flow group "
-						+ ruleFlowGroup+" #10a");
-				FactHandle ruleDetailsHandle = newKieSession.insert(ruleDetails);
-
-				/* Inserting all the parameters in the working memory ad a facts */
-				for (String key : items.keySet()) {
-					newKieSession.insert(items.get(key));
-					if (items.get(key) instanceof GennyToken) {
-						GennyToken gToken = (GennyToken) items.get(key);
-						if (!gToken.getCode().equals("PER_SERVICE")) {
-							/* Generate a QRules */
-							// log.info("Adding rules to facts");
-							QRules rules = new QRules(serviceToken, gToken);
-							newKieSession.insert(rules);
-						}
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #8");
+					for (FactHandle allow : allowables) {
+						newKieSession.retract(allow);
 					}
 
-				}
-				log.info(callingWorkflow + " Running rule flow group "
-						+ ruleFlowGroup+" #11a");
+					newKieSession.dispose();
+
+				} else {
+
+					KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
+					newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, RulesLoader.env);
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #10a");
+					FactHandle ruleDetailsHandle = newKieSession.insert(ruleDetails);
+
+					/* Inserting all the parameters in the working memory ad a facts */
+					for (String key : items.keySet()) {
+						newKieSession.insert(items.get(key));
+						if (items.get(key) instanceof GennyToken) {
+							GennyToken gToken = (GennyToken) items.get(key);
+							if (!gToken.getCode().equals("PER_SERVICE")) {
+								/* Generate a QRules */
+								// log.info("Adding rules to facts");
+								QRules rules = new QRules(serviceToken, gToken);
+								newKieSession.insert(rules);
+							}
+						}
+
+					}
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #11a");
 //			OutputParam output2 = new OutputParam2();
 //			FactHandle output2Fact = newKieSession.insert(output2);
 
-				/* INserting facts to save the output result */
-				FactHandle factHandle = newKieSession.insert(output);
-				FactHandle answersToSaveHandle = newKieSession.insert(answersToSave);
-				FactHandle beUtilsHandle = newKieSession.insert(beUtils);
-				FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
-				FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
-				
-				QBulkMessage payload = new QBulkMessage();
+					/* INserting facts to save the output result */
+					FactHandle factHandle = newKieSession.insert(output);
+					FactHandle answersToSaveHandle = newKieSession.insert(answersToSave);
+					FactHandle beUtilsHandle = newKieSession.insert(beUtils);
+					FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
+					FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
+
+					QBulkMessage payload = new QBulkMessage();
 //				FactHandle payloadHandle = newKieSession.insert(payload);
-				newKieSession.setGlobal("payload", payload);
+					newKieSession.setGlobal("payload", payload);
 
-				log.info(callingWorkflow + " Running rule flow group "
-						+ ruleFlowGroup+" #12a");
-				List<FactHandle> allowables = new ArrayList<FactHandle>();
-				// get User capabilities
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #12a");
+					List<FactHandle> allowables = new ArrayList<FactHandle>();
+					// get User capabilities
 
-				// inject kieSession
-				for (Allowed allow : allowable) {
-					allowables.add(newKieSession.insert(allow));
-				}
+					// inject kieSession
+					for (Allowed allow : allowable) {
+						allowables.add(newKieSession.insert(allow));
+					}
 
-				/* Setting focus to rule-flow group */
-				newKieSession.getAgenda().getAgendaGroup(ruleFlowGroup).setFocus();
+					/* Setting focus to rule-flow group */
+					newKieSession.getAgenda().getAgendaGroup(ruleFlowGroup).setFocus();
 
-				newKieSession.fireAllRules();
-				log.info(callingWorkflow + " Running rule flow group "
-						+ ruleFlowGroup+" #13a");
+					newKieSession.fireAllRules();
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #13a");
 //	    	output2 = (OutputParam) newKieSession.getObject(output2Fact);
-				output = (OutputParam) newKieSession.getObject(factHandle);
-				answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
-				capabilityUtils = (CapabilityUtils) newKieSession.getObject(capabilityUtilsHandle);
+					output = (OutputParam) newKieSession.getObject(factHandle);
+					answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
+					capabilityUtils = (CapabilityUtils) newKieSession.getObject(capabilityUtilsHandle);
 //				payload = (QBulkMessage) newKieSession.getObject(payloadHandle);
 //	    	// HACK
 //	    	if (!output2.getResultCode().equalsIgnoreCase("DUMMY")) {
 //	    		output = output2;
 //	    	}
-				log.info(callingWorkflow + " Running rule flow group "
-+ ruleFlowGroup+" #14a");
-				QEventMessage msg = (QEventMessage) items.get("message");
-				if (msg != null) {
+					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #14a");
+					QEventMessage msg = (QEventMessage) items.get("message");
+					if (msg != null) {
 
-					JsonObject cachedOutputJson = VertxUtils.readCachedJson(userToken.getRealm(),
-							"OUTPUT:" + msg.getData().getCode(), userToken.getToken());
-					if (cachedOutputJson.getString("status").equalsIgnoreCase("ok")) {
-						OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("value"), OutputParam.class);
-						if (o != null) {
-							output = o;
+						JsonObject cachedOutputJson = VertxUtils.readCachedJson(userToken.getRealm(),
+								"OUTPUT:" + msg.getData().getCode(), userToken.getToken());
+						if (cachedOutputJson.getString("status").equalsIgnoreCase("ok")) {
+							OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("value"), OutputParam.class);
+							if (o != null) {
+								output = o;
+							}
 						}
 					}
-				}
 
-				resultMap.put("output", output);
-				resultMap.put("answersToSave", answersToSave);
-				payload = (QBulkMessage) newKieSession.getGlobal("payload");
-				resultMap.put("payload", payload);
-				resultMap.put("capabilityUtils",capabilityUtils);
-				
-				newKieSession.retract(ruleDetailsHandle);
-				newKieSession.retract(factHandle);
-				newKieSession.retract(answersToSaveHandle);
-				newKieSession.retract(beUtilsHandle);
-				newKieSession.retract(capabilityUtilsHandle);
-				newKieSession.retract(kieSessionHandle);
+					resultMap.put("output", output);
+					resultMap.put("answersToSave", answersToSave);
+					payload = (QBulkMessage) newKieSession.getGlobal("payload");
+					resultMap.put("payload", payload);
+					resultMap.put("capabilityUtils", capabilityUtils);
+
+					newKieSession.retract(ruleDetailsHandle);
+					newKieSession.retract(factHandle);
+					newKieSession.retract(answersToSaveHandle);
+					newKieSession.retract(beUtilsHandle);
+					newKieSession.retract(capabilityUtilsHandle);
+					newKieSession.retract(kieSessionHandle);
 //				newKieSession.retract(payloadHandle);
 
-				for (FactHandle allow : allowables) {
-					newKieSession.retract(allow);
-				}
+					for (FactHandle allow : allowables) {
+						newKieSession.retract(allow);
+					}
 
-				newKieSession.dispose();
+					newKieSession.dispose();
+				}
 			}
-		}
 		} catch (Exception e) {
 			log.error(e.getLocalizedMessage());
 		}

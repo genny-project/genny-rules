@@ -492,7 +492,14 @@ public class ShowFrame implements WorkItemHandler {
 
 			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS",
 					userToken.getToken());
-
+			
+			JsonObject askMsgJson = VertxUtils.readCachedJson(userToken.getRealm(), rootFrameCode + "_ASKS",userToken.getToken());
+			if ("OK".equals(askMsgJson.getString("status"))) {
+				askMsgs2Str = askMsgJson.getString("value");
+			} else {
+				askMsgs2Str = null;
+			}
+			
 			if (askMsgs2Str == null) {
 				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl + " with rootFrameCode = " + rootFrameCode);
 				log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode + "_ASKS");
