@@ -1489,11 +1489,11 @@ public class RulesLoader {
 
 		if (ruleCode.startsWith("RUL_FRM_")) {
 			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(filename.replaceAll("\\.[^.]*$", ""),false); // check if actually fires
+			FrameUtils2.ruleFires.put(realm+":"+filename.replaceAll("\\.[^.]*$", ""),false); // check if actually fires
 		}
 		if (ruleCode.startsWith("RUL_THM_")) {
 			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(filename.replaceAll("\\.[^.]*$", ""),false); // check if actuall fires
+			FrameUtils2.ruleFires.put(realm+":"+filename.replaceAll("\\.[^.]*$", ""),false); // check if actuall fires
 		}
 
 		// get existing rule from cache
