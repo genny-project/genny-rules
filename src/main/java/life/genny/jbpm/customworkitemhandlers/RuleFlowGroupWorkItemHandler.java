@@ -131,70 +131,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			}
 			log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2");
 			user = beUtils.getBaseEntityByCode(userCode);
-			List<EntityAttribute> roles = user.findPrefixEntityAttributes("PRI_IS_");
-			List<Allowed> allowable = new CopyOnWriteArrayList<Allowed>();
-			for (EntityAttribute role : roles) { // should store in cached map
-				Boolean value = false;
-				if (role.getValue() instanceof Boolean) {
-					value = role.getValue();
-				} else {
-					if (role.getValue() instanceof String) {
-						value = "TRUE".equalsIgnoreCase(role.getValue());
-//						log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2.5 role value = "
-//								+ role.getValue());
-					} else {
-//						log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2.6 role value = "
-//								+ role.getValue());
-					}
-				}
-				if (value) {
-					String roleBeCode = "ROL_" + role.getAttributeCode().substring("PRI_IS_".length());
-					BaseEntity roleBE = VertxUtils.readFromDDT(userToken.getRealm(), roleBeCode, userToken.getToken());
-					if (roleBE == null) {
-						continue;
-					}
-					// Add the actual role to capabilities
-					allowable.add(
-							new Allowed(role.getAttributeCode().substring("PRI_IS_".length()), CapabilityMode.VIEW));
-//					log.info(callingWorkflow + " got to here before capabilities");
-					List<EntityAttribute> capabilities = roleBE.findPrefixEntityAttributes("PRM_");
-					for (EntityAttribute ea : capabilities) {
-						String modeString = null;
-						Boolean ignore = false;
-						try {
-							Object val = ea.getValue();
-							if (val instanceof Boolean) {
-								log.error("capability attributeCode=" + ea.getAttributeCode() + " is BOOLEAN??????");
-								ignore = true;
-							} else {
-								modeString = ea.getValue();
-							}
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						if (!ignore) {
-							CapabilityMode mode = CapabilityMode.getMode(modeString);
-							// This is my cunning switch statement that takes into consideration the
-							// priority order of the modes... (note, no breaks and it relies upon the fall
-							// through)
-							switch (mode) {
-							case DELETE:
-								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.DELETE));
-							case ADD:
-								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.ADD));
-							case EDIT:
-								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.EDIT));
-							case VIEW:
-								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.VIEW));
-							case NONE:
-								allowable.add(new Allowed(ea.getAttributeCode().substring(4), CapabilityMode.NONE));
-							}
-						}
-
-					}
-				}
-			}
+			List<Allowed> allowable = CapabilityUtils.generateAlloweds(userToken, user);
 
 			if (StringUtils.isBlank(callingWorkflow)) {
 				callingWorkflow = "";
@@ -403,6 +340,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		}
 		return resultMap;
 	}
+
+
 
 	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
 		// Do nothing, notifications cannot be aborted
