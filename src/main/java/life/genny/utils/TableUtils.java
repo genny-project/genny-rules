@@ -421,7 +421,7 @@ public class TableUtils {
 		tableRowCellStatus.setDttCode("DTT_TEXT_STATUS");
 
 		Context tableRowCellText = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"),
-				VisualControlType.VCL_WRAPPER, 1.0);
+				VisualControlType.VCL_WRAPPER, 2.0);
 		tableRowCellText.setDataType("Text");
 
 
