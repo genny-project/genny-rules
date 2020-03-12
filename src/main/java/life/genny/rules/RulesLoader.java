@@ -793,14 +793,14 @@ public class RulesLoader {
 						BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
 						List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
 					
-//						FactHandle capabilityUtilsHandle = kieSession.insert(capabilityUtils);
-//						FactHandle beUtilsHandle = kieSession.insert(beUtils);
-//
-//						List<FactHandle> allowables = new ArrayList<FactHandle>();
-//						// get each capability from each Role and add to allowables
-//						for (Allowed allow : allowable) {
-//							allowables.add(kieSession.insert(allow));
-//						}
+						FactHandle capabilityUtilsHandle = kieSession.insert(capabilityUtils);
+						FactHandle beUtilsHandle = kieSession.insert(beUtils);
+
+						List<FactHandle> allowables = new ArrayList<FactHandle>();
+						// get each capability from each Role and add to allowables
+						for (Allowed allow : allowable) {
+							allowables.add(kieSession.insert(allow));
+						}
 
 						Long processId = null;
 
@@ -913,12 +913,12 @@ public class RulesLoader {
 
 						}
 						// Cleanup facts
-//						kieSession.retract(beUtilsHandle);
-//						kieSession.retract(capabilityUtilsHandle);
-//
-//						for (FactHandle allow : allowables) {
-//							kieSession.retract(allow);
-//						}
+						kieSession.retract(beUtilsHandle);
+						kieSession.retract(capabilityUtilsHandle);
+
+						for (FactHandle allow : allowables) {
+							kieSession.retract(allow);
+						}
 
 					} /* When usertoken is null */
 					else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
