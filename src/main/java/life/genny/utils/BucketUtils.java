@@ -764,9 +764,9 @@ public class BucketUtils {
 					"SBE_INPROGRESS_APPLICATIONS", SearchEntity.class, serviceToken.getToken());
 
 			// SearchEntity SBE_AVAILABLE_INTERNS = new SearchEntity("SBE_AVAILABLE_INTERNS", "Available")
-			// 		.addSort("PRI_CREATED", "Created", SearchEntity.Sort.DESC)
+			// 		.addSort("PRI_CREATED", "Created", SearchEntity.Sort.ASC)
 			// 		.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "PER_%").addFilter("PRI_DISABLED", false)
-			// 		// .addFilter("PRI_IS_INTERN", true)
+			// 		.addFilter("PRI_IS_INTERN", true)
 
 			// 		/* status and image */
 			// 		.addColumn("PRI_STATUS_COLOR", "Status")
@@ -847,7 +847,7 @@ public class BucketUtils {
 			// 		.addColumn("PRI_INTERN_NAME", "Name").addColumn("PRI_INTERN_STUDENT_ID", "Student ID")
 			// 		.addColumn("PRI_INDUSTRY", "Industry").addColumn("PRI_EDU_PROVIDER_NAME", "Edu Provider")
 			// 		.addColumn("PRI_HOST_COMPANY_NAME", "Host Company")
-			// 		.addColumn("PRI_INTERVIEW_START_DATE", "Interview Date:  ").addColumn("PRI_DUMMY", "Dummy")
+			// 		.addColumn("PRI_INTERVIEW_START_DATETIME", "Interview Date:  ").addColumn("PRI_DUMMY", "Dummy")
 
 			// 		/* Bottom Card */
 			// 		.addColumn("PRI_OCCUPATION", "Occupation").addColumn("PRI_COMPASS", "Address")
@@ -1006,14 +1006,14 @@ public class BucketUtils {
 
 		/* row1Context context */
 		List<Context> row1Context = new ArrayList<>();
-		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL),
-				VisualControlType.GROUP_WRAPPER, 1.0));
-		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_WRAPPER),
-				VisualControlType.GROUP_WRAPPER, 1.0));
-		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_LABEL),
-				VisualControlType.GROUP_LABEL, 1.0));
-		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER),
-				VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		// row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL),
+		// 		VisualControlType.GROUP_WRAPPER, 1.0));
+		// row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_WRAPPER),
+		// 		VisualControlType.GROUP_WRAPPER, 1.0));
+		// row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_LABEL),
+		// 		VisualControlType.GROUP_LABEL, 1.0));
+		// row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER),
+		// 		VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_VCL_INPUT),
 				VisualControlType.VCL_INPUT, 1.0));
 
@@ -1044,8 +1044,8 @@ public class BucketUtils {
 
 		/* add the contextList to contextMap */
 		contextListMap.put("QUE_BUCKET_HEADER_ROW_ONE_GRP", new ContextList(row1Context));
-		contextListMap.put("QUE_BUCKET_HEADER_ROW_TWO_GRP", new ContextList(row2Context));
 		contextListMap.put("QUE_BUCKET_COUNT", new ContextList(bucketCountContextList));
+		//contextListMap.put("QUE_BUCKET_HEADER_ROW_TWO_GRP", new ContextList(row2Context));
 		// contextListMap.put("QUE_BUCKET_SEARCH", new ContextList(bucketSearchContextList));
 		// contextListMap.put("QUE_BUCKET_SORT", new ContextList(bucketSortContextList));
 
@@ -1056,13 +1056,14 @@ public class BucketUtils {
 		ValidationList searchValidationList = new ValidationList();
 		searchValidationList.setValidationList(validations);
 
-		Attribute searchAttribute = new Attribute("PRI_NAME", "Search",
-				new DataType("Text", searchValidationList, "Text"));
-
 		/* get the attributes */
 		Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken.getToken());
 		Attribute sortAttribute = RulesUtils.getAttribute("PRI_SORT", serviceToken.getToken());
 		Attribute nameAttribute = RulesUtils.getAttribute("PRI_NAME", serviceToken.getToken());
+		
+		Attribute searchAttribute = new Attribute("PRI_NAME", "Search",
+				new DataType("Text", searchValidationList, "Text"));
+
 		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken.getToken());
 		Attribute tableCellAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP_TABLE_CELL",
 				serviceToken.getToken());
@@ -1080,7 +1081,7 @@ public class BucketUtils {
 		Ask bucketCountAsk = new Ask(bucketCountQues, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
 
 		Ask[] row1ChildAsks = { bucketCountAsk };
-		// row1Ask.setChildAsks(row1ChildAsks);
+		row1Ask.setChildAsks(row1ChildAsks);
 
 		/* row-two-ask */
 		Question row2Ques = new Question("QUE_BUCKET_HEADER_ROW_TWO_GRP", "Row Two", tableCellAttribute, false);
