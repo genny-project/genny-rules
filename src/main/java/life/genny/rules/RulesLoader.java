@@ -74,6 +74,7 @@ import org.kie.api.runtime.manager.RuntimeEnvironmentBuilder;
 import org.kie.api.runtime.manager.RuntimeManager;
 import org.kie.api.runtime.manager.RuntimeManagerFactory;
 import org.kie.api.runtime.process.WorkItemHandler;
+import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.task.TaskService;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskData;
@@ -116,9 +117,11 @@ import life.genny.model.SessionPid;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.datatype.Allowed;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.exception.BadDataException;
+import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAnswerMessage;
 import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
@@ -784,6 +787,20 @@ public class RulesLoader {
 					if (facts.getUserToken() != null) {
 
 						String session_state = facts.getUserToken().getSessionCode();
+						BaseEntityUtils beUtils = new BaseEntityUtils(facts.getUserToken());
+						beUtils.setServiceToken(facts.getServiceToken());
+						CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
+						BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
+						List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
+					
+						FactHandle capabilityUtilsHandle = kieSession.insert(capabilityUtils);
+						FactHandle beUtilsHandle = kieSession.insert(beUtils);
+
+						List<FactHandle> allowables = new ArrayList<FactHandle>();
+						// get each capability from each Role and add to allowables
+						for (Allowed allow : allowable) {
+							allowables.add(kieSession.insert(allow));
+						}
 
 						Long processId = null;
 
@@ -895,6 +912,14 @@ public class RulesLoader {
 							}
 
 						}
+						// Cleanup facts
+						kieSession.retract(beUtilsHandle);
+						kieSession.retract(capabilityUtilsHandle);
+
+						for (FactHandle allow : allowables) {
+							kieSession.retract(allow);
+						}
+
 					} /* When usertoken is null */
 					else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
 
