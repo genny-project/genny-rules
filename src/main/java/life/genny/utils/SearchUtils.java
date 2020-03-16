@@ -137,13 +137,19 @@ public class SearchUtils {
 						String attributeCode = column.getKey();
 						String attributeName = column.getValue();
 						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
+						
+						if(attr!=null) {
+							
+							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
+									true);
+							Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
+							
+							/* add the entityAttribute ask to list */
+							childAskList.add(childAsk);
+						}else {
+							System.out.println("The attribute " + attributeCode +" was null while fetching from RulesUtils attribute map");
+						}
 
-						Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
-								true);
-						Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
-
-						/* add the entityAttribute ask to list */
-						childAskList.add(childAsk);
 
 					}
 
