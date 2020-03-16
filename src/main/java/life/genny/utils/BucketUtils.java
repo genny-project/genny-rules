@@ -125,6 +125,12 @@ public class BucketUtils {
 					
 			Theme THM_HEADER_PROFILE_PICTURE = VertxUtils.getObject(serviceToken.getRealm(), "",
 					"THM_HEADER_PROFILE_PICTURE", Theme.class, serviceToken.getToken());
+
+			Theme THM_PROGRESS_VCL_INPUT = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_PROGRESS_VCL_INPUT", Theme.class, serviceToken.getToken());
+
+			Theme THM_PROGRESS_INPUT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
+					"THM_PROGRESS_INPUT_WRAPPER", Theme.class, serviceToken.getToken());
 					
 			Theme THM_BORDER_RADIUS_50 = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BORDER_RADIUS_50",
 					Theme.class, serviceToken.getToken());
@@ -173,27 +179,6 @@ public class BucketUtils {
 			Theme THM_EXPANDABLE_ICON = VertxUtils.getObject(serviceToken.getRealm(), "",
 					"THM_EXPANDABLE_ICON", Theme.class, serviceToken.getToken());
 
-			Theme THM_PROGRESS_VCL_INPUT = VertxUtils.getObject(serviceToken.getRealm(), "",
-			"THM_PROGRESS_VCL_INPUT", Theme.class, serviceToken.getToken());
-
-			Theme THM_PROGRESS_INPUT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
-			"THM_PROGRESS_INPUT_WRAPPER", Theme.class, serviceToken.getToken());
-			
-			// Theme THM_PROGRESS_VCL_INPUT = Theme.builder("THM_PROGRESS_VCL_INPUT")
-			// 														.addAttribute()
-			// 															.sections(12)
-			// 															.color("green")
-			// 														.end()
-			// 														.addAttribute(ThemeAttributeType.PRI_IS_INHERITABLE, false).end()
-			// 														.build();  
-
-			// Theme THM_PROGRESS_INPUT_WRAPPER = Theme.builder("THM_PROGRESS_INPUT_WRAPPER")
-			// 														.addAttribute()
-			// 															.padding(10)
-			// 														.end()
-			// 														.addAttribute(ThemeAttributeType.PRI_IS_INHERITABLE, false).end()
-			// 														.build();   
-
 			/* new themes */
 			Theme THM_CARD_STATUS_INPUT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
 						"THM_CARD_STATUS_INPUT_WRAPPER", Theme.class, serviceToken.getToken());
@@ -225,6 +210,7 @@ public class BucketUtils {
 			Theme THM_CARD_BOTTOM_VCL_ICON = VertxUtils.getObject(serviceToken.getRealm(), "",
 			"THM_CARD_BOTTOM_VCL_ICON", Theme.class, serviceToken.getToken());
 
+			/* ICON TYPES */
 			Theme THM_ICON_WORK = VertxUtils.getObject(serviceToken.getRealm(), "",
 						"THM_ICON_WORK", Theme.class, serviceToken.getToken());
 
@@ -249,27 +235,16 @@ public class BucketUtils {
 			Theme THM_HIDE_INPUT = VertxUtils.getObject(serviceToken.getRealm(), "",
 						"THM_HIDE_INPUT", Theme.class, serviceToken.getToken());
 
-			// Theme THM_HIDE_INPUT = Theme.builder("THM_HIDE_INPUT").addAttribute(ThemeAttributeType.PRI_HAS_INPUT, false)
-			// 		.end().build();
-			
-
 			Theme THM_CARD_DATE = VertxUtils.getObject(serviceToken.getRealm(), "",
 						"THM_CARD_DATE", Theme.class, serviceToken.getToken());
 			
 			Theme THM_CARD_DATE_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
 						"THM_CARD_DATE_WRAPPER", Theme.class, serviceToken.getToken());
-			// Theme THM_CARD_MENU_GROUP_CONTENT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
-			// 			"THM_CARD_MENU_GROUP_CONTENT_WRAPPER", Theme.class, serviceToken.getToken());
-			Theme THM_CARD_MENU_GROUP_CONTENT_WRAPPER = Theme.builder("THM_CARD_MENU_GROUP_CONTENT_WRAPPER")
-																					.addAttribute()
-																						.padding(4)
-																						.borderRadius(4)
-																						.position("right")
-																					.end()
-																					.build();
 			
-			/* end new themes */
+			Theme THM_CARD_MENU_GROUP_CONTENT_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "",
+						"THM_CARD_MENU_GROUP_CONTENT_WRAPPER", Theme.class, serviceToken.getToken());
 
+			/* end new themes */
 
 			/* prepare context for progress bar */
 			Context progressVclInputContext = new Context(ContextType.THEME,
@@ -300,6 +275,7 @@ public class BucketUtils {
 			cardContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_CARD),
 					VisualControlType.GROUP_WRAPPER, 1.0));
 
+			/* NEW */
 			Context hideContext = new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_HIDE_INPUT),
 			VisualControlType.GROUP_CONTENT_WRAPPER, 1.0);
 			hideContext.setDttCode("DTT_DUMMY");
@@ -379,6 +355,9 @@ public class BucketUtils {
 
 			/* NEW END */
 
+			cardCentreContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_FLEX_ONE),
+					VisualControlType.GROUP_WRAPPER, 1.0));
+
 						
 			/* NEW */
 			Context cardCentreGrpWrapperContext = new Context(ContextType.THEME,
@@ -405,25 +384,18 @@ public class BucketUtils {
 
 			/* cardBottomContext */
 			List<Context> cardBottomContext = new ArrayList<>();
-			// cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_JUSTIFY_CONTENT_CENTRE),
-			// 		VisualControlType.GROUP_CLICKABLE_WRAPPER, 1.0));
 			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_CARD_BOTTOM_GROUP_CLICKABLE_WRAPPER),
 					VisualControlType.GROUP_CLICKABLE_WRAPPER, 1.0));
 			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_EXPANDABLE),
 					VisualControlType.GROUP, 1.0));
 			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_WIDTH_100_PERCENT),
 					VisualControlType.GROUP, 1.0));
-			// cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_PADDING_X_10),
-			// 		VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
-			// cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_EXPANDABLE_ICON),
-			// 		VisualControlType.GROUP_ICON, 1.0));
 			cardBottomContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_DISPLAY_VERTICAL),
 					VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 			cardBottomContext.add(progressVclInputContext);
 			cardBottomContext.add(progressInputWrapperContext);		
 
 			/* adding icons here */	
-
 
 			Context workContext = new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_ICON_WORK),
 			VisualControlType.VCL_ICON, 1.0);
@@ -1006,14 +978,14 @@ public class BucketUtils {
 
 		/* row1Context context */
 		List<Context> row1Context = new ArrayList<>();
-		// row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL),
-		// 		VisualControlType.GROUP_WRAPPER, 1.0));
-		// row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_WRAPPER),
-		// 		VisualControlType.GROUP_WRAPPER, 1.0));
-		// row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_LABEL),
-		// 		VisualControlType.GROUP_LABEL, 1.0));
-		// row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER),
-		// 		VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_DISPLAY_HORIZONTAL),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_WRAPPER),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_LABEL),
+				VisualControlType.GROUP_LABEL, 1.0));
+		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_GRP_CONTENT_WRAPPER),
+				VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 		row1Context.add(new Context(ContextType.THEME, this.getThemeBe(THM_BH_ROW_ONE_VCL_INPUT),
 				VisualControlType.VCL_INPUT, 1.0));
 
@@ -1044,10 +1016,8 @@ public class BucketUtils {
 
 		/* add the contextList to contextMap */
 		contextListMap.put("QUE_BUCKET_HEADER_ROW_ONE_GRP", new ContextList(row1Context));
+		contextListMap.put("QUE_BUCKET_HEADER_ROW_TWO_GRP", new ContextList(row2Context));
 		contextListMap.put("QUE_BUCKET_COUNT", new ContextList(bucketCountContextList));
-		//contextListMap.put("QUE_BUCKET_HEADER_ROW_TWO_GRP", new ContextList(row2Context));
-		// contextListMap.put("QUE_BUCKET_SEARCH", new ContextList(bucketSearchContextList));
-		// contextListMap.put("QUE_BUCKET_SORT", new ContextList(bucketSortContextList));
 
 		/* Validation for Search Attribute */
 		Validation validation = new Validation("VLD_NON_EMPTY", "EmptyandBlankValues", "(?!^$|\\s+)");
