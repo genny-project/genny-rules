@@ -246,6 +246,11 @@ public class BucketUtils {
 		Theme THM_BH_GROUP_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BH_GROUP_WRAPPER",
 				Theme.class, serviceToken.getToken());
 
+		Theme THM_WIDTH_100_PERCENT_NO_INHERIT = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_WIDTH_100_PERCENT_NO_INHERIT", Theme.class, serviceToken.getToken());
+		Theme THM_BUCKET_HEADER_GROUP_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BUCKET_HEADER_GROUP_WRAPPER", Theme.class, serviceToken.getToken());
+		Theme THM_BUCKET_HEADER_GROUP_HEADER_WRAPPER = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BUCKET_HEADER_GROUP_HEADER_WRAPPER", Theme.class, serviceToken.getToken());
+		Theme THM_BUCKET_HEADER_GROUP_LABEL = VertxUtils.getObject(serviceToken.getRealm(), "", "THM_BUCKET_HEADER_GROUP_LABEL", Theme.class, serviceToken.getToken());
+
 
 		/* get the theme baseentioty */
 		BaseEntity THM_DISPLAY_VERTICAL_BE = this.getThemeBe(THM_DISPLAY_VERTICAL);
@@ -306,6 +311,11 @@ public class BucketUtils {
 		BaseEntity THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER_BE = this.getThemeBe(THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER);
 		BaseEntity THM_BH_ROW_TWO_INPUT_FIELD_BE = this.getThemeBe(THM_BH_ROW_TWO_INPUT_FIELD);
 		BaseEntity THM_BH_GROUP_WRAPPER_BE = this.getThemeBe(THM_BH_GROUP_WRAPPER);
+		
+		BaseEntity THM_WIDTH_100_PERCENT_NO_INHERIT_BE = this.getThemeBe(THM_WIDTH_100_PERCENT_NO_INHERIT);
+		BaseEntity THM_BUCKET_HEADER_GROUP_WRAPPER_BE = this.getThemeBe(THM_BUCKET_HEADER_GROUP_WRAPPER);
+		BaseEntity THM_BUCKET_HEADER_GROUP_HEADER_WRAPPER_BE = this.getThemeBe(THM_BUCKET_HEADER_GROUP_HEADER_WRAPPER);
+		BaseEntity THM_BUCKET_HEADER_GROUP_LABEL_BE = this.getThemeBe(THM_BUCKET_HEADER_GROUP_LABEL);
 
 		List<BaseEntity> themes = new ArrayList<BaseEntity>();		
 		themes.add(THM_DISPLAY_VERTICAL_BE);
@@ -366,6 +376,10 @@ public class BucketUtils {
 		themes.add(THM_BH_ROW_TWO_GRP_CONTENT_WRAPPER_BE);
 		themes.add(THM_BH_ROW_TWO_INPUT_FIELD_BE);
 		themes.add(THM_BH_GROUP_WRAPPER_BE);
+		themes.add(THM_WIDTH_100_PERCENT_NO_INHERIT_BE);
+		themes.add(THM_BUCKET_HEADER_GROUP_WRAPPER_BE);
+		themes.add(THM_BUCKET_HEADER_GROUP_HEADER_WRAPPER_BE);
+		themes.add(THM_BUCKET_HEADER_GROUP_LABEL_BE);
 
 		System.out.println("**************** Themes in the list :: "+ themes.size() +" ********************");
 
