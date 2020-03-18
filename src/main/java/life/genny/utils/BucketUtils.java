@@ -1545,6 +1545,13 @@ public class BucketUtils {
 				/* fetch the search results */
 				QDataBaseEntityMessage msg = searchUtils.fetchSearchResults(searchBe, serviceToken);
 
+				if (msg == null) {
+					System.out.println("The msg in " +code+" was null");
+				} else {
+					System.out.println("The items in " + code + " was " + msg.getItems().length + " items , with total="
+					+ msg.getTotal());
+				}
+
 				/* get the application counts */
 				long totalResults = msg.getItems().length;
 				log.info("items in bucket " + code + " is :: " + totalResults );
@@ -1560,6 +1567,9 @@ public class BucketUtils {
 
 				/* add the application to the baseentity list */
 				beList.addAll(appList);
+
+				/* add the updated searchBe as well */
+				beList.add(searchBe);
 
 				/* convert app to asks */
 				List<Ask> appAsksList = searchUtils.generateQuestions(beUtils.getGennyToken(), beUtils, appList,
