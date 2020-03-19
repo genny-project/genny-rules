@@ -790,6 +790,7 @@ public class RulesLoader {
 						BaseEntityUtils beUtils = new BaseEntityUtils(facts.getUserToken());
 						beUtils.setServiceToken(facts.getServiceToken());
 						CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
+						capabilityUtils.process();
 						BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
 						List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
 					
