@@ -775,6 +775,11 @@ public class RulesLoader {
 						new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
 				kieSession.getEnvironment().set("Autoclaim", "true"); // for JBPM
+				
+				/* set up a global */
+				QBulkMessage payload = new QBulkMessage();
+				kieSession.setGlobal("payload", payload);
+
 
 			}
 
