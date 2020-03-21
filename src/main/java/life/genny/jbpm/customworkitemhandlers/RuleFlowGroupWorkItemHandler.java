@@ -95,7 +95,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				userToken = serviceToken;
 			}
 
-			log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #1");
+			//log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #1");
 
 			BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 			CapabilityUtils capabilityUtils = null;
@@ -129,7 +129,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			} else {
 
 			}
-			log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2");
+			//log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2");
 			user = beUtils.getBaseEntityByCode(userCode);
 			List<Allowed> allowable = CapabilityUtils.generateAlloweds(userToken, user);
 
