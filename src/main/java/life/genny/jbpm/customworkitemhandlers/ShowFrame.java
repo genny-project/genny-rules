@@ -494,7 +494,7 @@ public class ShowFrame implements WorkItemHandler {
 //					userToken.getToken());
 			
 			JsonObject askMsgJson = VertxUtils.readCachedJson(userToken.getRealm(), rootFrameCode + "_ASKS",userToken.getToken());
-			if ("OK".equals(askMsgJson.getString("status"))) {
+			if ("OK".equalsIgnoreCase(askMsgJson.getString("status"))) {
 				askMsgs2Str = askMsgJson.getString("value");
 			} else {
 				askMsgs2Str = null;
@@ -591,7 +591,7 @@ public class ShowFrame implements WorkItemHandler {
 						JsonObject searchBe = VertxUtils.readCachedJson(userToken.getRealm(), "SBE_" + groupCode,
 								userToken.getToken());
 
-						if ("ok".equals(searchBe.getString("status"))) {
+						if ("ok".equalsIgnoreCase(searchBe.getString("status"))) {
 
 							/* This is for dynamically generated items */
 							SearchEntity sbe = JsonUtils.fromJson(searchBe.getString("value"), SearchEntity.class);
@@ -612,7 +612,7 @@ public class ShowFrame implements WorkItemHandler {
 										val.getCode() + " groupCode has Illegal Group Code : [" + groupCode
 												+ "] dataType=[" + dt + "] for attributeCode:[" + attributeCode + "]");
 
-							} else if ("ok".equals(json.getString("status"))) {
+							} else if ("ok".equalsIgnoreCase(json.getString("status"))) {
 
 								qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
 								qdb.setToken(userToken.getToken());
