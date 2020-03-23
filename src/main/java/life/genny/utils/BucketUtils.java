@@ -1557,10 +1557,16 @@ public class BucketUtils {
 				log.info("items in bucket " + code + " is :: " + totalResults );
 
 				/* also update the searchBe with the attribute */
-				Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBe.getCode(),
-						"PRI_TOTAL_RESULTS", totalResults + "");
-				beUtils.addAnswer(totalAnswer);
-				beUtils.updateBaseEntity(searchBe, totalAnswer);
+				// Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBe.getCode(),
+				// 		"PRI_TOTAL_RESULTS", totalResults + "");
+				// beUtils.addAnswer(totalAnswer);
+				// beUtils.updateBaseEntity(searchBe, totalAnswer);
+
+				Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken.getToken());
+				EntityAttribute eAttribute = new EntityAttribute(searchBe, countAttribute,1.0);
+				eAttribute.setValueInteger(Integer.parseInt(totalResults+""));
+
+				searchBe.getBaseEntityAttributes().add(eAttribute);
 
 				/* get the applications */
 				List<BaseEntity> appList = Arrays.asList(msg.getItems());
