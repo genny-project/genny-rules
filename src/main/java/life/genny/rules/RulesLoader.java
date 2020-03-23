@@ -861,7 +861,12 @@ public class RulesLoader {
 								} else {
 									log.info("SignalEvent -> 'event' for " + facts.getUserToken().getUserCode() + ":"
 											+ processId);
-									kieSession.signalEvent("event", facts, processId);
+									try {
+										kieSession.signalEvent("event", facts, processId);
+									} catch (Exception e) {
+										log.error("Bad Session Error for process Id "+processId+" and userCode "+facts.getUserToken().getUserCode());
+										
+									}
 								}
 							}
 
