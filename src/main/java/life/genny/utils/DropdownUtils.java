@@ -91,7 +91,7 @@ public class DropdownUtils implements Serializable {
 		QDataBaseEntityMessage DROPDOWN_MSG = VertxUtils.getObject(serviceToken.getRealm(), "",
 				searchBE.getCode() + "_MSG", QDataBaseEntityMessage.class, serviceToken.getToken());
 
-		if (DROPDOWN_MSG == null) {
+		if (DROPDOWN_MSG == null || true ) {  // TODO, update search caches upon item add/delete
 
 			String jsonSearchBE = JsonUtils.toJson(searchBE);
 			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",

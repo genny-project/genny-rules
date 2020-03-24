@@ -877,7 +877,8 @@ public class RulesLoader {
 
 								msg_code = ((QDataMessage) facts.getMessage()).getData_type();
 								bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
-
+								// Save an associated Bridge IP to the session
+								VertxUtils.writeCachedJson(facts.getUserToken().getRealm(), facts.getUserToken().getSessionCode(), bridgeSourceAddress, facts.getUserToken().getToken());
 								log.info("incoming DATA" + " message from " + bridgeSourceAddress + ": "
 										+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
 										+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
