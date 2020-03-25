@@ -441,7 +441,7 @@ public class RulesLoader {
 				}
 			}
 
-			if (rulesChanged ) {
+			if (rulesChanged) {
 				log.info("Theme and Frame Rules CHANGED. RUNNING init frames...");
 			} else {
 				log.info("Theme and Frame Rules DID NOT CHANGE. NOT RUNNING init frames...");
@@ -721,7 +721,7 @@ public class RulesLoader {
 		}
 		return ret;
 	}
-	
+
 	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
 	public void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
 		int rulesFired = 0;
@@ -775,11 +775,10 @@ public class RulesLoader {
 						new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
 				kieSession.getEnvironment().set("Autoclaim", "true"); // for JBPM
-				
+
 				/* set up a global */
 				QBulkMessage payload = new QBulkMessage();
 				kieSession.setGlobal("payload", payload);
-
 
 			}
 
@@ -791,26 +790,39 @@ public class RulesLoader {
 					/* If userToken is not null then send the event through user Session */
 					if (facts.getUserToken() != null) {
 
+						log.info("Settting up Capabilitys and Alloweds ");
+
 						String session_state = facts.getUserToken().getSessionCode();
 						BaseEntityUtils beUtils = new BaseEntityUtils(facts.getUserToken());
 						beUtils.setServiceToken(facts.getServiceToken());
-						CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
-						capabilityUtils.process();
-						BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
-						List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
-					
-						FactHandle capabilityUtilsHandle = kieSession.insert(capabilityUtils);
 						FactHandle beUtilsHandle = kieSession.insert(beUtils);
-
+						FactHandle capabilityUtilsHandle = null;
 						List<FactHandle> allowables = new ArrayList<FactHandle>();
-						// get each capability from each Role and add to allowables
-						for (Allowed allow : allowable) {
-							allowables.add(kieSession.insert(allow));
+
+						log.info("Baseentity created");
+						CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
+						log.info("CapabilityUtils created , now processing");
+						//capabilityUtils.process();
+						log.info("CapabilitysUtils processed ");
+						BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
+						if (user != null) {
+
+							log.info("User fetched ");
+							List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
+							log.info("Alloweds generated ");
+							capabilityUtilsHandle = kieSession.insert(capabilityUtils);
+							log.info("Adding Allowed to kiesession");
+							
+							// get each capability from each Role and add to allowables
+							for (Allowed allow : allowable) {
+								allowables.add(kieSession.insert(allow));
+							}
 						}
 
 						Long processId = null;
-
-						Optional<Long> processIdBysessionId = getProcessIdBysessionId(serviceToken.getRealm(),session_state);
+						log.info("Looking up ProcessId by session " + session_state);
+						Optional<Long> processIdBysessionId = getProcessIdBysessionId(serviceToken.getRealm(),
+								session_state);
 
 						/* Check if the process already exist or not */
 						boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
@@ -826,6 +838,12 @@ public class RulesLoader {
 
 								msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
 								bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
+								// Save an associated Bridge IP to the session
+								log.info("saving bridge ip to cache associted with session "
+										+ facts.getUserToken().getSessionCode());
+								VertxUtils.writeCachedJson(facts.getUserToken().getRealm(),
+										facts.getUserToken().getSessionCode(), bridgeSourceAddress,
+										facts.getUserToken().getToken());
 
 								log.info("incoming EVENT" + " message from " + bridgeSourceAddress + ": "
 										+ facts.getUserToken().getRealm() + ": " + facts.getUserToken().getSessionCode()
@@ -864,8 +882,9 @@ public class RulesLoader {
 									try {
 										kieSession.signalEvent("event", facts, processId);
 									} catch (Exception e) {
-										log.error("Bad Session Error for process Id "+processId+" and userCode "+facts.getUserToken().getUserCode());
-										
+										log.error("Bad Session Error for process Id " + processId + " and userCode "
+												+ facts.getUserToken().getUserCode());
+
 									}
 								}
 							}
@@ -878,7 +897,11 @@ public class RulesLoader {
 								msg_code = ((QDataMessage) facts.getMessage()).getData_type();
 								bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
 								// Save an associated Bridge IP to the session
-								VertxUtils.writeCachedJson(facts.getUserToken().getRealm(), facts.getUserToken().getSessionCode(), bridgeSourceAddress, facts.getUserToken().getToken());
+								log.info("saving bridge ip to cache associted with session "
+										+ facts.getUserToken().getSessionCode());
+								VertxUtils.writeCachedJson(facts.getUserToken().getRealm(),
+										facts.getUserToken().getSessionCode(), bridgeSourceAddress,
+										facts.getUserToken().getToken());
 								log.info("incoming DATA" + " message from " + bridgeSourceAddress + ": "
 										+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
 										+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
@@ -888,15 +911,19 @@ public class RulesLoader {
 								log.info("SignalEvent -> 'data' for " + facts.getUserToken().getUserCode() + ":"
 										+ processId);
 								try {
-									if (facts.getMessage()==null) { log.error("facts.getMessage() is NULL");}
-									else if (facts.getUserToken()==null) { log.error("facts.getUserToken() is NULL");}
-									else if (facts.getServiceToken()==null) { log.error("facts.getServiceToken() is NULL");}
-									else if (processId==null) { log.error("processId is NULL");}
-									else {
+									if (facts.getMessage() == null) {
+										log.error("facts.getMessage() is NULL");
+									} else if (facts.getUserToken() == null) {
+										log.error("facts.getUserToken() is NULL");
+									} else if (facts.getServiceToken() == null) {
+										log.error("facts.getServiceToken() is NULL");
+									} else if (processId == null) {
+										log.error("processId is NULL");
+									} else {
 										kieSession.signalEvent("data", facts, processId);
 									}
 								} catch (Exception e) {
-									log.error("Error in data signal :"+facts+":"+e.getLocalizedMessage());
+									log.error("Error in data signal :" + facts + ":" + e.getLocalizedMessage());
 								}
 
 							}
@@ -926,10 +953,12 @@ public class RulesLoader {
 						}
 						// Cleanup facts
 						kieSession.retract(beUtilsHandle);
-						kieSession.retract(capabilityUtilsHandle);
+						if (capabilityUtilsHandle!=null) {
+							kieSession.retract(capabilityUtilsHandle);
 
-						for (FactHandle allow : allowables) {
-							kieSession.retract(allow);
+							for (FactHandle allow : allowables) {
+								kieSession.retract(allow);
+							}
 						}
 
 					} /* When usertoken is null */
@@ -1082,10 +1111,10 @@ public class RulesLoader {
 //		}
 	}
 
-	public static Map<String,Object> executeStateless(final List<Tuple2<String, Object>> globals, final List<Object> facts,
-			final GennyToken serviceToken, final GennyToken userToken) {
-		Map<String,Object> results = new HashMap<String,Object>();
-		
+	public static Map<String, Object> executeStateless(final List<Tuple2<String, Object>> globals,
+			final List<Object> facts, final GennyToken serviceToken, final GennyToken userToken) {
+		Map<String, Object> results = new HashMap<String, Object>();
+
 		StatefulKnowledgeSession kieSession = null;
 		int rulesFired = 0;
 		QEventMessage eventMsg = null;
@@ -1143,8 +1172,6 @@ public class RulesLoader {
 			CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
 
 			rulesFired = kieSession.fireAllRules();
-			
-			
 
 		} catch (final Throwable t) {
 			log.error(t.getLocalizedMessage());
@@ -1325,7 +1352,7 @@ public class RulesLoader {
 	public void triggerStartupRules(final String realm, final String rulesDir) {
 		log.info("Triggering Startup Rules for all " + realm);
 		QEventMessage msg = new QEventMessage("EVT_MSG", "INIT_STARTUP");
-		msg.getData().setValue((rulesChanged||true) ? "RULES_CHANGED" : "NO_RULES_CHANGED");
+		msg.getData().setValue((rulesChanged || true) ? "RULES_CHANGED" : "NO_RULES_CHANGED");
 		initMsg("Event:INIT_STARTUP", realm, msg);
 		// rulesChanged = false;
 
@@ -1365,40 +1392,38 @@ public class RulesLoader {
 //		return instances.stream().map(d -> d.getId()).findFirst();
 //
 //	}
-	public static Optional<Long> getProcessIdBysessionId(String realm,String sessionId) {
+	public static Optional<Long> getProcessIdBysessionId(String realm, String sessionId) {
 		// Do pagination here
 		QueryContext ctx = new QueryContext(0, 100);
 		try {
-			Collection<SessionPid> instances = queryService.query("getAllSessionPids",
-					SessionPidQueryMapper.get(), ctx, QueryParam.equalsTo("sessionCode", sessionId)/*,QueryParam.equalsTo("realm", realm)*/);
+			Collection<SessionPid> instances = queryService.query("getAllSessionPids", SessionPidQueryMapper.get(), ctx,
+					QueryParam.equalsTo("sessionCode", sessionId)/* ,QueryParam.equalsTo("realm", realm) */);
 
 			return instances.stream().map(d -> d.getProcessInstanceId()).findFirst();
 		} catch (Exception e) {
-			log.warn("No pid found for sessionCode="+sessionId);
+			log.warn("No pid found for sessionCode=" + sessionId);
 		}
 		return Optional.empty();
 
 	}
-	
-	
-	public static Optional<Long> getProcessIdByWorkflowBeCode(String realm,String workflowBeCode) {
+
+	public static Optional<Long> getProcessIdByWorkflowBeCode(String realm, String workflowBeCode) {
 		// Do pagination here
 		QueryContext ctx = new QueryContext(0, 100);
-		Collection<NodeStatus> instances = queryService.query("getAllNodeStatuses2",
-				NodeStatusQueryMapper.get(), ctx, QueryParam.equalsTo("workflowBeCode", workflowBeCode),QueryParam.equalsTo("realm", realm));
+		Collection<NodeStatus> instances = queryService.query("getAllNodeStatuses2", NodeStatusQueryMapper.get(), ctx,
+				QueryParam.equalsTo("workflowBeCode", workflowBeCode), QueryParam.equalsTo("realm", realm));
 		return instances.stream().map(d -> d.getId()).findFirst();
 
 	}
 
-	public static List<String> getWorkflowBeCodeByWorkflowStage(String realm,String workflowStage) {
+	public static List<String> getWorkflowBeCodeByWorkflowStage(String realm, String workflowStage) {
 		// Do pagination here
 		QueryContext ctx = new QueryContext(0, 100);
-		Collection<NodeStatus> instances = queryService.query("getAllNodeStatuses2",
-				NodeStatusQueryMapper.get(), ctx, QueryParam.equalsTo("workflowStage", workflowStage),QueryParam.equalsTo("realm", realm));
+		Collection<NodeStatus> instances = queryService.query("getAllNodeStatuses2", NodeStatusQueryMapper.get(), ctx,
+				QueryParam.equalsTo("workflowStage", workflowStage), QueryParam.equalsTo("realm", realm));
 		return instances.stream().map(d -> d.getWorkflowBeCode()).collect(Collectors.toList());
 
 	}
-
 
 	private static QueryService queryService;
 	private static KieServiceConfigurator serviceConfigurator;
@@ -1473,7 +1498,7 @@ public class RulesLoader {
 		} catch (QueryAlreadyRegisteredException e) {
 			log.warn(query.getName() + " is already registered");
 		}
-		
+
 		SqlQueryDefinition query3 = new SqlQueryDefinition("getAllSessionPids", "java:jboss/datasources/gennyDS");
 		query3.setExpression("select * from session_pid");
 		try {
@@ -1482,7 +1507,6 @@ public class RulesLoader {
 			log.warn(query3.getName() + " is already registered");
 		}
 
-		
 		SqlQueryDefinition query2 = new SqlQueryDefinition("getAllNodeStatuses2", "java:jboss/datasources/gennyDS");
 		query2.setExpression("select  * from nodestatus");
 
@@ -1495,9 +1519,9 @@ public class RulesLoader {
 		log.info("Finished init");
 	}
 
-	public static Optional<Long> getProcessIdBySessionId(String realm,String sessionId) {
+	public static Optional<Long> getProcessIdBySessionId(String realm, String sessionId) {
 		// TODO Auto-generated method stub
-		return RulesLoader.getProcessIdBysessionId(realm,sessionId);
+		return RulesLoader.getProcessIdBysessionId(realm, sessionId);
 	}
 
 	private static Boolean processRule(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {
@@ -1526,11 +1550,13 @@ public class RulesLoader {
 
 		if (ruleCode.startsWith("RUL_FRM_")) {
 			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(realm+":"+filename.replaceAll("\\.[^.]*$", ""),false); // check if actually fires
+			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actually
+																									// fires
 		}
 		if (ruleCode.startsWith("RUL_THM_")) {
 			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(realm+":"+filename.replaceAll("\\.[^.]*$", ""),false); // check if actuall fires
+			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actuall
+																									// fires
 		}
 
 		// get existing rule from cache
@@ -1670,9 +1696,9 @@ public class RulesLoader {
 				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_TYPE", realmTokenMap.get(realm)), kieType);
 				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_TEXT", realmTokenMap.get(realm)), ruleText);
 				existingRuleBe.setValue(RulesUtils.getAttribute("PRI_KIE_NAME", realmTokenMap.get(realm)), name);
-			} catch (ClassCastException ee )
-			{
-				log.error("ClassCastException?!? realm="+realm+" realmTokenMap.get(realm)="+realmTokenMap.get(realm));
+			} catch (ClassCastException ee) {
+				log.error("ClassCastException?!? realm=" + realm + " realmTokenMap.get(realm)="
+						+ realmTokenMap.get(realm));
 			} catch (BadDataException e) {
 				log.error("Bad data");
 			}
