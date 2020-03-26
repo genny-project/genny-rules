@@ -753,8 +753,8 @@ public class RulesLoader {
 				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getId());
 				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
-				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
-
+				//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
+				AbstractAuditLogger logger = new NodeStatusLog(emf,env);
 				// addHandlers(kieSession);
 				kieSession.addEventListener(logger);
 				kieSession.addEventListener(new GennyAgendaEventListener());
