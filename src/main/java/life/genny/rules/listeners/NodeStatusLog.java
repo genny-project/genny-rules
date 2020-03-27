@@ -20,6 +20,7 @@ import java.util.Date;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -32,6 +33,10 @@ import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transactional;
 import javax.transaction.UserTransaction;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 
 import org.drools.core.WorkingMemory;
 import org.drools.core.common.InternalWorkingMemory;
@@ -62,6 +67,8 @@ import org.kie.api.runtime.KieSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.javaparser.utils.Log;
+
 import life.genny.model.NodeStatus;
 import life.genny.model.SessionPid;
 import life.genny.models.GennyToken;
@@ -74,7 +81,7 @@ import life.genny.utils.SessionFacts;
  */
 public class NodeStatusLog extends AbstractAuditLogger {
 
-	private static final Logger logger = LoggerFactory.getLogger(JPAWorkingMemoryDbLogger.class);
+	private static final Logger logger = LoggerFactory.getLogger(NodeStatusLog.class);
 
 	private static final String[] KNOWN_UT_JNDI_KEYS = new String[] { "UserTransaction", "java:jboss/UserTransaction",
 			System.getProperty("jbpm.ut.jndi.lookup") };
@@ -86,6 +93,8 @@ public class NodeStatusLog extends AbstractAuditLogger {
 
 	private ProcessIndexerManager indexManager = ProcessIndexerManager.get();
 
+	private Validator validator;
+  
 	/*
 	 * for backward compatibility
 	 */
@@ -95,12 +104,18 @@ public class NodeStatusLog extends AbstractAuditLogger {
 		if (processRuntime != null) {
 			processRuntime.addEventListener((ProcessEventListener) this);
 		}
+		  ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		    validator = factory.getValidator();
+
 	}
 
 	public NodeStatusLog(KieSession session) {
 		Environment env = session.getEnvironment();
 		internalSetIsJTA(env);
 		session.addEventListener(this);
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		validator = factory.getValidator();
+
 	}
 
 	/*
@@ -109,6 +124,9 @@ public class NodeStatusLog extends AbstractAuditLogger {
 
 	public NodeStatusLog(EntityManagerFactory emf) {
 		this.emf = emf;
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		validator = factory.getValidator();
+
 	}
 
 	public NodeStatusLog() {
@@ -118,10 +136,16 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	public NodeStatusLog(EntityManagerFactory emf, Environment env) {
 		this.emf = emf;
 		internalSetIsJTA(env);
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		 validator = factory.getValidator();
+
 	}
 
 	public NodeStatusLog(Environment env) {
 		internalSetIsJTA(env);
+		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		validator = factory.getValidator();
+
 	}
 
 	private void internalSetIsJTA(Environment env) {
@@ -371,6 +395,16 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	private void persist(Object entity, KieRuntimeEvent event) {
 		EntityManager em = getEntityManager(event);
 		Object tx = joinTransaction(em);
+		if (entity instanceof NodeStatus) {
+			Set<ConstraintViolation<NodeStatus>> constraintViolations =  validator.validate( (NodeStatus)entity );
+			if (!constraintViolations.isEmpty()) {
+				Log.error("NodeStatus constraint error: "+constraintViolations);
+				leaveTransaction(em,tx);
+				return;
+			}
+		} else {
+			logger.warn("NON NodeStatus Object being persisted");
+		}
 		em.persist(entity);
 		leaveTransaction(em, tx);
 	}

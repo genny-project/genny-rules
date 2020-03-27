@@ -1528,8 +1528,8 @@ public class BucketUtils {
 			QDataBaseEntityMessage SBE_DUMMY_MSG = new QDataBaseEntityMessage(SBE_DUMMY);
 			SBE_DUMMY_MSG.setToken(userToken.getToken());
 			
-			String msgJson = JsonUtils.toJson(SBE_DUMMY_MSG);
-			VertxUtils.writeMsg("webcmds",msgJson);
+			/* String msgJson = JsonUtils.toJson(SBE_DUMMY_MSG); */
+			VertxUtils.writeMsg("webcmds",SBE_DUMMY_MSG);
 
 
 			/* loop through the s */
@@ -1609,7 +1609,7 @@ public class BucketUtils {
 				QDataBaseEntityMessage msg2 = FrameUtils2.toMessage(bucketContent, userToken, askSet, contextListMap,
 						virtualAskMap);
 				msg2.setToken(userToken.getToken());
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg2));
+				VertxUtils.writeMsg("webcmds", msg2);
 				
 				/* Send asks */
 				for (QDataAskMessage askMsg : askSet) {
@@ -1618,8 +1618,8 @@ public class BucketUtils {
 
 					askMsg.setToken(userToken.getToken());
 
-					String json = JsonUtils.toJson(askMsg);
-					VertxUtils.writeMsg("webcmds", json);
+					/* String json = JsonUtils.toJson(askMsg); */
+					VertxUtils.writeMsg("webcmds", askMsg);
 
 				}
 
@@ -1630,7 +1630,7 @@ public class BucketUtils {
 
 			QDataBaseEntityMessage appMsg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
 			appMsg.setToken(userToken.getToken());
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(appMsg));
+			VertxUtils.writeMsg("webcmds", appMsg);
 
 			log.info("Sending asks from outside the loop");
 
