@@ -135,6 +135,22 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		Map<Long,Boolean> mandatoryDoneMap = new ConcurrentHashMap<Long,Boolean>();
 
 		OutputParam output = (OutputParam) items.get("output");
+		
+		if (output.getTypeOfResult().equalsIgnoreCase("NO_PROCESSING"))
+		{
+			output.setResultCode("NONE");
+			output.setTypeOfResult("NONE");
+			resultMap.put("output", output);
+
+			if (kieSession != null) {
+				kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
+			} else {
+				manager.completeWorkItem(workItem.getId(), resultMap);
+			}
+
+			return;
+		}
+		
 		GennyToken userToken = (GennyToken) items.get("userToken");
 		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
 		String formCode = "NONE";
@@ -222,6 +238,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		if ((!validAnswersExist) || exitOut || (answerMap2.isEmpty())) {
 			log.error(callingWorkflow + " exiting out early due to no valid answers nor pri_submit");
 			output.setResultCode("NONE");
+			output.setTypeOfResult("NONE");
 			resultMap.put("output", output);
 			manager.completeWorkItem(workItem.getId(), resultMap);
 			return;
