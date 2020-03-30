@@ -521,7 +521,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 	 * the transaction parameter.
 	 * 
 	 * @param em The entity manager.
-	 * @param ut The (user) transaction.
+	 * @param transaction The (user) transaction.
 	 */
 	private void leaveTransaction(EntityManager em, Object transaction) {
 		if (isJTA) {
