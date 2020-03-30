@@ -745,13 +745,13 @@ public class RulesLoader {
 			if (GennySettings.useSingleton) { // TODO
 				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
 				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
-						+ kieSession.getId());
+						+ kieSession.getIdentifier());
 				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
 			} else {
 				RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
 				kieSession = runtimeEngine.getKieSession();
 				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
-						+ kieSession.getId());
+						+ kieSession.getIdentifier());
 				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
 				//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(emf,env);
@@ -812,7 +812,7 @@ public class RulesLoader {
 							log.info("Alloweds generated ");
 							capabilityUtilsHandle = kieSession.insert(capabilityUtils);
 							log.info("Adding Allowed to kiesession");
-							
+
 							// get each capability from each Role and add to allowables
 							for (Allowed allow : allowable) {
 								allowables.add(kieSession.insert(allow));
@@ -952,12 +952,12 @@ public class RulesLoader {
 
 						}
 						// Cleanup facts
-						kieSession.retract(beUtilsHandle);
+						kieSession.delete(beUtilsHandle);
 						if (capabilityUtilsHandle!=null) {
-							kieSession.retract(capabilityUtilsHandle);
+							kieSession.delete(capabilityUtilsHandle);
 
 							for (FactHandle allow : allowables) {
-								kieSession.retract(allow);
+								kieSession.delete(allow);
 							}
 						}
 
