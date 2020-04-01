@@ -229,9 +229,12 @@ public class ShowFrame implements WorkItemHandler {
 					// Minify
 					String payload = JsonUtils.toJson(FRM_MSG);
 					JSONObject js = new JSONObject(payload);
+					js.put("token", userToken.getToken());
 					String payload2 = js.toString();
 					if (payload2 != null) {
-						VertxUtils.writeMsg("webcmds", payload2);
+					//	VertxUtils.writeMsg("webcmds", payload2);
+					VertxUtils.writeMsg("webcmds", FRM_MSG);
+
 					}
 
 					sendAsks(rootFrameCode, userToken, callingWorkflow, output);
@@ -350,7 +353,7 @@ public class ShowFrame implements WorkItemHandler {
 					QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(besToSend);
 					beMsg.setToken(userToken.getToken());
 					beMsg.setReplace(true);
-					VertxUtils.writeMsg("webdata", JsonUtils.toJson(beMsg));
+					VertxUtils.writeMsg("webdata", beMsg);
 
 				}
 
