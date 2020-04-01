@@ -724,7 +724,7 @@ public class RulesLoader {
 	}
 
 	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
-	private KieSession getKieSesion(SessionFacts facts) {
+	private static KieSession getKieSesion(SessionFacts facts) {
 		KieSession kieSession = null;
 		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
 		if (RUNTIME_MANAGER_ON) {
@@ -762,7 +762,7 @@ public class RulesLoader {
 		return kieSession;
 	}
 
-	private void processQEventMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
+	private static void processQEventMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
 		((QEventMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
 
 		String msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
@@ -819,7 +819,7 @@ public class RulesLoader {
 		}
 	}
 
-	private void processQDataMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
+	private static void processQDataMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
 		((QDataMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
 
 		String msg_code = ((QDataMessage) facts.getMessage()).getData_type();
@@ -856,7 +856,7 @@ public class RulesLoader {
 		}
 	}
 
-	private void processAuthInitEvent(SessionFacts facts, KieSession kieSession){
+	private static void processAuthInitEvent(SessionFacts facts, KieSession kieSession){
 		((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
 		String bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
@@ -868,7 +868,7 @@ public class RulesLoader {
 		kieSession.signalEvent("newSession", facts);
 	}
 
-	private void sendEventThroughUserSession(SessionFacts facts, KieSession kieSession) throws InterruptedException {
+	private static void sendEventThroughUserSession(SessionFacts facts, KieSession kieSession) throws InterruptedException {
 		log.info("Setting up Capabilities and Alloweds");
 		String bridgeSourceAddress = "";
 		GennyToken serviceToken = facts.getServiceToken();
@@ -916,11 +916,11 @@ public class RulesLoader {
 			processId = processIdBysessionId.get();
 			processState = kieSession.getProcessInstance(processId).getState();
 
-			while(processState != ProcessInstance.STATE_COMPLETED) {
-				log.warn("Current process:" + processId + " not completed, state is:" + processState + ", wait 1 second.");
-				processState = kieSession.getProcessInstance(processId).getState();
-				TimeUnit.SECONDS.sleep(1);
-			}
+//			while(processState != ProcessInstance.STATE_COMPLETED) {
+//				log.warn("Current process:" + processId + " not completed, state is:" + processState + ", wait 1 second.");
+//				processState = kieSession.getProcessInstance(processId).getState();
+//				TimeUnit.SECONDS.sleep(1);
+//			}
 
 			/* If the message is QEventMessage then send in to event channel */
 			if (facts.getMessage() instanceof QEventMessage) {
@@ -948,7 +948,7 @@ public class RulesLoader {
 		}
 	}
 
-	public void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
+	public static synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
 		int rulesFired = 0;
 		GennyToken serviceToken = facts.getServiceToken();
 
