@@ -868,7 +868,7 @@ public class RulesLoader {
 		kieSession.signalEvent("newSession", facts);
 	}
 
-	private void sendEventThroughUserSession(SessionFacts facts, KieSession kieSession) {
+	private void sendEventThroughUserSession(SessionFacts facts, KieSession kieSession) throws InterruptedException {
 		log.info("Setting up Capabilities and Alloweds");
 		String bridgeSourceAddress = "";
 		GennyToken serviceToken = facts.getServiceToken();
@@ -907,13 +907,20 @@ public class RulesLoader {
 
 		Long processId = null;
 		String session_state = facts.getUserToken().getSessionCode();
+		int processState = -1;
 
 		log.info("Looking up ProcessId by session " + session_state);
 		Optional<Long> processIdBysessionId = getProcessIdBysessionId(serviceToken.getRealm(), session_state);
 
 		if (processIdBysessionId.isPresent()) {
 			processId = processIdBysessionId.get();
-//			kieSession.getProcessInstance(processId).getState() == ProcessInstance.STATE_COMPLETED;
+			processState = kieSession.getProcessInstance(processId).getState();
+
+			while(processState != ProcessInstance.STATE_COMPLETED) {
+				log.warn("Current process:" + processId + " not completed, state is:" + processState + ", wait 1 second.");
+				processState = kieSession.getProcessInstance(processId).getState();
+				TimeUnit.SECONDS.sleep(1);
+			}
 
 			/* If the message is QEventMessage then send in to event channel */
 			if (facts.getMessage() instanceof QEventMessage) {
