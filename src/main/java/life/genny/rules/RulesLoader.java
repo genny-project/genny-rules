@@ -727,38 +727,38 @@ public class RulesLoader {
 	private KieSession getKieSesion(SessionFacts facts) {
 		KieSession kieSession = null;
 		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
-		if (RUNTIME_MANAGER_ON) {
-			if (GennySettings.useSingleton) { // TODO
-				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
-				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
-						+ kieSession.getIdentifier());
-				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
-			} else {
-				RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-				kieSession = runtimeEngine.getKieSession();
-				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
-						+ kieSession.getIdentifier());
-				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
-				//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
-				AbstractAuditLogger logger = new NodeStatusLog(emf, env);
-				// addHandlers(kieSession);
-				kieSession.addEventListener(logger);
-				kieSession.addEventListener(new GennyAgendaEventListener());
-				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
-				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
-						new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
-				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
-						new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the env should be the same for all kieSessions
-				kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
-						new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
+//		if (RUNTIME_MANAGER_ON) {
+//			if (GennySettings.useSingleton) { // TODO
+//				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
+//				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
+//						+ kieSession.getIdentifier());
+//				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+//			} else {
+		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+		kieSession = runtimeEngine.getKieSession();
+		log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
+				+ kieSession.getIdentifier());
+		// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
+		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
+		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
+		// addHandlers(kieSession);
+		kieSession.addEventListener(logger);
+		kieSession.addEventListener(new GennyAgendaEventListener());
+		kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
+				new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
+		kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
+				new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the env should be the same for all kieSessions
+		kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
+				new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
-				kieSession.getEnvironment().set("Autoclaim", "true"); // for JBPM
+		kieSession.getEnvironment().set("Autoclaim", "true"); // for JBPM
 
-				/* set up a global */
-				QBulkMessage payload = new QBulkMessage();
-				kieSession.setGlobal("payload", payload);
-			}
-		}
+		/* set up a global */
+		QBulkMessage payload = new QBulkMessage();
+		kieSession.setGlobal("payload", payload);
+//			}
+//		}
 		return kieSession;
 	}
 
