@@ -948,7 +948,8 @@ public class RulesLoader {
 		}
 	}
 
-	public static synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
+	public static synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) throws InterruptedException {
+		TimeUnit.SECONDS.sleep(2);
 		int rulesFired = 0;
 		GennyToken serviceToken = facts.getServiceToken();
 
