@@ -73,6 +73,7 @@ import org.kie.api.runtime.manager.RuntimeEnvironment;
 import org.kie.api.runtime.manager.RuntimeEnvironmentBuilder;
 import org.kie.api.runtime.manager.RuntimeManager;
 import org.kie.api.runtime.manager.RuntimeManagerFactory;
+import org.kie.api.runtime.process.ProcessInstance;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.task.TaskService;
@@ -259,7 +260,7 @@ public class RulesLoader {
 	}
 
 	/**
-	 * @param vertx
+	 * @param rulesDir
 	 * @return
 	 */
 	public void triggerStartupRules(final String rulesDir) {
@@ -723,11 +724,234 @@ public class RulesLoader {
 	}
 
 	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
-	public void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
-		int rulesFired = 0;
-		String msg_code = "";
-		GennyToken serviceToken = facts.getServiceToken();
+	private KieSession getKieSesion(SessionFacts facts) {
+		KieSession kieSession = null;
+		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
+//		if (RUNTIME_MANAGER_ON) {
+//			if (GennySettings.useSingleton) { // TODO
+//				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
+//				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
+//						+ kieSession.getIdentifier());
+//				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+//			} else {
+		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+		kieSession = runtimeEngine.getKieSession();
+		log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
+				+ kieSession.getIdentifier());
+		// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
+		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
+		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
+		// addHandlers(kieSession);
+		kieSession.addEventListener(logger);
+		kieSession.addEventListener(new GennyAgendaEventListener());
+		kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
+				new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
+		kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
+				new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the env should be the same for all kieSessions
+		kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
+				new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
+
+		kieSession.getEnvironment().set("Autoclaim", "true"); // for JBPM
+
+		/* set up a global */
+		QBulkMessage payload = new QBulkMessage();
+		kieSession.setGlobal("payload", payload);
+//			}
+//		}
+		return kieSession;
+	}
+
+	private void processQEventMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
+		((QEventMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
+
+		String msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
+		String bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
+
+		// Save an associated Bridge IP to the session
+		log.info("saving bridge ip to cache associted with session "
+				+ facts.getUserToken().getSessionCode());
+		VertxUtils.writeCachedJson(facts.getUserToken().getRealm(),
+				facts.getUserToken().getSessionCode(), bridgeSourceAddress,
+				facts.getUserToken().getToken());
+
+		log.info("incoming EVENT" + " message from " + bridgeSourceAddress + ": "
+				+ facts.getUserToken().getRealm() + ": " + facts.getUserToken().getSessionCode()
+				+ ": " + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
+				+ processId);
+
+		// kieSession.signalEvent("EV_"+session_state, facts);
+
+		// HACK!!
+		if (msg_code.equals("QUE_SUBMIT")) {
+			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(),
+					facts.getUserToken().getUserCode(), "PRI_SUBMIT", "QUE_SUBMIT");
+//									String ad = "{\"street_number\":\"63\",\"street_name\":\"Fakenham Road\",\"suburb\":\"Ashburton\",\"state\":\"Victoria\",\"country\":\"AU\",\"postal_code\":\"3147\",\"full_address\":\"64 Fakenham Rd, Ashburton VIC 3147, Australia\",\"latitude\":-37.863208,\"longitude\":145.092359,\"street_address\":\"64 Fakenham Road\"}";
+//									dataAnswer = new Answer(facts.getUserToken().getUserCode(),
+//											facts.getUserToken().getUserCode(), "PRI_ADDRESS_JSON", ad);
+			dataAnswer.setChangeEvent(false);
+			QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
+			SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
+					facts.getUserToken(), dataMsg);
+			log.info("SignalEvent -> QUE_SUBMIT event to 'data' for "
+					+ facts.getUserToken().getUserCode() + ":" + processId);
+			kieSession.signalEvent("data", sessionFactsData, processId);
+		} else if (msg_code.equals("QUE_CANCEL")) {
+			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(),
+					facts.getUserToken().getUserCode(), "PRI_SUBMIT", "QUE_CANCEL");
+			dataAnswer.setChangeEvent(false);
+			QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
+			SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
+					facts.getUserToken(), dataMsg);
+			log.info("SignalEvent -> QUE_CANCEL event to 'data' for "
+					+ facts.getUserToken().getUserCode() + ":" + processId);
+			kieSession.signalEvent("data", sessionFactsData, processId);
+		} else {
+			log.info("SignalEvent -> 'event' for " + facts.getUserToken().getUserCode() + ":"
+					+ processId);
+			try {
+				kieSession.signalEvent("event", facts, processId);
+			} catch (Exception e) {
+				log.error("Bad Session Error for process Id " + processId + " and userCode "
+						+ facts.getUserToken().getUserCode());
+
+			}
+		}
+	}
+
+	private void processQDataMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
+		((QDataMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
+
+		String msg_code = ((QDataMessage) facts.getMessage()).getData_type();
+		String bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
+
+		// Save an associated Bridge IP to the session
+		log.info("saving bridge ip to cache associted with session "
+				+ facts.getUserToken().getSessionCode());
+		VertxUtils.writeCachedJson(facts.getUserToken().getRealm(),
+				facts.getUserToken().getSessionCode(), bridgeSourceAddress,
+				facts.getUserToken().getToken());
+		log.info("incoming DATA" + " message from " + bridgeSourceAddress + ": "
+				+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
+				+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
+				+ processId);
+
+		// kieSession.signalEvent("DT_"+session_state, facts);
+		log.info("SignalEvent -> 'data' for " + facts.getUserToken().getUserCode() + ":"
+				+ processId);
+		try {
+			if (facts.getMessage() == null) {
+				log.error("facts.getMessage() is NULL");
+			} else if (facts.getUserToken() == null) {
+				log.error("facts.getUserToken() is NULL");
+			} else if (facts.getServiceToken() == null) {
+				log.error("facts.getServiceToken() is NULL");
+//			} else if (processId == null) {
+//				log.error("processId is NULL");
+			} else {
+				kieSession.signalEvent("data", facts, processId);
+			}
+		} catch (Exception e) {
+			log.error("Error in data signal :" + facts + ":" + e.getLocalizedMessage());
+		}
+	}
+
+	private void processAuthInitEvent(SessionFacts facts, KieSession kieSession){
+		((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
+		String bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
+
+		log.info("incoming  AUTH_INIT message from " + bridgeSourceAddress + ": "
+				+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
+				+ ":" + facts.getUserToken().getUserCode() + "   " + "AUTH_INIT"
+				+ " to NEW SESSION");
+		/* sending New Session Signal */
+		kieSession.signalEvent("newSession", facts);
+	}
+
+	private void sendEventThroughUserSession(SessionFacts facts, KieSession kieSession) throws InterruptedException {
+		log.info("Setting up Capabilities and Alloweds");
 		String bridgeSourceAddress = "";
+		GennyToken serviceToken = facts.getServiceToken();
+
+		BaseEntityUtils beUtils = new BaseEntityUtils(facts.getUserToken());
+		beUtils.setServiceToken(facts.getServiceToken());
+		log.info("BaseEntity created");
+
+		FactHandle beUtilsHandle = kieSession.insert(beUtils);
+		FactHandle capabilityUtilsHandle = null;
+		List<FactHandle> allowables = new ArrayList<FactHandle>();
+
+		CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
+
+/*
+		log.info("CapabilityUtils created , now processing");
+		capabilityUtils.process();
+		log.info("CapabilitysUtils processed ");
+ */
+
+		BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
+		if (user != null) {
+			log.info("User:" + user.getCode() +  "fetched.");
+
+			List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
+			log.info(allowable.size() +  " Alloweds generated ");
+
+			capabilityUtilsHandle = kieSession.insert(capabilityUtils);
+
+			log.info("Adding Allowed to kiesession");
+			// get each capability from each Role and add to allowables
+			for (Allowed allow : allowable) {
+				allowables.add(kieSession.insert(allow));
+			}
+		}
+
+		Long processId = null;
+		String session_state = facts.getUserToken().getSessionCode();
+		int processState = -1;
+
+		log.info("Looking up ProcessId by session " + session_state);
+		Optional<Long> processIdBysessionId = getProcessIdBysessionId(serviceToken.getRealm(), session_state);
+
+		if (processIdBysessionId.isPresent()) {
+			processId = processIdBysessionId.get();
+			processState = kieSession.getProcessInstance(processId).getState();
+
+//			while(processState != ProcessInstance.STATE_COMPLETED) {
+//				log.warn("Current process:" + processId + " not completed, state is:" + processState + ", wait 1 second.");
+//				processState = kieSession.getProcessInstance(processId).getState();
+//				TimeUnit.SECONDS.sleep(1);
+//			}
+
+			/* If the message is QEventMessage then send in to event channel */
+			if (facts.getMessage() instanceof QEventMessage) {
+				processQEventMessageEvent(facts, processId, kieSession);
+			} else if (facts.getMessage() instanceof QDataMessage) {
+				/* If the message is data message then send in to data channel */
+				processQDataMessageEvent(facts, processId, kieSession);
+			}
+		} else {
+			if (facts.getMessage() instanceof QEventMessage
+					&& ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
+				/* If the message is QeventMessage and the Event Message is AuthInit */
+					processAuthInitEvent(facts, kieSession);
+			} else {
+				log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
+			}
+		}
+		// Cleanup facts
+		kieSession.delete(beUtilsHandle);
+		if (capabilityUtilsHandle!=null) {
+			kieSession.delete(capabilityUtilsHandle);
+			for (FactHandle allow : allowables) {
+				kieSession.delete(allow);
+			}
+		}
+	}
+
+	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) throws InterruptedException {
+		TimeUnit.SECONDS.sleep(2);
+		int rulesFired = 0;
+		GennyToken serviceToken = facts.getServiceToken();
 
 		EntityManager em = emf.createEntityManager();
 		EntityTransaction tx = em.getTransaction();
@@ -737,259 +961,34 @@ public class RulesLoader {
 			return;
 		}
 
-		KieSession kieSession = null;
-		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
+		KieSession kieSession = getKieSesion(facts);
 
-		if (RUNTIME_MANAGER_ON) {
-
-			if (GennySettings.useSingleton) { // TODO
-				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
-				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
-						+ kieSession.getIdentifier());
-				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+		try {
+			tx.begin();
+			/* If userToken is not null then send the event through user Session */
+			if (facts.getUserToken() != null) {
+				sendEventThroughUserSession(facts, kieSession);
+			} else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
+				/* When usertoken is null */
+				/* Running init_project workflow */
+				log.info("initProject Events! with facts=" + facts);
+				kieSession.signalEvent("initProject", facts);
 			} else {
-				RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-				kieSession = runtimeEngine.getKieSession();
-				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
-						+ kieSession.getIdentifier());
-				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
-				//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
-				AbstractAuditLogger logger = new NodeStatusLog(emf,env);
-				// addHandlers(kieSession);
-				kieSession.addEventListener(logger);
-				kieSession.addEventListener(new GennyAgendaEventListener());
-				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
-				kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
-						new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
-				kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
-						new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the
-																															// env
-																															// should
-																															// be
-																															// the
-																															// same
-																															// for
-																															// all
-																															// kieSessions
-				kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
-						new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
-
-				kieSession.getEnvironment().set("Autoclaim", "true"); // for JBPM
-
-				/* set up a global */
-				QBulkMessage payload = new QBulkMessage();
-				kieSession.setGlobal("payload", payload);
-
+				log.info("Invalid Events coming in");
 			}
-
-			/* synchronized (kieSession) */ {
-				try {
-
-					tx.begin();
-
-					/* If userToken is not null then send the event through user Session */
-					if (facts.getUserToken() != null) {
-
-						log.info("Settting up Capabilitys and Alloweds ");
-
-						String session_state = facts.getUserToken().getSessionCode();
-						BaseEntityUtils beUtils = new BaseEntityUtils(facts.getUserToken());
-						beUtils.setServiceToken(facts.getServiceToken());
-						FactHandle beUtilsHandle = kieSession.insert(beUtils);
-						FactHandle capabilityUtilsHandle = null;
-						List<FactHandle> allowables = new ArrayList<FactHandle>();
-
-						log.info("Baseentity created");
-						CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
-						log.info("CapabilityUtils created , now processing");
-						//capabilityUtils.process();
-						log.info("CapabilitysUtils processed ");
-						BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
-						if (user != null) {
-
-							log.info("User fetched ");
-							List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
-							log.info("Alloweds generated ");
-							capabilityUtilsHandle = kieSession.insert(capabilityUtils);
-							log.info("Adding Allowed to kiesession");
-
-							// get each capability from each Role and add to allowables
-							for (Allowed allow : allowable) {
-								allowables.add(kieSession.insert(allow));
-							}
-						}
-
-						Long processId = null;
-						log.info("Looking up ProcessId by session " + session_state);
-						Optional<Long> processIdBysessionId = getProcessIdBysessionId(serviceToken.getRealm(),
-								session_state);
-
-						/* Check if the process already exist or not */
-						boolean hasProcessIdBySessionId = processIdBysessionId.isPresent();
-
-						if (hasProcessIdBySessionId) {
-
-							processId = processIdBysessionId.get();
-
-							/* If the message is QEventMessage then send in to event channel */
-							if (facts.getMessage() instanceof QEventMessage) {
-
-								((QEventMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
-
-								msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
-								bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
-								// Save an associated Bridge IP to the session
-								log.info("saving bridge ip to cache associted with session "
-										+ facts.getUserToken().getSessionCode());
-								VertxUtils.writeCachedJson(facts.getUserToken().getRealm(),
-										facts.getUserToken().getSessionCode(), bridgeSourceAddress,
-										facts.getUserToken().getToken());
-
-								log.info("incoming EVENT" + " message from " + bridgeSourceAddress + ": "
-										+ facts.getUserToken().getRealm() + ": " + facts.getUserToken().getSessionCode()
-										+ ": " + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
-										+ processId);
-
-								// kieSession.signalEvent("EV_"+session_state, facts);
-
-								// HACK!!
-								if (msg_code.equals("QUE_SUBMIT")) {
-									Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(),
-											facts.getUserToken().getUserCode(), "PRI_SUBMIT", "QUE_SUBMIT");
-//									String ad = "{\"street_number\":\"64\",\"street_name\":\"Fakenham Road\",\"suburb\":\"Ashburton\",\"state\":\"Victoria\",\"country\":\"AU\",\"postal_code\":\"3147\",\"full_address\":\"64 Fakenham Rd, Ashburton VIC 3147, Australia\",\"latitude\":-37.863208,\"longitude\":145.092359,\"street_address\":\"64 Fakenham Road\"}";
-//									dataAnswer = new Answer(facts.getUserToken().getUserCode(),
-//											facts.getUserToken().getUserCode(), "PRI_ADDRESS_JSON", ad);
-									dataAnswer.setChangeEvent(false);
-									QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
-									SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
-											facts.getUserToken(), dataMsg);
-									log.info("SignalEvent -> QUE_SUBMIT event to 'data' for "
-											+ facts.getUserToken().getUserCode() + ":" + processId);
-									kieSession.signalEvent("data", sessionFactsData, processId);
-								} else if (msg_code.equals("QUE_CANCEL")) {
-									Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(),
-											facts.getUserToken().getUserCode(), "PRI_SUBMIT", "QUE_CANCEL");
-									dataAnswer.setChangeEvent(false);
-									QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
-									SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
-											facts.getUserToken(), dataMsg);
-									log.info("SignalEvent -> QUE_CANCEL event to 'data' for "
-											+ facts.getUserToken().getUserCode() + ":" + processId);
-									kieSession.signalEvent("data", sessionFactsData, processId);
-								} else {
-									log.info("SignalEvent -> 'event' for " + facts.getUserToken().getUserCode() + ":"
-											+ processId);
-									try {
-										kieSession.signalEvent("event", facts, processId);
-									} catch (Exception e) {
-										log.error("Bad Session Error for process Id " + processId + " and userCode "
-												+ facts.getUserToken().getUserCode());
-
-									}
-								}
-							}
-
-							/* If the message is data message then send in to data channel */
-							else if (facts.getMessage() instanceof QDataMessage) {
-
-								((QDataMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
-
-								msg_code = ((QDataMessage) facts.getMessage()).getData_type();
-								bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
-								// Save an associated Bridge IP to the session
-								log.info("saving bridge ip to cache associted with session "
-										+ facts.getUserToken().getSessionCode());
-								VertxUtils.writeCachedJson(facts.getUserToken().getRealm(),
-										facts.getUserToken().getSessionCode(), bridgeSourceAddress,
-										facts.getUserToken().getToken());
-								log.info("incoming DATA" + " message from " + bridgeSourceAddress + ": "
-										+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
-										+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
-										+ processId);
-
-								// kieSession.signalEvent("DT_"+session_state, facts);
-								log.info("SignalEvent -> 'data' for " + facts.getUserToken().getUserCode() + ":"
-										+ processId);
-								try {
-									if (facts.getMessage() == null) {
-										log.error("facts.getMessage() is NULL");
-									} else if (facts.getUserToken() == null) {
-										log.error("facts.getUserToken() is NULL");
-									} else if (facts.getServiceToken() == null) {
-										log.error("facts.getServiceToken() is NULL");
-									} else if (processId == null) {
-										log.error("processId is NULL");
-									} else {
-										kieSession.signalEvent("data", facts, processId);
-									}
-								} catch (Exception e) {
-									log.error("Error in data signal :" + facts + ":" + e.getLocalizedMessage());
-								}
-
-							}
-
-						} else {
-
-							/* If the message is QeventMessage and the Event Message is AuthInit */
-							if (facts.getMessage() instanceof QEventMessage
-									&& ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
-
-								((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
-								bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
-
-								log.info("incoming  AUTH_INIT message from " + bridgeSourceAddress + ": "
-										+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
-										+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code
-										+ " to NEW SESSION");
-
-								/* sending New Session Signal */
-								kieSession.signalEvent("newSession", facts);
-
-							} else {
-								log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
-
-							}
-
-						}
-						// Cleanup facts
-						kieSession.delete(beUtilsHandle);
-						if (capabilityUtilsHandle!=null) {
-							kieSession.delete(capabilityUtilsHandle);
-
-							for (FactHandle allow : allowables) {
-								kieSession.delete(allow);
-							}
-						}
-
-					} /* When usertoken is null */
-					else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
-
-						/* Running init_project workflow */
-						log.info("initProject Events! with facts=" + facts);
-						kieSession.signalEvent("initProject", facts);
-					} else {
-						log.info("Invalid Events coming in");
-					}
-
-					// rulesFired = kieSession.fireAllRules();
-
-				} catch (NullPointerException e) {
-					log.error("Null pointer Exception thrown in workflow/rules");
-				} catch (final Throwable t) {
-					log.error(t.getLocalizedMessage());
-
-				} finally {
-					log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
-
-					// commit
-					tx.commit();
-					em.close();
-
-					// runtimeManager.disposeRuntimeEngine(runtimeEngine);
-				}
-			}
-
+			// rulesFired = kieSession.fireAllRules();
+		} catch (NullPointerException e) {
+			log.error("Null pointer Exception thrown in workflow/rules");
+		} catch (final Throwable t) {
+			log.error(t.getLocalizedMessage());
+		} finally {
+			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
+			// commit
+			tx.commit();
+			em.close();
+			// runtimeManager.disposeRuntimeEngine(runtimeEngine);
 		}
+	}
 //		else {
 //
 //			// StatefulKnowledgeSession kieSession = null;
@@ -1109,7 +1108,6 @@ public class RulesLoader {
 //				}
 //			}
 //		}
-	}
 
 	public static Map<String, Object> executeStateless(final List<Tuple2<String, Object>> globals,
 			final List<Object> facts, final GennyToken serviceToken, final GennyToken userToken) {
@@ -1346,7 +1344,7 @@ public class RulesLoader {
 	}
 
 	/**
-	 * @param vertx
+	 * @param rulesDir
 	 * @return
 	 */
 	public void triggerStartupRules(final String realm, final String rulesDir) {
