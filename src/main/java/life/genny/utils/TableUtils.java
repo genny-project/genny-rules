@@ -1184,11 +1184,11 @@ public class TableUtils {
 							/* switch case to add icons  */
 							switch (attr.getCode()) {
 								case "PRI_EVENT_VIEW":
-									log.info("attribute code is PRI_EVENT_VIEW attaching the context now");
+									//log.info("attribute code is PRI_EVENT_VIEW attaching the context now");
 									childAsk.setContextList(new ContextList(viewContextList));
 									break;
 								case "PRI_EVENT_APPLY":
-									log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
+									//log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
 									childAsk.setContextList(new ContextList(applyContextList));
 									break;
 
