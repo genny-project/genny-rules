@@ -136,10 +136,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		OutputParam output = (OutputParam) items.get("output");
 		
-		if (output.getTypeOfResult().equalsIgnoreCase("NO_PROCESSING"))
+		if ((output==null) || (output.getTypeOfResult().equalsIgnoreCase("NO_PROCESSING")))
 		{
+			output = new OutputParam();
+			output.setFormCode("NONE", "NONE");
 			output.setResultCode("NONE");
-			output.setTypeOfResult("NONE");
+			output.setTypeOfResult("NO_PROCESSING");
 			resultMap.put("output", output);
 
 			if (kieSession != null) {
@@ -191,7 +193,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		
 		if ((answersToSave == null)||(answersToSave.getAnswers()==null)||(answersToSave.getAnswers().isEmpty())) {
 			output = new OutputParam();
-			output.setTypeOfResult("NONE");
+			output.setTypeOfResult("NO_PROCESSING");
 			output.setFormCode("NONE", "NONE");
 			resultMap.put("output", output);
 			if (kieSession != null) {
