@@ -260,8 +260,12 @@ public class ShowFrame implements WorkItemHandler {
 			}
 		} else {
 			for (Validation val : aask.getQuestion().getAttribute().getDataType().getValidationList()) {
+				if (val != null) {
 				if (val.getRegex() == null) {
-					log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode() + " == null");
+						log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode() + " == null");
+					}
+				} else {
+					log.error("Validation is null for "+aask.getQuestion().getAttribute().getCode());
 				}
 			}
 		}
