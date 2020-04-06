@@ -727,13 +727,13 @@ public class RulesLoader {
 	private KieSession getKieSesion(SessionFacts facts) {
 		KieSession kieSession = null;
 		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
-//		if (RUNTIME_MANAGER_ON) {
-//			if (GennySettings.useSingleton) { // TODO
-//				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
-//				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
-//						+ kieSession.getIdentifier());
-//				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
-//			} else {
+		if (RUNTIME_MANAGER_ON) {
+			if (GennySettings.useSingleton) { // TODO
+				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
+				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
+						+ kieSession.getIdentifier());
+				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+			} else {
 		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
 		kieSession = runtimeEngine.getKieSession();
 		log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
@@ -757,8 +757,8 @@ public class RulesLoader {
 		/* set up a global */
 		QBulkMessage payload = new QBulkMessage();
 		kieSession.setGlobal("payload", payload);
-//			}
-//		}
+			}
+		}
 		return kieSession;
 	}
 
