@@ -948,6 +948,36 @@ public class RulesLoader {
 		}
 	}
 
+	public void executeStatefulForIintEvent(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
+		int rulesFired = 0;
+		GennyToken serviceToken = facts.getServiceToken();
+
+		EntityManager em = emf.createEntityManager();
+		EntityTransaction tx = em.getTransaction();
+
+		if (getKieBaseCache().get(serviceToken.getRealm()) == null) {
+			log.error("The realm  kieBaseCache is null, not loaded " + serviceToken.getRealm());
+			return;
+		}
+
+		KieSession kieSession = getKieSesion(facts);
+
+		try {
+			tx.begin();
+			log.info("initProject Events! with facts=" + facts);
+			kieSession.signalEvent("initProject", facts);
+		} catch (NullPointerException e) {
+			log.error("Null pointer Exception thrown in workflow/rules");
+		} catch (final Throwable t) {
+			log.error(t.getLocalizedMessage());
+		} finally {
+			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
+			// commit
+			tx.commit();
+			em.close();
+		}
+	}
+
 	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) throws InterruptedException {
 		TimeUnit.SECONDS.sleep(2);
 		int rulesFired = 0;
@@ -962,6 +992,15 @@ public class RulesLoader {
 		}
 
 		KieSession kieSession = getKieSesion(facts);
+		long kieID = kieSession.getIdentifier();
+		String sessionCode = facts.getUserToken().getSessionCode();
+		if (kieSessionMap.get(sessionCode) == null) {
+			log.info("JIANLI, Add Kiession:" + kieID);
+			kieSessionMap.put(sessionCode, kieSession);
+		} else{
+			KieSession oldKieSession = kieSessionMap.replace(sessionCode, kieSession);
+			log.info("JIANLI, Add new Kiession:" + kieID + ",Replace old Kiession:" + oldKieSession.getIdentifier());
+		}
 
 		try {
 			tx.begin();
@@ -1238,11 +1277,10 @@ public class RulesLoader {
 		SessionFacts facts = new SessionFacts(gennyServiceToken, null, msg);
 
 		try {
-			executeStateful(globals, facts);
+			executeStatefulForIintEvent(globals, facts);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	public void processMsg(final Object msg, final String token) {
