@@ -991,15 +991,23 @@ public class RulesLoader {
 			return;
 		}
 
+		String sessionCode = facts.getUserToken().getSessionCode();
+		KieSession currentKieSession = kieSessionMap.get(sessionCode);
+		
+		long oldKieSesionID = -1;
+		if (currentKieSession !=  null) {
+			oldKieSesionID  = currentKieSession.getIdentifier();
+		}
+
+		// get new kieSession
 		KieSession kieSession = getKieSesion(facts);
 		long kieID = kieSession.getIdentifier();
-		String sessionCode = facts.getUserToken().getSessionCode();
 		if (kieSessionMap.get(sessionCode) == null) {
 			log.info("JIANLI, Add Kiession:" + kieID);
 			kieSessionMap.put(sessionCode, kieSession);
 		} else{
-			KieSession oldKieSession = kieSessionMap.replace(sessionCode, kieSession);
-			log.info("JIANLI, Add new Kiession:" + kieID + ",Replace old Kiession:" + oldKieSession.getIdentifier());
+			kieSessionMap.replace(sessionCode, kieSession);
+			log.info("JIANLI, Add new KieSession:" + kieID + ",Replace old KieSession:" + oldKieSesionID);
 		}
 
 		try {
