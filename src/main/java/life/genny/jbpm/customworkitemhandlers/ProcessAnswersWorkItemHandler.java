@@ -264,9 +264,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			} else {
 				Long sessionId = task.getTaskData().getProcessSessionId();
 				try {
-					kSession = RulesLoader.kieSessionMap.get(userToken.getSessionCode());
-				//kSession = ks.getStoreServices().loadKieSession(sessionId, kieBase,
-				//		ksconf, env);
+					//kSession = RulesLoader.kieSessionMap.get(userToken.getSessionCode());
+				kSession = ks.getStoreServices().loadKieSession(sessionId, kieBase,
+						ksconf, env);
 				} catch (Exception ke) {
 					log.error("kieSession could not be loaded "+sessionId);
 				}
