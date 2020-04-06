@@ -1024,8 +1024,11 @@ public class RulesLoader {
 		} finally {
 			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
 			// commit
-			tx.commit();
-			em.close();
+			if (tx.isActive()) {
+				tx.commit();
+			}
+			if (em.isOpen())
+				em.close();
 			// runtimeManager.disposeRuntimeEngine(runtimeEngine);
 		}
 	}
