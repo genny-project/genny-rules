@@ -992,22 +992,15 @@ public class RulesLoader {
 		}
 
 		String sessionCode = facts.getUserToken().getSessionCode();
-		KieSession currentKieSession = kieSessionMap.get(sessionCode);
-		
-		long oldKieSesionID = -1;
-		if (currentKieSession !=  null) {
-			oldKieSesionID  = currentKieSession.getIdentifier();
-		}
-
 		// get new kieSession
 		KieSession kieSession = getKieSesion(facts);
 		long kieID = kieSession.getIdentifier();
 		if (kieSessionMap.get(sessionCode) == null) {
-			log.info("JIANLI, Add Kiession:" + kieID);
+			log.info("Add new Kiession:" + kieID);
 			kieSessionMap.put(sessionCode, kieSession);
 		} else{
+			log.info("Replace old Kiession with new Kiession:" + kieID);
 			kieSessionMap.replace(sessionCode, kieSession);
-			log.info("JIANLI, Add new KieSession:" + kieID + ",Replace old KieSession:" + oldKieSesionID);
 		}
 
 		try {
