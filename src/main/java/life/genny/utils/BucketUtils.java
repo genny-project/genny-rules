@@ -1568,6 +1568,12 @@ public class BucketUtils {
 
 				searchBe.getBaseEntityAttributes().add(eAttribute);
 
+				log.info("-------------------- Sending searchbe " + searchBe.getCode() + " entity after PRI_TOTAL_RESULTS update");
+				QDataBaseEntityMessage sbeMsg = new QDataBaseEntityMessage(searchBe);
+				sbeMsg.setToken(userToken.getToken());
+				VertxUtils.writeMsg("webcmds", sbeMsg);
+				log.info("-------------------- Sent searchbe " + searchBe.getCode());
+
 				/* get the applications */
 				List<BaseEntity> appList = Arrays.asList(msg.getItems());
 
