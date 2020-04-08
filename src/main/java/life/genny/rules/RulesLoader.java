@@ -1,32 +1,33 @@
 package life.genny.rules;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Persistence;
-import javax.transaction.Transactional;
-
+import com.google.common.io.Files;
+import com.google.gson.reflect.TypeToken;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.Tuple3;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
+import io.vertx.rxjava.core.Vertx;
+import io.vertx.rxjava.core.buffer.Buffer;
+import life.genny.jbpm.customworkitemhandlers.*;
+import life.genny.model.NodeStatus;
+import life.genny.model.SessionPid;
+import life.genny.models.GennyToken;
+import life.genny.qwanda.Answer;
+import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.datatype.Allowed;
+import life.genny.qwanda.entity.BaseEntity;
+import life.genny.qwanda.entity.User;
+import life.genny.qwanda.exception.BadDataException;
+import life.genny.qwanda.message.*;
+import life.genny.qwandautils.GennySettings;
+import life.genny.qwandautils.JsonUtils;
+import life.genny.qwandautils.QwandaUtils;
+import life.genny.rules.listeners.GennyAgendaEventListener;
+import life.genny.rules.listeners.JbpmInitListener;
+import life.genny.rules.listeners.NodeStatusLog;
+import life.genny.utils.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
 import org.drools.compiler.compiler.DrlParser;
@@ -38,16 +39,12 @@ import org.jbpm.executor.ExecutorServiceFactory;
 import org.jbpm.executor.impl.ExecutorImpl;
 import org.jbpm.executor.impl.ExecutorServiceImpl;
 import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
-import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
-import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
 import org.jbpm.process.audit.AbstractAuditLogger;
 import org.jbpm.runtime.manager.impl.DefaultRegisterableItemsFactory;
 import org.jbpm.services.api.ProcessService;
 import org.jbpm.services.api.RuntimeDataService;
 import org.jbpm.services.api.UserTaskService;
-import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
-import org.jbpm.services.api.query.QueryNotFoundException;
 import org.jbpm.services.api.query.QueryService;
 import org.jbpm.services.api.query.model.QueryParam;
 import org.jbpm.services.api.utils.KieServiceConfigurator;
@@ -62,18 +59,9 @@ import org.kie.api.event.process.ProcessEventListener;
 import org.kie.api.executor.ExecutorService;
 import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceType;
-import org.kie.api.runtime.Environment;
-import org.kie.api.runtime.EnvironmentName;
-import org.kie.api.runtime.KieContainer;
-import org.kie.api.runtime.KieSession;
-import org.kie.api.runtime.KieSessionConfiguration;
+import org.kie.api.runtime.*;
 import org.kie.api.runtime.conf.TimedRuleExecutionOption;
-import org.kie.api.runtime.manager.RuntimeEngine;
-import org.kie.api.runtime.manager.RuntimeEnvironment;
-import org.kie.api.runtime.manager.RuntimeEnvironmentBuilder;
-import org.kie.api.runtime.manager.RuntimeManager;
-import org.kie.api.runtime.manager.RuntimeManagerFactory;
-import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.manager.*;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.task.TaskService;
@@ -85,64 +73,17 @@ import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.runtime.manager.context.EmptyContext;
 import org.kie.internal.task.api.UserGroupCallback;
 
-import com.google.common.io.Files;
-import com.google.gson.reflect.TypeToken;
-
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.Tuple3;
-import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.JsonObject;
-import io.vertx.rxjava.core.Vertx;
-import io.vertx.rxjava.core.buffer.Buffer;
-import life.genny.jbpm.customworkitemhandlers.AskQuestionTaskWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
-import life.genny.jbpm.customworkitemhandlers.CheckTasksWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.GetProcessesUsingVariable;
-import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.ProcessAnswersWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.ProcessTaskIdWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.SendSignalToWorkflowWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
-import life.genny.jbpm.customworkitemhandlers.ShowFrame;
-import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
-import life.genny.jbpm.customworkitemhandlers.ShowFrames;
-import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.ThrowSignalWorkItemHandler;
-import life.genny.model.NodeStatus;
-import life.genny.model.SessionPid;
-import life.genny.models.GennyToken;
-import life.genny.qwanda.Answer;
-import life.genny.qwanda.attribute.Attribute;
-import life.genny.qwanda.datatype.Allowed;
-import life.genny.qwanda.entity.BaseEntity;
-import life.genny.qwanda.entity.User;
-import life.genny.qwanda.exception.BadDataException;
-import life.genny.qwanda.message.QBulkMessage;
-import life.genny.qwanda.message.QDataAnswerMessage;
-import life.genny.qwanda.message.QDataMessage;
-import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
-import life.genny.qwanda.message.QEventLinkChangeMessage;
-import life.genny.qwanda.message.QEventMessage;
-import life.genny.qwandautils.GennySettings;
-import life.genny.qwandautils.JsonUtils;
-import life.genny.qwandautils.QwandaUtils;
-import life.genny.rules.listeners.GennyAgendaEventListener;
-import life.genny.rules.listeners.JbpmInitListener;
-import life.genny.rules.listeners.NodeStatusLog;
-import life.genny.utils.BaseEntityUtils;
-import life.genny.utils.CapabilityUtils;
-import life.genny.utils.FrameUtils2;
-import life.genny.utils.NodeStatusQueryMapper;
-import life.genny.utils.OutputParam;
-import life.genny.utils.RulesUtils;
-import life.genny.utils.SessionFacts;
-import life.genny.utils.SessionPidQueryMapper;
-import life.genny.utils.VertxUtils;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import java.io.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Type;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -757,9 +698,13 @@ public class RulesLoader {
 	}
 
     //	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
-    private KieSession getKieSesion(SessionFacts facts) {
+    private KieSession getKieSesion(SessionFacts facts, boolean isInitEvent) {
         KieSession kieSession = null;
-        String sessionCode = facts.getUserToken().getSessionCode();
+        String sessionCode = "DEFAULT_SESSION_CODE";
+
+		if(!isInitEvent) {
+			sessionCode = facts.getUserToken().getSessionCode();
+		}
 
         if (RUNTIME_MANAGER_ON) {
             if (GennySettings.useSingleton) { // TODO
@@ -984,7 +929,7 @@ public class RulesLoader {
 			return;
 		}
 
-		KieSession kieSession = getKieSesion(facts);
+		KieSession kieSession = getKieSesion(facts, true);
 
 		try {
 			tx.begin();
@@ -1017,7 +962,7 @@ public class RulesLoader {
 
 		String sessionCode = facts.getUserToken().getSessionCode();
 		// get new kieSession
-		KieSession kieSession = getKieSesion(facts);
+		KieSession kieSession = getKieSesion(facts, false);
 //		Collection<ProcessInstance> processInstances = kieSession.getProcessInstances();
 //		for (ProcessInstance p : processInstances) {
 //			log.info(debugStr + "KiesessionID:" +  kieSession.getIdentifier() + ",ProcessID:" + p.getProcessId()
