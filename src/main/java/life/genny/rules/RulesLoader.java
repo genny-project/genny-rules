@@ -113,8 +113,9 @@ public class RulesLoader {
 	protected static ProcessService processService;
 	protected UserTaskService userTaskService;
 
-	public static Map<String, KieSession> kieSessionMap = new ConcurrentHashMap<String, KieSession>();
-	public static Map<String, TaskService> taskServiceMap = new ConcurrentHashMap<String, TaskService>();
+	public static Map<String, KieSession> kieSessionMap = new ConcurrentHashMap<>();
+	public static Map<String, TaskService> taskServiceMap = new ConcurrentHashMap<>();
+	public static Map<String, RuntimeEngine> runtimeEngineMap= new ConcurrentHashMap<>();
 
 	private static RuntimeDataService rds;
 
@@ -504,11 +505,9 @@ public class RulesLoader {
 					log.info("Created Singleton runtimeManager for " + realm);
 
 				} else {
-//					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment,
-//							realm);
-					runtimeManager = RuntimeManagerFactory.Factory.get().newPerProcessInstanceRuntimeManager(runtimeEnvironment,
+					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment,
 							realm);
-					log.info("Created Per process instance strategy runtimeManager for " + realm);
+					log.info("Created Per request strategy runtimeManager for " + realm);
 				}
 			}
 
@@ -525,6 +524,8 @@ public class RulesLoader {
 			 * one KieSession
 			 */
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+			runtimeEngineMap.put(realm, runtimeEngine);
+
 			TaskService taskService = runtimeEngine.getTaskService();
 			taskServiceMap.put(realm, taskService);
 
@@ -668,11 +669,15 @@ public class RulesLoader {
 	}
 
 	private KieSession createNewKieSession(SessionFacts facts) {
-		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
-		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+		String realm = facts.getServiceToken().getRealm();
+		TaskService taskService = taskServiceMap.get(realm);
+
+		RuntimeEngine runtimeEngine = runtimeEngineMap.get(realm);
 		log.info(debugStr + runtimeEngine.toString());
+
 		KieSession kieSession = runtimeEngine.getKieSession();
 		log.info(debugStr + kieSession.toString());
+
 //				 JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
@@ -727,10 +732,10 @@ public class RulesLoader {
                     kieSessionMap.replace(sessionCode, kieSession);
                     log.info(debugStr + "Replace with new KieSession:" + kieSession.getIdentifier());
                 }
-//				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
-//						+ kieSession.getIdentifier());
-				log.info("Using Runtime engine in Per process instance strategy ::::::: Stateful with kieSession id="
+				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getIdentifier());
+//				log.info("Using Runtime engine in Per process instance strategy ::::::: Stateful with kieSession id="
+//						+ kieSession.getIdentifier());
 			}
 		}
 		return kieSession;
