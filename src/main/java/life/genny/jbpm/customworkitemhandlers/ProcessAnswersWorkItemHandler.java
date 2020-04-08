@@ -24,6 +24,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
+import life.genny.qwandautils.GennySettings;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.drools.persistence.api.TransactionManager;
@@ -264,10 +265,13 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			} else {
 				Long sessionId = task.getTaskData().getProcessSessionId();
 				try {
-//					kSession = RulesLoader.kieSessionMap.get(userToken.getSessionCode());
-					kSession = RulesLoader.kieSessionMap.get(userToken.getRealm());
-					KieSession kSession1 = ks.getStoreServices().loadKieSession(sessionId, kieBase,
-						ksconf, env);
+					if(GennySettings.useSingleton) {
+						kSession = RulesLoader.kieSessionMap.get(userToken.getRealm());
+					} else {
+						kSession = RulesLoader.kieSessionMap.get(userToken.getSessionCode());
+					}
+//					KieSession kSession = ks.getStoreServices().loadKieSession(sessionId, kieBase,
+//						ksconf, env);
 				} catch (Exception ke) {
 					log.error("kieSession could not be loaded "+sessionId);
 				}
