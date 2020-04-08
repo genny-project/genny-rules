@@ -1,32 +1,33 @@
 package life.genny.rules;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Persistence;
-import javax.transaction.Transactional;
-
+import com.google.common.io.Files;
+import com.google.gson.reflect.TypeToken;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import io.vavr.Tuple3;
+import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
+import io.vertx.rxjava.core.Vertx;
+import io.vertx.rxjava.core.buffer.Buffer;
+import life.genny.jbpm.customworkitemhandlers.*;
+import life.genny.model.NodeStatus;
+import life.genny.model.SessionPid;
+import life.genny.models.GennyToken;
+import life.genny.qwanda.Answer;
+import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.datatype.Allowed;
+import life.genny.qwanda.entity.BaseEntity;
+import life.genny.qwanda.entity.User;
+import life.genny.qwanda.exception.BadDataException;
+import life.genny.qwanda.message.*;
+import life.genny.qwandautils.GennySettings;
+import life.genny.qwandautils.JsonUtils;
+import life.genny.qwandautils.QwandaUtils;
+import life.genny.rules.listeners.GennyAgendaEventListener;
+import life.genny.rules.listeners.JbpmInitListener;
+import life.genny.rules.listeners.NodeStatusLog;
+import life.genny.utils.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
 import org.drools.compiler.compiler.DrlParser;
@@ -38,16 +39,12 @@ import org.jbpm.executor.ExecutorServiceFactory;
 import org.jbpm.executor.impl.ExecutorImpl;
 import org.jbpm.executor.impl.ExecutorServiceImpl;
 import org.jbpm.kie.services.impl.query.SqlQueryDefinition;
-import org.jbpm.kie.services.impl.query.mapper.ProcessInstanceQueryMapper;
-import org.jbpm.kie.services.impl.query.persistence.QueryDefinitionEntity;
 import org.jbpm.process.audit.AbstractAuditLogger;
 import org.jbpm.runtime.manager.impl.DefaultRegisterableItemsFactory;
 import org.jbpm.services.api.ProcessService;
 import org.jbpm.services.api.RuntimeDataService;
 import org.jbpm.services.api.UserTaskService;
-import org.jbpm.services.api.model.ProcessInstanceDesc;
 import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
-import org.jbpm.services.api.query.QueryNotFoundException;
 import org.jbpm.services.api.query.QueryService;
 import org.jbpm.services.api.query.model.QueryParam;
 import org.jbpm.services.api.utils.KieServiceConfigurator;
@@ -62,18 +59,9 @@ import org.kie.api.event.process.ProcessEventListener;
 import org.kie.api.executor.ExecutorService;
 import org.kie.api.io.Resource;
 import org.kie.api.io.ResourceType;
-import org.kie.api.runtime.Environment;
-import org.kie.api.runtime.EnvironmentName;
-import org.kie.api.runtime.KieContainer;
-import org.kie.api.runtime.KieSession;
-import org.kie.api.runtime.KieSessionConfiguration;
+import org.kie.api.runtime.*;
 import org.kie.api.runtime.conf.TimedRuleExecutionOption;
-import org.kie.api.runtime.manager.RuntimeEngine;
-import org.kie.api.runtime.manager.RuntimeEnvironment;
-import org.kie.api.runtime.manager.RuntimeEnvironmentBuilder;
-import org.kie.api.runtime.manager.RuntimeManager;
-import org.kie.api.runtime.manager.RuntimeManagerFactory;
-import org.kie.api.runtime.process.ProcessInstance;
+import org.kie.api.runtime.manager.*;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.task.TaskService;
@@ -85,64 +73,17 @@ import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.runtime.manager.context.EmptyContext;
 import org.kie.internal.task.api.UserGroupCallback;
 
-import com.google.common.io.Files;
-import com.google.gson.reflect.TypeToken;
-
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
-import io.vavr.Tuple3;
-import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.JsonObject;
-import io.vertx.rxjava.core.Vertx;
-import io.vertx.rxjava.core.buffer.Buffer;
-import life.genny.jbpm.customworkitemhandlers.AskQuestionTaskWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.AwesomeHandler;
-import life.genny.jbpm.customworkitemhandlers.CheckTasksWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.GetProcessesUsingVariable;
-import life.genny.jbpm.customworkitemhandlers.NotificationWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.PrintWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.ProcessAnswersWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.ProcessTaskIdWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.SendSignalToWorkflowWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.SendSignalWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.ShowAllFormsHandler;
-import life.genny.jbpm.customworkitemhandlers.ShowFrame;
-import life.genny.jbpm.customworkitemhandlers.ShowFrameWIthContextList;
-import life.genny.jbpm.customworkitemhandlers.ShowFrames;
-import life.genny.jbpm.customworkitemhandlers.ThrowSignalProcessWorkItemHandler;
-import life.genny.jbpm.customworkitemhandlers.ThrowSignalWorkItemHandler;
-import life.genny.model.NodeStatus;
-import life.genny.model.SessionPid;
-import life.genny.models.GennyToken;
-import life.genny.qwanda.Answer;
-import life.genny.qwanda.attribute.Attribute;
-import life.genny.qwanda.datatype.Allowed;
-import life.genny.qwanda.entity.BaseEntity;
-import life.genny.qwanda.entity.User;
-import life.genny.qwanda.exception.BadDataException;
-import life.genny.qwanda.message.QBulkMessage;
-import life.genny.qwanda.message.QDataAnswerMessage;
-import life.genny.qwanda.message.QDataMessage;
-import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
-import life.genny.qwanda.message.QEventLinkChangeMessage;
-import life.genny.qwanda.message.QEventMessage;
-import life.genny.qwandautils.GennySettings;
-import life.genny.qwandautils.JsonUtils;
-import life.genny.qwandautils.QwandaUtils;
-import life.genny.rules.listeners.GennyAgendaEventListener;
-import life.genny.rules.listeners.JbpmInitListener;
-import life.genny.rules.listeners.NodeStatusLog;
-import life.genny.utils.BaseEntityUtils;
-import life.genny.utils.CapabilityUtils;
-import life.genny.utils.FrameUtils2;
-import life.genny.utils.NodeStatusQueryMapper;
-import life.genny.utils.OutputParam;
-import life.genny.utils.RulesUtils;
-import life.genny.utils.SessionFacts;
-import life.genny.utils.SessionPidQueryMapper;
-import life.genny.utils.VertxUtils;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import java.io.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Type;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -172,8 +113,8 @@ public class RulesLoader {
 	protected static ProcessService processService;
 	protected UserTaskService userTaskService;
 
-	public static Map<String, KieSession> kieSessionMap = new ConcurrentHashMap<String, KieSession>();
-	public static Map<String, TaskService> taskServiceMap = new ConcurrentHashMap<String, TaskService>();
+	public static Map<String, KieSession> kieSessionMap = new ConcurrentHashMap<>();
+	public static Map<String, TaskService> taskServiceMap = new ConcurrentHashMap<>();
 
 	private static RuntimeDataService rds;
 
@@ -188,6 +129,7 @@ public class RulesLoader {
 
 	public static Boolean persistRules = GennySettings.persistRules;
 	// public static Boolean rulesChanged = true;
+	private final String debugStr = "DEBUG,";
 
 	public static void shutdown() {
 		runtimeManager.close();
@@ -562,9 +504,9 @@ public class RulesLoader {
 					log.info("Created Singleton runtimeManager for " + realm);
 
 				} else {
-
 					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment,
 							realm);
+					log.info("Created Per request strategy runtimeManager for " + realm);
 				}
 			}
 
@@ -581,6 +523,7 @@ public class RulesLoader {
 			 * one KieSession
 			 */
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
+
 			TaskService taskService = runtimeEngine.getTaskService();
 			taskServiceMap.put(realm, taskService);
 
@@ -592,10 +535,10 @@ public class RulesLoader {
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 			ksconf.setProperty("name", realm);
 
-			KieSession kieSession = runtimeEngine.getKieSession();
-			kieSessionMap.put(realm, kieSession);
 
 			if (GennySettings.useSingleton) { // TODO
+				KieSession kieSession = runtimeEngine.getKieSession();
+				kieSessionMap.put(realm, kieSession);
 
 				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
@@ -723,32 +666,33 @@ public class RulesLoader {
 		return ret;
 	}
 
-	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
-	private KieSession getKieSesion(SessionFacts facts) {
-		KieSession kieSession = null;
-		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
-		if (RUNTIME_MANAGER_ON) {
-			if (GennySettings.useSingleton) { // TODO
-				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
-				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
-						+ kieSession.getIdentifier());
-				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
-			} else {
+	private KieSession createNewKieSession(SessionFacts facts) {
+		String realm = facts.getServiceToken().getRealm();
+
 		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-		kieSession = runtimeEngine.getKieSession();
-		log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
-				+ kieSession.getIdentifier());
-		// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
+		log.info(debugStr + runtimeEngine.toString());
+
+		KieSession kieSession = runtimeEngine.getKieSession();
+		log.info(debugStr + kieSession.toString());
+
+		// update taskSerice map
+		TaskService taskService = runtimeEngine.getTaskService();
+		taskServiceMap.put(realm, taskService);
+
+//				 JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
-		// addHandlers(kieSession);
+//				 addHandlers(kieSession);
 		kieSession.addEventListener(logger);
 		kieSession.addEventListener(new GennyAgendaEventListener());
 		kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
 				new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
+
 		kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
 				new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the env should be the same for all kieSessions
+
 		kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
 				new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
@@ -757,10 +701,46 @@ public class RulesLoader {
 		/* set up a global */
 		QBulkMessage payload = new QBulkMessage();
 		kieSession.setGlobal("payload", payload);
+
+		return kieSession;
+	}
+
+    //	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
+    private KieSession getKieSesion(SessionFacts facts, boolean isInitEvent) {
+        KieSession kieSession = null;
+        String sessionCode = facts.getServiceToken().getRealm();
+
+		if(!isInitEvent) {
+			sessionCode = facts.getUserToken().getSessionCode();
+		}
+
+        if (RUNTIME_MANAGER_ON) {
+            if (GennySettings.useSingleton) { // TODO
+                kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
+                // map to current sessionCode
+                kieSessionMap.put(sessionCode, kieSession);
+                kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+
+                log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
+                        + kieSession.getIdentifier());
+            } else {
+				kieSession = createNewKieSession(facts);
+				if (kieSessionMap.get(sessionCode) == null) {
+					// map to current sessionCode
+					kieSessionMap.put(sessionCode, kieSession);
+					log.info("Create new KieSession:" + kieSession.getIdentifier());
+                } else {
+                    kieSessionMap.replace(sessionCode, kieSession);
+                    log.info(debugStr + "Replace with new KieSession:" + kieSession.getIdentifier());
+                }
+				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
+						+ kieSession.getIdentifier());
+//				log.info("Using Runtime engine in Per process instance strategy ::::::: Stateful with kieSession id="
+//						+ kieSession.getIdentifier());
 			}
 		}
 		return kieSession;
-	}
+    }
 
 	private void processQEventMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
 		((QEventMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
@@ -948,6 +928,36 @@ public class RulesLoader {
 		}
 	}
 
+	public void executeStatefulForIintEvent(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
+		int rulesFired = 0;
+		GennyToken serviceToken = facts.getServiceToken();
+
+		EntityManager em = emf.createEntityManager();
+		EntityTransaction tx = em.getTransaction();
+
+		if (getKieBaseCache().get(serviceToken.getRealm()) == null) {
+			log.error("The realm  kieBaseCache is null, not loaded " + serviceToken.getRealm());
+			return;
+		}
+
+		KieSession kieSession = getKieSesion(facts, true);
+
+		try {
+			tx.begin();
+			log.info("initProject Events! with facts=" + facts);
+			kieSession.signalEvent("initProject", facts);
+		} catch (NullPointerException e) {
+			log.error("Null pointer Exception thrown in workflow/rules");
+		} catch (final Throwable t) {
+			log.error(t.getLocalizedMessage());
+		} finally {
+			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
+			// commit
+			tx.commit();
+			em.close();
+		}
+	}
+
 	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) throws InterruptedException {
 		TimeUnit.SECONDS.sleep(2);
 		int rulesFired = 0;
@@ -961,7 +971,17 @@ public class RulesLoader {
 			return;
 		}
 
-		KieSession kieSession = getKieSesion(facts);
+		String sessionCode = facts.getUserToken().getSessionCode();
+		// get new kieSession
+		KieSession kieSession = getKieSesion(facts, false);
+//		Collection<ProcessInstance> processInstances = kieSession.getProcessInstances();
+//		for (ProcessInstance p : processInstances) {
+//			log.info(debugStr + "KiesessionID:" +  kieSession.getIdentifier() + ",ProcessID:" + p.getProcessId()
+//					+ ",ID:" + p.getId()
+//					+ ",State:" + p.getState()
+//					+ ",ProcessName:" + p.getProcessName()
+//					+ ",ParentID" + p.getParentProcessInstanceId());
+//		}
 
 		try {
 			tx.begin();
@@ -984,8 +1004,11 @@ public class RulesLoader {
 		} finally {
 			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
 			// commit
-			tx.commit();
-			em.close();
+			if (tx.isActive()) {
+				tx.commit();
+			}
+			if (em.isOpen())
+				em.close();
 			// runtimeManager.disposeRuntimeEngine(runtimeEngine);
 		}
 	}
@@ -1238,11 +1261,10 @@ public class RulesLoader {
 		SessionFacts facts = new SessionFacts(gennyServiceToken, null, msg);
 
 		try {
-			executeStateful(globals, facts);
+			executeStatefulForIintEvent(globals, facts);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	public void processMsg(final Object msg, final String token) {
