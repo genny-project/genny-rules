@@ -504,9 +504,11 @@ public class RulesLoader {
 					log.info("Created Singleton runtimeManager for " + realm);
 
 				} else {
-
-					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment,
+//					runtimeManager = RuntimeManagerFactory.Factory.get().newPerRequestRuntimeManager(runtimeEnvironment,
+//							realm);
+					runtimeManager = RuntimeManagerFactory.Factory.get().newPerProcessInstanceRuntimeManager(runtimeEnvironment,
 							realm);
+					log.info("Created Per process instance strategy runtimeManager for " + realm);
 				}
 			}
 
@@ -725,7 +727,9 @@ public class RulesLoader {
                     kieSessionMap.replace(sessionCode, kieSession);
                     log.info(debugStr + "Replace with new KieSession:" + kieSession.getIdentifier());
                 }
-				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
+//				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
+//						+ kieSession.getIdentifier());
+				log.info("Using Runtime engine in Per process instance strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getIdentifier());
 			}
 		}
