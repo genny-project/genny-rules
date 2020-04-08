@@ -188,6 +188,7 @@ public class RulesLoader {
 
 	public static Boolean persistRules = GennySettings.persistRules;
 	// public static Boolean rulesChanged = true;
+	private final String debugStr = "DEBUG,";
 
 	public static void shutdown() {
 		runtimeManager.close();
@@ -592,10 +593,10 @@ public class RulesLoader {
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 			ksconf.setProperty("name", realm);
 
-			KieSession kieSession = runtimeEngine.getKieSession();
-			kieSessionMap.put(realm, kieSession);
 
 			if (GennySettings.useSingleton) { // TODO
+				KieSession kieSession = runtimeEngine.getKieSession();
+				kieSessionMap.put(realm, kieSession);
 
 				// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
 				AbstractAuditLogger logger = new NodeStatusLog(kieSession);
@@ -723,32 +724,26 @@ public class RulesLoader {
 		return ret;
 	}
 
-	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
-	private KieSession getKieSesion(SessionFacts facts) {
-		KieSession kieSession = null;
+	private KieSession createNewKieSession(SessionFacts facts) {
 		TaskService taskService = taskServiceMap.get(facts.getServiceToken().getRealm());
-//		if (RUNTIME_MANAGER_ON) {
-//			if (GennySettings.useSingleton) { // TODO
-//				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
-//				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
-//						+ kieSession.getIdentifier());
-//				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
-//			} else {
 		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-		kieSession = runtimeEngine.getKieSession();
-		log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
-				+ kieSession.getIdentifier());
-		// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLog;ger(kieSession);
+		log.info(debugStr + runtimeEngine.toString());
+		KieSession kieSession = runtimeEngine.getKieSession();
+		log.info(debugStr + kieSession.toString());
+//				 JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
-		// addHandlers(kieSession);
+//				 addHandlers(kieSession);
 		kieSession.addEventListener(logger);
 		kieSession.addEventListener(new GennyAgendaEventListener());
 		kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
 				new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
+
 		kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
 				new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the env should be the same for all kieSessions
+
 		kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
 				new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
@@ -757,10 +752,39 @@ public class RulesLoader {
 		/* set up a global */
 		QBulkMessage payload = new QBulkMessage();
 		kieSession.setGlobal("payload", payload);
-//			}
-//		}
+
 		return kieSession;
 	}
+
+    //	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
+    private KieSession getKieSesion(SessionFacts facts) {
+        KieSession kieSession = null;
+        String sessionCode = facts.getUserToken().getSessionCode();
+
+        if (RUNTIME_MANAGER_ON) {
+            if (GennySettings.useSingleton) { // TODO
+                kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
+                // map to current sessionCode
+                kieSessionMap.put(sessionCode, kieSession);
+                kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+
+                log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
+                        + kieSession.getIdentifier());
+            } else {
+                if (kieSessionMap.get(sessionCode) == null) {
+                    kieSession = createNewKieSession(facts);
+					// map to current sessionCode
+					kieSessionMap.put(sessionCode, kieSession);
+                    log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
+                            + kieSession.getIdentifier());
+                } else {
+                    kieSession = kieSessionMap.get(sessionCode);
+                    log.info(debugStr + "Use existing KieSession:" + kieSession.getIdentifier());
+                }
+            }
+        }
+        return kieSession;
+    }
 
 	private void processQEventMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
 		((QEventMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
@@ -994,14 +1018,14 @@ public class RulesLoader {
 		String sessionCode = facts.getUserToken().getSessionCode();
 		// get new kieSession
 		KieSession kieSession = getKieSesion(facts);
-		long kieID = kieSession.getIdentifier();
-		if (kieSessionMap.get(sessionCode) == null) {
-			log.info("Add new Kiession:" + kieID);
-			kieSessionMap.put(sessionCode, kieSession);
-		} else{
-			log.info("Replace old Kiession with new Kiession:" + kieID);
-			kieSessionMap.replace(sessionCode, kieSession);
-		}
+//		Collection<ProcessInstance> processInstances = kieSession.getProcessInstances();
+//		for (ProcessInstance p : processInstances) {
+//			log.info(debugStr + "KiesessionID:" +  kieSession.getIdentifier() + ",ProcessID:" + p.getProcessId()
+//					+ ",ID:" + p.getId()
+//					+ ",State:" + p.getState()
+//					+ ",ProcessName:" + p.getProcessName()
+//					+ ",ParentID" + p.getParentProcessInstanceId());
+//		}
 
 		try {
 			tx.begin();
