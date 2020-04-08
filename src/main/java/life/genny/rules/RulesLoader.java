@@ -115,7 +115,6 @@ public class RulesLoader {
 
 	public static Map<String, KieSession> kieSessionMap = new ConcurrentHashMap<>();
 	public static Map<String, TaskService> taskServiceMap = new ConcurrentHashMap<>();
-	public static Map<String, RuntimeEngine> runtimeEngineMap= new ConcurrentHashMap<>();
 
 	private static RuntimeDataService rds;
 
@@ -524,7 +523,6 @@ public class RulesLoader {
 			 * one KieSession
 			 */
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
-			runtimeEngineMap.put(realm, runtimeEngine);
 
 			TaskService taskService = runtimeEngine.getTaskService();
 			taskServiceMap.put(realm, taskService);
@@ -670,13 +668,16 @@ public class RulesLoader {
 
 	private KieSession createNewKieSession(SessionFacts facts) {
 		String realm = facts.getServiceToken().getRealm();
-		TaskService taskService = taskServiceMap.get(realm);
 
-		RuntimeEngine runtimeEngine = runtimeEngineMap.get(realm);
+		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
 		log.info(debugStr + runtimeEngine.toString());
 
 		KieSession kieSession = runtimeEngine.getKieSession();
 		log.info(debugStr + kieSession.toString());
+
+		// update taskSerice map
+		TaskService taskService = runtimeEngine.getTaskService();
+		taskServiceMap.put(realm, taskService);
 
 //				 JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
