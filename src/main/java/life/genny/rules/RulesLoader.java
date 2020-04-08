@@ -700,7 +700,7 @@ public class RulesLoader {
     //	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
     private KieSession getKieSesion(SessionFacts facts, boolean isInitEvent) {
         KieSession kieSession = null;
-        String sessionCode = "DEFAULT_SESSION_CODE";
+        String sessionCode = facts.getServiceToken().getRealm();
 
 		if(!isInitEvent) {
 			sessionCode = facts.getUserToken().getSessionCode();
@@ -716,19 +716,20 @@ public class RulesLoader {
                 log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
                         + kieSession.getIdentifier());
             } else {
-                if (kieSessionMap.get(sessionCode) == null) {
-                    kieSession = createNewKieSession(facts);
+				kieSession = createNewKieSession(facts);
+				if (kieSessionMap.get(sessionCode) == null) {
 					// map to current sessionCode
 					kieSessionMap.put(sessionCode, kieSession);
-                    log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
-                            + kieSession.getIdentifier());
+					log.info("Create new KieSession:" + kieSession.getIdentifier());
                 } else {
-                    kieSession = kieSessionMap.get(sessionCode);
-                    log.info(debugStr + "Use existing KieSession:" + kieSession.getIdentifier());
+                    kieSessionMap.replace(sessionCode, kieSession);
+                    log.info(debugStr + "Replace with new KieSession:" + kieSession.getIdentifier());
                 }
-            }
-        }
-        return kieSession;
+				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
+						+ kieSession.getIdentifier());
+			}
+		}
+		return kieSession;
     }
 
 	private void processQEventMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
