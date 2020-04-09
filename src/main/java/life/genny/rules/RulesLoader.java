@@ -668,7 +668,7 @@ public class RulesLoader {
 		return ret;
 	}
 
-	private KieSession createNewKieSession(SessionFacts facts) {
+	private KieSession createNewKieSession(SessionFacts facts, boolean isInitEvent) {
 		String realm = facts.getServiceToken().getRealm();
 
 		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
@@ -681,9 +681,12 @@ public class RulesLoader {
 		TaskService taskService = runtimeEngine.getTaskService();
 		synchronized (taskServiceMap) {
 			taskServiceMap.put(realm, taskService);
-			taskServiceMap.put(facts.getUserToken().getSessionCode(), taskService);
+			// userToken is null when application startup
+			if(!isInitEvent) {
+				taskServiceMap.put(facts.getUserToken().getSessionCode(), taskService);
+			}
 		}
-//				 JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+		//JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
 //				 addHandlers(kieSession);
@@ -728,7 +731,7 @@ public class RulesLoader {
                 log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
                         + kieSession.getIdentifier());
             } else {
-				kieSession = createNewKieSession(facts);
+				kieSession = createNewKieSession(facts, isInitEvent);
 				if (kieSessionMap.get(sessionCode) == null) {
 					// map to current sessionCode
 					kieSessionMap.put(sessionCode, kieSession);
@@ -739,8 +742,6 @@ public class RulesLoader {
                 }
 				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getIdentifier());
-//				log.info("Using Runtime engine in Per process instance strategy ::::::: Stateful with kieSession id="
-//						+ kieSession.getIdentifier());
 			}
 		}
 		return kieSession;
