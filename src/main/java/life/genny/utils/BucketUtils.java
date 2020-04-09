@@ -1643,4 +1643,204 @@ public class BucketUtils {
 		}
 	}
 
+	public void updateCards(Frame3 FRM_BUCKET_CONTENT, GennyToken userToken, GennyToken serviceToken, String source, String target) {
+		
+		/* initialize beUtils */
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		beUtils.setServiceToken(serviceToken);
+
+		/* initialize bucketUtils */
+		BucketUtils bucketUtils = new BucketUtils(beUtils);
+
+		/* initialize searchUtils */
+		SearchUtils searchUtils = new SearchUtils(beUtils);
+
+		/* initialize virtualAskMap */
+		Map<String, QDataAskMessage> virtualAskMap = new HashMap<String, QDataAskMessage>();
+
+		/* initialize ask set */
+		Set<QDataAskMessage> askSet = new HashSet<QDataAskMessage>();
+
+		/* initialize contextListMap */
+		Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
+
+		/* list to collect baseentity */
+		List<BaseEntity> beList = new ArrayList<BaseEntity>();
+
+		/* get the bucket-content ask */
+		Ask FRM_BUCKET_CONTENT_ASK = bucketUtils.getBucketContentAsk(contextListMap, userToken);
+
+		/* get the bucket-content ask */
+		//Frame3 FRM_BUCKET_CONTENT = bucketUtils.getBucketContentFrame("FRM_BUCKET_CONTENT", "test", "test");
+
+		/* get the themes */
+		Theme THM_WIDTH_100_PERCENT_NO_INHERIT = VertxUtils.getObject(userToken.getRealm(), "", "THM_WIDTH_100_PERCENT_NO_INHERIT",
+				Theme.class, userToken.getToken());
+
+		/* bucketContent context */
+		List<Context> bucketContentContext = new ArrayList<>();
+		bucketContentContext.add(new Context(ContextType.THEME, bucketUtils.getThemeBe(THM_WIDTH_100_PERCENT_NO_INHERIT),
+				VisualControlType.GROUP_WRAPPER, 1.0));
+
+		System.out.println("Updating the cards now....");
+
+		System.out.println("Source Bucket  :: " + source);
+		System.out.println("Target Bucket  :: " + target);
+
+		try {
+
+			/* get the list of bucket searchBEs from the cache */
+			List<SearchEntity> searchBeList = new ArrayList<SearchEntity>();
+			
+			SearchEntity sourceSearchBe = VertxUtils.getObject(serviceToken.getRealm(), "",
+			source, SearchEntity.class, serviceToken.getToken());
+
+			SearchEntity targetSearchBe = VertxUtils.getObject(serviceToken.getRealm(), "",
+			target, SearchEntity.class, serviceToken.getToken());
+
+			searchBeList.add(sourceSearchBe);
+			searchBeList.add(targetSearchBe);
+			
+			/* get all the contextListMap for card */
+			contextListMap = bucketUtils.getCardContextListMap(contextListMap, userToken);
+			List<Context> cardContext = contextListMap.get("QUE_CARD_APPLICATION_TEMPLATE_GRP").getContextList();
+			
+			/* publish SBE_DUMMY */
+			BaseEntity SBE_DUMMY = new BaseEntity("SBE_DUMMY", "SBE_DUMMY");
+
+			Attribute contentAttribute = new Attribute("PRI_CONTENT", "content", new DataType(String.class));
+			EntityAttribute entAttr = new EntityAttribute(SBE_DUMMY, contentAttribute, 1.0, "{  \"flex\": 1 }");
+			Set<EntityAttribute> entAttrSet = new HashSet<>();
+			entAttrSet.add(entAttr);
+			SBE_DUMMY.setBaseEntityAttributes(entAttrSet);
+			
+			QDataBaseEntityMessage SBE_DUMMY_MSG = new QDataBaseEntityMessage(SBE_DUMMY);
+			SBE_DUMMY_MSG.setToken(userToken.getToken());
+			
+			/* String msgJson = JsonUtils.toJson(SBE_DUMMY_MSG); */
+			VertxUtils.writeMsg("webcmds",SBE_DUMMY_MSG);
+
+
+			/* loop through the s */
+			for (SearchEntity searchBe : searchBeList) {
+
+				log.info("inside search loop  ::");
+				String code = searchBe.getCode().split("SBE_")[1];
+				log.info("code  ::" +code );
+
+				/* get the attributes from searchObj */
+				Map<String, String> columns = searchUtils.getTableColumns(searchBe);
+
+				/* fetch the search results */
+				QDataBaseEntityMessage msg = searchUtils.fetchSearchResults(searchBe, serviceToken);
+
+				if (msg == null) {
+					System.out.println("The msg in " +code+" was null");
+				} else {
+					System.out.println("The items in " + code + " was " + msg.getItems().length + " items , with total="
+					+ msg.getTotal());
+				}
+
+				/* get the application counts */
+				long totalResults = msg.getItems().length;
+				log.info("items in bucket " + code + " is :: " + totalResults );
+
+				/* also update the searchBe with the attribute */
+				// Answer totalAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBe.getCode(),
+				// 		"PRI_TOTAL_RESULTS", totalResults + "");
+				// beUtils.addAnswer(totalAnswer);
+				// beUtils.updateBaseEntity(searchBe, totalAnswer);
+
+				Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken.getToken());
+				EntityAttribute eAttribute = new EntityAttribute(searchBe, countAttribute,1.0);
+				eAttribute.setValueInteger(Integer.parseInt(totalResults+""));
+
+				searchBe.getBaseEntityAttributes().add(eAttribute);
+
+				/* get the applications */
+				List<BaseEntity> appList = Arrays.asList(msg.getItems());
+
+				/* add the application to the baseentity list */
+				beList.addAll(appList);
+
+				/* add the updated searchBe as well */
+				beList.add(searchBe);
+
+					/* Send */
+				log.info("----------------------------------------------");
+				log.info("Sending search entity :: " + searchBe.getCode());
+				
+				QDataBaseEntityMessage sbeMsg = new QDataBaseEntityMessage(searchBe);
+				sbeMsg.setToken(userToken.getToken());
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((sbeMsg)));
+				
+				log.info("Sent search entity :: " + searchBe.getCode());
+				log.info("----------------------------------------------");
+
+				/* convert app to asks */
+				List<Ask> appAsksList = searchUtils.generateQuestions(beUtils.getGennyToken(), beUtils, appList,
+						columns, beUtils.getGennyToken().getUserCode());
+				
+				/* get the templat ask for card */
+				Ask templateAsk = bucketUtils.getCardTemplate();
+
+				/* implement template ask to appAks list */
+				List<Ask> askList = bucketUtils.implementCardTemplate(code, appAsksList, templateAsk, contextListMap);
+
+				/* generate bucketContent asks for each bucket */
+				Ask bucketContentAsk = Ask.clone(FRM_BUCKET_CONTENT_ASK);
+				bucketContentAsk.setQuestionCode("QUE_BUCKET_CONTENT_" + code + "_GRP");
+				bucketContentAsk.setName(searchBe.getName());
+
+				/* link bucketContentAsk to application asks */
+				bucketContentAsk.setChildAsks(askList.toArray(new Ask[askList.size()]));
+
+				/* add the bucketContent ask to virtualAskMap */
+				virtualAskMap.put("QUE_BUCKET_CONTENT_" + code + "_GRP", new QDataAskMessage(bucketContentAsk));
+
+				/* link the bucket-content ask to bucket-content frame */
+				Frame3 bucketContent = Frame3.clone(FRM_BUCKET_CONTENT);
+				bucketContent.setCode("FRM_BUCKET_CONTENT_" + code);
+				bucketContent.setQuestionCode("QUE_BUCKET_CONTENT_" + code + "_GRP");
+				
+				/* add the contextList for the cardQuestion */
+				contextListMap.put("QUE_CARD_APPLICATION_TEMPLATE_GRP", new ContextList(cardContext));
+
+				QDataBaseEntityMessage msg2 = FrameUtils2.toMessage(bucketContent, userToken, askSet, contextListMap,
+						virtualAskMap);
+				msg2.setToken(userToken.getToken());
+				VertxUtils.writeMsg("webcmds", msg2);
+				
+				/* Send asks */
+				for (QDataAskMessage askMsg : askSet) {
+					
+					log.info("Cards in the bucket :: " + askMsg.getItems()[0].getName() + " are  :: " + askMsg.getItems()[0].getChildAsks().length);
+
+					askMsg.setToken(userToken.getToken());
+
+					/* String json = JsonUtils.toJson(askMsg); */
+					VertxUtils.writeMsg("webcmds", askMsg);
+
+				}
+
+			}
+
+			/* Send */
+			log.info("Sending application entitites");
+
+			QDataBaseEntityMessage appMsg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
+			appMsg.setToken(userToken.getToken());
+			VertxUtils.writeMsg("webcmds", appMsg);
+
+			log.info("Sending asks from outside the loop");
+
+			
+			System.out.print("Completed");
+
+		} catch (Exception e) {
+			// TODO: handle exception
+
+		}
+	}
+
 }
