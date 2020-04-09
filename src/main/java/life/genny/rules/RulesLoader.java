@@ -113,8 +113,8 @@ public class RulesLoader {
 	protected static ProcessService processService;
 	protected UserTaskService userTaskService;
 
-	public static Map<String, KieSession> kieSessionMap = new ConcurrentHashMap<>();
-	public static Map<String, TaskService> taskServiceMap = new ConcurrentHashMap<>();
+	public static final Map<String, KieSession> kieSessionMap = new ConcurrentHashMap<>();
+	public static final Map<String, TaskService> taskServiceMap = new ConcurrentHashMap<>();
 
 	private static RuntimeDataService rds;
 
@@ -525,7 +525,9 @@ public class RulesLoader {
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
 
 			TaskService taskService = runtimeEngine.getTaskService();
-			taskServiceMap.put(realm, taskService);
+			synchronized (taskServiceMap) {
+				taskServiceMap.put(realm, taskService);
+			}
 
 			/* For using ProcessInstanceIdContext */
 			// RuntimeEngine runtimeEngine =
@@ -677,8 +679,10 @@ public class RulesLoader {
 
 		// update taskSerice map
 		TaskService taskService = runtimeEngine.getTaskService();
-		taskServiceMap.put(realm, taskService);
-
+		synchronized (taskServiceMap) {
+			taskServiceMap.put(realm, taskService);
+			taskServiceMap.put(facts.getUserToken().getSessionCode(), taskService);
+		}
 //				 JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
@@ -1745,7 +1749,7 @@ public class RulesLoader {
 
 	public static OutputParam loadOutputFromTask(GennyToken userToken, Long taskId) {
 		OutputParam output = new OutputParam();
-		TaskService taskService = taskServiceMap.get(userToken.getRealm());
+		TaskService taskService = taskServiceMap.get(userToken.getSessionCode());
 		Map<String, Object> params = new HashMap<String, Object>();
 		// Do Task Operations
 		if (taskService == null) {

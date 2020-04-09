@@ -263,7 +263,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (VertxUtils.cachedEnabled) {
 				kSession = kieSession;
 			} else {
-				Long sessionId = task.getTaskData().getProcessSessionId();
+				long sessionId = task.getTaskData().getProcessSessionId();
 				try {
 					if(GennySettings.useSingleton) {
 						kSession = RulesLoader.kieSessionMap.get(userToken.getRealm());

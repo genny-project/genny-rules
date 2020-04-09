@@ -61,14 +61,14 @@ public class TaskUtils {
 
 		String realm = userToken.getRealm();
 		String userCode = userToken.getUserCode();
-		List<TaskSummary> tasks = RulesLoader.taskServiceMap.get(userToken.getRealm())
+		List<TaskSummary> tasks = RulesLoader.taskServiceMap.get(userToken.getSessionCode())
 				.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
 		log.info("Tasks=" + tasks);
 		return tasks;
 	}
 
 	public static void sendTaskMenuItems(GennyToken userToken) {
-		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 
 		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
 
@@ -169,7 +169,7 @@ public class TaskUtils {
 			Integer index = 0;
 			for (TaskSummary ts : taskSummarys) {
 				// We send an Ask to the frontend that contains the task items
-				Task task = RulesLoader.taskServiceMap.get(userToken.getRealm()).getTaskById(ts.getId());
+				Task task = RulesLoader.taskServiceMap.get(userToken.getSessionCode()).getTaskById(ts.getId());
 				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
 				item.setRealm(userToken.getRealm());
 				item.setIndex(index++);
@@ -291,7 +291,7 @@ public class TaskUtils {
 		}
 		log.info("getTaskOutputParam: found=" + found);
 		if (found) {
-			TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+			TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 			Task task = taskService.getTaskById(taskId);
 			String formCode = task.getFormName();
 			output.setFormCode(formCode, "FRM_CONTENT");
@@ -324,7 +324,7 @@ public class TaskUtils {
 	
 	public static void clearAllTasks(GennyToken userToken)
 	{
-		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 
 		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
 		for (TaskSummary ts : taskSummarys) {
@@ -353,7 +353,7 @@ public class TaskUtils {
 	
 	public static void clearTaskType(GennyToken userToken, Question q)
 	{
-		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 
 		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
 		for (TaskSummary ts : taskSummarys) {
