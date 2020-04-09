@@ -1766,6 +1766,17 @@ public class BucketUtils {
 				/* add the updated searchBe as well */
 				beList.add(searchBe);
 
+					/* Send */
+				log.info("----------------------------------------------");
+				log.info("Sending search entity :: " + searchBe.getCode());
+				
+				QDataBaseEntityMessage sbeMsg = new QDataBaseEntityMessage(searchBe);
+				sbeMsg.setToken(userToken.getToken());
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson((sbeMsg)));
+				
+				log.info("Sent search entity :: " + searchBe.getCode());
+				log.info("----------------------------------------------");
+
 				/* convert app to asks */
 				List<Ask> appAsksList = searchUtils.generateQuestions(beUtils.getGennyToken(), beUtils, appList,
 						columns, beUtils.getGennyToken().getUserCode());
