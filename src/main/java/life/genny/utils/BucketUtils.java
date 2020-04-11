@@ -772,89 +772,101 @@ public class BucketUtils {
 
 	}
 
-		public HashMap<String, Ask[]> getOptionTemplate(String targetCode) {
+	public HashMap<String, Ask[]> getOptionTemplate(String targetCode) {
 		
-		/* iniitialize empty HashMap */
-		HashMap<String, Ask[]> map = new HashMap<String, Ask[]>(); 
-		
-		String sourceCode = "PER_SERVICE";
-		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
-
-		/* create childAsks */
-		// view-profile ask
-		Question viewProfileQues = new Question("QUE_VIEW_PROFILE", "View Profile", questionAttribute, true);
-		Ask viewProfileAsk = new Ask(viewProfileQues, sourceCode, targetCode);
-
-		// view-application ask
-		Question viewApplicationQues = new Question("QUE_VIEW_APP", "View Application", questionAttribute, true);
-		Ask viewApplicationAsk = new Ask(viewApplicationQues, sourceCode, targetCode);
-		
-		// reactivate ask
-		Question reactivateQues = new Question("QUE_REACTIVATE_APP", "Reactivate", questionAttribute, true);
-		Ask reactivateAsk = new Ask(reactivateQues, sourceCode, targetCode);
-		
-		// onHold ask
-		Question onHoldQues = new Question("QUE_ON_HOLD_APP", "On Hold", questionAttribute, true);
-		Ask onHoldAsk = new Ask(onHoldQues, sourceCode, targetCode);
-		
-		// delete ask
-		Question deleteQues = new Question("QUE_DELETE_APP", "Delete", questionAttribute, true);
-		Ask deleteAsk = new Ask(deleteQues, sourceCode, targetCode);
+	/* iniitialize empty HashMap */
+	HashMap<String, Ask[]> map = new HashMap<String, Ask[]>(); 
 	
-		// withdrawn ask
-		Question withdrawnQues = new Question("QUE_WITHDRAWN_APP", "Withdrawn", questionAttribute, true);
-		Ask withdrawnAsk = new Ask(withdrawnQues, sourceCode, targetCode);
-		
-		// reject ask
-		Question rejectQues = new Question("QUE_REJECT_APP", "Reject", questionAttribute, true);
-		Ask rejectAsk = new Ask(rejectQues, sourceCode, targetCode);
-		
-		// shortlist ask
-		Question shortlistQues = new Question("QUE_SHORTLIST_APP", "Shortlist", questionAttribute, true);
-		Ask shortlistAsk = new Ask(shortlistQues, sourceCode, targetCode);
-		
-		// interview ask
-		Question interviewQues = new Question("QUE_INTERVIEW_APP", "Interview", questionAttribute, true);
-		Ask interviewAsk = new Ask(interviewQues, sourceCode, targetCode);
-		
-		// offer ask
-		Question offerQues = new Question("QUE_OFFER_APP", "Offer", questionAttribute, true);
-		Ask offerAsk = new Ask(offerQues, sourceCode, targetCode);
-		
-		// view-internship-offer ask
-		//Question startInternshipQues = new Question("QUE_START_INTERNSHIP", "Start Internship", questionAttribute, true);
-		//Ask startInternshipAsk = new Ask(startInternshipQues, sourceCode, targetCode);
-		
-		// view-internship-offer ask
-		Question viewInternshipOfferQues = new Question("QUE_VIEW_INTERNSHIP_OFFER", "View Internship Offer", questionAttribute, true);
-		Ask viewInternshipOfferAsk = new Ask(viewInternshipOfferQues, sourceCode, targetCode);
-		
-		// view-induction-offer ask
-		Question viewInductionOfferQues = new Question("QUE_VIEW_INDUCTION_OFFER", "View Induction Offer", questionAttribute, true);
-		Ask viewInductionOfferAsk = new Ask(viewInductionOfferQues, sourceCode, targetCode);
-		
-		// finish-internship ask
-		Question finishInternshipQues = new Question("QUE_FINISH_INTERNSHIP", "Finish Internship", questionAttribute, true);
-		Ask finishInternshipAsk = new Ask(finishInternshipQues, sourceCode, targetCode);
-		
-		// logBooks ask
-		Question logbooksQues = new Question("QUE_LOGBOOKS", "Logbooks", questionAttribute, true);
-		Ask logbooksAsk = new Ask(logbooksQues, sourceCode, targetCode);
+	String sourceCode = "PER_SERVICE";
+	Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 
-		/* createChildAsk array */
-		Ask[] availableAsk= {viewProfileAsk, reactivateAsk, onHoldAsk, deleteAsk, withdrawnAsk};
-		
-		Ask[] appliedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, shortlistAsk};
+	/* create childAsks */
+	// view-profile ask
+	Question viewProfileQues = new Question("QUE_VIEW_PROFILE", "View Profile", questionAttribute, true);
+	Ask viewProfileAsk = new Ask(viewProfileQues, sourceCode, targetCode);
 
-		Ask[] shortlistedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, interviewAsk};
+	// view-application ask
+	Question viewApplicationQues = new Question("QUE_VIEW_APP", "View Application", questionAttribute, true);
+	Ask viewApplicationAsk = new Ask(viewApplicationQues, sourceCode, targetCode);
+	
+	// reactivate ask
+	Question reactivateQues = new Question("QUE_REACTIVATE_APP", "Reactivate", questionAttribute, true);
+	Ask reactivateAsk = new Ask(reactivateQues, sourceCode, targetCode);
+	
+	// onHold ask
+	Question onHoldQues = new Question("QUE_ON_HOLD_APP", "On Hold", questionAttribute, true);
+	Ask onHoldAsk = new Ask(onHoldQues, sourceCode, targetCode);
+	
+	// delete ask
+	Question deleteQues = new Question("QUE_DELETE_APP", "Delete", questionAttribute, true);
+	Ask deleteAsk = new Ask(deleteQues, sourceCode, targetCode);
 
-		Ask[] interviewedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, offerAsk};
+	// withdrawn ask
+	Question withdrawnQues = new Question("QUE_WITHDRAWN_APP", "Withdrawn", questionAttribute, true);
+	Ask withdrawnAsk = new Ask(withdrawnQues, sourceCode, targetCode);
+	
+	// reject ask
+	Question rejectQues = new Question("QUE_REJECT_APP", "Reject", questionAttribute, true);
+	Ask rejectAsk = new Ask(rejectQues, sourceCode, targetCode);
+	
+	// shortlist ask
+	Question shortlistQues = new Question("QUE_SHORTLIST_APP", "Shortlist", questionAttribute, true);
+	Ask shortlistAsk = new Ask(shortlistQues, sourceCode, targetCode);
+	
+	// interview ask
+	Question interviewQues = new Question("QUE_INTERVIEW_APP", "Interview", questionAttribute, true);
+	Ask interviewAsk = new Ask(interviewQues, sourceCode, targetCode);
+	
+	// offer ask
+	Question offerQues = new Question("QUE_OFFER_APP", "Offer", questionAttribute, true);
+	Ask offerAsk = new Ask(offerQues, sourceCode, targetCode);
+	
+	// offer ask
+	Question editAppQues = new Question("QUE_EDIT_APPLICATION", "Edit Application", questionAttribute, true);
+	Ask editAppAsk = new Ask(editAppQues, sourceCode, targetCode);
+	
+	// view-internship-offer ask
+	//Question startInternshipQues = new Question("QUE_START_INTERNSHIP", "Start Internship", questionAttribute, true);
+	//Ask startInternshipAsk = new Ask(startInternshipQues, sourceCode, targetCode);
+	
+	// place ask
+	Question placeQues = new Question("QUE_PLACE_APP", "Place", questionAttribute, true);
+	Ask placeAsk = new Ask(placeQues, sourceCode, targetCode);
+	
+	// in progress ask
+	Question progressQues = new Question("QUE_PROGRESS_APP", "Begin Internship", questionAttribute, true);
+	Ask progressAsk = new Ask(progressQues, sourceCode, targetCode);
+	
+	// view-internship-offer ask
+	Question viewInternshipOfferQues = new Question("QUE_VIEW_INTERNSHIP_OFFER", "View Internship Offer", questionAttribute, true);
+	Ask viewInternshipOfferAsk = new Ask(viewInternshipOfferQues, sourceCode, targetCode);
+	
+	// view-induction-offer ask
+	Question viewInductionOfferQues = new Question("QUE_VIEW_INDUCTION_OFFER", "View Induction Offer", questionAttribute, true);
+	Ask viewInductionOfferAsk = new Ask(viewInductionOfferQues, sourceCode, targetCode);
+	
+	// finish-internship ask
+	Question finishInternshipQues = new Question("QUE_FINISH_INTERNSHIP", "Finish Internship", questionAttribute, true);
+	Ask finishInternshipAsk = new Ask(finishInternshipQues, sourceCode, targetCode);
+	
+	// logBooks ask
+	Question logbooksQues = new Question("QUE_LOGBOOKS", "Logbooks", questionAttribute, true);
+	Ask logbooksAsk = new Ask(logbooksQues, sourceCode, targetCode);
 
-		Ask[] offeredAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, viewInternshipOfferAsk};
-		
-		Ask[] placedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, viewInternshipOfferAsk};
+	/* createChildAsk array */
+	Ask[] availableAsk= {viewProfileAsk, reactivateAsk, onHoldAsk, deleteAsk, withdrawnAsk};
+	
+	Ask[] appliedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, shortlistAsk, finishInternshipAsk};
 
-		Ask[] inProgressAsk = {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, viewInternshipOfferAsk, viewInductionOfferAsk, finishInternshipAsk, logbooksAsk};
+	Ask[] shortlistedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, interviewAsk, finishInternshipAsk};
+
+	Ask[] interviewedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, offerAsk, finishInternshipAsk};
+
+	Ask[] offeredAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, editAppAsk, viewInternshipOfferAsk, placeAsk, finishInternshipAsk};
+	
+	Ask[] placedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, progressAsk, finishInternshipAsk};
+
+	Ask[] inProgressAsk = {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, finishInternshipAsk};
 
 		map.put("AVAILABLE_INTERNS",availableAsk);
 		map.put("APPLIED_APPLICATIONS",appliedAsk);
