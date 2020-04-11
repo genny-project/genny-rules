@@ -331,9 +331,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 								ask.setValue(answer.getValue());
 								// check
 								taskAsksProcessed.add(ask); // save for later updating
-								if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
-									validAnswers.add(answer);
-								}
+								validAnswers.add(answer);
+								//if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
+								//	validAnswers.add(answer);
+								//}
 								answerMap.remove(key);
 
 							} else {
@@ -344,9 +345,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 									ask.setValue("");
 									taskAsksProcessed.add(ask); // save for later updating
 									answer.setValue("");
-									if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
-										validAnswers.add(answer);
-									}
+									validAnswers.add(answer);
+									//if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
+									//	validAnswers.add(answer);
+									//}
 									answerMap.remove(key);
 								}
 							}
@@ -354,9 +356,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							if (answer.getInferred()) {
 								// This is a valid answer but has not come from the frondend and is not going to
 								// be expected in the task list */
-								if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
-									validAnswers.add(answer);
-								}
+								validAnswers.add(answer);
+								//if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
+								//	validAnswers.add(answer);
+								//}
 								answerMap.remove(key);
 							} else {
 								log.error("Not a valid ASK! " + key);
