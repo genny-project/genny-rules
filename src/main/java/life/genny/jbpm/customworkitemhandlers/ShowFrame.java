@@ -615,7 +615,7 @@ public class ShowFrame implements WorkItemHandler {
 
 							if ("null".equals(json.getString("value"))) {
 
-								throw new IllegalArgumentException(
+								log.error(
 										val.getCode() + " groupCode has Illegal Group Code : [" + groupCode
 												+ "] dataType=[" + dt + "] for attributeCode:[" + attributeCode + "]");
 
