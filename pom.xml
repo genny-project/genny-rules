@@ -46,11 +46,11 @@
 	<distributionManagement>
 		<repository>
 			<id>life.genny</id>
-			<url>https://nexus.outcome-hub.com/nexus/content/repositories/life.genny</url>
+			<url>https://nexus.outcome-hub.com/repository/life.genny</url>
 		</repository>
 		<snapshotRepository>
 			<id>nexus-snapshots</id>
-			<url>http://nexus.outcome-hub.com/nexus/content/repositories/snapshots</url>
+			<url>http://nexus.outcome-hub.com/repository/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 
@@ -62,7 +62,7 @@
 		</repository>
 		<repository>
 			<id>life.genny</id>
-			<url>https://nexus.outcome-hub.com/nexus/content/repositories/life.genny</url>
+			<url>https://nexus.outcome-hub.com/repository/life.genny</url>
 		</repository>
 
 	</repositories>
@@ -592,7 +592,7 @@
 				</executions>
 				<configuration>
 					<serverId>life.genny</serverId>
-					<nexusUrl>https://nexus.outcome-hub.com/nexus/</nexusUrl>
+					<nexusUrl>https://nexus.outcome-hub.com/</nexusUrl>
 					<skipStaging>true</skipStaging>
 				</configuration>
 			</plugin>
