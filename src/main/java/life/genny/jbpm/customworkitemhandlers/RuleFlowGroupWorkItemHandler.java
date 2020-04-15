@@ -40,6 +40,7 @@ import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.QRules;
 
 import life.genny.rules.RulesLoader;
+import life.genny.rules.listeners.GennyRuleTimingListener;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
 import life.genny.utils.OutputParam;
@@ -207,7 +208,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 					/* Setting focus to rule-flow group */
 					newKieSession.getAgenda().getAgendaGroup(ruleFlowGroup).setFocus();
-
+					newKieSession.addEventListener(new GennyRuleTimingListener());
 					newKieSession.fireAllRules();
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #7");
 //	    	ObjectFilter filter = new ObjectFilter() {
@@ -288,7 +289,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 					/* Setting focus to rule-flow group */
 					newKieSession.getAgenda().getAgendaGroup(ruleFlowGroup).setFocus();
-
+					newKieSession.addEventListener(new GennyRuleTimingListener());
 					newKieSession.fireAllRules();
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #13a");
 //	    	output2 = (OutputParam) newKieSession.getObject(output2Fact);

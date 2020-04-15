@@ -25,6 +25,7 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.listeners.GennyAgendaEventListener;
+import life.genny.rules.listeners.GennyRuleTimingListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
 import life.genny.utils.*;
@@ -683,6 +684,7 @@ public class RulesLoader {
 		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
 //				 addHandlers(kieSession);
+		kieSession.addEventListener(new GennyRuleTimingListener());
 		kieSession.addEventListener(logger);
 		kieSession.addEventListener(new GennyAgendaEventListener());
 		kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
