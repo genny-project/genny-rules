@@ -15,7 +15,6 @@
 	</licenses>
 
 	<properties>
-
 		<genny-verticle.version>${project.version}</genny-verticle.version>
 		<kie.version>7.34.0.Final</kie.version>
 		<vertx.version>3.5.4</vertx.version>
