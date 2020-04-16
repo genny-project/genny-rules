@@ -93,10 +93,10 @@ public class GennyRuleTimingListener implements  AgendaEventListener {
 				Long count = Long.parseLong(str[1]);
 				Long actualcount = ruleCount.get(key);
 				if (actualcount >= count) {
-					log.info(String.format("%50s %8d ms",key,sortedMap.get(key)));
+					log.info(String.format("%50s %8d ",key,sortedMap.get(key)));
 				}
 			} else {
-				log.info(String.format("%50s %8d ms",key,sortedMap.get(key)));
+				log.info(String.format("%50s %8d ",key,sortedMap.get(key)));
 			}
 		}
 	}
