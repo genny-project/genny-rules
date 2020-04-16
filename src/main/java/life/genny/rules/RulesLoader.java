@@ -114,8 +114,8 @@ public class RulesLoader {
 	protected static ProcessService processService;
 	protected UserTaskService userTaskService;
 
-	public static Map<String, KieSession> kieSessionMap = new ConcurrentHashMap<>();
-	public static Map<String, TaskService> taskServiceMap = new ConcurrentHashMap<>();
+	public static final Map<String, KieSession> kieSessionMap = new ConcurrentHashMap<>();
+	public static final Map<String, TaskService> taskServiceMap = new ConcurrentHashMap<>();
 
 	private static RuntimeDataService rds;
 
@@ -526,7 +526,9 @@ public class RulesLoader {
 			RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
 
 			TaskService taskService = runtimeEngine.getTaskService();
-			taskServiceMap.put(realm, taskService);
+			synchronized (taskServiceMap) {
+				taskServiceMap.put(realm, taskService);
+			}
 
 			/* For using ProcessInstanceIdContext */
 			// RuntimeEngine runtimeEngine =
@@ -667,7 +669,7 @@ public class RulesLoader {
 		return ret;
 	}
 
-	private KieSession createNewKieSession(SessionFacts facts) {
+	private KieSession createNewKieSession(SessionFacts facts, boolean isInitEvent) {
 		String realm = facts.getServiceToken().getRealm();
 
 		RuntimeEngine runtimeEngine = runtimeManager.getRuntimeEngine(EmptyContext.get());
@@ -678,9 +680,14 @@ public class RulesLoader {
 
 		// update taskSerice map
 		TaskService taskService = runtimeEngine.getTaskService();
-		taskServiceMap.put(realm, taskService);
-
-//				 JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+		synchronized (taskServiceMap) {
+			taskServiceMap.put(realm, taskService);
+			// userToken is null when application startup
+			if(!isInitEvent) {
+				taskServiceMap.put(facts.getUserToken().getSessionCode(), taskService);
+			}
+		}
+		//JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
 		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
 //				 addHandlers(kieSession);
@@ -726,7 +733,7 @@ public class RulesLoader {
                 log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
                         + kieSession.getIdentifier());
             } else {
-				kieSession = createNewKieSession(facts);
+				kieSession = createNewKieSession(facts, isInitEvent);
 				if (kieSessionMap.get(sessionCode) == null) {
 					// map to current sessionCode
 					kieSessionMap.put(sessionCode, kieSession);
@@ -737,8 +744,6 @@ public class RulesLoader {
                 }
 				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getIdentifier());
-//				log.info("Using Runtime engine in Per process instance strategy ::::::: Stateful with kieSession id="
-//						+ kieSession.getIdentifier());
 			}
 		}
 		return kieSession;
@@ -1747,7 +1752,7 @@ public class RulesLoader {
 
 	public static OutputParam loadOutputFromTask(GennyToken userToken, Long taskId) {
 		OutputParam output = new OutputParam();
-		TaskService taskService = taskServiceMap.get(userToken.getRealm());
+		TaskService taskService = taskServiceMap.get(userToken.getSessionCode());
 		Map<String, Object> params = new HashMap<String, Object>();
 		// Do Task Operations
 		if (taskService == null) {

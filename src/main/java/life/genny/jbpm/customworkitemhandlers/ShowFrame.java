@@ -294,7 +294,7 @@ public class ShowFrame implements WorkItemHandler {
 
 		if ((output != null)) {
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
-				taskService = RulesLoader.taskServiceMap.get(userToken.getRealm());
+				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 				task = taskService.getTaskById(output.getTaskId());
 				// Now get the TaskAsk that relates to this specific Ask
 				// assume that all attributes have the same source and target
