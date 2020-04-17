@@ -126,7 +126,7 @@ public class RulesLoader {
 
 	public static List<String> activeRealms = new ArrayList<String>();
 
-	public static Boolean rulesChanged = GennySettings.detectRuleChanges;
+	public static Boolean rulesChanged = !GennySettings.detectRuleChanges;   // If detectRule Changes is false then ALWAYS assume rules changed
 
 	public static Boolean persistRules = GennySettings.persistRules;
 	// public static Boolean rulesChanged = true;
@@ -1379,7 +1379,7 @@ public class RulesLoader {
 	public void triggerStartupRules(final String realm, final String rulesDir) {
 		log.info("Triggering Startup Rules for all " + realm);
 		QEventMessage msg = new QEventMessage("EVT_MSG", "INIT_STARTUP");
-		msg.getData().setValue((rulesChanged || true) ? "RULES_CHANGED" : "NO_RULES_CHANGED");
+		msg.getData().setValue((rulesChanged ) ? "RULES_CHANGED" : "NO_RULES_CHANGED");
 		initMsg("Event:INIT_STARTUP", realm, msg);
 		// rulesChanged = false;
 
