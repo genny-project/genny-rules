@@ -790,15 +790,15 @@ public class BucketUtils {
 	Ask viewApplicationAsk = new Ask(viewApplicationQues, sourceCode, targetCode);
 	
 	// reactivate ask
-	Question reactivateQues = new Question("QUE_REACTIVATE_APP", "Reactivate", questionAttribute, true);
-	Ask reactivateAsk = new Ask(reactivateQues, sourceCode, targetCode);
+	//Question reactivateQues = new Question("QUE_REACTIVATE_APP", "Reactivate", questionAttribute, true);
+	//Ask reactivateAsk = new Ask(reactivateQues, sourceCode, targetCode);
 	
 	// onHold ask
-	Question onHoldQues = new Question("QUE_ON_HOLD_APP", "On Hold", questionAttribute, true);
+	Question onHoldQues = new Question("QUE_ON_HOLD_APP", "On Hold/Reactivate", questionAttribute, true);
 	Ask onHoldAsk = new Ask(onHoldQues, sourceCode, targetCode);
 	
 	// delete ask
-	Question deleteQues = new Question("QUE_DELETE_APP", "Delete", questionAttribute, true);
+	Question deleteQues = new Question("QUE_DELETE_APP", "Remove Application", questionAttribute, true);
 	Ask deleteAsk = new Ask(deleteQues, sourceCode, targetCode);
 
 	// withdrawn ask
@@ -814,20 +814,20 @@ public class BucketUtils {
 	Ask shortlistAsk = new Ask(shortlistQues, sourceCode, targetCode);
 	
 	// interview ask
-	Question interviewQues = new Question("QUE_INTERVIEW_APP", "Interview", questionAttribute, true);
+	Question interviewQues = new Question("QUE_INTERVIEW_APP", "Schedule for Interview", questionAttribute, true);
 	Ask interviewAsk = new Ask(interviewQues, sourceCode, targetCode);
 	
 	// offer ask
-	Question offerQues = new Question("QUE_OFFER_APP", "Offer", questionAttribute, true);
+	Question offerQues = new Question("QUE_OFFER_APP", "Make an Offer", questionAttribute, true);
 	Ask offerAsk = new Ask(offerQues, sourceCode, targetCode);
 	
 	// offer ask
-	Question editAppQues = new Question("QUE_EDIT_APPLICATION", "Edit Application", questionAttribute, true);
-	Ask editAppAsk = new Ask(editAppQues, sourceCode, targetCode);
+	Question editAgreementQues = new Question("QUE_EDIT_AGREEMENT", "Edit Intenship Agreement", questionAttribute, true);
+	Ask editAgreementAsk = new Ask(editAgreementQues, sourceCode, targetCode);
 	
-	// view-internship-offer ask
-	//Question startInternshipQues = new Question("QUE_START_INTERNSHIP", "Start Internship", questionAttribute, true);
-	//Ask startInternshipAsk = new Ask(startInternshipQues, sourceCode, targetCode);
+	// offer ask
+	Question viewAgreementQues = new Question("QUE_VIEW_AGREEMENT", "View Intenship Agreement", questionAttribute, true);
+	Ask viewAgreementAsk = new Ask(viewAgreementQues, sourceCode, targetCode);
 	
 	// place ask
 	Question placeQues = new Question("QUE_PLACE_APP", "Place", questionAttribute, true);
@@ -850,23 +850,23 @@ public class BucketUtils {
 	Ask finishInternshipAsk = new Ask(finishInternshipQues, sourceCode, targetCode);
 	
 	// logBooks ask
-	Question logbooksQues = new Question("QUE_LOGBOOKS", "Logbooks", questionAttribute, true);
-	Ask logbooksAsk = new Ask(logbooksQues, sourceCode, targetCode);
+	Question journalQues = new Question("QUE_JOURNAL", "Enter Journal", questionAttribute, true);
+	Ask journalAsk = new Ask(journalQues, sourceCode, targetCode);
 
 	/* createChildAsk array */
-	Ask[] availableAsk= {viewProfileAsk, reactivateAsk, onHoldAsk, deleteAsk, withdrawnAsk};
+	Ask[] availableAsk= {viewProfileAsk, onHoldAsk};
 	
-	Ask[] appliedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, shortlistAsk, finishInternshipAsk};
+	Ask[] appliedAsk= {viewProfileAsk, viewApplicationAsk, shortlistAsk, onHoldAsk, rejectAsk, withdrawnAsk};
 
-	Ask[] shortlistedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, interviewAsk, finishInternshipAsk};
+	Ask[] shortlistedAsk= {viewProfileAsk, viewApplicationAsk, interviewAsk, onHoldAsk, rejectAsk, withdrawnAsk};
 
-	Ask[] interviewedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, offerAsk, finishInternshipAsk};
+	Ask[] interviewedAsk= {viewProfileAsk, viewApplicationAsk, offerAsk, onHoldAsk, rejectAsk, withdrawnAsk};
 
-	Ask[] offeredAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, editAppAsk, viewInternshipOfferAsk, placeAsk, finishInternshipAsk};
+	Ask[] offeredAsk= {viewProfileAsk, viewApplicationAsk, editAgreementAsk, viewAgreementAsk, onHoldAsk, rejectAsk, withdrawnAsk};
 	
-	Ask[] placedAsk= {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, progressAsk, finishInternshipAsk};
+	Ask[] placedAsk= {viewProfileAsk, viewApplicationAsk, viewAgreementAsk, onHoldAsk, rejectAsk, withdrawnAsk};
 
-	Ask[] inProgressAsk = {viewProfileAsk, viewApplicationAsk, reactivateAsk, onHoldAsk, withdrawnAsk, rejectAsk, finishInternshipAsk};
+	Ask[] inProgressAsk = {viewProfileAsk, viewApplicationAsk, viewAgreementAsk, journalAsk, onHoldAsk, rejectAsk, withdrawnAsk, finishInternshipAsk};
 
 		map.put("AVAILABLE_INTERNS",availableAsk);
 		map.put("APPLIED_APPLICATIONS",appliedAsk);
