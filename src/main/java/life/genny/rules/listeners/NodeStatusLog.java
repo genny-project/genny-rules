@@ -402,9 +402,9 @@ public class NodeStatusLog extends AbstractAuditLogger {
 				leaveTransaction(em,tx);
 				return;
 			}
-		} else {
+		} /*else {
 			logger.warn("NON NodeStatus Object being persisted");
-		}
+		}*/
 		em.persist(entity);
 		leaveTransaction(em, tx);
 	}
