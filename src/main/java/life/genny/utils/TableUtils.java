@@ -658,7 +658,9 @@ public class TableUtils {
 		String sendingMsg = JsonUtils.toJson(askMsg);
 		Integer length = sendingMsg.length();
 		VertxUtils.writeMsg("webcmds", sendingMsg);
-
+		
+		log.info("*************** Sending table title question ***************");
+		sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_TITLE", beUtils.getGennyToken());
 	}
 
 	/**
@@ -1381,7 +1383,7 @@ public class TableUtils {
 		QDataAskMessage titleAskMsg = new QDataAskMessage(askArray1);
 		titleAskMsg.setToken(userToken.getToken());
 		titleAskMsg.setReplace(false);
-
+		log.info("Inside sendQuestion method");
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(titleAskMsg));
 
 	}
