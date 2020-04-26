@@ -1369,7 +1369,7 @@ public class TableUtils {
 
 	}
 
-	private void sendQuestion(String titleQuestionCode, String sourceCode, String targetCode, String attributeCode,
+	public void sendQuestion(String titleQuestionCode, String sourceCode, String targetCode, String attributeCode,
 			GennyToken userToken) {
 		// Set the table title
 		Attribute nameAttribute = RulesUtils.getAttribute(attributeCode, userToken.getToken());
