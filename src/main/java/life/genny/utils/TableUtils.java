@@ -107,7 +107,7 @@ public class TableUtils {
 		showTableContent(serviceToken, searchBE, msg, columns);
 		log.info("calling sendTableContexts");
 		sendTableContexts();
-		showTableFooter(searchBE);
+		/* showTableFooter(searchBE); */
 
 	}
 
