@@ -207,19 +207,6 @@ public class ShowFrame implements WorkItemHandler {
 						}
 					}
 
-					if (rootFrameCode.matches("FRM_QUE_STT_.*_GRP")) {
-						log.info("Searching for Unity Context BaseEntity for: " + rootFrameCode);
-						String code = rootFrameCode.split("FRM_QUE_STT_")[1].split("_GRP")[0];
-						BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-						BaseEntity unityBe = beUtils.getBaseEntityByCode("UNT_" + code + "_CTX_DATA");
-						if (unityBe != null) {
-							log.info("Attaching BaseEntity with code: UNT_" + code + "_CTX_DATA");
-							FRM_MSG.add(unityBe);
-						} else {
-							log.warn("Could not find Context BaseEntity with code: UNT_" + code + "_CTX_DATA");
-						}
-					}
-
 					log.info(callingWorkflow + ": ShowFrame !!!!! : " + rootFrameCode + ":" + targetFrameCode);
 
 					FRM_MSG.setToken(userToken.getToken());
@@ -574,7 +561,7 @@ public class ShowFrame implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	private static void sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken) {
+	public static void sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken) {
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		DropdownUtils dropDownUtils = new DropdownUtils(serviceToken);
 
