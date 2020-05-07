@@ -22,6 +22,7 @@ import life.genny.utils.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jbpm.services.task.utils.ContentMarshallerHelper;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
@@ -228,13 +229,18 @@ public class ShowFrame implements WorkItemHandler {
 
 					// Minify
 					String payload = JsonUtils.toJson(FRM_MSG);
-					JSONObject js = new JSONObject(payload);
-					js.put("token", userToken.getToken());
-					String payload2 = js.toString();
-					if (payload2 != null) {
-					//	VertxUtils.writeMsg("webcmds", payload2);
-					VertxUtils.writeMsg("webcmds", FRM_MSG);
+					try {
+						JSONObject js = new JSONObject(payload);
+						js.put("token", userToken.getToken());
+						String payload2 = js.toString();
+						if (payload2 != null) {
+						//	VertxUtils.writeMsg("webcmds", payload2);
+						VertxUtils.writeMsg("webcmds", FRM_MSG);
 
+						}
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 
 					sendAsks(rootFrameCode, userToken, callingWorkflow, output);

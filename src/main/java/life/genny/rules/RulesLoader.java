@@ -2,6 +2,9 @@ package life.genny.rules;
 
 import com.google.common.io.Files;
 import com.google.gson.reflect.TypeToken;
+
+import es.usc.citius.hipster.graph.GraphBuilder;
+import es.usc.citius.hipster.graph.HipsterDirectedGraph;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
@@ -84,6 +87,8 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class RulesLoader {
@@ -131,6 +136,8 @@ public class RulesLoader {
 	public static Boolean persistRules = GennySettings.persistRules;
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
+	
+
 
 	public static void shutdown() {
 		runtimeManager.close();
@@ -154,6 +161,11 @@ public class RulesLoader {
 	public static void loadRules(final String rulesDir) {
 
 		log.info("Loading Rules and workflows!!!");
+		
+		// Create a simple weighted directed graph with Hipster where
+					// vertices are Strings and edge values are just Strings
+
+		GraphBuilder<String, String> gb = GraphBuilder.<String, String>create();
 
 		List<String> activeRealms = new ArrayList<String>();
 		JsonObject ar = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "REALMS");
@@ -384,6 +396,9 @@ public class RulesLoader {
 					count++;
 				}
 			}
+			log.info("Creating RulesGraph");
+			FrameUtils2.rulesGraph = FrameUtils2.graphBuilder.createDirectedGraph(); 
+
 
 			if (rulesChanged) {
 				log.info("Theme and Frame Rules CHANGED. RUNNING init frames...");
@@ -664,8 +679,9 @@ public class RulesLoader {
 				kfs.write(inMemoryDrlFileName, ks.getResources().newReaderResource(new StringReader(rule._3))
 						.setResourceType(ResourceType.DRL));
 			}
-			return true;
+			ret = true;
 		}
+
 		return ret;
 	}
 
@@ -1553,6 +1569,36 @@ public class RulesLoader {
 
 	private static Boolean processRule(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {
 		Boolean ret = false;
+		String filename = ruleTuple._2;
+		String ruleText = ruleTuple._3;
+		Pattern p = Pattern
+				.compile("(FRM_[A-Z0-9_-]+|THM_[A-Z0-9_-]+)");
+
+
+		
+		// If Rule is a theme or Frame
+		String ruleName = filename.replaceAll("\\.[^.]*$", "");
+		String ruleCode = "RUL_" + ruleName;
+
+		if (ruleCode.startsWith("RUL_FRM_")||ruleCode.startsWith("RUL_THM")) {
+			// Parse rule text to identify child rules
+			Set<String> children = new HashSet<String>();
+			Matcher m = p.matcher(ruleText);
+			while (m.find()) {
+				   String child = m.group();
+				   children.add(child);
+				  
+				 }
+			if (!children.isEmpty()) {
+				for (String child : children) {
+				   FrameUtils2.graphBuilder.connect(ruleName).to(child).withEdge("PARENT");
+				   FrameUtils2.graphBuilder.connect(child).to(ruleName).withEdge("CHILD");
+				   log.info("Rule : "+ruleName+" --- child -> "+child);
+				}
+			}
+			
+		}
+		
 		if (!persistRules) {
 			return false;
 		}
@@ -1560,8 +1606,6 @@ public class RulesLoader {
 		// their cache and db entries
 		Map<String, String> realmTokenMap = new HashMap<String, String>();
 		Map<String, BaseEntityUtils> realmBeUtilsMap = new HashMap<String, BaseEntityUtils>();
-		String filename = ruleTuple._2;
-		String ruleText = ruleTuple._3;
 		Integer hashcode = ruleText.hashCode();
 		if (realmTokenMap.get(realm) == null) {
 			JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
@@ -1573,7 +1617,6 @@ public class RulesLoader {
 		String kieType = ext.toUpperCase();
 
 		// Get rule filename
-		String ruleCode = "RUL_" + filename.replaceAll("\\.[^.]*$", "");
 
 		if (ruleCode.startsWith("RUL_FRM_")) {
 			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
