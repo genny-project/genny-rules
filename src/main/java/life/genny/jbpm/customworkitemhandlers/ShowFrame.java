@@ -357,7 +357,7 @@ public class ShowFrame implements WorkItemHandler {
 				// find any select Attributes, find their selection Baseentities and send
 				GennyToken serviceToken = null;
 				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN",
-						String.class);
+						String.class,userToken.getToken());
 				if (serviceTokenStr == null) {
 					log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
 					return;
