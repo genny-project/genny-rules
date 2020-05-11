@@ -67,9 +67,12 @@ public class DropdownUtils implements Serializable {
 				shouldDeleteLinkedBaseEntities, userToken, this.serviceToken, sortByWeight);
 
 		if (beMessage != null) {
-			beMessage.setToken(userToken.getToken());
+			
 			/* Writing to Vert.x EventBus */
-			writeToVertx("webcmds", beMessage);
+			if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+				beMessage.setToken(userToken.getToken());
+				//writeToVertx("webcmds", beMessage);
+			}
 		} else {
 			log.error("Could not retrieve Search Results for parentCode " + parentCode + " and linkCode " + linkCode
 					+ " and linkValue " + linkValue);

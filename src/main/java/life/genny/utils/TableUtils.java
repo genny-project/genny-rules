@@ -89,7 +89,9 @@ public class TableUtils {
 		// Send out Search Results
 		QDataBaseEntityMessage msg = fetchSearchResults(searchBE);
 		ret.add(msg);
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+		if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+		}
 
 		/* publishing the searchBE to frontEnd */
 		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", (msg.getTotal()) + ""); // if result
@@ -102,9 +104,9 @@ public class TableUtils {
 		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
 		ret.add(searchBeMsg);
 		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
-		// searchBeMsg.setToken(serviceToken.getToken());
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
-
+		if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
+		}
 		Map<String, String> columns = getTableColumns(searchBE);
 
 		/*

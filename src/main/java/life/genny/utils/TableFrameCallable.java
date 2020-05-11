@@ -14,22 +14,14 @@ public class TableFrameCallable implements Callable<QBulkMessage> {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
-    private String name;
-    private long period;
-    private CountDownLatch latch;
+
     QBulkMessage ret = new QBulkMessage();
     BaseEntityUtils beUtils;
     
-    public TableFrameCallable(BaseEntityUtils beUtils,String name, long period, CountDownLatch latch) {
-        this(beUtils,name, period);
-        this.latch = latch;
-        this.beUtils = beUtils;
-    }
+ 
 
-    public TableFrameCallable(BaseEntityUtils beUtils, String name, long period) {
-        this.name = name;
-        this.period = period;
-        ret.setData_type(name);
+    public TableFrameCallable(BaseEntityUtils beUtils) {
+
         this.beUtils = beUtils;
     }
 
@@ -41,9 +33,7 @@ public class TableFrameCallable implements Callable<QBulkMessage> {
             QBulkMessage qbm2 = ShowFrame.display(beUtils.getGennyToken(), "FRM_TABLE_VIEW", "FRM_TAB_CONTENT", "Test");
             ret.add(qbm1.getMessages());
             ret.add(qbm2.getMessages());
-            if (latch != null) {
-                latch.countDown();
-            }
+
             log.info("Finished Table Frame construction");
         return ret;
     }

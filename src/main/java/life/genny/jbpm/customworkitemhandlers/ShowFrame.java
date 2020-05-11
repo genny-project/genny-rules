@@ -235,8 +235,8 @@ public class ShowFrame implements WorkItemHandler {
 						e.printStackTrace();
 					}
 
-					sendAsks(rootFrameCode, userToken, callingWorkflow, output);
-
+					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output);
+					qBulkMessage.add(asks);
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
 							+ " DOES NOT EXIST IN CACHE - cannot display frame");
@@ -337,7 +337,7 @@ public class ShowFrame implements WorkItemHandler {
 				askMsg.setToken(userToken.getToken());
 
 				String jsonStr = updateSourceAndTarget(askMsg, sourceCode, targetCode, output, userToken);
-
+				QDataAskMessage updated = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
 				// Find all the target be's to send
 				Set<String> beCodes = new HashSet<String>();
 				// The user will already be there
@@ -358,7 +358,10 @@ public class ShowFrame implements WorkItemHandler {
 					QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(besToSend);
 					beMsg.setToken(userToken.getToken());
 					beMsg.setReplace(true);
-					VertxUtils.writeMsg("webdata", beMsg);
+					qBulkMessage.add(beMsg);
+					if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+						//VertxUtils.writeMsg("webdata", beMsg);
+					}
 
 				}
 
@@ -377,11 +380,15 @@ public class ShowFrame implements WorkItemHandler {
 				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
 					for (String dropdownCode : dropdownCodes) {
 						dropdownCode = dropdownCode.replaceAll("\"", "");
-						sendSelectionItems(dropdownCode, userToken, serviceToken);
+						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken);
+						qBulkMessage.add(qb);
 					}
 				}
 
-				VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
+				qBulkMessage.add(updated);
+				if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+					//VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
+				}
 			}
 		}
 		
@@ -437,6 +444,40 @@ public class ShowFrame implements WorkItemHandler {
 		return jsonStr;
 	}
 
+	private static QDataAskMessage updateSourceAndTargetMsg(QDataAskMessage askMsg, String sourceCode, String targetCode,
+			OutputParam output, GennyToken userToken) {
+
+		QDataAskMessage ret = askMsg;
+		
+		if (!output.getAttributeTargetCodeMap().keySet().isEmpty()) {
+			for (Ask ask : askMsg.getItems()) {
+				updateTargetInAsk(ask, sourceCode, targetCode, output, userToken);
+			}
+
+		}
+
+		String json = JsonUtils.toJson(askMsg);
+
+		String jsonStr = json.replaceAll("PER_SERVICE", userToken.getUserCode()); // set the
+
+		if (sourceCode != null) { // user
+			jsonStr = jsonStr.replaceAll("PER_SOURCE", sourceCode);
+		} else {
+			jsonStr = jsonStr.replaceAll("PER_SOURCE", userToken.getUserCode());
+			sourceCode = userToken.getUserCode();
+		}
+		if (targetCode != null) { // user
+			jsonStr = jsonStr.replaceAll("PER_TARGET", targetCode);
+		} else {
+			jsonStr = jsonStr.replaceAll("PER_TARGET", userToken.getUserCode());
+			targetCode = userToken.getUserCode();
+		}
+		//log.info("ShowFrame: Setting outgoing Asks to have " + sourceCode + ":" + targetCode);
+		ret = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
+		return ret;
+	}
+
+	
 	/**
 	 * @param rootFrameCode
 	 * @param userToken
@@ -577,7 +618,8 @@ public class ShowFrame implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	public static void sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken) {
+	public static QBulkMessage sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken) {
+		QBulkMessage qBulkMessage = new QBulkMessage();
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		DropdownUtils dropDownUtils = new DropdownUtils(serviceToken);
 
@@ -606,7 +648,8 @@ public class ShowFrame implements WorkItemHandler {
 							/* This is for dynamically generated items */
 							SearchEntity sbe = JsonUtils.fromJson(searchBe.getString("value"), SearchEntity.class);
 							dropDownUtils.setSearch(sbe);
-							dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, false);
+							QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, false);
+							qBulkMessage.add(resultsMsg);
 
 						} else {
 
@@ -625,8 +668,12 @@ public class ShowFrame implements WorkItemHandler {
 							} else if ("ok".equalsIgnoreCase(json.getString("status"))) {
 
 								qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
-								qdb.setToken(userToken.getToken());
-								VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qdb));
+							
+								qBulkMessage.add(qdb);
+								if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+									qdb.setToken(userToken.getToken());
+								//	VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qdb));
+								}
 
 							} else {
 
@@ -634,6 +681,7 @@ public class ShowFrame implements WorkItemHandler {
 										.setPageStart(0).setPageSize(10000);
 
 								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true);
+								qBulkMessage.add(qdb);
 								VertxUtils.writeCachedJson(userToken.getRealm(), "QDB_" + groupCode,
 										JsonUtils.toJson(qdb), userToken.getToken());
 							}
@@ -646,5 +694,6 @@ public class ShowFrame implements WorkItemHandler {
 
 			e.printStackTrace();
 		}
+		return qBulkMessage;
 	}
 }
