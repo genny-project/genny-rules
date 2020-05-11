@@ -12,12 +12,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.google.gson.reflect.TypeToken;
 
 import org.apache.logging.log4j.Logger;
 
+import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
 import life.genny.models.TableData;
@@ -37,6 +42,7 @@ import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.exception.BadDataException;
+import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
@@ -66,21 +72,23 @@ public class TableUtils {
 		this.performSearch(serviceToken, searchBarCode, answer, filterCode, filterValue);
 	}
 
-	public void performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer) {
-
+	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer) {
+		QBulkMessage ret = new QBulkMessage();
 		beUtils.setGennyToken(userToken);
-		this.performSearch(serviceToken, searchBarCode, answer, null, null);
+		ret = this.performSearch(serviceToken, searchBarCode, answer, null, null);
+		return ret;
 	}
 
-	public void performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer, final String filterCode,
+	public QBulkMessage performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer, final String filterCode,
 			final String filterValue) {
+		QBulkMessage ret = new QBulkMessage();
 		beUtils.setServiceToken(serviceToken);
 
 		SearchEntity searchBE = processSearchString(answer, searchBarCode, filterCode, filterValue);
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = fetchSearchResults(searchBE);
-
+		ret.add(msg);
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 
 		/* publishing the searchBE to frontEnd */
@@ -92,6 +100,7 @@ public class TableUtils {
 		// showing
 		// anything
 		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
+		ret.add(searchBeMsg);
 		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
 		// searchBeMsg.setToken(serviceToken.getToken());
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
@@ -108,7 +117,7 @@ public class TableUtils {
 		log.info("calling sendTableContexts");
 		sendTableContexts();
 		/* showTableFooter(searchBE); */
-
+		return ret;
 	}
 
 	public void sendTableContexts() {
@@ -398,9 +407,9 @@ public class TableUtils {
 	 * @param askMsgs
 	 * @param headerAskMsg
 	 */
-	private void showTableContent(GennyToken serviceToken, SearchEntity searchBE, QDataBaseEntityMessage msg,
+	private QBulkMessage showTableContent(GennyToken serviceToken, SearchEntity searchBE, QDataBaseEntityMessage msg,
 			Map<String, String> columns) {
-
+		QBulkMessage ret = new QBulkMessage();
 		log.info("inside showTableContent");
 
 		Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
@@ -657,10 +666,13 @@ public class TableUtils {
 		askMsg.setReplace(true);
 		String sendingMsg = JsonUtils.toJson(askMsg);
 		Integer length = sendingMsg.length();
+		ret.add(askMsg);
 		VertxUtils.writeMsg("webcmds", sendingMsg);
 		
 		log.info("*************** Sending table title question ***************");
 		sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_TITLE", beUtils.getGennyToken());
+		
+		return ret;
 	}
 
 	/**
@@ -1471,4 +1483,90 @@ public class TableUtils {
 		return themeBe;
 	}
 
+	public void awaitTerminationAfterShutdown(ExecutorService threadPool) {
+	    threadPool.shutdown();
+	    try {
+	        if (!threadPool.awaitTermination(90, TimeUnit.SECONDS)) {
+	            threadPool.shutdownNow();
+	        }
+	    } catch (InterruptedException ex) {
+	        threadPool.shutdownNow();
+	        Thread.currentThread().interrupt();
+	    }
+	}
+	
+	public class TableFrameCallable implements Callable<QBulkMessage> {
+	    
+	    private String name;
+	    private long period;
+	    private CountDownLatch latch;
+	    QBulkMessage ret = new QBulkMessage();
+	    BaseEntityUtils beUtils;
+	    
+	    public TableFrameCallable(BaseEntityUtils beUtils,String name, long period, CountDownLatch latch) {
+	        this(beUtils,name, period);
+	        this.latch = latch;
+	        this.beUtils = beUtils;
+	    }
+
+	    public TableFrameCallable(BaseEntityUtils beUtils, String name, long period) {
+	        this.name = name;
+	        this.period = period;
+	        ret.setData_type(name);
+	        this.beUtils = beUtils;
+	    }
+
+	    public QBulkMessage call() {
+	    	
+	        // Thread.sleep(period);
+	            QBulkMessage qbm1 = ShowFrame.display(beUtils.getGennyToken(), "FRM_QUE_TAB_VIEW", "FRM_CONTENT", "Test");
+	            QBulkMessage qbm2 = ShowFrame.display(beUtils.getGennyToken(), "FRM_TABLE_VIEW", "FRM_TAB_CONTENT", "Test");
+	            ret.add(qbm1.getMessages());
+	            ret.add(qbm2.getMessages());
+	            if (latch != null) {
+	                latch.countDown();
+	            }
+
+	        return ret;
+	    }
+	}
+	
+	public class SearchCallable implements Callable<QBulkMessage> {
+	    
+	    private String name;
+	    private long period;
+	    private CountDownLatch latch;
+	    QBulkMessage ret = new QBulkMessage();
+	    TableUtils tableUtils;
+	    private String searchBeCode;
+	    private BaseEntityUtils beUtils;
+	    
+	    public SearchCallable(TableUtils tableUtils,String searchBeCode,BaseEntityUtils beUtils, String name, long period, CountDownLatch latch) {
+	        this(tableUtils,searchBeCode, beUtils,name, period);
+	        this.latch = latch;
+	        
+	    }
+
+	    public SearchCallable(TableUtils tableUtils,String searchBeCode,BaseEntityUtils beUtils, String name, long period) {
+	        this.name = name;
+	        this.period = period;
+	        ret.setData_type(name);
+	        this.tableUtils = tableUtils;
+	        this.beUtils = beUtils;
+	        this.searchBeCode = searchBeCode;
+	    }
+
+	    public QBulkMessage call()  {
+	    	
+	        // Thread.sleep(period);
+	    
+	            QBulkMessage qbm1 = tableUtils.performSearch(beUtils.getGennyToken(), beUtils.getServiceToken(), searchBeCode, null);
+	            ret.add(qbm1.getMessages());
+	            if (latch != null) {
+	                latch.countDown();
+	            }
+	            log.info("Finished Search!");
+	        return ret;
+	    }
+	}
 }
