@@ -53,14 +53,26 @@ public class DropdownUtils implements Serializable {
 		return this.sendSearchResults(parentCode, linkCode, linkValue, userToken, false);
 	}
 
+
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
 			GennyToken userToken, Boolean sortByWeight) throws IOException {
 
-		return this.sendSearchResults(parentCode, linkCode, linkValue, false, false, userToken, sortByWeight);
+		return this.sendSearchResults(parentCode, linkCode, linkValue, false, false, userToken, sortByWeight,false);
+	}
+	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
+			GennyToken userToken, Boolean sortByWeight,Boolean cache) throws IOException {
+
+		return this.sendSearchResults(parentCode, linkCode, linkValue, false, false, userToken, sortByWeight,cache);
 	}
 
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
 			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight)
+			throws IOException {
+		return sendSearchResults(parentCode,linkCode,linkValue,replace,shouldDeleteLinkedBaseEntities,userToken,sortByWeight,false);
+	}
+
+	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
+			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight,Boolean cache)
 			throws IOException {
 
 		QDataBaseEntityMessage beMessage = getSearchResults(this.searchEntity, parentCode, linkCode, linkValue, replace,
@@ -69,9 +81,11 @@ public class DropdownUtils implements Serializable {
 		if (beMessage != null) {
 			
 			/* Writing to Vert.x EventBus */
-			if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+			if (cache) {
+				
+			} else {
 				beMessage.setToken(userToken.getToken());
-				//writeToVertx("webcmds", beMessage);
+				writeToVertx("webcmds", beMessage);
 			}
 		} else {
 			log.error("Could not retrieve Search Results for parentCode " + parentCode + " and linkCode " + linkCode

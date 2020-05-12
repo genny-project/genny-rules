@@ -29,8 +29,8 @@ public class TableFrameCallable implements Callable<QBulkMessage> {
     	
         // Thread.sleep(period);
     	 log.info("Starting Table Frame construction ");
-            QBulkMessage qbm1 = ShowFrame.display(beUtils.getGennyToken(), "FRM_QUE_TAB_VIEW", "FRM_CONTENT", "Test");
-            QBulkMessage qbm2 = ShowFrame.display(beUtils.getGennyToken(), "FRM_TABLE_VIEW", "FRM_TAB_CONTENT", "Test");
+            QBulkMessage qbm1 = ShowFrame.display(beUtils.getGennyToken(), "FRM_QUE_TAB_VIEW", "FRM_CONTENT", "Test",true);
+            QBulkMessage qbm2 = ShowFrame.display(beUtils.getGennyToken(), "FRM_TABLE_VIEW", "FRM_TAB_CONTENT", "Test",true);
             ret.add(qbm1.getMessages());
             ret.add(qbm2.getMessages());
 

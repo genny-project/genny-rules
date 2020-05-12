@@ -80,6 +80,11 @@ public class ShowFrame implements WorkItemHandler {
 
 	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow) {
+		return display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, false);
+	}
+
+	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+			String callingWorkflow,Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		
 		OutputParam output = new OutputParam();
@@ -87,7 +92,7 @@ public class ShowFrame implements WorkItemHandler {
 		output.setTypeOfResult("FORMCODE");
 		output.setResultCode(rootFrameCode);
 		output.setTargetCode(targetFrameCode);
-		qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output);
+		qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output,cache);
 		return qBulkMessage;
 	}
 
@@ -97,8 +102,14 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param targetFrameCode
 	 * @param callingWorkflow
 	 */
+	
 	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output) {
+		return display(userToken, rootFrameCode, targetFrameCode, callingWorkflow,output, false);
+	}
+	
+	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+			String callingWorkflow, OutputParam output,Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		
 		if (userToken == null) {
@@ -215,27 +226,31 @@ public class ShowFrame implements WorkItemHandler {
 
 					log.info(callingWorkflow + ": ShowFrame !!!!! : " + rootFrameCode + ":" + targetFrameCode);
 
-					FRM_MSG.setToken(userToken.getToken());
-
 					FRM_MSG.setReplace(true);
-
-					// Minify
-					String payload = JsonUtils.toJson(FRM_MSG);
-					try {
-						JSONObject js = new JSONObject(payload);
-						js.put("token", userToken.getToken());
-						String payload2 = js.toString();
-						if (payload2 != null) {
-						//	VertxUtils.writeMsg("webcmds", payload2);
+					if (cache) {
+						qBulkMessage.add(FRM_MSG);
+					} else {
+						FRM_MSG.setToken(userToken.getToken());					
 						VertxUtils.writeMsg("webcmds", FRM_MSG);
-
-						}
-					} catch (JSONException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
 					}
+					
+					// Minify
+//					String payload = JsonUtils.toJson(FRM_MSG);
+//					try {
+//						JSONObject js = new JSONObject(payload);
+//						js.put("token", userToken.getToken());
+//						String payload2 = js.toString();
+//						if (payload2 != null) {
+//						//	VertxUtils.writeMsg("webcmds", payload2);
+//						VertxUtils.writeMsg("webcmds", FRM_MSG);
+//
+//						}
+//					} catch (JSONException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
 
-					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output);
+					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output,cache);
 					qBulkMessage.add(asks);
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
@@ -278,7 +293,7 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param callingWorkflow
 	 */
 	private static QBulkMessage sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow,
-			OutputParam output) {
+			OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		
 		if (VertxUtils.cachedEnabled) {
@@ -356,11 +371,12 @@ public class ShowFrame implements WorkItemHandler {
 						besToSend.add(be);
 					}
 					QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(besToSend);
-					beMsg.setToken(userToken.getToken());
 					beMsg.setReplace(true);
-					qBulkMessage.add(beMsg);
-					if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
-						//VertxUtils.writeMsg("webdata", beMsg);
+					if (cache) {
+						qBulkMessage.add(beMsg);
+					} else {
+						beMsg.setToken(userToken.getToken());
+						VertxUtils.writeMsg("webdata", beMsg);
 					}
 
 				}
@@ -380,14 +396,14 @@ public class ShowFrame implements WorkItemHandler {
 				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
 					for (String dropdownCode : dropdownCodes) {
 						dropdownCode = dropdownCode.replaceAll("\"", "");
-						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken);
+						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken,cache);
 						qBulkMessage.add(qb);
 					}
 				}
 
 				qBulkMessage.add(updated);
-				if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
-					//VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
+				if (!cache) {
+					VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 				}
 			}
 		}
@@ -618,7 +634,7 @@ public class ShowFrame implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	public static QBulkMessage sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken) {
+	public static QBulkMessage sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		DropdownUtils dropDownUtils = new DropdownUtils(serviceToken);
@@ -648,8 +664,10 @@ public class ShowFrame implements WorkItemHandler {
 							/* This is for dynamically generated items */
 							SearchEntity sbe = JsonUtils.fromJson(searchBe.getString("value"), SearchEntity.class);
 							dropDownUtils.setSearch(sbe);
-							QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, false);
-							qBulkMessage.add(resultsMsg);
+							QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, false,cache);
+							if (cache) {
+								qBulkMessage.add(resultsMsg);
+							}
 
 						} else {
 
@@ -669,10 +687,12 @@ public class ShowFrame implements WorkItemHandler {
 
 								qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
 							
-								qBulkMessage.add(qdb);
-								if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+								
+								if (cache) {
+									qBulkMessage.add(qdb);
+								} else {
 									qdb.setToken(userToken.getToken());
-								//	VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qdb));
+									VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qdb));
 								}
 
 							} else {
@@ -680,8 +700,10 @@ public class ShowFrame implements WorkItemHandler {
 								dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items").setSourceCode(groupCode)
 										.setPageStart(0).setPageSize(10000);
 
-								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true);
-								qBulkMessage.add(qdb);
+								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true,cache);
+								if (cache) {
+									qBulkMessage.add(qdb);
+								}
 								VertxUtils.writeCachedJson(userToken.getRealm(), "QDB_" + groupCode,
 										JsonUtils.toJson(qdb), userToken.getToken());
 							}
