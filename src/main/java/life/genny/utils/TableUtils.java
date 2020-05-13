@@ -65,22 +65,35 @@ public class TableUtils {
 		this.beUtils = beUtils;
 	}
 
-	public void performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer,
-			final String filterCode, final String filterValue) {
-
-		beUtils.setGennyToken(userToken);
-		this.performSearch(serviceToken, searchBarCode, answer, filterCode, filterValue);
-	}
-
 	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer) {
 		QBulkMessage ret = new QBulkMessage();
 		beUtils.setGennyToken(userToken);
 		ret = this.performSearch(serviceToken, searchBarCode, answer, null, null);
 		return ret;
 	}
+	
+	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer, Boolean cache) {
+		QBulkMessage ret = new QBulkMessage();
+		beUtils.setGennyToken(userToken);
+		ret = this.performSearch(serviceToken, searchBarCode, answer, null, null, cache);
+		return ret;
+	}
+	public void performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer,
+			final String filterCode, final String filterValue) {
+		beUtils.setGennyToken(userToken);
+		this.performSearch(serviceToken, searchBarCode, answer, filterCode, filterValue);
+	}
+
+
 
 	public QBulkMessage performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer, final String filterCode,
-			final String filterValue) {
+			final String filterValue)
+	{
+		return performSearch(serviceToken, searchBarCode, answer, filterCode, filterValue,false);
+	}
+	
+	public QBulkMessage performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer, final String filterCode,
+			final String filterValue, Boolean cache) {
 		QBulkMessage ret = new QBulkMessage();
 		beUtils.setServiceToken(serviceToken);
 
@@ -88,8 +101,9 @@ public class TableUtils {
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = fetchSearchResults(searchBE);
-		ret.add(msg);
-		if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+		if (cache) {
+			ret.add(msg);
+		} else {
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 		}
 
@@ -102,9 +116,12 @@ public class TableUtils {
 		// showing
 		// anything
 		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
-		ret.add(searchBeMsg);
-		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
-		if (!"TRUE".equals(System.getenv("SEND_AGGREGATED"))) {
+		
+		
+		if (cache) {
+			ret.add(searchBeMsg);
+		} else {
+			searchBeMsg.setToken(beUtils.getGennyToken().getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
 		}
 		Map<String, String> columns = getTableColumns(searchBE);
@@ -115,15 +132,17 @@ public class TableUtils {
 
 		/* QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg); */
 		log.info("calling showTableContent");
-		showTableContent(serviceToken, searchBE, msg, columns);
+		QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns,cache);
+		ret.add(qb);
 		log.info("calling sendTableContexts");
-		sendTableContexts();
+		QDataBaseEntityMessage qm = sendTableContexts(cache);
+		ret.add(qm);
 		/* showTableFooter(searchBE); */
 		return ret;
 	}
 
-	public void sendTableContexts() {
-
+	public QDataBaseEntityMessage sendTableContexts(Boolean cache) {
+		QDataBaseEntityMessage ret = new QDataBaseEntityMessage();
 		log.info("Sending contexts for table");
 
 		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class,
@@ -264,11 +283,15 @@ public class TableUtils {
 		log.info("**************** Themes in the list :: " + themes.size() + " ********************");
 
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(themes);
+		if (cache) {
+			ret = msg;
+		} else {
 		msg.setToken(beUtils.getGennyToken().getToken());
-		log.info("**************** Sending all the themes and icons now ********************");
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-		log.info("**************** Sent all the themes and icons ********************");
-
+			log.info("**************** Sending all the themes and icons now ********************");
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+			log.info("**************** Sent all the themes and icons ********************");
+		}
+		return ret;
 	}
 
 	public SearchEntity getSessionSearch(final String searchCode) {
@@ -411,6 +434,10 @@ public class TableUtils {
 	 */
 	private QBulkMessage showTableContent(GennyToken serviceToken, SearchEntity searchBE, QDataBaseEntityMessage msg,
 			Map<String, String> columns) {
+		return showTableContent(serviceToken, searchBE, msg, columns, false);
+	}
+	private QBulkMessage showTableContent(GennyToken serviceToken, SearchEntity searchBE, QDataBaseEntityMessage msg,
+			Map<String, String> columns, Boolean cache) {
 		QBulkMessage ret = new QBulkMessage();
 		log.info("inside showTableContent");
 
@@ -657,23 +684,32 @@ public class TableUtils {
 
 		QDataBaseEntityMessage msg3 = changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk, serviceToken,
 				beUtils.getGennyToken(), tableResultAskMsgs);
-		msg3.setToken(beUtils.getGennyToken().getToken());
 		msg3.setReplace(true);
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
+		
+		if (cache) {
+			ret.add(msg3);
+		} else {
+			msg3.setToken(beUtils.getGennyToken().getToken());		
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
+		}
 
 		/* send the results questionGroup */
 		log.info("*************** Sending the QUE_TABLE_RESULTS_GRP askMsg ***************");
 		QDataAskMessage askMsg = new QDataAskMessage(tableResultAsk);
-		askMsg.setToken(beUtils.getGennyToken().getToken());
 		askMsg.setReplace(true);
-		String sendingMsg = JsonUtils.toJson(askMsg);
-		Integer length = sendingMsg.length();
-		ret.add(askMsg);
-		VertxUtils.writeMsg("webcmds", sendingMsg);
+		
+		if (cache) {
+			ret.add(askMsg);
+		} else {
+			askMsg.setToken(beUtils.getGennyToken().getToken());
+			VertxUtils.writeMsg("webcmds",  JsonUtils.toJson(askMsg));
+		}
 		
 		log.info("*************** Sending table title question ***************");
-		sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_TITLE", beUtils.getGennyToken());
-		
+		QDataAskMessage qAskMsg = sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_TITLE", beUtils.getGennyToken(),cache);
+		if (cache) {
+			ret.add(qAskMsg);
+		}
 		return ret;
 	}
 
@@ -681,36 +717,36 @@ public class TableUtils {
 	 * @param beUtils
 	 * @param searchBE
 	 */
-	private void showTableFooter(SearchEntity searchBE) {
-		/* need to send the footer question again here */
-		Attribute totalAttribute = new Attribute("PRI_TOTAL_RESULTS", "link", new DataType(String.class));
-		Attribute indexAttribute = new Attribute("PRI_INDEX", "link", new DataType(String.class));
-
-		/* create total count ask */
-		Question totalQuestion = new Question("QUE_TABLE_TOTAL_RESULT_COUNT", "Total Results", totalAttribute, true);
-
-		Ask totalAsk = new Ask(totalQuestion, beUtils.getGennyToken().getUserCode(), searchBE.getCode());
-		totalAsk.setReadonly(true);
-		totalAsk.setRealm(beUtils.getGennyToken().getRealm());
-		/* create index ask */
-		Question indexQuestion = new Question("QUE_TABLE_PAGE_INDEX", "Page Number", indexAttribute, true);
-
-		Ask indexAsk = new Ask(indexQuestion, beUtils.getGennyToken().getUserCode(), searchBE.getCode());
-		indexAsk.setReadonly(true);
-		indexAsk.setRealm(beUtils.getGennyToken().getRealm());
-
-		/* collect the asks to be sent out */
-		Set<QDataAskMessage> footerAskMsgs = new HashSet<QDataAskMessage>();
-		footerAskMsgs.add(new QDataAskMessage(totalAsk));
-		footerAskMsgs.add(new QDataAskMessage(indexAsk));
-
-		/* publish the new asks with searchBe set as targetCode */
-		for (QDataAskMessage footerAskMsg : footerAskMsgs) {
-			footerAskMsg.setToken(beUtils.getGennyToken().getToken());
-			footerAskMsg.setReplace(false);
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(footerAskMsg));
-		}
-	}
+//	private void showTableFooter(SearchEntity searchBE) {
+//		/* need to send the footer question again here */
+//		Attribute totalAttribute = new Attribute("PRI_TOTAL_RESULTS", "link", new DataType(String.class));
+//		Attribute indexAttribute = new Attribute("PRI_INDEX", "link", new DataType(String.class));
+//
+//		/* create total count ask */
+//		Question totalQuestion = new Question("QUE_TABLE_TOTAL_RESULT_COUNT", "Total Results", totalAttribute, true);
+//
+//		Ask totalAsk = new Ask(totalQuestion, beUtils.getGennyToken().getUserCode(), searchBE.getCode());
+//		totalAsk.setReadonly(true);
+//		totalAsk.setRealm(beUtils.getGennyToken().getRealm());
+//		/* create index ask */
+//		Question indexQuestion = new Question("QUE_TABLE_PAGE_INDEX", "Page Number", indexAttribute, true);
+//
+//		Ask indexAsk = new Ask(indexQuestion, beUtils.getGennyToken().getUserCode(), searchBE.getCode());
+//		indexAsk.setReadonly(true);
+//		indexAsk.setRealm(beUtils.getGennyToken().getRealm());
+//
+//		/* collect the asks to be sent out */
+//		Set<QDataAskMessage> footerAskMsgs = new HashSet<QDataAskMessage>();
+//		footerAskMsgs.add(new QDataAskMessage(totalAsk));
+//		footerAskMsgs.add(new QDataAskMessage(indexAsk));
+//
+//		/* publish the new asks with searchBe set as targetCode */
+//		for (QDataAskMessage footerAskMsg : footerAskMsgs) {
+//			footerAskMsg.setToken(beUtils.getGennyToken().getToken());
+//			footerAskMsg.setReplace(false);
+//			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(footerAskMsg));
+//		}
+//	}
 
 	public TableData generateTableAsks(SearchEntity searchBe) {
 
@@ -1383,8 +1419,14 @@ public class TableUtils {
 
 	}
 
-	public void sendQuestion(String titleQuestionCode, String sourceCode, String targetCode, String attributeCode,
+	public QDataAskMessage sendQuestion(String titleQuestionCode, String sourceCode, String targetCode, String attributeCode,
 			GennyToken userToken) {
+		return sendQuestion(titleQuestionCode, sourceCode, targetCode, attributeCode, userToken, false);
+	}
+
+	public QDataAskMessage sendQuestion(String titleQuestionCode, String sourceCode, String targetCode, String attributeCode,
+			GennyToken userToken, Boolean cache) {
+		QDataAskMessage ret = null;
 		// Set the table title
 		Attribute nameAttribute = RulesUtils.getAttribute(attributeCode, userToken.getToken());
 		Question titleQuestion = new Question(titleQuestionCode, titleQuestionCode, nameAttribute, true);
@@ -1395,11 +1437,15 @@ public class TableUtils {
 		Ask[] askArray1 = new Ask[1];
 		askArray1[0] = titleAsk;
 		QDataAskMessage titleAskMsg = new QDataAskMessage(askArray1);
-		titleAskMsg.setToken(userToken.getToken());
 		titleAskMsg.setReplace(false);
 		log.info("Inside sendQuestion method");
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(titleAskMsg));
-
+		if (cache) {
+			ret = titleAskMsg;
+		} else {
+			titleAskMsg.setToken(userToken.getToken());
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(titleAskMsg));
+		}
+		return ret;
 	}
 
 	private void updateBaseEntity(BaseEntity be, String attributeCode, String value) {

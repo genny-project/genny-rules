@@ -17,20 +17,24 @@ public class SearchCallable implements Callable<QBulkMessage> {
     TableUtils tableUtils;
     private String searchBeCode;
     private BaseEntityUtils beUtils;
-    
+    Boolean cache= false;
 
 
     public SearchCallable(TableUtils tableUtils,String searchBeCode,BaseEntityUtils beUtils) {
+        this(tableUtils, searchBeCode, beUtils, false);
+    }
+    public SearchCallable(TableUtils tableUtils,String searchBeCode,BaseEntityUtils beUtils, Boolean cache) {
         this.tableUtils = tableUtils;
         this.beUtils = beUtils;
         this.searchBeCode = searchBeCode;
+        this.cache = cache;
     }
 
     public QBulkMessage call()  {
     	
     	 log.info("Starting Search! "+searchBeCode);
-            QBulkMessage qbm1 = tableUtils.performSearch(beUtils.getGennyToken(), beUtils.getServiceToken(), searchBeCode, null);
-            ret.add(qbm1.getMessages());
+            QBulkMessage qbm1 = tableUtils.performSearch(beUtils.getGennyToken(), beUtils.getServiceToken(), searchBeCode, null, cache);
+            ret.add(qbm1);
 
             log.info("Finished Search with ");
         return ret;
