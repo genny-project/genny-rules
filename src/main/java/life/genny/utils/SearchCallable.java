@@ -36,7 +36,7 @@ public class SearchCallable implements Callable<QBulkMessage> {
             QBulkMessage qbm1 = tableUtils.performSearch(beUtils.getGennyToken(), beUtils.getServiceToken(), searchBeCode, null, cache);
             ret.add(qbm1);
 
-            log.info("Finished Search with ");
+            log.info("Finished Search with "+qbm1.getMessages().length+" items");
         return ret;
     }
 }

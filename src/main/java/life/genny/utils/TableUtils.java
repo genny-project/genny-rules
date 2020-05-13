@@ -13,13 +13,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.google.gson.reflect.TypeToken;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
@@ -65,35 +71,35 @@ public class TableUtils {
 		this.beUtils = beUtils;
 	}
 
-	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer) {
+	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode,
+			Answer answer) {
 		QBulkMessage ret = new QBulkMessage();
 		beUtils.setGennyToken(userToken);
 		ret = this.performSearch(serviceToken, searchBarCode, answer, null, null);
 		return ret;
 	}
-	
-	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer, Boolean cache) {
+
+	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode,
+			Answer answer, Boolean cache) {
 		QBulkMessage ret = new QBulkMessage();
 		beUtils.setGennyToken(userToken);
 		ret = this.performSearch(serviceToken, searchBarCode, answer, null, null, cache);
 		return ret;
 	}
+
 	public void performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer,
 			final String filterCode, final String filterValue) {
 		beUtils.setGennyToken(userToken);
 		this.performSearch(serviceToken, searchBarCode, answer, filterCode, filterValue);
 	}
 
-
-
-	public QBulkMessage performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer, final String filterCode,
-			final String filterValue)
-	{
-		return performSearch(serviceToken, searchBarCode, answer, filterCode, filterValue,false);
+	public QBulkMessage performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer,
+			final String filterCode, final String filterValue) {
+		return performSearch(serviceToken, searchBarCode, answer, filterCode, filterValue, false);
 	}
-	
-	public QBulkMessage performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer, final String filterCode,
-			final String filterValue, Boolean cache) {
+
+	public QBulkMessage performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer,
+			final String filterCode, final String filterValue, Boolean cache) {
 		QBulkMessage ret = new QBulkMessage();
 		beUtils.setServiceToken(serviceToken);
 
@@ -116,8 +122,7 @@ public class TableUtils {
 		// showing
 		// anything
 		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
-		
-		
+
 		if (cache) {
 			ret.add(searchBeMsg);
 		} else {
@@ -132,7 +137,7 @@ public class TableUtils {
 
 		/* QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg); */
 		log.info("calling showTableContent");
-		QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns,cache);
+		QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns, cache);
 		ret.add(qb);
 		log.info("calling sendTableContexts");
 		QDataBaseEntityMessage qm = sendTableContexts(cache);
@@ -147,8 +152,8 @@ public class TableUtils {
 
 		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class,
 				beUtils.getServiceToken().getToken());
-		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class,
-				beUtils.getServiceToken().getToken());
+		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY",
+				Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_HEADER_FONT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
 				"THM_TABLE_HEADER_FONT", Theme.class, beUtils.getServiceToken().getToken());
 
@@ -160,8 +165,8 @@ public class TableUtils {
 				"THM_TABLE_ROW_CONTENT_WRAPPER", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_WIDTH_100_PERCENT_NO_INHERIT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
 				"THM_WIDTH_100_PERCENT_NO_INHERIT", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW", Theme.class,
-				beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW",
+				Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL",
 				Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_CONTENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_CONTENT",
@@ -286,7 +291,7 @@ public class TableUtils {
 		if (cache) {
 			ret = msg;
 		} else {
-		msg.setToken(beUtils.getGennyToken().getToken());
+			msg.setToken(beUtils.getGennyToken().getToken());
 			log.info("**************** Sending all the themes and icons now ********************");
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 			log.info("**************** Sent all the themes and icons ********************");
@@ -297,8 +302,8 @@ public class TableUtils {
 	public SearchEntity getSessionSearch(final String searchCode) {
 		String sessionSearchCode = searchCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
 
-		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
-				beUtils.getGennyToken().getToken());
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode,
+				SearchEntity.class, beUtils.getGennyToken().getToken());
 
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
@@ -436,6 +441,7 @@ public class TableUtils {
 			Map<String, String> columns) {
 		return showTableContent(serviceToken, searchBE, msg, columns, false);
 	}
+
 	private QBulkMessage showTableContent(GennyToken serviceToken, SearchEntity searchBE, QDataBaseEntityMessage msg,
 			Map<String, String> columns, Boolean cache) {
 		QBulkMessage ret = new QBulkMessage();
@@ -450,7 +456,8 @@ public class TableUtils {
 		tableRowValidationList.setValidationList(tableRowValidations);
 
 		Context CTX_THM_TABLE_BORDER = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"), VisualControlType.GROUP_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"), VisualControlType.GROUP_WRAPPER,
+				1.0);
 		CTX_THM_TABLE_BORDER.setDataType("Table Row Group");
 
 		DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
@@ -460,7 +467,8 @@ public class TableUtils {
 		horizontalContext.setDataType("Table Header Group");
 
 		Context tableRowContentWrapperContext = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER", "THM_TABLE_ROW_CONTENT_WRAPPER"), VisualControlType.GROUP, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER", "THM_TABLE_ROW_CONTENT_WRAPPER"),
+				VisualControlType.GROUP, 1.0);
 		tableRowContentWrapperContext.setDataType("Table Row Group");
 
 		Context tableRowContext = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
@@ -473,32 +481,38 @@ public class TableUtils {
 		tableRowCellContext.setWeight(3.0);
 
 		Context tableRowCellName = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellName.setDttCode("DTT_TEXT_NAME");
 
 		Context tableRowCellLandline = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"), VisualControlType.VCL_WRAPPER,
-				1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"),
+				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellLandline.setDataType("Landline");
 
 		Context tableRowCellMobile = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_MOBILE", "THM_TABLE_ROW_CELL_MOBILE"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_MOBILE", "THM_TABLE_ROW_CELL_MOBILE"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellMobile.setDataType("Mobile");
 
 		Context tableRowCellPhone = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellPhone.setDttCode("DTT_PHONE");
 
 		Context tableRowCellAddress = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
+				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellAddress.setDataType("Address");
 
 		Context tableRowCellEmail = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_EMAIL", "THM_TABLE_ROW_CELL_EMAIL"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_EMAIL", "THM_TABLE_ROW_CELL_EMAIL"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellEmail.setDataType("Email");
 
 		Context tableRowCellView = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellView.setDttCode("DTT_EVENT_VIEW");
 		tableRowCellView.setWeight(2.0);
 
@@ -509,27 +523,33 @@ public class TableUtils {
 		tableRowCellViewJournal.setWeight(2.0);
 
 		Context tableRowCellApply = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellApply.setDttCode("DTT_EVENT_APPLY");
 
 		Context tableRowCellStatus = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellStatus.setDttCode("DTT_TEXT_STATUS");
 
 		Context tableRowCellDate = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_DATE", "THM_TABLE_ROW_CELL_DATE"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_DATE", "THM_TABLE_ROW_CELL_DATE"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellDate.setDttCode("DTT_PAST_DATE");
 
 		Context tableRowCellHours = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_HOURS", "THM_TABLE_ROW_CELL_HOURS"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_HOURS", "THM_TABLE_ROW_CELL_HOURS"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellHours.setDttCode("DTT_DOUBLE");
 
 		Context tableRowCellHtml = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_HTML", "THM_TABLE_ROW_CELL_HTML"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_HTML", "THM_TABLE_ROW_CELL_HTML"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellHtml.setDttCode("DTT_HTMLAREA");
 
 		Context tableRowCellText = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"), VisualControlType.VCL_WRAPPER, 2.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"), VisualControlType.VCL_WRAPPER,
+				2.0);
 		tableRowCellText.setDataType("Text");
 
 		List<Context> contexts = new ArrayList<Context>();
@@ -572,32 +592,38 @@ public class TableUtils {
 		List<Context> headerContexts = new ArrayList<Context>();
 
 		Context tableRowCellNameHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellNameHeader.setDttCode("DTT_TEXT_NAME_HEADER");
 
 		Context tableRowCellLandlineHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"), VisualControlType.VCL_WRAPPER,
-				1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"),
+				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellLandlineHeader.setDttCode("DTT_LANDLINE_HEADER");
 
 		Context tableRowCellMobileHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_MOBILE", "THM_TABLE_ROW_CELL_MOBILE"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_MOBILE", "THM_TABLE_ROW_CELL_MOBILE"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellMobileHeader.setDttCode("DTT_MOBILE_HEADER");
 
 		Context tableRowCellPhoneHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellPhoneHeader.setDttCode("DTT_PHONE_HEADER");
 
 		Context tableRowCellAddressHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
+				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellAddressHeader.setDttCode("DTT_ADDRESS_HEADER");
 
 		Context tableRowCellEmailHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_EMAIL", "THM_TABLE_ROW_CELL_EMAIL"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_EMAIL", "THM_TABLE_ROW_CELL_EMAIL"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellEmailHeader.setDttCode("DTT_EMAIL_HEADER");
 
 		Context tableRowCellViewHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellViewHeader.setDttCode("DTT_EVENT_VIEW_HEADER");
 		tableRowCellViewHeader.setWeight(2.0);
 
@@ -608,27 +634,33 @@ public class TableUtils {
 		// tableRowCellViewJournalHeader.setWeight(2.0);
 
 		Context tableRowCellApplyHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellApplyHeader.setDttCode("DTT_EVENT_APPLY_HEADER");
 
 		Context tableRowCellStatusHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellStatusHeader.setDttCode("DTT_TEXT_STATUS_HEADER");
 
 		Context tableRowCellTextHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellTextHeader.setDttCode("DTT_TEXT_HEADER");
 
 		Context tableRowCellDateHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_DATE", "THM_TABLE_ROW_CELL_DATE"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_DATE", "THM_TABLE_ROW_CELL_DATE"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellDateHeader.setDttCode("DTT_PAST_DATE_HEADER");
 
 		Context tableRowCellHoursHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_HOURS", "THM_TABLE_ROW_CELL_HOURS"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_HOURS", "THM_TABLE_ROW_CELL_HOURS"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellHoursHeader.setDttCode("DTT_DOUBLE_HEADER");
 
 		Context tableRowCellHtmlHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_HTML", "THM_TABLE_ROW_CELL_HTML"), VisualControlType.VCL_WRAPPER, 1.0);
+				new BaseEntity("THM_TABLE_ROW_CELL_HTML", "THM_TABLE_ROW_CELL_HTML"), VisualControlType.VCL_WRAPPER,
+				1.0);
 		tableRowCellHtmlHeader.setDttCode("DTT_HTMLAREA_HEADER");
 
 		/* newly added contexts to header */
@@ -647,12 +679,13 @@ public class TableUtils {
 		headerContexts.add(tableRowCellHoursHeader);
 		headerContexts.add(tableRowCellHtmlHeader);
 
-		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_HEADER_FONT", "THM_TABLE_HEADER_FONT"),
-				VisualControlType.INPUT_FIELD, 1.0));
+		headerContexts.add(new Context(ContextType.THEME,
+				new BaseEntity("THM_TABLE_HEADER_FONT", "THM_TABLE_HEADER_FONT"), VisualControlType.INPUT_FIELD, 1.0));
 		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_BORDER", "THM_TABLE_BORDER"),
 				VisualControlType.GROUP_WRAPPER, 1.0));
-		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_WIDTH_100_PERCENT", "THM_WIDTH_100_PERCENT"),
-				VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
+		headerContexts
+				.add(new Context(ContextType.THEME, new BaseEntity("THM_WIDTH_100_PERCENT", "THM_WIDTH_100_PERCENT"),
+						VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
 		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
 				VisualControlType.GROUP_WRAPPER, 1.0));
 		headerAsk.setContextList(new ContextList(headerContexts));
@@ -666,7 +699,8 @@ public class TableUtils {
 		/* Now send out the question rows and themes etc */
 
 		/* Link row asks to a single ask: QUE_TEST_TABLE_RESULTS_GRP */
-		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_RESULTS", "link", new DataType(String.class));
+		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_RESULTS", "link",
+				new DataType(String.class));
 		Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group",
 				questionAttribute, true);
 		Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
@@ -685,11 +719,11 @@ public class TableUtils {
 		QDataBaseEntityMessage msg3 = changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk, serviceToken,
 				beUtils.getGennyToken(), tableResultAskMsgs);
 		msg3.setReplace(true);
-		
+
 		if (cache) {
 			ret.add(msg3);
 		} else {
-			msg3.setToken(beUtils.getGennyToken().getToken());		
+			msg3.setToken(beUtils.getGennyToken().getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
 		}
 
@@ -697,16 +731,17 @@ public class TableUtils {
 		log.info("*************** Sending the QUE_TABLE_RESULTS_GRP askMsg ***************");
 		QDataAskMessage askMsg = new QDataAskMessage(tableResultAsk);
 		askMsg.setReplace(true);
-		
+
 		if (cache) {
 			ret.add(askMsg);
 		} else {
 			askMsg.setToken(beUtils.getGennyToken().getToken());
-			VertxUtils.writeMsg("webcmds",  JsonUtils.toJson(askMsg));
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
 		}
-		
+
 		log.info("*************** Sending table title question ***************");
-		QDataAskMessage qAskMsg = sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_TITLE", beUtils.getGennyToken(),cache);
+		QDataAskMessage qAskMsg = sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(),
+				searchBE.getCode(), "SCH_TITLE", beUtils.getGennyToken(), cache);
 		if (cache) {
 			ret.add(qAskMsg);
 		}
@@ -806,44 +841,44 @@ public class TableUtils {
 
 			tests.add(createTestCompany("Melbourne University", "0398745321", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Monash University", "0398744421", "support@melbuni.edu.au", "CLAYTON", "Victoria",
-					"3142"));
-			tests.add(createTestCompany("Latrobe University", "0398733321", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
+			tests.add(createTestCompany("Monash University", "0398744421", "support@melbuni.edu.au", "CLAYTON",
+					"Victoria", "3142"));
+			tests.add(createTestCompany("Latrobe University", "0398733321", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
 			tests.add(createTestCompany("University Of Warracknabeal", "0392225321", "support@melbuni.edu.au",
 					"WARRACKNABEAL", "Victoria", "3993"));
 			tests.add(createTestCompany("Ashburton University", "0398741111", "support@melbuni.edu.au", "ASHBURTON",
 					"Victoria", "3147"));
-			tests.add(createTestCompany("Outcome Academy", "0398745777", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
-			tests.add(createTestCompany("Holland University", "0298555521", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
+			tests.add(createTestCompany("Outcome Academy", "0398745777", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
+			tests.add(createTestCompany("Holland University", "0298555521", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
 			tests.add(createTestCompany("University of Greenvale", "0899995321", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Crow University", "0398749999", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
-			tests.add(createTestCompany("RMIT University", "0398748787", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
+			tests.add(createTestCompany("Crow University", "0398749999", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
+			tests.add(createTestCompany("RMIT University", "0398748787", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
 			tests.add(createTestCompany("Mt Buller University", "0398836421", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Australian National University", "0198876541", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("Australian National University", "0198876541", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany("Dodgy University", "0390000001", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Dodgy University", "0390000001", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
-			tests.add(createTestCompany("Australian Catholic University", "0398711121", "support@melbuni.edu.au", "MELBOURNE",
-					"Victoria", "3001"));
-			tests.add(createTestCompany("Australian Jedi University", "0798788881", "support@melbuni.edu.au", "MELBOURNE",
-					"Victoria", "3001"));
+			tests.add(createTestCompany("Australian Catholic University", "0398711121", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany("Australian Jedi University", "0798788881", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
 			tests.add(createTestCompany("Brisbane Lions University", "0401020319", "support@melbuni.edu.au", "BRISBANE",
 					"Queensland", "4000"));
-			tests.add(
-					createTestCompany("AFL University", "0390000001", "support@melbuni.edu.au", "MELBOURNE", "Victoria", "3001"));
-			tests.add(createTestCompany("Uluru University", "0398711441", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
-			tests.add(createTestCompany("University Of Hard Knocks", "0798744881", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("AFL University", "0390000001", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Scam University", "0705020319", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
+			tests.add(createTestCompany("Uluru University", "0398711441", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
+			tests.add(createTestCompany("University Of Hard Knocks", "0798744881", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany("Scam University", "0705020319", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
 
 			for (Integer pageIndex = pageStart; pageIndex < (pageStart + pageSize); pageIndex++) {
 				if (pageIndex < tests.size()) {
@@ -947,8 +982,10 @@ public class TableUtils {
 		result1.setRealm(beUtils.getGennyToken().getRealm());
 		try {
 			result1.addAnswer(new Answer(result1, result1, attribute("PRI_EMAIL", beUtils.getGennyToken()), email));
-			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_STATE", beUtils.getGennyToken()), state));
-			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_CITY", beUtils.getGennyToken()), city));
+			result1.addAnswer(
+					new Answer(result1, result1, attribute("PRI_ADDRESS_STATE", beUtils.getGennyToken()), state));
+			result1.addAnswer(
+					new Answer(result1, result1, attribute("PRI_ADDRESS_CITY", beUtils.getGennyToken()), city));
 			result1.addAnswer(
 					new Answer(result1, result1, attribute("PRI_ADDRESS_POSTCODE", beUtils.getGennyToken()), postcode));
 			result1.addAnswer(new Answer(result1, result1, attribute("PRI_LANDLINE", beUtils.getGennyToken()), phone));
@@ -997,7 +1034,8 @@ public class TableUtils {
 
 			/* Initialize Column Header Ask group */
 			Question columnHeaderQuestion = new Question("QUE_" + attributeCode, attributeName, priEvent, true);
-			Ask columnHeaderAsk = new Ask(columnHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
+			Ask columnHeaderAsk = new Ask(columnHeaderQuestion, beUtils.getGennyToken().getUserCode(),
+					searchBe.getCode());
 
 			/* creating ask for table header label-sort */
 			/*
@@ -1045,7 +1083,8 @@ public class TableUtils {
 		/*
 		 * we create a table-header ask grp and set all the column asks as it's childAsk
 		 */
-		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", searchBe.getName(), questionAttribute, true);
+		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", searchBe.getName(), questionAttribute,
+				true);
 
 		Ask tableHeaderAsk = new Ask(tableHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 		tableHeaderAsk.setChildAsks(asksArray);
@@ -1068,15 +1107,15 @@ public class TableUtils {
 		return createVirtualContext(ask, themeList, linkCode, VisualControlType.VCL_INPUT, themeMsgList);
 	}
 
-	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType,
-			List<QDataBaseEntityMessage> themeMsgList) {
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode,
+			VisualControlType visualControlType, List<QDataBaseEntityMessage> themeMsgList) {
 		List<BaseEntity> themeList = new ArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType, themeMsgList);
 	}
 
-	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType,
-			Double weight, List<QDataBaseEntityMessage> themeMsgList) {
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode,
+			VisualControlType visualControlType, Double weight, List<QDataBaseEntityMessage> themeMsgList) {
 		List<BaseEntity> themeList = new ArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType, weight, themeMsgList);
@@ -1155,7 +1194,8 @@ public class TableUtils {
 		createVirtualContext(columnSortAsk, horizontalWrapperBe, ContextType.THEME, VisualControlType.VCL_WRAPPER,
 				themeMsgList);
 		createVirtualContext(columnSortAsk, sortIconBe, ContextType.ICON, VisualControlType.VCL_ICON, themeMsgList);
-		createVirtualContext(columnSortAsk, visualBaseEntity, ContextType.THEME, VisualControlType.VCL_INPUT, themeMsgList);
+		createVirtualContext(columnSortAsk, visualBaseEntity, ContextType.THEME, VisualControlType.VCL_INPUT,
+				themeMsgList);
 		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.VCL_LABEL,
 				themeMsgList);
 
@@ -1272,7 +1312,8 @@ public class TableUtils {
 					if (sourceFrame.getCode().equals(ask.getQuestionCode())) {
 
 						log.info("ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
-						EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute, 1.0, "CENTRE");
+						EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute, 1.0,
+								"CENTRE");
 						Set<EntityEntity> entEntList = targetFrame.getLinks();
 						entEntList.add(entityEntity);
 						targetFrame.setLinks(entEntList);
@@ -1303,8 +1344,8 @@ public class TableUtils {
 		/* get the themes */
 		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class,
 				beUtils.getServiceToken().getToken());
-		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class,
-				beUtils.getServiceToken().getToken());
+		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY",
+				Theme.class, beUtils.getServiceToken().getToken());
 
 		/* get the sort icon */
 		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
@@ -1316,11 +1357,13 @@ public class TableUtils {
 		viewContextList.add(new Context(ContextType.ICON, ICN_VIEW, VisualControlType.VCL_ICON, 1.0));
 
 		List<Context> applyContextList = new ArrayList<>();
-		applyContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
+		applyContextList
+				.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
 		applyContextList.add(new Context(ContextType.ICON, ICN_ADD, VisualControlType.VCL_ICON, 1.0));
 
 		List<Context> documentContextList = new ArrayList<>();
-		documentContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
+		documentContextList
+				.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
 		documentContextList.add(new Context(ContextType.ICON, ICN_DESCRIPTION, VisualControlType.VCL_ICON, 1.0));
 
 		if (columns != null) {
@@ -1342,34 +1385,34 @@ public class TableUtils {
 						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
 
 						if (attr != null) {
-							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
-									true);
+							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(),
+									attributeName, attr, true);
 							Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 							childAsk.setReadonly(true);
 
 							/* switch case to add icons */
 							switch (attr.getCode()) {
-								case "PRI_EVENT_VIEW":
-									// log.info("attribute code is PRI_EVENT_VIEW attaching the context now");
-									childAsk.setContextList(new ContextList(viewContextList));
-									childAsk.setReadonly(false);
+							case "PRI_EVENT_VIEW":
+								// log.info("attribute code is PRI_EVENT_VIEW attaching the context now");
+								childAsk.setContextList(new ContextList(viewContextList));
+								childAsk.setReadonly(false);
 
-									break;
-								case "PRI_EVENT_APPLY":
-									// log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
-									childAsk.setContextList(new ContextList(applyContextList));
-									childAsk.setReadonly(false);
+								break;
+							case "PRI_EVENT_APPLY":
+								// log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
+								childAsk.setContextList(new ContextList(applyContextList));
+								childAsk.setReadonly(false);
 
-									break;
-								case "PRI_EVENT_JOURNAL_VIEW":
-									// log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
-									childAsk.setContextList(new ContextList(documentContextList));
-									childAsk.setReadonly(false);
+								break;
+							case "PRI_EVENT_JOURNAL_VIEW":
+								// log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
+								childAsk.setContextList(new ContextList(documentContextList));
+								childAsk.setReadonly(false);
 
-									break;
+								break;
 
-								default:
-									break;
+							default:
+								break;
 							}
 
 							/* add the entityAttribute ask to list */
@@ -1394,7 +1437,8 @@ public class TableUtils {
 					Attribute tableRowAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_ROW");
 
 					/* Generate ask for the baseentity */
-					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(), tableRowAttribute, true);
+					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
+							tableRowAttribute, true);
 					Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
 
 					/* set readOnly to true */
@@ -1419,13 +1463,13 @@ public class TableUtils {
 
 	}
 
-	public QDataAskMessage sendQuestion(String titleQuestionCode, String sourceCode, String targetCode, String attributeCode,
-			GennyToken userToken) {
+	public QDataAskMessage sendQuestion(String titleQuestionCode, String sourceCode, String targetCode,
+			String attributeCode, GennyToken userToken) {
 		return sendQuestion(titleQuestionCode, sourceCode, targetCode, attributeCode, userToken, false);
 	}
 
-	public QDataAskMessage sendQuestion(String titleQuestionCode, String sourceCode, String targetCode, String attributeCode,
-			GennyToken userToken, Boolean cache) {
+	public QDataAskMessage sendQuestion(String titleQuestionCode, String sourceCode, String targetCode,
+			String attributeCode, GennyToken userToken, Boolean cache) {
 		QDataAskMessage ret = null;
 		// Set the table title
 		Attribute nameAttribute = RulesUtils.getAttribute(attributeCode, userToken.getToken());
@@ -1519,9 +1563,8 @@ public class TableUtils {
 			for (ThemeAttribute themeAttribute : theme.getAttributes()) {
 
 				try {
-					themeBe.addAttribute(new EntityAttribute(themeBe,
-							new Attribute(themeAttribute.getCode(), themeAttribute.getCode(), new DataType("DTT_THEME")), 1.0,
-							themeAttribute.getJson()));
+					themeBe.addAttribute(new EntityAttribute(themeBe, new Attribute(themeAttribute.getCode(),
+							themeAttribute.getCode(), new DataType("DTT_THEME")), 1.0, themeAttribute.getJson()));
 				} catch (BadDataException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -1532,89 +1575,137 @@ public class TableUtils {
 	}
 
 	public void awaitTerminationAfterShutdown(ExecutorService threadPool) {
-	    threadPool.shutdown();
-	    try {
-	        if (!threadPool.awaitTermination(90, TimeUnit.SECONDS)) {
-	            threadPool.shutdownNow();
-	        }
-	    } catch (InterruptedException ex) {
-	        threadPool.shutdownNow();
-	        Thread.currentThread().interrupt();
-	    }
+		threadPool.shutdown();
+		try {
+			if (!threadPool.awaitTermination(90, TimeUnit.SECONDS)) {
+				threadPool.shutdownNow();
+			}
+		} catch (InterruptedException ex) {
+			threadPool.shutdownNow();
+			Thread.currentThread().interrupt();
+		}
 	}
-	
-	public class TableFrameCallable implements Callable<QBulkMessage> {
-	    
-	    private String name;
-	    private long period;
-	    private CountDownLatch latch;
-	    QBulkMessage ret = new QBulkMessage();
-	    BaseEntityUtils beUtils;
-	    
-	    public TableFrameCallable(BaseEntityUtils beUtils,String name, long period, CountDownLatch latch) {
-	        this(beUtils,name, period);
-	        this.latch = latch;
-	        this.beUtils = beUtils;
-	    }
 
-	    public TableFrameCallable(BaseEntityUtils beUtils, String name, long period) {
-	        this.name = name;
-	        this.period = period;
-	        ret.setData_type(name);
-	        this.beUtils = beUtils;
-	    }
+	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache) {
+		long starttime = System.currentTimeMillis();
 
-	    public QBulkMessage call() {
-	    	
-	        // Thread.sleep(period);
-	            QBulkMessage qbm1 = ShowFrame.display(beUtils.getGennyToken(), "FRM_QUE_TAB_VIEW", "FRM_CONTENT", "Test");
-	            QBulkMessage qbm2 = ShowFrame.display(beUtils.getGennyToken(), "FRM_TABLE_VIEW", "FRM_TAB_CONTENT", "Test");
-	            ret.add(qbm1.getMessages());
-	            ret.add(qbm2.getMessages());
-	            if (latch != null) {
-	                latch.countDown();
-	            }
+		System.out.println("FINAL CODE   ::   " + code);
 
-	        return ret;
-	    }
-	}
-	
-	public class SearchCallable implements Callable<QBulkMessage> {
-	    
-	    private String name;
-	    private long period;
-	    private CountDownLatch latch;
-	    QBulkMessage ret = new QBulkMessage();
-	    TableUtils tableUtils;
-	    private String searchBeCode;
-	    private BaseEntityUtils beUtils;
-	    
-	    public SearchCallable(TableUtils tableUtils,String searchBeCode,BaseEntityUtils beUtils, String name, long period, CountDownLatch latch) {
-	        this(tableUtils,searchBeCode, beUtils,name, period);
-	        this.latch = latch;
-	        
-	    }
+		String searchBeCode = "SBE_" + code;
+		System.out.println("SBE CODE   ::   " + searchBeCode);
 
-	    public SearchCallable(TableUtils tableUtils,String searchBeCode,BaseEntityUtils beUtils, String name, long period) {
-	        this.name = name;
-	        this.period = period;
-	        ret.setData_type(name);
-	        this.tableUtils = tableUtils;
-	        this.beUtils = beUtils;
-	        this.searchBeCode = searchBeCode;
-	    }
+		String frameCode = "FRM_TABLE_" + code;
+		System.out.println("FRAME CODE   ::   " + frameCode);
 
-	    public QBulkMessage call()  {
-	    	
-	        // Thread.sleep(period);
-	    
-	            QBulkMessage qbm1 = tableUtils.performSearch(beUtils.getGennyToken(), beUtils.getServiceToken(), searchBeCode, null);
-	            ret.add(qbm1.getMessages());
-	            if (latch != null) {
-	                latch.countDown();
-	            }
-	            log.info("Finished Search!");
-	        return ret;
-	    }
+		long s1time = System.currentTimeMillis();
+		/* get current search */
+		TableUtils tableUtils = new TableUtils(beUtils);
+		SearchEntity searchBE = tableUtils.getSessionSearch(searchBeCode);
+
+		long s2time = System.currentTimeMillis();
+		Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START",
+				"0");
+		Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX",
+				"1");
+
+		searchBE = beUtils.updateBaseEntity(searchBE, pageAnswer, SearchEntity.class);
+		searchBE = beUtils.updateBaseEntity(searchBE, pageNumberAnswer, SearchEntity.class);
+
+		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
+				beUtils.getGennyToken().getToken());
+
+		long s3time = System.currentTimeMillis();
+
+		ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
+		CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
+
+		TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
+		SearchCallable sc = new SearchCallable(tableUtils, searchBE.getCode(), beUtils, cache);
+
+		List<Callable<QBulkMessage>> callables = Arrays.asList(tfc, sc);
+
+		QBulkMessage aggregatedMessages = new QBulkMessage();
+
+		long startProcessingTime = System.currentTimeMillis();
+		long totalProcessingTime;
+
+		if (cache) {
+			for (Callable<QBulkMessage> callable : callables) {
+				service.submit(callable);
+			}
+			try {
+				Future<QBulkMessage> future = service.take();
+				QBulkMessage firstThreadResponse = future.get();
+				aggregatedMessages.add(firstThreadResponse);
+				totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+
+				/*
+				 * assertTrue("First response should be from the fast thread",
+				 * "fast thread".equals(firstThreadResponse.getData_type()));
+				 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
+				 */
+				System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
+
+				future = service.take();
+				QBulkMessage secondThreadResponse = future.get();
+				aggregatedMessages.add(secondThreadResponse);
+				System.out.println("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
+			} catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
+			totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+
+			WORKER_THREAD_POOL.shutdown();
+			try {
+				if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
+					WORKER_THREAD_POOL.shutdownNow();
+				}
+			} catch (InterruptedException ex) {
+				WORKER_THREAD_POOL.shutdownNow();
+				Thread.currentThread().interrupt();
+			}
+		} else {
+			tfc.call();
+			sc.call();
+
+		}
+		totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+		System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
+		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
+		QDataAskMessage[] asks = aggregatedMessages.getAsks();
+		aggregatedMessages.setAsks(null);
+
+		if (cache) {
+			String json = JsonUtils.toJson(aggregatedMessages);
+			VertxUtils.writeMsg("webcmds", json);
+			for (QDataAskMessage askMsg : asks) {
+				askMsg.setToken(beUtils.getGennyToken().getToken());
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
+			}
+		}
+		/* show tab-view first */
+		/*
+		 * ShowFrame.display(beUtils.getGennyToken(), "FRM_QUE_TAB_VIEW", "FRM_CONTENT",
+		 * "Test");
+		 */
+
+		/* show table-view inside tab-content */
+		/* Send to front end */
+		/* output.setTypeOfResult("NONE"); */
+		/* output.setResultCode("NONE"); */ /* dont display anything new */
+
+		/* update(output); */
+		long endtime = System.currentTimeMillis();
+		System.out.println("init setup took " + (s1time - starttime) + " ms");
+		System.out.println("search session setup took " + (s2time - s1time) + " ms");
+		System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
+		/*
+		 * System.out.println("send frame table and tab display setup took " + (s4time -
+		 * s3time) + " ms"); System.out.println("searching took " + (s5time - s4time) +
+		 * " ms"); System.out.println("finish took " + (endtime - s5time) + " ms");
+		 * System.out.println("total took " + (endtime - starttime) + " ms");
+		 */
+
+		return (endtime - starttime);
 	}
 }
