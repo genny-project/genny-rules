@@ -110,6 +110,7 @@ public class TableUtils {
 		if (cache) {
 			ret.add(msg);
 		} else {
+			msg.setToken(beUtils.getGennyToken().getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 		}
 
