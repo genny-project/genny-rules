@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../prj_genny"
+		},
+		{
+			"path": "../prj_internmatch"
+		},
+		{
+			"path": "../qwanda"
+		},
+		{
+			"path": "../genny-verticle-rules"
+		}
+	]
+}
