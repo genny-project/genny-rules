@@ -33,7 +33,7 @@ public class SearchCallable implements Callable<QBulkMessage> {
     public QBulkMessage call()  {
     	
     	 log.info("Starting Search! "+searchBeCode);
-            QBulkMessage qbm1 = tableUtils.performSearch(beUtils.getGennyToken(), beUtils.getServiceToken(), searchBeCode, null, cache);
+            QBulkMessage qbm1 = tableUtils.performSearch(beUtils.getServiceToken(), beUtils.getServiceToken(), searchBeCode, null, cache);
             ret.add(qbm1);
 
             log.info("Finished Search with "+qbm1.getMessages().length+" items");
