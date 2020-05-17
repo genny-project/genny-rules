@@ -1630,7 +1630,7 @@ public class TableUtils {
 		long startProcessingTime = System.currentTimeMillis();
 		long totalProcessingTime;
 
-		if (true) {
+		if (false) {
 			for (Callable<QBulkMessage> callable : callables) {
 				service.submit(callable);
 			}
