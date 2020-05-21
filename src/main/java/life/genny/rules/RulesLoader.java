@@ -21,6 +21,7 @@ import life.genny.qwanda.Answer;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.datatype.Allowed;
 import life.genny.qwanda.entity.BaseEntity;
+import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.entity.User;
 import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.message.*;
@@ -31,6 +32,7 @@ import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.GennyRuleTimingListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
+import life.genny.services.BaseEntityService2;
 import life.genny.utils.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
@@ -194,7 +196,13 @@ public class RulesLoader {
 			realms = new HashSet<>(activeRealms);
 		}
 
-		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
+		List<Tuple3<String, String, String>> rules = null;
+		
+		if (GennySettings.useApiRules) {
+			rules = processFileRealmsFromApi(realms);
+		} else {
+			rules = processFileRealmsFromFiles("genny", rulesDir, realms);
+		}
 		log.info("LOADED ALL RULES");
 //		realms = getRealms(rules);
 		realms.stream().forEach(System.out::println);
@@ -233,7 +241,60 @@ public class RulesLoader {
 
 	}
 
-	static public List<Tuple3<String, String, String>> processFileRealms(final String realm, String inputFileStrs,
+	
+	static public List<Tuple3<String, String, String>> processFileRealmsFromApi(Set<String> activeRealms) {
+		List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
+
+		for (String realm : activeRealms) {
+		
+		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+		String sToken = tokenObj.getString("value");
+		GennyToken serviceToken = new GennyToken("PER_SERVICE",sToken);
+
+
+		if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+			return null;
+		}
+
+
+		// Fetch all the rules from the api
+		SearchEntity searchBE = new SearchEntity("SBE_RULES", "Rules")
+				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_%")
+			/*	.addFilter("PRI_BRANCH", SearchEntity.StringFilter.LIKE,branch) */
+				.addColumn("PRI_KIE_TEXT", "Text")
+				.addColumn("PR_FILENAME", "Filename")
+				.setPageStart(0).setPageSize(4000);
+
+		searchBE.setRealm(serviceToken.getRealm());
+
+		String jsonSearchBE = JsonUtils.toJson(searchBE);
+		/* System.out.println(jsonSearchBE); */
+		String resultJson;
+
+		try {
+			resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+					jsonSearchBE, serviceToken.getToken());
+			QDataBaseEntityMessage resultMsg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+			for (BaseEntity ruleBe : resultMsg.getItems()) {
+				String filename = ruleBe.getValueAsString("PRI_FILENAME");
+				String ruleText = ruleBe.getValueAsString("PRI_KIE_TEXT");
+				Tuple3<String, String, String> rule = (Tuple.of(realm, filename, ruleText));
+				rules.add(rule);
+			}
+		} catch (Exception e) {
+			log.error("Could not fetch Rules from API");
+					
+		}
+		}
+	
+		
+		return rules;
+	}
+	
+	
+	
+	static public List<Tuple3<String, String, String>> processFileRealmsFromFiles(final String realm, String inputFileStrs,
 			Set<String> activeRealms) {
 		List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
 
@@ -277,7 +338,7 @@ public class RulesLoader {
 					}
 
 					for (final String dirFileStr : filesList) {
-						List<Tuple3<String, String, String>> childRules = processFileRealms(localRealm, dirFileStr,
+						List<Tuple3<String, String, String>> childRules = processFileRealmsFromFiles(localRealm, dirFileStr,
 								realms); // use
 						// directory
 						// name
