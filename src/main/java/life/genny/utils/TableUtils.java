@@ -289,6 +289,7 @@ public class TableUtils {
 		log.info("**************** Themes in the list :: " + themes.size() + " ********************");
 
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(themes);
+		msg.setReplace(true);
 		if (cache) {
 			ret = msg;
 		} else {
@@ -1589,7 +1590,8 @@ public class TableUtils {
 
 	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache) {
 		long starttime = System.currentTimeMillis();
-
+		
+		System.out.println("Cache enabled ? ::" + cache);
 		System.out.println("FINAL CODE   ::   " + code);
 
 		String searchBeCode = "SBE_" + code;
@@ -1674,15 +1676,16 @@ public class TableUtils {
 		System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 		QDataAskMessage[] asks = aggregatedMessages.getAsks();
-		aggregatedMessages.setAsks(null);
+		/* aggregatedMessages.setAsks(null); */
 
 		if (cache) {
+			System.out.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 			String json = JsonUtils.toJson(aggregatedMessages);
 			VertxUtils.writeMsg("webcmds", json);
-			for (QDataAskMessage askMsg : asks) {
-				askMsg.setToken(beUtils.getGennyToken().getToken());
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
-			}
+			// for (QDataAskMessage askMsg : asks) {
+			// 	askMsg.setToken(beUtils.getGennyToken().getToken());
+			// 	VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
+			// }
 		}
 		/* show tab-view first */
 		/*
