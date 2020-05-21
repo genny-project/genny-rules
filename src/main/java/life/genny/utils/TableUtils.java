@@ -1676,6 +1676,9 @@ public class TableUtils {
 		System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 		QDataAskMessage[] asks = aggregatedMessages.getAsks();
+		
+		log.info("Checking asks included in QBulk  :: " + aggregatedMessages.getAsks().length);
+		
 		/* aggregatedMessages.setAsks(null); */
 
 		if (cache) {
