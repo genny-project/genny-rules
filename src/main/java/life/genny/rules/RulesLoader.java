@@ -32,7 +32,7 @@ import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.GennyRuleTimingListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
-import life.genny.services.BaseEntityService2;
+
 import life.genny.utils.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
@@ -133,20 +133,22 @@ public class RulesLoader {
 
 	public static List<String> activeRealms = new ArrayList<String>();
 
-	public static Boolean rulesChanged = !GennySettings.detectRuleChanges;   // If detectRule Changes is false then ALWAYS assume rules changed
+	public static Boolean rulesChanged = !GennySettings.detectRuleChanges; // If detectRule Changes is false then ALWAYS
+																			// assume rules changed
 
 	public static Boolean persistRules = GennySettings.persistRules;
+	
+	public static Boolean gNotReady = false;
+	
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
-	
-
 
 	public static void shutdown() {
 		runtimeManager.close();
 	}
 
 	public static void addRules(final String rulesDir, List<Tuple3<String, String, String>> newrules) {
-		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
+		List<Tuple3<String, String, String>> rules = processFileRealmsFromApi(realms);
 		rules.addAll(newrules);
 		// realms = getRealms(rules);
 		realms.stream().forEach(System.out::println);
@@ -163,9 +165,9 @@ public class RulesLoader {
 	public static void loadRules(final String rulesDir) {
 
 		log.info("Loading Rules and workflows!!!");
-		
+
 		// Create a simple weighted directed graph with Hipster where
-					// vertices are Strings and edge values are just Strings
+		// vertices are Strings and edge values are just Strings
 
 		GraphBuilder<String, String> gb = GraphBuilder.<String, String>create();
 
@@ -197,13 +199,13 @@ public class RulesLoader {
 		}
 
 		List<Tuple3<String, String, String>> rules = null;
-		
+
 		if (GennySettings.useApiRules) {
 			rules = processFileRealmsFromApi(realms);
 		} else {
 			rules = processFileRealmsFromFiles("genny", rulesDir, realms);
 		}
-		log.info("LOADED ALL RULES");
+		log.info("LOADED ALL RULES "+rules.size());
 //		realms = getRealms(rules);
 		realms.stream().forEach(System.out::println);
 		realms.remove("genny");
@@ -241,61 +243,55 @@ public class RulesLoader {
 
 	}
 
-	
 	static public List<Tuple3<String, String, String>> processFileRealmsFromApi(Set<String> activeRealms) {
 		List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
 
 		for (String realm : activeRealms) {
-		
-		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-		String sToken = tokenObj.getString("value");
-		GennyToken serviceToken = new GennyToken("PER_SERVICE",sToken);
 
+			JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+			String sToken = tokenObj.getString("value");
+			GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
 
-		if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
-			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
-			return null;
-		}
-
-
-		// Fetch all the rules from the api
-		SearchEntity searchBE = new SearchEntity("SBE_RULES", "Rules")
-				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_%")
-			/*	.addFilter("PRI_BRANCH", SearchEntity.StringFilter.LIKE,branch) */
-				.addColumn("PRI_KIE_TEXT", "Text")
-				.addColumn("PR_FILENAME", "Filename")
-				.setPageStart(0).setPageSize(4000);
-
-		searchBE.setRealm(serviceToken.getRealm());
-
-		String jsonSearchBE = JsonUtils.toJson(searchBE);
-		/* System.out.println(jsonSearchBE); */
-		String resultJson;
-
-		try {
-			resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-					jsonSearchBE, serviceToken.getToken());
-			QDataBaseEntityMessage resultMsg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-			for (BaseEntity ruleBe : resultMsg.getItems()) {
-				String filename = ruleBe.getValueAsString("PRI_FILENAME");
-				String ruleText = ruleBe.getValueAsString("PRI_KIE_TEXT");
-				Tuple3<String, String, String> rule = (Tuple.of(realm, filename, ruleText));
-				rules.add(rule);
+			if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+				log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+				return null;
 			}
-		} catch (Exception e) {
-			log.error("Could not fetch Rules from API");
-					
+
+			// Fetch all the rules from the api
+			SearchEntity searchBE = new SearchEntity("SBE_RULES", "Rules")
+					.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_%")
+					/* .addFilter("PRI_BRANCH", SearchEntity.StringFilter.LIKE,branch) */
+					.addColumn("PRI_KIE_TEXT", "Text").addColumn("PRI_FILENAME", "Filename").setPageStart(0)
+					.setPageSize(4000);
+
+			searchBE.setRealm(serviceToken.getRealm());
+
+			String jsonSearchBE = JsonUtils.toJson(searchBE);
+			/* System.out.println(jsonSearchBE); */
+			String resultJson;
+
+			try {
+				resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+						jsonSearchBE, serviceToken.getToken());
+				QDataBaseEntityMessage resultMsg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+				for (BaseEntity ruleBe : resultMsg.getItems()) {
+					String filename = ruleBe.getValueAsString("PRI_FILENAME");
+					String ruleText = ruleBe.getValueAsString("PRI_KIE_TEXT");
+					Tuple3<String, String, String> rule = (Tuple.of(realm, filename, ruleText));
+					rules.add(rule);
+					log.info("Imported rule from API : "+filename);
+				}
+			} catch (Exception e) {
+				log.error("Could not fetch Rules from API");
+
+			}
 		}
-		}
-	
-		
+
 		return rules;
 	}
-	
-	
-	
-	static public List<Tuple3<String, String, String>> processFileRealmsFromFiles(final String realm, String inputFileStrs,
-			Set<String> activeRealms) {
+
+	static public List<Tuple3<String, String, String>> processFileRealmsFromFiles(final String realm,
+			String inputFileStrs, Set<String> activeRealms) {
 		List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
 
 		String[] inputFileStrArray = inputFileStrs.split(";,:"); // allow multiple rules dirs
@@ -338,8 +334,8 @@ public class RulesLoader {
 					}
 
 					for (final String dirFileStr : filesList) {
-						List<Tuple3<String, String, String>> childRules = processFileRealmsFromFiles(localRealm, dirFileStr,
-								realms); // use
+						List<Tuple3<String, String, String>> childRules = processFileRealmsFromFiles(localRealm,
+								dirFileStr, realms); // use
 						// directory
 						// name
 						// as
@@ -458,8 +454,7 @@ public class RulesLoader {
 				}
 			}
 			log.info("Creating RulesGraph");
-			FrameUtils2.rulesGraph = FrameUtils2.graphBuilder.createDirectedGraph(); 
-
+			FrameUtils2.rulesGraph = FrameUtils2.graphBuilder.createDirectedGraph();
 
 			if (rulesChanged) {
 				log.info("Theme and Frame Rules CHANGED. RUNNING init frames...");
@@ -614,7 +609,6 @@ public class RulesLoader {
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 			ksconf.setProperty("name", realm);
 
-
 			if (GennySettings.useSingleton) { // TODO
 				KieSession kieSession = runtimeEngine.getKieSession();
 				kieSessionMap.put(realm, kieSession);
@@ -760,12 +754,12 @@ public class RulesLoader {
 		synchronized (taskServiceMap) {
 			taskServiceMap.put(realm, taskService);
 			// userToken is null when application startup
-			if(!isInitEvent) {
+			if (!isInitEvent) {
 				taskServiceMap.put(facts.getUserToken().getSessionCode(), taskService);
 			}
 		}
-		//JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
-		//AbstractAuditLogger logger = new NodeStatusLog(kieSession);
+		// JPAWorkingMemoryDbLogger logger = new JPAWorkingMemoryDbLogger(kieSession);
+		// AbstractAuditLogger logger = new NodeStatusLog(kieSession);
 		AbstractAuditLogger logger = new NodeStatusLog(emf, env);
 //				 addHandlers(kieSession);
 		kieSession.addEventListener(new GennyRuleTimingListener());
@@ -777,7 +771,15 @@ public class RulesLoader {
 				new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
 		kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
-				new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the env should be the same for all kieSessions
+				new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the
+																													// env
+																													// should
+																													// be
+																													// the
+																													// same
+																													// for
+																													// all
+																													// kieSessions
 
 		kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
 				new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
@@ -791,88 +793,83 @@ public class RulesLoader {
 		return kieSession;
 	}
 
-    //	@Transactional(dontRollbackOn = { org.drools.persistence.jta.JtaTransactionManager.class })
-    private KieSession getKieSesion(SessionFacts facts, boolean isInitEvent) {
-        KieSession kieSession = null;
-        String sessionCode = facts.getServiceToken().getRealm();
+	// @Transactional(dontRollbackOn = {
+	// org.drools.persistence.jta.JtaTransactionManager.class })
+	private KieSession getKieSesion(SessionFacts facts, boolean isInitEvent) {
+		KieSession kieSession = null;
+		String sessionCode = facts.getServiceToken().getRealm();
 
-		if(!isInitEvent) {
+		if (!isInitEvent) {
 			sessionCode = facts.getUserToken().getSessionCode();
 		}
 
-        if (RUNTIME_MANAGER_ON) {
-            if (GennySettings.useSingleton) { // TODO
-                kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
-                // map to current sessionCode
-                kieSessionMap.put(sessionCode, kieSession);
-                kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
+		if (RUNTIME_MANAGER_ON) {
+			if (GennySettings.useSingleton) { // TODO
+				kieSession = kieSessionMap.get(facts.getServiceToken().getRealm());
+				// map to current sessionCode
+				kieSessionMap.put(sessionCode, kieSession);
+				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
 
-                log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
-                        + kieSession.getIdentifier());
-            } else {
+				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
+						+ kieSession.getIdentifier());
+			} else {
 				kieSession = createNewKieSession(facts, isInitEvent);
 				if (kieSessionMap.get(sessionCode) == null) {
 					// map to current sessionCode
 					kieSessionMap.put(sessionCode, kieSession);
 					log.info("Create new KieSession:" + kieSession.getIdentifier());
-                } else {
-                    kieSessionMap.replace(sessionCode, kieSession);
-                    log.info(debugStr + "Replace with new KieSession:" + kieSession.getIdentifier());
-                }
+				} else {
+					kieSessionMap.replace(sessionCode, kieSession);
+					log.info(debugStr + "Replace with new KieSession:" + kieSession.getIdentifier());
+				}
 				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getIdentifier());
 			}
 		}
 		return kieSession;
-    }
+	}
 
-	private void processQEventMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
+	private void processQEventMessageEvent(SessionFacts facts, long processId, KieSession kieSession) {
 		((QEventMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
 
 		String msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
 		String bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
 		// Save an associated Bridge IP to the session
-		log.info("saving bridge ip to cache associted with session "
-				+ facts.getUserToken().getSessionCode());
-		VertxUtils.writeCachedJson(facts.getUserToken().getRealm(),
-				facts.getUserToken().getSessionCode(), bridgeSourceAddress,
-				facts.getUserToken().getToken());
+		log.info("saving bridge ip to cache associted with session " + facts.getUserToken().getSessionCode());
+		VertxUtils.writeCachedJson(facts.getUserToken().getRealm(), facts.getUserToken().getSessionCode(),
+				bridgeSourceAddress, facts.getUserToken().getToken());
 
-		log.info("incoming EVENT" + " message from " + bridgeSourceAddress + ": "
-				+ facts.getUserToken().getRealm() + ": " + facts.getUserToken().getSessionCode()
-				+ ": " + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
-				+ processId);
+		log.info("incoming EVENT" + " message from " + bridgeSourceAddress + ": " + facts.getUserToken().getRealm()
+				+ ": " + facts.getUserToken().getSessionCode() + ": " + facts.getUserToken().getUserCode() + "   "
+				+ msg_code + " to pid " + processId);
 
 		// kieSession.signalEvent("EV_"+session_state, facts);
 
 		// HACK!!
 		if (msg_code.equals("QUE_SUBMIT")) {
-			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(),
-					facts.getUserToken().getUserCode(), "PRI_SUBMIT", "QUE_SUBMIT");
+			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), facts.getUserToken().getUserCode(),
+					"PRI_SUBMIT", "QUE_SUBMIT");
 //									String ad = "{\"street_number\":\"63\",\"street_name\":\"Fakenham Road\",\"suburb\":\"Ashburton\",\"state\":\"Victoria\",\"country\":\"AU\",\"postal_code\":\"3147\",\"full_address\":\"64 Fakenham Rd, Ashburton VIC 3147, Australia\",\"latitude\":-37.863208,\"longitude\":145.092359,\"street_address\":\"64 Fakenham Road\"}";
 //									dataAnswer = new Answer(facts.getUserToken().getUserCode(),
 //											facts.getUserToken().getUserCode(), "PRI_ADDRESS_JSON", ad);
 			dataAnswer.setChangeEvent(false);
 			QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
-			SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
-					facts.getUserToken(), dataMsg);
-			log.info("SignalEvent -> QUE_SUBMIT event to 'data' for "
-					+ facts.getUserToken().getUserCode() + ":" + processId);
+			SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(), facts.getUserToken(), dataMsg);
+			log.info("SignalEvent -> QUE_SUBMIT event to 'data' for " + facts.getUserToken().getUserCode() + ":"
+					+ processId);
 			kieSession.signalEvent("data", sessionFactsData, processId);
 		} else if (msg_code.equals("QUE_CANCEL")) {
-			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(),
-					facts.getUserToken().getUserCode(), "PRI_SUBMIT", "QUE_CANCEL");
+			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), facts.getUserToken().getUserCode(),
+					"PRI_SUBMIT", "QUE_CANCEL");
 			dataAnswer.setChangeEvent(false);
 			QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
-			SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(),
-					facts.getUserToken(), dataMsg);
-			log.info("SignalEvent -> QUE_CANCEL event to 'data' for "
-					+ facts.getUserToken().getUserCode() + ":" + processId);
+			SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(), facts.getUserToken(), dataMsg);
+			log.info("SignalEvent -> QUE_CANCEL event to 'data' for " + facts.getUserToken().getUserCode() + ":"
+					+ processId);
 			kieSession.signalEvent("data", sessionFactsData, processId);
 		} else {
-			log.info("SignalEvent -> 'event' for " + facts.getUserToken().getUserCode() + ":"
-					+ processId);
+			log.info("SignalEvent -> 'event' for " + facts.getUserToken().getUserCode() + ":" + processId);
 			try {
 				kieSession.signalEvent("event", facts, processId);
 			} catch (Exception e) {
@@ -883,26 +880,22 @@ public class RulesLoader {
 		}
 	}
 
-	private void processQDataMessageEvent(SessionFacts facts, long processId, KieSession kieSession){
+	private void processQDataMessageEvent(SessionFacts facts, long processId, KieSession kieSession) {
 		((QDataMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
 
 		String msg_code = ((QDataMessage) facts.getMessage()).getData_type();
 		String bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
 
 		// Save an associated Bridge IP to the session
-		log.info("saving bridge ip to cache associted with session "
-				+ facts.getUserToken().getSessionCode());
-		VertxUtils.writeCachedJson(facts.getUserToken().getRealm(),
-				facts.getUserToken().getSessionCode(), bridgeSourceAddress,
-				facts.getUserToken().getToken());
-		log.info("incoming DATA" + " message from " + bridgeSourceAddress + ": "
-				+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
-				+ ":" + facts.getUserToken().getUserCode() + "   " + msg_code + " to pid "
-				+ processId);
+		log.info("saving bridge ip to cache associted with session " + facts.getUserToken().getSessionCode());
+		VertxUtils.writeCachedJson(facts.getUserToken().getRealm(), facts.getUserToken().getSessionCode(),
+				bridgeSourceAddress, facts.getUserToken().getToken());
+		log.info("incoming DATA" + " message from " + bridgeSourceAddress + ": " + facts.getUserToken().getRealm() + ":"
+				+ facts.getUserToken().getSessionCode() + ":" + facts.getUserToken().getUserCode() + "   " + msg_code
+				+ " to pid " + processId);
 
 		// kieSession.signalEvent("DT_"+session_state, facts);
-		log.info("SignalEvent -> 'data' for " + facts.getUserToken().getUserCode() + ":"
-				+ processId);
+		log.info("SignalEvent -> 'data' for " + facts.getUserToken().getUserCode() + ":" + processId);
 		try {
 			if (facts.getMessage() == null) {
 				log.error("facts.getMessage() is NULL");
@@ -920,14 +913,13 @@ public class RulesLoader {
 		}
 	}
 
-	private void processAuthInitEvent(SessionFacts facts, KieSession kieSession){
+	private void processAuthInitEvent(SessionFacts facts, KieSession kieSession) {
 		((QEventMessage) facts.getMessage()).getData().setValue("NEW_SESSION");
 		String bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
-		log.info("incoming  AUTH_INIT message from " + bridgeSourceAddress + ": "
-				+ facts.getUserToken().getRealm() + ":" + facts.getUserToken().getSessionCode()
-				+ ":" + facts.getUserToken().getUserCode() + "   " + "AUTH_INIT"
-				+ " to NEW SESSION");
+		log.info("incoming  AUTH_INIT message from " + bridgeSourceAddress + ": " + facts.getUserToken().getRealm()
+				+ ":" + facts.getUserToken().getSessionCode() + ":" + facts.getUserToken().getUserCode() + "   "
+				+ "AUTH_INIT" + " to NEW SESSION");
 		/* sending New Session Signal */
 		kieSession.signalEvent("newSession", facts);
 	}
@@ -947,18 +939,17 @@ public class RulesLoader {
 
 		CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
 
-/*
-		log.info("CapabilityUtils created , now processing");
-		capabilityUtils.process();
-		log.info("CapabilitysUtils processed ");
- */
+		/*
+		 * log.info("CapabilityUtils created , now processing");
+		 * capabilityUtils.process(); log.info("CapabilitysUtils processed ");
+		 */
 
 		BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
 		if (user != null) {
-			log.info("User:" + user.getCode() +  "fetched.");
+			log.info("User:" + user.getCode() + "fetched.");
 
 			List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
-			log.info(allowable.size() +  " Alloweds generated ");
+			log.info(allowable.size() + " Alloweds generated ");
 
 			capabilityUtilsHandle = kieSession.insert(capabilityUtils);
 
@@ -997,14 +988,14 @@ public class RulesLoader {
 			if (facts.getMessage() instanceof QEventMessage
 					&& ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
 				/* If the message is QeventMessage and the Event Message is AuthInit */
-					processAuthInitEvent(facts, kieSession);
+				processAuthInitEvent(facts, kieSession);
 			} else {
 				log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
 			}
 		}
 		// Cleanup facts
 		kieSession.delete(beUtilsHandle);
-		if (capabilityUtilsHandle!=null) {
+		if (capabilityUtilsHandle != null) {
 			kieSession.delete(capabilityUtilsHandle);
 			for (FactHandle allow : allowables) {
 				kieSession.delete(allow);
@@ -1042,7 +1033,8 @@ public class RulesLoader {
 		}
 	}
 
-	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) throws InterruptedException {
+	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts)
+			throws InterruptedException {
 		TimeUnit.SECONDS.sleep(2);
 		int rulesFired = 0;
 		GennyToken serviceToken = facts.getServiceToken();
@@ -1431,20 +1423,33 @@ public class RulesLoader {
 		reloadRealms.add(realm);
 		realms = new HashSet<>(reloadRealms);
 
-		List<Tuple3<String, String, String>> rules = processFileRealms("genny", rulesDir, realms);
-		log.info("LOADED ALL RULES");
+		List<Tuple3<String, String, String>> rules = null;
+		if (GennySettings.useApiRules) {
+			rules = processFileRealmsFromApi(realms);
+		} else {
+			rules = processFileRealmsFromFiles("genny", rulesDir, realms);
+		}
 
-		realms.stream().forEach(System.out::println);
-		realms.remove("genny");
+		log.info("LOADED ALL RULES " + rules.size());
 
-		log.info("LOADING " + realm + " RULES");
-		Integer rulesCount = setupKieRules(realm, rules);
-		log.info("Rules Count for " + realm + " = " + rulesCount);
+		if (rules.size() > 0) {
+			gNotReady = true;
 
-		// set up kie conf
-		if (ksconf == null) {
-			ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-			ksconf.setOption(TimedRuleExecutionOption.YES);
+			realms.stream().forEach(System.out::println);
+			realms.remove("genny");
+
+			log.info("LOADING " + realm + " RULES");
+			Integer rulesCount = setupKieRules(realm, rules);
+			log.info("Rules Count for " + realm + " = " + rulesCount);
+
+			// set up kie conf
+			if (ksconf == null) {
+				ksconf = KieServices.Factory.get().newKieSessionConfiguration();
+				ksconf.setOption(TimedRuleExecutionOption.YES);
+			}
+		} else {
+			log.error("NO RULES LOADED FROM API");
+			gNotReady = false;
 		}
 
 	}
@@ -1456,7 +1461,7 @@ public class RulesLoader {
 	public void triggerStartupRules(final String realm, final String rulesDir) {
 		log.info("Triggering Startup Rules for all " + realm);
 		QEventMessage msg = new QEventMessage("EVT_MSG", "INIT_STARTUP");
-		msg.getData().setValue((rulesChanged ) ? "RULES_CHANGED" : "NO_RULES_CHANGED");
+		msg.getData().setValue((rulesChanged) ? "RULES_CHANGED" : "NO_RULES_CHANGED");
 		initMsg("Event:INIT_STARTUP", realm, msg);
 		// rulesChanged = false;
 
@@ -1632,34 +1637,31 @@ public class RulesLoader {
 		Boolean ret = false;
 		String filename = ruleTuple._2;
 		String ruleText = ruleTuple._3;
-		Pattern p = Pattern
-				.compile("(FRM_[A-Z0-9_-]+|THM_[A-Z0-9_-]+)");
+		Pattern p = Pattern.compile("(FRM_[A-Z0-9_-]+|THM_[A-Z0-9_-]+)");
 
-
-		
 		// If Rule is a theme or Frame
 		String ruleName = filename.replaceAll("\\.[^.]*$", "");
 		String ruleCode = "RUL_" + ruleName;
 
-		if (ruleCode.startsWith("RUL_FRM_")||ruleCode.startsWith("RUL_THM")) {
+		if (ruleCode.startsWith("RUL_FRM_") || ruleCode.startsWith("RUL_THM")) {
 			// Parse rule text to identify child rules
 			Set<String> children = new HashSet<String>();
 			Matcher m = p.matcher(ruleText);
 			while (m.find()) {
-				   String child = m.group();
-				   children.add(child);
-				  
-				 }
+				String child = m.group();
+				children.add(child);
+
+			}
 			if (!children.isEmpty()) {
 				for (String child : children) {
-				   FrameUtils2.graphBuilder.connect(ruleName).to(child).withEdge("PARENT");
-				   FrameUtils2.graphBuilder.connect(child).to(ruleName).withEdge("CHILD");
-				   log.info("Rule : "+ruleName+" --- child -> "+child);
+					FrameUtils2.graphBuilder.connect(ruleName).to(child).withEdge("PARENT");
+					FrameUtils2.graphBuilder.connect(child).to(ruleName).withEdge("CHILD");
+					log.info("Rule : " + ruleName + " --- child -> " + child);
 				}
 			}
-			
+
 		}
-		
+
 		if (!persistRules) {
 			return false;
 		}
