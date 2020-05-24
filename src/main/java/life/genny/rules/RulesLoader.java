@@ -137,9 +137,9 @@ public class RulesLoader {
 																			// assume rules changed
 
 	public static Boolean persistRules = GennySettings.persistRules;
-	
+
 	public static Boolean gNotReady = false;
-	
+
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
 
@@ -162,7 +162,7 @@ public class RulesLoader {
 	/**
 	 * @param rulesDir
 	 */
-	public static void loadRules(final String rulesDir) {
+	public static Boolean loadRules(final String rulesDir) {
 
 		log.info("Loading Rules and workflows!!!");
 
@@ -205,23 +205,42 @@ public class RulesLoader {
 		} else {
 			rules = processFileRealmsFromFiles("genny", rulesDir, realms);
 		}
-		log.info("LOADED ALL RULES "+rules.size());
-//		realms = getRealms(rules);
+		log.info("LOADED ALL RULES " + rules.size());
 		realms.stream().forEach(System.out::println);
 		realms.remove("genny");
-//		Integer rulesCount = setupKieRules("genny", rules); // rNo need to run genny rules
-//		log.info("Rules Count for genny = "+rulesCount);
+
+		List<String> uninitialisedThemes = new ArrayList<String>();
+		List<String> uninitialisedFrames = new ArrayList<String>();
 
 		for (String realm : activeRealms) {
 			log.info("LOADING " + realm + " RULES");
 			Integer rulesCount = setupKieRules(realm, rules);
 			log.info("Rules Count for " + realm + " = " + rulesCount);
+			// check if rules need to be initialised
+			// Check if rules have been initialised
+			List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm);
+			List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm);
+
+			if (realmUninitialisedThemes == null) {
+				rulesChanged = true;
+			} else if (!realmUninitialisedThemes.isEmpty()) {
+				rulesChanged = true;
+				realmUninitialisedThemes.addAll(realmUninitialisedThemes);
+			}
+			if (realmUninitialisedFrames == null) {
+				rulesChanged = true;
+			} else if (!realmUninitialisedFrames.isEmpty()) {
+				rulesChanged = true;
+				realmUninitialisedFrames.addAll(realmUninitialisedFrames);
+			}
+
 		}
 
 		// set up kie conf
 		ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 		ksconf.setOption(TimedRuleExecutionOption.YES);
 
+		return rulesChanged;
 	}
 
 	/**
@@ -279,7 +298,7 @@ public class RulesLoader {
 					String ruleText = ruleBe.getValueAsString("PRI_KIE_TEXT");
 					Tuple3<String, String, String> rule = (Tuple.of(realm, filename, ruleText));
 					rules.add(rule);
-					log.info("Imported rule from API : "+filename);
+					log.info("Imported rule from API : " + filename);
 				}
 			} catch (Exception e) {
 				log.error("Could not fetch Rules from API");
@@ -711,7 +730,7 @@ public class RulesLoader {
 				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 				Resource rs = ks.getResources().newReaderResource(new StringReader(rule._3));
 				kfs.write(inMemoryDrlFileName, rs.setResourceType(ResourceType.BPMN2));
-				processJbpm(realm, rule);
+//				processJbpm(realm, rule);
 //				DrlParser parser = new DrlParser();
 //				try {
 //					RuleDescr ruleObj = parser.parse(rs).getRules().get(0);
@@ -1662,6 +1681,17 @@ public class RulesLoader {
 
 		}
 
+		if (ruleCode.startsWith("RUL_FRM_")) {
+			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actually
+
+		}
+		if (ruleCode.startsWith("RUL_THM_")) {
+			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actuall
+																									// fires
+		}
+
 		if (!persistRules) {
 			return false;
 		}
@@ -1680,17 +1710,6 @@ public class RulesLoader {
 		String kieType = ext.toUpperCase();
 
 		// Get rule filename
-
-		if (ruleCode.startsWith("RUL_FRM_")) {
-			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actually
-																									// fires
-		}
-		if (ruleCode.startsWith("RUL_THM_")) {
-			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actuall
-																									// fires
-		}
 
 		// get existing rule from cache
 
@@ -1875,6 +1894,90 @@ public class RulesLoader {
 		output.setTypeOfResult("FORMCODE");
 
 		return output;
+	}
+
+	static public List<String> returnUninitialisedThemes(String realm) {
+		List<String> uninitialisedThemes = new ArrayList<String>();
+		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+		String sToken = tokenObj.getString("value");
+		GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+
+		if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+			return null; // TODO throw exception
+		}
+
+		// Fetch all the uninitilised theme rules from the api
+		SearchEntity searchBE = new SearchEntity("SBE_RULES_FIRED", "Have Rules been initialised")
+				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_THM_%")
+				.addFilter("PRI_POJO", SearchEntity.StringFilter.EQUAL, "EMPTY").addColumn("PRI_FILENAME", "Filename")
+				.setPageStart(0).setPageSize(4000);
+
+		searchBE.setRealm(serviceToken.getRealm());
+
+		String jsonSearchBE = JsonUtils.toJson(searchBE);
+		String resultJson;
+
+		try {
+			resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+					jsonSearchBE, serviceToken.getToken());
+			QDataBaseEntityMessage resultMsg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+
+			if (resultMsg.getItems() != null) {
+				for (BaseEntity ruleBe : resultMsg.getItems()) {
+					String filename = ruleBe.getValueAsString("PRI_FILENAME");
+					log.info("############ RULE THEME  : " + filename + "   HAS NOT BEEN INITIALISED");
+					uninitialisedThemes.add(ruleBe.getCode());
+				}
+			}
+		} catch (Exception e) {
+			log.error("Could not fetch Rules from API");
+
+		}
+		return uninitialisedThemes;
+	}
+
+	static public List<String> returnUninitialisedFrames(String realm) {
+		List<String> uninitialisedFrames = new ArrayList<String>();
+		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+		String sToken = tokenObj.getString("value");
+		GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+
+		if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+			return null; // TODO throw exception
+		}
+
+		// Fetch all the uninitilised theme rules from the api
+		SearchEntity searchBE = new SearchEntity("SBE_RULES_FIRED", "Have Rules been initialised")
+				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_FRM_%")
+				.addFilter("PRI_POJO", SearchEntity.StringFilter.EQUAL, "EMPTY")
+				.addFilter("PRI_ASKS", SearchEntity.StringFilter.EQUAL, "EMPTY")
+				.addFilter("PRI_MSG", SearchEntity.StringFilter.EQUAL, "EMPTY").addColumn("PRI_FILENAME", "Filename")
+				.setPageStart(0).setPageSize(4000);
+
+		searchBE.setRealm(serviceToken.getRealm());
+
+		String jsonSearchBE = JsonUtils.toJson(searchBE);
+		String resultJson;
+
+		try {
+			resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+					jsonSearchBE, serviceToken.getToken());
+			QDataBaseEntityMessage resultMsg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+
+			if (resultMsg.getItems() != null) {
+				for (BaseEntity ruleBe : resultMsg.getItems()) {
+					String filename = ruleBe.getValueAsString("PRI_FILENAME");
+					log.info("############ RULE FRAME  : " + filename + "   HAS NOT BEEN INITIALISED");
+					uninitialisedFrames.add(ruleBe.getCode());
+				}
+			}
+		} catch (Exception e) {
+			log.error("Could not fetch Rules from API");
+
+		}
+		return uninitialisedFrames;
 	}
 
 }
