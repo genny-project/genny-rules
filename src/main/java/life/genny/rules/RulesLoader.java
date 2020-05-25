@@ -3,8 +3,15 @@ package life.genny.rules;
 import com.google.common.io.Files;
 import com.google.gson.reflect.TypeToken;
 
+
+import es.usc.citius.hipster.algorithm.Algorithm;
+import es.usc.citius.hipster.algorithm.Hipster;
+import es.usc.citius.hipster.algorithm.Algorithm.SearchResult;
 import es.usc.citius.hipster.graph.GraphBuilder;
+import es.usc.citius.hipster.graph.GraphSearchProblem;
 import es.usc.citius.hipster.graph.HipsterDirectedGraph;
+import es.usc.citius.hipster.model.impl.WeightedNode;
+import es.usc.citius.hipster.model.problem.SearchProblem;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.Tuple3;
@@ -98,7 +105,15 @@ public class RulesLoader {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	static String RESOURCE_PATH = "src/main/resources/life/genny/rules/";
+	
+	// Create a simple weighted directed graph with Hipster where
+	// vertices are Strings and edge values are just Strings
 
+	public static GraphBuilder<String, String> gbCP = null;
+	public static GraphBuilder<String, String> gbPC = null;
+	public static HipsterDirectedGraph<String, String> rulesGraphCP = null; // Child Parent
+	public static HipsterDirectedGraph<String, String> rulesGraphPC = null; // Parent Child
+	
 	public static Map<String, KieBase> kieBaseCache = new ConcurrentHashMap<String, KieBase>();;
 	static {
 		setKieBaseCache(new ConcurrentHashMap<String, KieBase>());
@@ -169,8 +184,9 @@ public class RulesLoader {
 		// Create a simple weighted directed graph with Hipster where
 		// vertices are Strings and edge values are just Strings
 
-		GraphBuilder<String, String> gb = GraphBuilder.<String, String>create();
-
+		gbCP = GraphBuilder.<String, String>create();
+		gbPC = GraphBuilder.<String, String>create();
+		
 		List<String> activeRealms = new ArrayList<String>();
 		JsonObject ar = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "REALMS");
 		String ars = ar.getString("value");
@@ -250,7 +266,102 @@ public class RulesLoader {
 	public void triggerStartupRules(final String rulesDir) {
 		log.info("Triggering Startup Rules for all realms");
 		for (String realm : realms) {
+			// force a cache reload
+			JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+			String sToken = tokenObj.getString("value");
+			GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+
+			if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+				log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+				return;
+			}
+
+			try {
+				QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/service/refreshcache", serviceToken.getToken());
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 			triggerStartupRules(realm, rulesDir);
+			
+			List<String> unfiredFrameRules = RulesLoader.returnUninitialisedFrames(realm);
+			Map<String,Tuple2<Integer,String>> culprits = new HashMap<String,Tuple2<Integer,String>>();
+			for (String frameRule : unfiredFrameRules) {
+				// Now find it in the graphDB and raverse back to find first ancestor that did not fire
+//				FrameUtils2.rulesGraph 
+//				FrameUtils2.graphBuilder.connect(ruleName).to(child).withEdge("PARENT");
+//				FrameUtils2.graphBuilder.connect(child).to(ruleName).withEdge("CHILD");
+				// Create the search problem. For graph problems, just use
+				// the GraphSearchProblem util class to generate the problem with ease.
+				
+				SearchProblem p = GraphSearchProblem
+                        .startingFrom(frameRule)
+                        .in(rulesGraphPC)
+                        .takeCostsFromEdges()
+                        .build();			
+				
+				Integer max = -1;
+			   String  oldestAncestor = "EMPTY";
+				
+				for (String otherFrame : unfiredFrameRules) {
+		
+					if (!otherFrame.equals(frameRule)) {
+						Algorithm.SearchResult result = Hipster.createDijkstra(p).search(otherFrame);
+						Integer levels = result.getIterations();
+						if (levels > max) {
+							max = levels;
+							oldestAncestor = otherFrame;
+						}
+						//System.out.println(result);
+					}
+				}
+				if (culprits.get(oldestAncestor) != null) {
+					Tuple2 existing = culprits.get(oldestAncestor);
+					Integer existingMax = (Integer)existing._1;
+					if (existingMax < max) {
+						culprits.put(oldestAncestor, Tuple.of(max, frameRule));
+					}
+				} else {
+					culprits.put(oldestAncestor, Tuple.of(max, frameRule));
+				}
+				
+//				SearchProblem<Double, String, WeightedNode<Double, String, Double>> p = GraphSearchProblem.startingFrom(frameRule)
+//						.in(FrameUtils2.rulesGraph).takeCostsFromEdges().build();
+//
+//				// Search the shortest path from "AUD" to "JPY" use smallest conversions
+//				SearchResult result = Hipster.createDijkstra(p).search(terms);
+//
+//				LinkedList<Double> recoverActionPath = (LinkedList<Double>) Algorithm.recoverActionPath(result.getGoalNode());
+//				if ((recoverActionPath.isEmpty()) && (!base.equals(terms))) {
+//					throw new NoCurrencyConversionPathException(base, terms);
+//				}
+//				if (verbose) {
+//					LinkedList<String> recoverStatePath = (LinkedList<String>) Algorithm.recoverStatePath(result.getGoalNode());
+//					System.out.println("Conversion Path is " + recoverStatePath);
+//				}
+//				Double conversionRate = recoverActionPath.stream().reduce(1d, (a, b) -> a * b);
+
+			}
+			
+			if (!culprits.isEmpty()) {
+				for (String culprit : culprits.keySet()) {
+				log.info("CULPRIT ==> "+ culprit);
+				SearchProblem p = GraphSearchProblem
+                        .startingFrom(culprit)
+                        .in(rulesGraphCP)
+                        .takeCostsFromEdges()
+                        .build();	
+				Tuple2 maxVictim = culprits.get(culprit);
+				Algorithm.SearchResult result = Hipster.createDijkstra(p).search(maxVictim._2);
+				log.info("Victims -> "+result.getGoalNodes());
+				}
+				
+			}
+			
 		}
 		log.info("Startup Rules Triggered");
 		try {
@@ -473,8 +584,9 @@ public class RulesLoader {
 				}
 			}
 			log.info("Creating RulesGraph");
-			FrameUtils2.rulesGraph = FrameUtils2.graphBuilder.createDirectedGraph();
-
+			rulesGraphCP = gbCP.createDirectedGraph();
+			rulesGraphPC = gbPC.createDirectedGraph();
+			
 			if (rulesChanged) {
 				log.info("Theme and Frame Rules CHANGED. RUNNING init frames...");
 			} else {
@@ -1673,8 +1785,8 @@ public class RulesLoader {
 			}
 			if (!children.isEmpty()) {
 				for (String child : children) {
-					FrameUtils2.graphBuilder.connect(ruleName).to(child).withEdge("PARENT");
-					FrameUtils2.graphBuilder.connect(child).to(ruleName).withEdge("CHILD");
+					gbPC.connect(ruleName).to(child).withEdge("PARENT");
+					gbCP.connect(child).to(ruleName).withEdge("CHILD");
 					log.info("Rule : " + ruleName + " --- child -> " + child);
 				}
 			}
