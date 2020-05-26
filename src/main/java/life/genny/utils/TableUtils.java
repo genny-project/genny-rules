@@ -1064,17 +1064,17 @@ public class TableUtils {
 			// columnHeaderAsk.setChildAsks(tableColumnChildAsksArray);
 
 			/* get paddingX theme */
-			BaseEntity paddingXTheme = beUtils.getBaseEntityByCode("THM_PADDING_X_10");
+			// BaseEntity paddingXTheme = beUtils.getBaseEntityByCode("THM_PADDING_X_10");
 
-			QDataBaseEntityMessage paddingXThemeMsg = new QDataBaseEntityMessage(paddingXTheme);
-			paddingXThemeMsg.setToken(beUtils.getGennyToken().getToken());
+			// QDataBaseEntityMessage paddingXThemeMsg = new QDataBaseEntityMessage(paddingXTheme);
+			// paddingXThemeMsg.setToken(beUtils.getGennyToken().getToken());
 
-			/* publish paddingXTheme */
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((paddingXThemeMsg)));
+			// /* publish paddingXTheme */
+			// VertxUtils.writeMsg("webcmds", JsonUtils.toJson((paddingXThemeMsg)));
 
 			/* set Vertical Theme to columnHeaderAsk */
-			columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, paddingXTheme, ContextType.THEME,
-					VisualControlType.GROUP_CONTENT_WRAPPER, themeMsgList);
+			// columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, paddingXTheme, ContextType.THEME,
+			// 		VisualControlType.GROUP_CONTENT_WRAPPER, themeMsgList);
 
 			asks.add(columnHeaderAsk);
 		}
@@ -1676,16 +1676,19 @@ public class TableUtils {
 		System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 		QDataAskMessage[] asks = aggregatedMessages.getAsks();
+		
+		log.info("Checking asks included in QBulk  :: " + aggregatedMessages.getAsks().length);
+		
 		/* aggregatedMessages.setAsks(null); */
 
 		if (cache) {
 			System.out.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 			String json = JsonUtils.toJson(aggregatedMessages);
 			VertxUtils.writeMsg("webcmds", json);
-			// for (QDataAskMessage askMsg : asks) {
-			// 	askMsg.setToken(beUtils.getGennyToken().getToken());
-			// 	VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
-			// }
+			for (QDataAskMessage askMsg : asks) {
+				askMsg.setToken(beUtils.getGennyToken().getToken());
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
+			}
 		}
 		/* show tab-view first */
 		/*
