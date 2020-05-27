@@ -529,6 +529,11 @@ public class TableUtils {
 				1.0);
 		tableRowCellApply.setDttCode("DTT_EVENT_APPLY");
 
+		Context tableRowCellDownload = new Context(ContextType.THEME,
+				new BaseEntity("THM_TABLE_ROW_CELL_DOWNLOAD_JOURNAL", "THM_TABLE_ROW_CELL_DOWNLOAD_JOURNAL"), VisualControlType.VCL_WRAPPER,
+				1.0);
+		tableRowCellDownload.setDttCode("DTT_EVENT_DOWNLOAD_JOURNAL");
+
 		Context tableRowCellStatus = new Context(ContextType.THEME,
 				new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"), VisualControlType.VCL_WRAPPER,
 				1.0);
@@ -570,6 +575,7 @@ public class TableUtils {
 		contexts.add(tableRowCellEmail);
 		contexts.add(tableRowCellView);
 		contexts.add(tableRowCellViewJournal);
+		contexts.add(tableRowCellDownload);
 		contexts.add(tableRowCellApply);
 		contexts.add(tableRowCellStatus);
 		contexts.add(tableRowCellText);
@@ -633,6 +639,11 @@ public class TableUtils {
 				new BaseEntity("THM_TABLE_ROW_CELL_VIEW_JOURNAL", "THM_TABLE_ROW_CELL_VIEW_JOURNAL"),
 				VisualControlType.VCL_WRAPPER, 1.0);
 		tableRowCellViewJournalHeader.setDttCode("DTT_EVENT_VIEW_JOURNAL_HEADER");
+
+		Context tableRowCellDownloadJournalHeader = new Context(ContextType.THEME,
+				new BaseEntity("THM_TABLE_ROW_CELL_DOWNLOAD_JOURNAL", "THM_TABLE_ROW_CELL_DOWNLOAD_JOURNAL"),
+				VisualControlType.VCL_WRAPPER, 1.0);
+		tableRowCellDownloadJournalHeader.setDttCode("DTT_EVENT_DOWNLOAD_JOURNAL_HEADER");
 		// tableRowCellViewJournalHeader.setWeight(2.0);
 
 		Context tableRowCellApplyHeader = new Context(ContextType.THEME,
@@ -674,6 +685,7 @@ public class TableUtils {
 		headerContexts.add(tableRowCellEmailHeader);
 		headerContexts.add(tableRowCellViewHeader);
 		headerContexts.add(tableRowCellViewJournalHeader);
+		headerContexts.add(tableRowCellDownloadJournalHeader);
 		headerContexts.add(tableRowCellApplyHeader);
 		headerContexts.add(tableRowCellStatusHeader);
 		headerContexts.add(tableRowCellTextHeader);
@@ -1353,6 +1365,7 @@ public class TableUtils {
 		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
 		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
 		BaseEntity ICN_DESCRIPTION = beUtils.getBaseEntityByCode("ICN_DESCRIPTION");
+		BaseEntity ICN_EMAIL = beUtils.getBaseEntityByCode("ICN_EMAIL");
 
 		List<Context> viewContextList = new ArrayList<>();
 		viewContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
@@ -1367,6 +1380,11 @@ public class TableUtils {
 		documentContextList
 				.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
 		documentContextList.add(new Context(ContextType.ICON, ICN_DESCRIPTION, VisualControlType.VCL_ICON, 1.0));
+
+		List<Context> downloadContextList = new ArrayList<>();
+		downloadContextList
+				.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
+		downloadContextList.add(new Context(ContextType.ICON, ICN_EMAIL, VisualControlType.VCL_ICON, 1.0));
 
 		if (columns != null) {
 			if (bes != null && bes.isEmpty() == false) {
@@ -1409,6 +1427,12 @@ public class TableUtils {
 							case "PRI_EVENT_JOURNAL_VIEW":
 								// log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
 								childAsk.setContextList(new ContextList(documentContextList));
+								childAsk.setReadonly(false);
+
+								break;
+							case "PRI_EVENT_JOURNAL_DOWNLOAD":
+								// log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
+								childAsk.setContextList(new ContextList(downloadContextList));
 								childAsk.setReadonly(false);
 
 								break;
