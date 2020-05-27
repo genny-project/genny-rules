@@ -219,6 +219,7 @@ public class TableUtils {
 		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
 		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
 		BaseEntity ICN_DESCRIPTION = beUtils.getBaseEntityByCode("ICN_DESCRIPTION");
+		BaseEntity ICN_DOWNLOAD = beUtils.getBaseEntityByCode("ICN_DOWNLOAD");
 
 		/* get the themes */
 		BaseEntity THM_ICON_BE = this.getThemeBe(THM_ICON);
@@ -285,6 +286,7 @@ public class TableUtils {
 		themes.add(ICN_VIEW);
 		themes.add(ICN_ADD);
 		themes.add(ICN_DESCRIPTION);
+		themes.add(ICN_DOWNLOAD);
 
 		log.info("**************** Themes in the list :: " + themes.size() + " ********************");
 
@@ -1365,7 +1367,7 @@ public class TableUtils {
 		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
 		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
 		BaseEntity ICN_DESCRIPTION = beUtils.getBaseEntityByCode("ICN_DESCRIPTION");
-		BaseEntity ICN_EMAIL = beUtils.getBaseEntityByCode("ICN_EMAIL");
+		BaseEntity ICN_DOWNLOAD = beUtils.getBaseEntityByCode("ICN_DOWNLOAD");
 
 		List<Context> viewContextList = new ArrayList<>();
 		viewContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
@@ -1384,7 +1386,7 @@ public class TableUtils {
 		List<Context> downloadContextList = new ArrayList<>();
 		downloadContextList
 				.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
-		downloadContextList.add(new Context(ContextType.ICON, ICN_EMAIL, VisualControlType.VCL_ICON, 1.0));
+		downloadContextList.add(new Context(ContextType.ICON, ICN_DOWNLOAD, VisualControlType.VCL_ICON, 1.0));
 
 		if (columns != null) {
 			if (bes != null && bes.isEmpty() == false) {
