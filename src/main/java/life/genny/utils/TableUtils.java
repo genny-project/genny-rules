@@ -198,6 +198,8 @@ public class TableUtils {
 				"THM_TABLE_ROW_CELL_VIEW", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_VIEW_JOURNAL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
 				"THM_TABLE_ROW_CELL_VIEW_JOURNAL", Theme.class, beUtils.getServiceToken().getToken());
+		Theme THM_TABLE_ROW_CELL_DOWNLOAD_JOURNAL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
+				"THM_TABLE_ROW_CELL_DOWNLOAD_JOURNAL", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_APPLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
 				"THM_TABLE_ROW_CELL_APPLY", Theme.class, beUtils.getServiceToken().getToken());
 		Theme THM_TABLE_ROW_CELL_STATUS = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
@@ -245,6 +247,7 @@ public class TableUtils {
 		BaseEntity THM_TABLE_ROW_CELL_EMAIL_BE = this.getThemeBe(THM_TABLE_ROW_CELL_EMAIL);
 		BaseEntity THM_TABLE_ROW_CELL_VIEW_BE = this.getThemeBe(THM_TABLE_ROW_CELL_VIEW);
 		BaseEntity THM_TABLE_ROW_CELL_VIEW_JOURNAL_BE = this.getThemeBe(THM_TABLE_ROW_CELL_VIEW_JOURNAL);
+		BaseEntity THM_TABLE_ROW_CELL_DOWNLOAD_JOURNAL_BE = this.getThemeBe(THM_TABLE_ROW_CELL_DOWNLOAD_JOURNAL);
 		BaseEntity THM_TABLE_ROW_CELL_APPLY_BE = this.getThemeBe(THM_TABLE_ROW_CELL_APPLY);
 		BaseEntity THM_TABLE_ROW_CELL_STATUS_BE = this.getThemeBe(THM_TABLE_ROW_CELL_STATUS);
 		BaseEntity THM_TABLE_ROW_CELL_NAME_BE = this.getThemeBe(THM_TABLE_ROW_CELL_NAME);
@@ -275,6 +278,7 @@ public class TableUtils {
 		themes.add(THM_TABLE_ROW_CELL_EMAIL_BE);
 		themes.add(THM_TABLE_ROW_CELL_VIEW_BE);
 		themes.add(THM_TABLE_ROW_CELL_VIEW_JOURNAL_BE);
+		themes.add(THM_TABLE_ROW_CELL_DOWNLOAD_JOURNAL_BE);
 		themes.add(THM_TABLE_ROW_CELL_APPLY_BE);
 		themes.add(THM_TABLE_ROW_CELL_STATUS_BE);
 		themes.add(THM_TABLE_ROW_CELL_NAME_BE);
