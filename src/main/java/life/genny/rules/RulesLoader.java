@@ -325,7 +325,27 @@ public class RulesLoader {
 				DijkstraShortestPath<String, DefaultEdge> dijkstraAlg = new DijkstraShortestPath<>(
 						directedGraph);
 				String otherFrameName = frameRule;//.substring("RUL_".length());
-					SingleSourcePaths<String, DefaultEdge> iPaths = dijkstraAlg.getPaths(otherFrameName);
+					SingleSourcePaths<String, DefaultEdge> iPaths = null;
+					Integer max = -1;
+					String oldestAncestor = "EMPTY";
+
+					try {
+						iPaths = dijkstraAlg.getPaths(otherFrameName);
+						
+						 Iterator<String> iterator = new DepthFirstIterator<>(directedGraph, otherFrameName);
+					        while (iterator.hasNext()) {
+					            String child = iterator.next();
+					            if (unfiredFrameRules.contains(child)) {
+					            	oldestAncestor = child;
+					            } else {
+					            	break;
+					            }
+					            System.out.println(child );
+					        }
+
+					} catch (Exception e) {
+						log.info("NOT FOUND IN GRAPH??? "+otherFrameName);
+					}
 
 				//DepthFirstIterator depthFirstIterator = new DepthFirstIterator<>(directedGraph);
 
@@ -343,19 +363,6 @@ public class RulesLoader {
 //                        .takeCostsFromEdges()
 //                        .build();			
 //				
-				Integer max = -1;
-				String oldestAncestor = "EMPTY";
-				
-				 Iterator<String> iterator = new DepthFirstIterator<>(directedGraph, otherFrameName);
-			        while (iterator.hasNext()) {
-			            String child = iterator.next();
-			            if (unfiredFrameRules.contains(child)) {
-			            	oldestAncestor = child;
-			            } else {
-			            	break;
-			            }
-			            System.out.println(child );
-			        }
 //				
 //				String frameName = frameRule.substring("RUL_".length());
 //				for (String otherFrame : unfiredFrameRules) {
