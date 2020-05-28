@@ -3,7 +3,7 @@ package life.genny.rules;
 import com.google.common.io.Files;
 import com.google.gson.reflect.TypeToken;
 
-
+import edu.uci.ics.jung.graph.DirectedGraph;
 import es.usc.citius.hipster.algorithm.Algorithm;
 import es.usc.citius.hipster.algorithm.Hipster;
 import es.usc.citius.hipster.algorithm.Algorithm.SearchResult;
@@ -61,6 +61,19 @@ import org.jbpm.services.api.query.QueryAlreadyRegisteredException;
 import org.jbpm.services.api.query.QueryService;
 import org.jbpm.services.api.query.model.QueryParam;
 import org.jbpm.services.api.utils.KieServiceConfigurator;
+import org.jgraph.graph.DefaultEdge;
+import org.jgrapht.Graph;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.cycle.CycleDetector;
+import org.jgrapht.alg.interfaces.ShortestPathAlgorithm.SingleSourcePaths;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
+import org.jgrapht.ext.DOTExporter;
+import org.jgrapht.ext.ExportException;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultWeightedEdge;
+import org.jgrapht.graph.Multigraph;
+import org.jgrapht.graph.SimpleDirectedGraph;
+import org.jgrapht.traverse.DepthFirstIterator;
 import org.kie.api.KieBase;
 import org.kie.api.KieBaseConfiguration;
 import org.kie.api.KieServices;
@@ -105,7 +118,7 @@ public class RulesLoader {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	static String RESOURCE_PATH = "src/main/resources/life/genny/rules/";
-	
+
 	// Create a simple weighted directed graph with Hipster where
 	// vertices are Strings and edge values are just Strings
 
@@ -113,7 +126,13 @@ public class RulesLoader {
 	public static GraphBuilder<String, String> gbPC = null;
 	public static HipsterDirectedGraph<String, String> rulesGraphCP = null; // Child Parent
 	public static HipsterDirectedGraph<String, String> rulesGraphPC = null; // Parent Child
-	
+
+	public static SimpleDirectedGraph<String, DefaultEdge> directedGraph = new SimpleDirectedGraph<String, DefaultEdge>(
+			DefaultEdge.class);
+
+	public static Multigraph<String, DefaultWeightedEdge> multiGraph = new Multigraph<String, DefaultWeightedEdge>(
+			DefaultWeightedEdge.class);
+
 	public static Map<String, KieBase> kieBaseCache = new ConcurrentHashMap<String, KieBase>();;
 	static {
 		setKieBaseCache(new ConcurrentHashMap<String, KieBase>());
@@ -186,7 +205,7 @@ public class RulesLoader {
 
 		gbCP = GraphBuilder.<String, String>create();
 		gbPC = GraphBuilder.<String, String>create();
-		
+
 		List<String> activeRealms = new ArrayList<String>();
 		JsonObject ar = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "REALMS");
 		String ars = ar.getString("value");
@@ -282,53 +301,105 @@ public class RulesLoader {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				// TODO Auto-generated catch b
 				e.printStackTrace();
 			}
 
 			triggerStartupRules(realm, rulesDir);
 			
+			// force api to load into cache
+			try {
+				QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/service/refreshcache", serviceToken.getToken());
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch b
+				e.printStackTrace();
+			}
+			
+
 			List<String> unfiredFrameRules = RulesLoader.returnUninitialisedFrames(realm);
-			Map<String,Tuple2<Integer,String>> culprits = new HashMap<String,Tuple2<Integer,String>>();
+			Map<String, Tuple2<Integer, String>> culprits = new HashMap<String, Tuple2<Integer, String>>();
 			for (String frameRule : unfiredFrameRules) {
-				// Now find it in the graphDB and raverse back to find first ancestor that did not fire
+				DijkstraShortestPath<String, DefaultEdge> dijkstraAlg = new DijkstraShortestPath<>(
+						directedGraph);
+				String otherFrameName = frameRule;//.substring("RUL_".length());
+					SingleSourcePaths<String, DefaultEdge> iPaths = dijkstraAlg.getPaths(otherFrameName);
+
+				//DepthFirstIterator depthFirstIterator = new DepthFirstIterator<>(directedGraph);
+
+				// Now find it in the graphDB and raverse back to find first ancestor that did
+				// not fire
 //				FrameUtils2.rulesGraph 
 //				FrameUtils2.graphBuilder.connect(ruleName).to(child).withEdge("PARENT");
 //				FrameUtils2.graphBuilder.connect(child).to(ruleName).withEdge("CHILD");
 				// Create the search problem. For graph problems, just use
 				// the GraphSearchProblem util class to generate the problem with ease.
-				
-				SearchProblem p = GraphSearchProblem
-                        .startingFrom(frameRule)
-                        .in(rulesGraphPC)
-                        .takeCostsFromEdges()
-                        .build();			
-				
+
+//				SearchProblem p = GraphSearchProblem
+//                        .startingFrom(frameRule)
+//                        .in(rulesGraphPC)
+//                        .takeCostsFromEdges()
+//                        .build();			
+//				
 				Integer max = -1;
-			   String  oldestAncestor = "EMPTY";
+				String oldestAncestor = "EMPTY";
 				
-				for (String otherFrame : unfiredFrameRules) {
-		
-					if (!otherFrame.equals(frameRule)) {
-						Algorithm.SearchResult result = Hipster.createDijkstra(p).search(otherFrame);
-						Integer levels = result.getIterations();
-						if (levels > max) {
-							max = levels;
-							oldestAncestor = otherFrame;
+				 Iterator<String> iterator = new DepthFirstIterator<>(directedGraph, otherFrameName);
+			        while (iterator.hasNext()) {
+			            String child = iterator.next();
+			            if (unfiredFrameRules.contains(child)) {
+			            	oldestAncestor = child;
+			            } else {
+			            	break;
+			            }
+			            System.out.println(child );
+			        }
+//				
+//				String frameName = frameRule.substring("RUL_".length());
+//				for (String otherFrame : unfiredFrameRules) {
+//					if (false && !otherFrame.equals(frameRule)) {
+//						
+//						DijkstraShortestPath<String, DefaultEdge> dijkstraAlg = new DijkstraShortestPath<>(
+//								directedGraph);
+//						String otherFrameName = otherFrame.substring("RUL_".length());
+//						if(directedGraph.containsVertex(otherFrameName)) {
+//							SingleSourcePaths<String, DefaultEdge> iPaths = dijkstraAlg.getPaths(otherFrameName);
+//							GraphPath<String, DefaultEdge> path = iPaths.getPath(frameName);
+//							
+//							if (path != null) {
+//								if (path.getLength() > max) {
+//									max = path.getLength();
+//									oldestAncestor = otherFrameName;
+//								}
+//
+//							}
+//						} else {
+//							//log.error("directedGraph does not contain vertex "+otherFrame);
+//						}
+////		
+////					if (!otherFrame.equals(frameRule)) {
+////						Algorithm.SearchResult result = Hipster.createDijkstra(p).search(otherFrame);
+////						Integer levels = result.getIterations();
+////						if (levels > max) {
+////							max = levels;
+////							oldestAncestor = otherFrame;
+////						}
+////						//System.out.println(result);
+////					}
+//					}
+
+					if (culprits.get(oldestAncestor) != null) {
+						Tuple2 existing = culprits.get(oldestAncestor);
+						Integer existingMax = (Integer) existing._1;
+						if (existingMax < max) {
+							culprits.put(oldestAncestor, Tuple.of(max,  otherFrameName));
 						}
-						//System.out.println(result);
+					} else {
+						culprits.put(oldestAncestor, Tuple.of(max,  otherFrameName));
 					}
 				}
-				if (culprits.get(oldestAncestor) != null) {
-					Tuple2 existing = culprits.get(oldestAncestor);
-					Integer existingMax = (Integer)existing._1;
-					if (existingMax < max) {
-						culprits.put(oldestAncestor, Tuple.of(max, frameRule));
-					}
-				} else {
-					culprits.put(oldestAncestor, Tuple.of(max, frameRule));
-				}
-				
 //				SearchProblem<Double, String, WeightedNode<Double, String, Double>> p = GraphSearchProblem.startingFrom(frameRule)
 //						.in(FrameUtils2.rulesGraph).takeCostsFromEdges().build();
 //
@@ -345,22 +416,37 @@ public class RulesLoader {
 //				}
 //				Double conversionRate = recoverActionPath.stream().reduce(1d, (a, b) -> a * b);
 
+//			}
+			// Check for cycles
+			CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<String, DefaultEdge>(
+					RulesLoader.directedGraph);
+
+			if (cycleDetector.detectCycles()) {
+				log.error("Cycled detected in Rules Graph" + cycleDetector.toString());
 			}
-			
+			Set<String> cycleVertices = cycleDetector.findCycles();
+
+			if (cycleVertices.size() > 0) {
+				for (String vertex : cycleVertices) {
+					log.error("Cycle Detected in path " + vertex);
+				}
+			}
+
 			if (!culprits.isEmpty()) {
 				for (String culprit : culprits.keySet()) {
-				log.info("CULPRIT ==> "+ culprit);
-				SearchProblem p = GraphSearchProblem
-                        .startingFrom(culprit)
-                        .in(rulesGraphCP)
-                        .takeCostsFromEdges()
-                        .build();	
-				Tuple2 maxVictim = culprits.get(culprit);
-				Algorithm.SearchResult result = Hipster.createDijkstra(p).search(maxVictim._2);
-				log.info("Victims -> "+result.getGoalNodes());
+					log.info("CULPRIT ==> " + culprit);
+//				SearchProblem p = GraphSearchProblem
+//                        .startingFrom(culprit)
+//                        .in(rulesGraphCP)
+//                        .takeCostsFromEdges()
+//                        .build();	
+//				Tuple2 maxVictim = culprits.get(culprit);
+//				Algorithm.SearchResult result = Hipster.createDijkstra(p).search(maxVictim._2);
+//				log.info("Victims -> "+result.getGoalNodes());
 				}
-				
+
 			}
+
 			
 		}
 		log.info("Startup Rules Triggered");
@@ -372,6 +458,7 @@ public class RulesLoader {
 		}
 
 	}
+
 
 	static public List<Tuple3<String, String, String>> processFileRealmsFromApi(Set<String> activeRealms) {
 		List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
@@ -586,7 +673,7 @@ public class RulesLoader {
 			log.info("Creating RulesGraph");
 			rulesGraphCP = gbCP.createDirectedGraph();
 			rulesGraphPC = gbPC.createDirectedGraph();
-			
+
 			if (rulesChanged) {
 				log.info("Theme and Frame Rules CHANGED. RUNNING init frames...");
 			} else {
@@ -1780,7 +1867,9 @@ public class RulesLoader {
 			Matcher m = p.matcher(ruleText);
 			while (m.find()) {
 				String child = m.group();
-				children.add(child);
+				if (!child.equals(ruleName)) {
+					children.add(child);
+				}
 
 			}
 			if (!children.isEmpty()) {
@@ -1788,6 +1877,9 @@ public class RulesLoader {
 					gbPC.connect(ruleName).to(child).withEdge("PARENT");
 					gbCP.connect(child).to(ruleName).withEdge("CHILD");
 					log.info("Rule : " + ruleName + " --- child -> " + child);
+					directedGraph.addVertex(ruleName);
+					directedGraph.addVertex(child);
+					directedGraph.addEdge(child, ruleName);
 				}
 			}
 
@@ -2010,6 +2102,8 @@ public class RulesLoader {
 
 	static public List<String> returnUninitialisedThemes(String realm) {
 		List<String> uninitialisedThemes = new ArrayList<String>();
+		List<String> initialisedThemes = new ArrayList<String>();
+		Integer total = 0;
 		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
 		String sToken = tokenObj.getString("value");
 		GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
@@ -2038,19 +2132,57 @@ public class RulesLoader {
 			if (resultMsg.getItems() != null) {
 				for (BaseEntity ruleBe : resultMsg.getItems()) {
 					String filename = ruleBe.getValueAsString("PRI_FILENAME");
-					log.info("############ RULE THEME  : " + filename + "   HAS NOT BEEN INITIALISED");
-					uninitialisedThemes.add(ruleBe.getCode());
+				//	log.info("############ RULE THEME  : " + filename + "   HAS NOT BEEN INITIALISED");
+					uninitialisedThemes.add(ruleBe.getCode().substring("RUL_".length()));
 				}
 			}
 		} catch (Exception e) {
 			log.error("Could not fetch Rules from API");
 
 		}
+		
+		SearchEntity searchBE2 = new SearchEntity("SBE_RULES_FIRED", "Have Rules been initialised")
+				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_THM_%")
+				.setPageStart(0).setPageSize(4000);
+
+		searchBE2.setRealm(serviceToken.getRealm());
+
+		String jsonSearchBE2 = JsonUtils.toJson(searchBE2);
+		String resultJson2;
+
+		try {
+			resultJson2 = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+					jsonSearchBE2, serviceToken.getToken());
+			QDataBaseEntityMessage resultMsg2 = JsonUtils.fromJson(resultJson2, QDataBaseEntityMessage.class);
+
+			if (resultMsg2.getItems() != null) {
+				for (BaseEntity ruleBe : resultMsg2.getItems()) {
+					String filename = ruleBe.getValueAsString("PRI_FILENAME");
+					initialisedThemes.add(ruleBe.getCode().substring("RUL_".length()));
+				}
+			}
+			total = initialisedThemes.size();
+			initialisedThemes.removeAll(uninitialisedThemes);
+			// Now check if they are in cache and are ok
+			for (String themeCode : initialisedThemes) {
+				// This theme should be in cache, check only cache
+				JsonObject json = VertxUtils.readCachedJson(realm, themeCode, serviceToken.getToken());
+				if (!json.getString("status").equalsIgnoreCase("OK")) {
+					log.error("ERROR! "+themeCode+" is 'initialised' BUT NOT IN CACHE");
+				}				
+			}
+		} catch (Exception e) {
+			log.error("Could not fetch Rules from API");
+
+		}
+		log.info(uninitialisedThemes.size()+" themes are uninitialised out of "+total);
 		return uninitialisedThemes;
 	}
 
 	static public List<String> returnUninitialisedFrames(String realm) {
 		List<String> uninitialisedFrames = new ArrayList<String>();
+		List<String> initialisedFrames = new ArrayList<String>();
+		Integer total = 0;
 		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
 		String sToken = tokenObj.getString("value");
 		GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
@@ -2081,14 +2213,62 @@ public class RulesLoader {
 			if (resultMsg.getItems() != null) {
 				for (BaseEntity ruleBe : resultMsg.getItems()) {
 					String filename = ruleBe.getValueAsString("PRI_FILENAME");
-					log.info("############ RULE FRAME  : " + filename + "   HAS NOT BEEN INITIALISED");
-					uninitialisedFrames.add(ruleBe.getCode());
+				//	log.info("############ RULE FRAME  : " + filename + "   HAS NOT BEEN INITIALISED");
+					uninitialisedFrames.add(ruleBe.getCode().substring("RUL_".length()));
 				}
 			}
 		} catch (Exception e) {
 			log.error("Could not fetch Rules from API");
 
 		}
+		
+		// Fetch all the uninitilised theme rules from the api
+		SearchEntity searchBE2 = new SearchEntity("SBE_RULES_FIRED", "Have Rules been initialised")
+				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_FRM_%")
+				.setPageStart(0).setPageSize(4000);
+
+		searchBE2.setRealm(serviceToken.getRealm());
+
+		String jsonSearchBE2 = JsonUtils.toJson(searchBE2);
+		String resultJson2;
+
+		try {
+			resultJson2 = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+					jsonSearchBE2, serviceToken.getToken());
+			QDataBaseEntityMessage resultMsg2 = JsonUtils.fromJson(resultJson2, QDataBaseEntityMessage.class);
+
+			if (resultMsg2.getItems() != null) {
+				for (BaseEntity ruleBe : resultMsg2.getItems()) {
+					initialisedFrames.add(ruleBe.getCode().substring("RUL_".length()));
+				}
+			}
+			total = initialisedFrames.size();
+			initialisedFrames.removeAll(uninitialisedFrames);
+			// Now check if they are in cache and are ok
+			for (String frameCode : initialisedFrames) {
+				// This theme should be in cache, check only cache
+				String cacheCode = frameCode;
+				JsonObject json = VertxUtils.readCachedJson(realm, cacheCode, serviceToken.getToken());
+				if (!json.getString("status").equalsIgnoreCase("OK")) {
+					log.error("ERROR! "+cacheCode+" is 'initialised' BUT NOT IN CACHE");
+				}
+				json = VertxUtils.readCachedJson(realm, cacheCode+"_ASKS", serviceToken.getToken());
+				if (!json.getString("status").equalsIgnoreCase("OK")) {
+					log.error("ERROR! "+cacheCode+"_ASKS is 'initialised' BUT NOT IN CACHE");
+				}				
+				json = VertxUtils.readCachedJson(realm, cacheCode+"_MSG", serviceToken.getToken());
+				if (!json.getString("status").equalsIgnoreCase("OK")) {
+					log.error("ERROR! "+cacheCode+"_MSG is 'initialised' BUT NOT IN CACHE");
+				}				
+
+			}
+
+		} catch (Exception e) {
+			log.error("Could not fetch Rules from API");
+
+		}
+		log.info(uninitialisedFrames.size()+" frames are uninitialised out of "+total);
+
 		return uninitialisedFrames;
 	}
 

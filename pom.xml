@@ -45,11 +45,11 @@
 	<distributionManagement>
 		<repository>
 			<id>life.genny</id>
-            <url>https://nexus.outcome-hub.com/repository/life.genny/</url>
+			<url>https://nexus.outcome-hub.com/repository/life.genny/</url>
 		</repository>
 		<snapshotRepository>
 			<id>nexus-snapshots</id>
-            <url>http://nexus.outcome-hub.com/repository/snapshots/</url>
+			<url>http://nexus.outcome-hub.com/repository/snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
 
@@ -61,7 +61,7 @@
 		</repository>
 		<repository>
 			<id>life.genny</id>
-            <url>https://nexus.outcome-hub.com/repository/life.genny/</url>
+			<url>https://nexus.outcome-hub.com/repository/life.genny/</url>
 		</repository>
 
 	</repositories>
@@ -368,7 +368,16 @@
 			<artifactId>menta-regex</artifactId>
 			<version>0.9.5</version>
 		</dependency>
-
+		<dependency>
+			<groupId>org.jgrapht</groupId>
+			<artifactId>jgrapht-core</artifactId>
+			<version>1.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jgrapht</groupId>
+			<artifactId>jgrapht-ext</artifactId>
+			<version>1.0.1</version>
+		</dependency>
 	</dependencies>
 
 	<build>
