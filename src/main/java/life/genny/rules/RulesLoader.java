@@ -306,7 +306,7 @@ public class RulesLoader {
 			}
 
 			triggerStartupRules(realm, rulesDir);
-			
+
 			// force api to load into cache
 			try {
 				QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/service/refreshcache", serviceToken.getToken());
@@ -317,37 +317,49 @@ public class RulesLoader {
 				// TODO Auto-generated catch b
 				e.printStackTrace();
 			}
-			
 
 			List<String> unfiredFrameRules = RulesLoader.returnUninitialisedFrames(realm);
 			Map<String, Tuple2<Integer, String>> culprits = new HashMap<String, Tuple2<Integer, String>>();
 			for (String frameRule : unfiredFrameRules) {
-				DijkstraShortestPath<String, DefaultEdge> dijkstraAlg = new DijkstraShortestPath<>(
-						directedGraph);
-				String otherFrameName = frameRule;//.substring("RUL_".length());
-					SingleSourcePaths<String, DefaultEdge> iPaths = null;
-					Integer max = -1;
-					String oldestAncestor = "EMPTY";
+				DijkstraShortestPath<String, DefaultEdge> dijkstraAlg = new DijkstraShortestPath<>(directedGraph);
+				String otherFrameName = frameRule;// .substring("RUL_".length());
+				SingleSourcePaths<String, DefaultEdge> iPaths = null;
+				Integer max = -1;
+				String oldestAncestor = "EMPTY";
 
-					try {
-						iPaths = dijkstraAlg.getPaths(otherFrameName);
-						
-						 Iterator<String> iterator = new DepthFirstIterator<>(directedGraph, otherFrameName);
-					        while (iterator.hasNext()) {
-					            String child = iterator.next();
-					            if (unfiredFrameRules.contains(child)) {
-					            	oldestAncestor = child;
-					            } else {
-					            	break;
-					            }
-					            System.out.println(child );
-					        }
+				try {
+					iPaths = dijkstraAlg.getPaths(otherFrameName);
 
-					} catch (Exception e) {
-						log.info("NOT FOUND IN GRAPH??? "+otherFrameName);
+					Iterator<String> iterator = new DepthFirstIterator<>(directedGraph, otherFrameName);
+					Boolean badKids = false;
+					while (iterator.hasNext()) {
+						String child = iterator.next();
+						if (child.startsWith("THM_")) {
+							// check if exists in cache
+							JsonObject json = VertxUtils.readCachedJson(serviceToken.getRealm(), child);
+							if (!json.getString("status").equalsIgnoreCase("OK")) {
+								log.error("BAD THEME " + child + " CAUSING FRAME " + otherFrameName + " to not start");
+							}
+						} else {
+
+							if (unfiredFrameRules.contains(child)) {
+								if (iPaths.getPath(child).getLength() > max) {
+									oldestAncestor = child;
+									max = iPaths.getPath(child).getLength();
+								}
+							} else {
+								continue;
+							}
+							System.out.println(child);
+						}
 					}
 
-				//DepthFirstIterator depthFirstIterator = new DepthFirstIterator<>(directedGraph);
+				} catch (Exception e) {
+					log.info("NOT FOUND IN GRAPH??? " + otherFrameName);
+				}
+
+				// DepthFirstIterator depthFirstIterator = new
+				// DepthFirstIterator<>(directedGraph);
 
 				// Now find it in the graphDB and raverse back to find first ancestor that did
 				// not fire
@@ -397,16 +409,16 @@ public class RulesLoader {
 ////					}
 //					}
 
-					if (culprits.get(oldestAncestor) != null) {
-						Tuple2 existing = culprits.get(oldestAncestor);
-						Integer existingMax = (Integer) existing._1;
-						if (existingMax < max) {
-							culprits.put(oldestAncestor, Tuple.of(max,  otherFrameName));
-						}
-					} else {
-						culprits.put(oldestAncestor, Tuple.of(max,  otherFrameName));
+				if (culprits.get(oldestAncestor) != null) {
+					Tuple2 existing = culprits.get(oldestAncestor);
+					Integer existingMax = (Integer) existing._1;
+					if (existingMax < max) {
+						culprits.put(oldestAncestor, Tuple.of(max, otherFrameName));
 					}
+				} else {
+					culprits.put(oldestAncestor, Tuple.of(max, otherFrameName));
 				}
+			}
 //				SearchProblem<Double, String, WeightedNode<Double, String, Double>> p = GraphSearchProblem.startingFrom(frameRule)
 //						.in(FrameUtils2.rulesGraph).takeCostsFromEdges().build();
 //
@@ -454,7 +466,6 @@ public class RulesLoader {
 
 			}
 
-			
 		}
 		log.info("Startup Rules Triggered");
 		try {
@@ -465,7 +476,6 @@ public class RulesLoader {
 		}
 
 	}
-
 
 	static public List<Tuple3<String, String, String>> processFileRealmsFromApi(Set<String> activeRealms) {
 		List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
@@ -1886,7 +1896,7 @@ public class RulesLoader {
 					log.info("Rule : " + ruleName + " --- child -> " + child);
 					directedGraph.addVertex(ruleName);
 					directedGraph.addVertex(child);
-					directedGraph.addEdge(child, ruleName);
+					directedGraph.addEdge(ruleName, child);
 				}
 			}
 
@@ -2139,7 +2149,8 @@ public class RulesLoader {
 			if (resultMsg.getItems() != null) {
 				for (BaseEntity ruleBe : resultMsg.getItems()) {
 					String filename = ruleBe.getValueAsString("PRI_FILENAME");
-				//	log.info("############ RULE THEME  : " + filename + "   HAS NOT BEEN INITIALISED");
+					// log.info("############ RULE THEME : " + filename + " HAS NOT BEEN
+					// INITIALISED");
 					uninitialisedThemes.add(ruleBe.getCode().substring("RUL_".length()));
 				}
 			}
@@ -2147,10 +2158,9 @@ public class RulesLoader {
 			log.error("Could not fetch Rules from API");
 
 		}
-		
+
 		SearchEntity searchBE2 = new SearchEntity("SBE_RULES_FIRED", "Have Rules been initialised")
-				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_THM_%")
-				.setPageStart(0).setPageSize(4000);
+				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_THM_%").setPageStart(0).setPageSize(4000);
 
 		searchBE2.setRealm(serviceToken.getRealm());
 
@@ -2175,14 +2185,14 @@ public class RulesLoader {
 				// This theme should be in cache, check only cache
 				JsonObject json = VertxUtils.readCachedJson(realm, themeCode, serviceToken.getToken());
 				if (!json.getString("status").equalsIgnoreCase("OK")) {
-					log.error("ERROR! "+themeCode+" is 'initialised' BUT NOT IN CACHE");
-				}				
+					log.error("ERROR! " + themeCode + " is 'initialised' BUT NOT IN CACHE");
+				}
 			}
 		} catch (Exception e) {
 			log.error("Could not fetch Rules from API");
 
 		}
-		log.info(uninitialisedThemes.size()+" themes are uninitialised out of "+total);
+		log.info(uninitialisedThemes.size() + " themes are uninitialised out of " + total);
 		return uninitialisedThemes;
 	}
 
@@ -2220,7 +2230,8 @@ public class RulesLoader {
 			if (resultMsg.getItems() != null) {
 				for (BaseEntity ruleBe : resultMsg.getItems()) {
 					String filename = ruleBe.getValueAsString("PRI_FILENAME");
-				//	log.info("############ RULE FRAME  : " + filename + "   HAS NOT BEEN INITIALISED");
+					// log.info("############ RULE FRAME : " + filename + " HAS NOT BEEN
+					// INITIALISED");
 					uninitialisedFrames.add(ruleBe.getCode().substring("RUL_".length()));
 				}
 			}
@@ -2228,11 +2239,10 @@ public class RulesLoader {
 			log.error("Could not fetch Rules from API");
 
 		}
-		
+
 		// Fetch all the uninitilised theme rules from the api
 		SearchEntity searchBE2 = new SearchEntity("SBE_RULES_FIRED", "Have Rules been initialised")
-				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_FRM_%")
-				.setPageStart(0).setPageSize(4000);
+				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "RUL_FRM_%").setPageStart(0).setPageSize(4000);
 
 		searchBE2.setRealm(serviceToken.getRealm());
 
@@ -2257,16 +2267,16 @@ public class RulesLoader {
 				String cacheCode = frameCode;
 				JsonObject json = VertxUtils.readCachedJson(realm, cacheCode, serviceToken.getToken());
 				if (!json.getString("status").equalsIgnoreCase("OK")) {
-					log.error("ERROR! "+cacheCode+" is 'initialised' BUT NOT IN CACHE");
+					log.error("ERROR! " + cacheCode + " is 'initialised' BUT NOT IN CACHE");
 				}
-				json = VertxUtils.readCachedJson(realm, cacheCode+"_ASKS", serviceToken.getToken());
+				json = VertxUtils.readCachedJson(realm, cacheCode + "_ASKS", serviceToken.getToken());
 				if (!json.getString("status").equalsIgnoreCase("OK")) {
-					log.error("ERROR! "+cacheCode+"_ASKS is 'initialised' BUT NOT IN CACHE");
-				}				
-				json = VertxUtils.readCachedJson(realm, cacheCode+"_MSG", serviceToken.getToken());
+					log.error("ERROR! " + cacheCode + "_ASKS is 'initialised' BUT NOT IN CACHE");
+				}
+				json = VertxUtils.readCachedJson(realm, cacheCode + "_MSG", serviceToken.getToken());
 				if (!json.getString("status").equalsIgnoreCase("OK")) {
-					log.error("ERROR! "+cacheCode+"_MSG is 'initialised' BUT NOT IN CACHE");
-				}				
+					log.error("ERROR! " + cacheCode + "_MSG is 'initialised' BUT NOT IN CACHE");
+				}
 
 			}
 
@@ -2274,7 +2284,7 @@ public class RulesLoader {
 			log.error("Could not fetch Rules from API");
 
 		}
-		log.info(uninitialisedFrames.size()+" frames are uninitialised out of "+total);
+		log.info(uninitialisedFrames.size() + " frames are uninitialised out of " + total);
 
 		return uninitialisedFrames;
 	}
