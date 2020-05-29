@@ -1872,7 +1872,7 @@ public class RulesLoader {
 		Boolean ret = false;
 		String filename = ruleTuple._2;
 		String ruleText = ruleTuple._3;
-		Pattern p = Pattern.compile("(FRM_[A-Z0-9_-]+|THM_[A-Z0-9_-]+)");
+		Pattern p = Pattern.compile("(FRM_[A-Z0-9_-]+\\s|THM_[A-Z0-9_-]+\\s)");
 
 		// If Rule is a theme or Frame
 		String ruleName = filename.replaceAll("\\.[^.]*$", "");
@@ -1884,6 +1884,7 @@ public class RulesLoader {
 			Matcher m = p.matcher(ruleText);
 			while (m.find()) {
 				String child = m.group();
+				child = child.trim();
 				if (!child.equals(ruleName)) {
 					children.add(child);
 				}
