@@ -228,11 +228,13 @@ public class RulesLoader {
 		activeRealms = JsonUtils.fromJson(ars, listType);
 		if (activeRealms == null) {
 			realms = new HashSet<>();
-			log.error("NO ACTIVE REALMS");
+			log.error("NO ACTIVE REALMS , api-realms=->"+ars);
+			return false;
 		} else {
 			realms = new HashSet<>(activeRealms);
 		}
 
+		log.info("Realms are "+realms);
 		List<Tuple3<String, String, String>> rules = null;
 
 		if (GennySettings.useApiRules) {
@@ -249,6 +251,9 @@ public class RulesLoader {
 
 		for (String realm : activeRealms) {
 			log.info("LOADING " + realm + " RULES");
+			if (realm == null) {
+				continue;
+			}
 			Integer rulesCount = setupKieRules(realm, rules);
 			log.info("Rules Count for " + realm + " = " + rulesCount);
 			// check if rules need to be initialised
@@ -325,7 +330,7 @@ public class RulesLoader {
 				String otherFrameName = frameRule;// .substring("RUL_".length());
 				SingleSourcePaths<String, DefaultEdge> iPaths = null;
 				Integer max = -1;
-				String oldestAncestor = "EMPTY";
+				String oldestAncestor = frameRule;
 
 				try {
 					iPaths = dijkstraAlg.getPaths(otherFrameName);
@@ -885,6 +890,10 @@ public class RulesLoader {
 			final List<Tuple3<String, String, String>> rules, final KieFileSystem kfs,
 			final Tuple3<String, String, String> rule) {
 		boolean ret = false;
+		if (rule == null) {
+			log.error("rule = null");
+			return false;
+		}
 
 		if (rule._1.equalsIgnoreCase("genny") || rule._1.equalsIgnoreCase(realm)) {
 			if ((rule._1.equalsIgnoreCase("genny")) && (!"genny".equalsIgnoreCase(realm))) {
