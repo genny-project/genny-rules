@@ -1242,6 +1242,16 @@ public class BucketUtils {
 		return bucketSearchBeList;
 	}
 
+	public BaseEntity getThemeBe(final String themeCode, GennyToken serviceToken)
+	{
+		Theme theme = VertxUtils.getObject(serviceToken.getRealm(), "",
+				themeCode, Theme.class, serviceToken.getToken());
+		if (theme == null) {
+			log.error("THEME DOES NOT EXIST!"+themeCode);
+		}
+		return getThemeBe(theme);
+	}
+	
 	/* returns baseentity of a theme */
 	public BaseEntity getThemeBe(Theme theme) {
 
