@@ -246,8 +246,6 @@ public class RulesLoader {
 		realms.stream().forEach(System.out::println);
 		realms.remove("genny");
 
-		List<String> uninitialisedThemes = new ArrayList<String>();
-		List<String> uninitialisedFrames = new ArrayList<String>();
 
 		for (String realm : activeRealms) {
 			log.info("LOADING " + realm + " RULES");
@@ -517,8 +515,13 @@ public class RulesLoader {
 					String filename = ruleBe.getValueAsString("PRI_FILENAME");
 					String ruleText = ruleBe.getValueAsString("PRI_KIE_TEXT");
 					Tuple3<String, String, String> rule = (Tuple.of(realm, filename, ruleText));
-					rules.add(rule);
-					log.info("Imported rule from API : " + filename);
+					if (filename == null) {
+						log.error("Rule filename is null");
+					} else {
+						rules.add(rule);
+						log.info("Imported rule from API : " + filename);
+					}
+					
 				}
 			} catch (Exception e) {
 				log.error("Could not fetch Rules from API");
