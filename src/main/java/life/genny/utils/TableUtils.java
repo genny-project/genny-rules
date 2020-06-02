@@ -1632,7 +1632,7 @@ public class TableUtils {
 		long startProcessingTime = System.currentTimeMillis();
 		long totalProcessingTime;
 
-		if (false) {
+		if (true) {
 			for (Callable<QBulkMessage> callable : callables) {
 				service.submit(callable);
 			}
@@ -1668,15 +1668,15 @@ public class TableUtils {
 				Thread.currentThread().interrupt();
 			}
 		} else {
-			tfc.call();
-			sc.call();
+			aggregatedMessages.add(tfc.call());
+			aggregatedMessages.add(sc.call());
 
 		}
 		totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 		System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 		QDataAskMessage[] asks = aggregatedMessages.getAsks();
-		/* aggregatedMessages.setAsks(null); */
+		aggregatedMessages.setAsks(asks); 
 
 		if (cache) {
 			System.out.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
