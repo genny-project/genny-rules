@@ -1632,7 +1632,7 @@ public class TableUtils {
 		long startProcessingTime = System.currentTimeMillis();
 		long totalProcessingTime;
 
-		if (true) {
+		if (GennySettings.useConcurrencyMsgs) {
 			for (Callable<QBulkMessage> callable : callables) {
 				service.submit(callable);
 			}
@@ -1656,7 +1656,6 @@ public class TableUtils {
 			} catch (InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 			}
-			totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 
 			WORKER_THREAD_POOL.shutdown();
 			try {
@@ -1675,8 +1674,8 @@ public class TableUtils {
 		totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 		System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
-		QDataAskMessage[] asks = aggregatedMessages.getAsks();
-		aggregatedMessages.setAsks(asks); 
+//		QDataAskMessage[] asks = aggregatedMessages.getAsks();
+//		aggregatedMessages.setAsks(asks); 
 
 		if (cache) {
 			System.out.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
