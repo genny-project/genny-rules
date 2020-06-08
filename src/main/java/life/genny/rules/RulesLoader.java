@@ -2162,8 +2162,7 @@ public class RulesLoader {
 			if (resultMsg.getItems() != null) {
 				for (BaseEntity ruleBe : resultMsg.getItems()) {
 					String filename = ruleBe.getValueAsString("PRI_FILENAME");
-					// log.info("############ RULE THEME : " + filename + " HAS NOT BEEN
-					// INITIALISED");
+					 log.info("############ RULE THEME : " + filename + " HAS NOT BEEN INITIALISED");
 					uninitialisedThemes.add(ruleBe.getCode().substring("RUL_".length()));
 				}
 			}
@@ -2243,8 +2242,7 @@ public class RulesLoader {
 			if (resultMsg.getItems() != null) {
 				for (BaseEntity ruleBe : resultMsg.getItems()) {
 					String filename = ruleBe.getValueAsString("PRI_FILENAME");
-					// log.info("############ RULE FRAME : " + filename + " HAS NOT BEEN
-					// INITIALISED");
+					log.info("############ RULE FRAME : " + filename + " HAS NOT BEEN INITIALISED");
 					uninitialisedFrames.add(ruleBe.getCode().substring("RUL_".length()));
 				}
 			}
