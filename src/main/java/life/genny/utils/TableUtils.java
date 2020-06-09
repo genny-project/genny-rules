@@ -71,39 +71,62 @@ public class TableUtils {
 		this.beUtils = beUtils;
 	}
 
-	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode,
+	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, String searchBeCode,
+			Answer answer) {
+		SearchEntity searchBE = getSessionSearch(searchBeCode);
+		return performSearch(userToken, serviceToken, searchBE,
+				answer);
+	}
+	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, SearchEntity searchBE,
 			Answer answer) {
 		QBulkMessage ret = new QBulkMessage();
 		beUtils.setGennyToken(userToken);
-		ret = this.performSearch(serviceToken, searchBarCode, answer, null, null);
+		ret = this.performSearch(serviceToken, searchBE, answer, null, null);
 		return ret;
 	}
 
-	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode,
+	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, SearchEntity searchBE,
 			Answer answer, Boolean cache) {
 		QBulkMessage ret = new QBulkMessage();
 		beUtils.setGennyToken(userToken);
-		ret = this.performSearch(serviceToken, searchBarCode, answer, null, null, cache);
+		ret = this.performSearch(serviceToken, searchBE, answer, null, null, cache);
 		return ret;
 	}
 
-	public void performSearch(GennyToken userToken, GennyToken serviceToken, final String searchBarCode, Answer answer,
+	public void performSearch(GennyToken userToken, GennyToken serviceToken, String searchBeCode, Answer answer,
+			final String filterCode, final String filterValue) {
+		SearchEntity searchBE = getSessionSearch(searchBeCode);
+
+		performSearch(userToken, serviceToken, searchBE, answer, filterCode, filterValue);
+	}
+	
+	public void performSearch(GennyToken userToken, GennyToken serviceToken, SearchEntity searchBE, Answer answer,
 			final String filterCode, final String filterValue) {
 		beUtils.setGennyToken(userToken);
-		this.performSearch(serviceToken, searchBarCode, answer, filterCode, filterValue);
+		this.performSearch(serviceToken, searchBE, answer, filterCode, filterValue);
 	}
 
-	public QBulkMessage performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer,
+	public QBulkMessage performSearch(GennyToken serviceToken, String searchBeCode, Answer answer,
 			final String filterCode, final String filterValue) {
-		return performSearch(serviceToken, searchBarCode, answer, filterCode, filterValue, false);
+		SearchEntity searchBE = getSessionSearch(searchBeCode);
+		
+		return performSearch(serviceToken, searchBE, answer, filterCode, filterValue, false);
 	}
 
-	public QBulkMessage performSearch(GennyToken serviceToken, final String searchBarCode, Answer answer,
+	public QBulkMessage performSearch(GennyToken serviceToken, SearchEntity searchBE, Answer answer,
+			final String filterCode, final String filterValue) {
+		return performSearch(serviceToken, searchBE, answer, filterCode, filterValue, false);
+	}
+
+	public QBulkMessage performSearch(GennyToken serviceToken, final SearchEntity searchBE, Answer answer,
 			final String filterCode, final String filterValue, Boolean cache) {
 		QBulkMessage ret = new QBulkMessage();
+		
+		
+		
+		
 		beUtils.setServiceToken(serviceToken);
 
-		SearchEntity searchBE = processSearchString(answer, searchBarCode, filterCode, filterValue);
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = fetchSearchResults(searchBE);
@@ -141,6 +164,7 @@ public class TableUtils {
 		QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns, cache);
 		ret.add(qb);
 		log.info("calling sendTableContexts");
+		
 		QDataBaseEntityMessage qm = sendTableContexts(cache);
 		ret.add(qm);
 		/* showTableFooter(searchBE); */
@@ -1616,6 +1640,9 @@ public class TableUtils {
 
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
+		
+		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(), searchBE,
+				beUtils.getGennyToken().getToken());
 
 		long s3time = System.currentTimeMillis();
 
@@ -1623,7 +1650,7 @@ public class TableUtils {
 		CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 
 		TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-		SearchCallable sc = new SearchCallable(tableUtils, searchBE.getCode(), beUtils, cache);
+		SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache);
 
 		List<Callable<QBulkMessage>> callables = Arrays.asList(tfc, sc);
 
@@ -1674,41 +1701,97 @@ public class TableUtils {
 		totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 		System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
-//		QDataAskMessage[] asks = aggregatedMessages.getAsks();
-//		aggregatedMessages.setAsks(asks); 
 
 		if (cache) {
 			System.out.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 			String json = JsonUtils.toJson(aggregatedMessages);
 			VertxUtils.writeMsg("webcmds", json);
-			// for (QDataAskMessage askMsg : asks) {
-			// 	askMsg.setToken(beUtils.getGennyToken().getToken());
-			// 	VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
-			// }
 		}
-		/* show tab-view first */
-		/*
-		 * ShowFrame.display(beUtils.getGennyToken(), "FRM_QUE_TAB_VIEW", "FRM_CONTENT",
-		 * "Test");
-		 */
-
-		/* show table-view inside tab-content */
-		/* Send to front end */
-		/* output.setTypeOfResult("NONE"); */
-		/* output.setResultCode("NONE"); */ /* dont display anything new */
 
 		/* update(output); */
 		long endtime = System.currentTimeMillis();
 		System.out.println("init setup took " + (s1time - starttime) + " ms");
 		System.out.println("search session setup took " + (s2time - s1time) + " ms");
 		System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
-		/*
-		 * System.out.println("send frame table and tab display setup took " + (s4time -
-		 * s3time) + " ms"); System.out.println("searching took " + (s5time - s4time) +
-		 * " ms"); System.out.println("finish took " + (endtime - s5time) + " ms");
-		 * System.out.println("total took " + (endtime - starttime) + " ms");
-		 */
+		return (endtime - starttime);
+	}
+	
+	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache) {
+		long starttime = System.currentTimeMillis();
+		
 
+		long s1time = System.currentTimeMillis();
+		/* get current search */
+		TableUtils tableUtils = new TableUtils(beUtils);
+
+		long s2time = System.currentTimeMillis();
+
+		ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
+		CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
+
+		TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
+		SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache);
+
+		List<Callable<QBulkMessage>> callables = Arrays.asList(tfc, sc);
+
+		QBulkMessage aggregatedMessages = new QBulkMessage();
+
+		long startProcessingTime = System.currentTimeMillis();
+		long totalProcessingTime;
+
+		if (GennySettings.useConcurrencyMsgs) {
+			for (Callable<QBulkMessage> callable : callables) {
+				service.submit(callable);
+			}
+			try {
+				Future<QBulkMessage> future = service.take();
+				QBulkMessage firstThreadResponse = future.get();
+				aggregatedMessages.add(firstThreadResponse);
+				totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+
+				/*
+				 * assertTrue("First response should be from the fast thread",
+				 * "fast thread".equals(firstThreadResponse.getData_type()));
+				 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
+				 */
+				System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
+
+				future = service.take();
+				QBulkMessage secondThreadResponse = future.get();
+				aggregatedMessages.add(secondThreadResponse);
+				System.out.println("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
+			} catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
+
+			WORKER_THREAD_POOL.shutdown();
+			try {
+				if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
+					WORKER_THREAD_POOL.shutdownNow();
+				}
+			} catch (InterruptedException ex) {
+				WORKER_THREAD_POOL.shutdownNow();
+				Thread.currentThread().interrupt();
+			}
+		} else {
+			aggregatedMessages.add(tfc.call());
+			aggregatedMessages.add(sc.call());
+
+		}
+		totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+		System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
+		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
+
+		if (cache) {
+			System.out.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
+			String json = JsonUtils.toJson(aggregatedMessages);
+			VertxUtils.writeMsg("webcmds", json);
+		}
+
+		/* update(output); */
+		long endtime = System.currentTimeMillis();
+		System.out.println("init setup took " + (s1time - starttime) + " ms");
+		System.out.println("search session setup took " + (s2time - s1time) + " ms");
 		return (endtime - starttime);
 	}
 }
