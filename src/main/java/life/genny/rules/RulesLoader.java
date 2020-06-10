@@ -176,6 +176,9 @@ public class RulesLoader {
 
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
+	private static Map<String, String> realmTokenMap = null;
+	private static Map<String, BaseEntityUtils> realmBeUtilsMap = null;
+
 
 	public static void shutdown() {
 		runtimeManager.close();
@@ -1880,71 +1883,50 @@ public class RulesLoader {
 		return RulesLoader.getProcessIdBysessionId(realm, sessionId);
 	}
 
-	private static Boolean processRule(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {
-		Boolean ret = false;
-		String filename = ruleTuple._2;
-		String ruleText = ruleTuple._3;
-		Pattern p = Pattern.compile("(FRM_[A-Z0-9_-]+\\s|THM_[A-Z0-9_-]+\\s)");
-
-		// If Rule is a theme or Frame
-		String ruleName = filename.replaceAll("\\.[^.]*$", "");
-		String ruleCode = "RUL_" + ruleName;
-
-		if (ruleCode.startsWith("RUL_FRM_") || ruleCode.startsWith("RUL_THM")) {
-			// Parse rule text to identify child rules
-			Set<String> children = new HashSet<String>();
-			Matcher m = p.matcher(ruleText);
-			while (m.find()) {
-				String child = m.group();
-				child = child.trim();
-				if (!child.equals(ruleName)) {
-					children.add(child);
-				}
-
-			}
-			if (!children.isEmpty()) {
-				for (String child : children) {
-					gbPC.connect(ruleName).to(child).withEdge("PARENT");
-					gbCP.connect(child).to(ruleName).withEdge("CHILD");
-					log.info("Rule : " + ruleName + " --- child -> " + child);
-					directedGraph.addVertex(ruleName);
-					directedGraph.addVertex(child);
-					directedGraph.addEdge(ruleName, child);
-				}
-			}
-
+	private static Map<String, String> getRealmTokenMap(String realm) {
+		if (realmTokenMap == null) {
+			realmTokenMap = new HashMap<>();
 		}
-
-		if (ruleCode.startsWith("RUL_FRM_")) {
-			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actually
-
-		}
-		if (ruleCode.startsWith("RUL_THM_")) {
-			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actuall
-																									// fires
-		}
-
-		if (!persistRules) {
-			return false;
-		}
-		// Determine what rules have changed via their hash .... and if so then clear
-		// their cache and db entries
-		Map<String, String> realmTokenMap = new HashMap<String, String>();
-		Map<String, BaseEntityUtils> realmBeUtilsMap = new HashMap<String, BaseEntityUtils>();
-		Integer hashcode = ruleText.hashCode();
 		if (realmTokenMap.get(realm) == null) {
 			JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
 			String token = tokenObj.getString("value");
 			realmTokenMap.put(realm, token);
 		}
+		return realmTokenMap;
+	}
+
+	private static 	Map<String, BaseEntityUtils> getRealmBeUtilsMap(String realm) {
+		if (realmBeUtilsMap == null){
+			realmBeUtilsMap = new HashMap<>();
+		}
+		if (realmBeUtilsMap.get(realm) == null) {
+			BaseEntityUtils beUtils = new BaseEntityUtils(new GennyToken(realmTokenMap.get(realm)));
+			realmBeUtilsMap.put(realm, beUtils);
+		}
+		return realmBeUtilsMap;
+	}
+
+	private static boolean persistRules(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {
+		boolean ret = false;
+		String filename = ruleTuple._2;
+		String ruleText = ruleTuple._3;
+		// If Rule is a theme or Frame
+		String ruleName = filename.replaceAll("\\.[^.]*$", "");
+		String ruleCode = "RUL_" + ruleName;
+
+		// Determine what rules have changed via their hash .... and if so then clear
+		// their cache and db entries
+		Map<String, String> realmTokenMap = getRealmTokenMap(realm);
+		Map<String, BaseEntityUtils> realmBeUtilsMap = getRealmBeUtilsMap(realm);
+		BaseEntityUtils beUtils =  realmBeUtilsMap.get(realm);
+
+		Integer hashcode = ruleText.hashCode();
+
 		// get kie type
 		String ext = filename.substring(filename.lastIndexOf(".") + 1);
 		String kieType = ext.toUpperCase();
 
 		// Get rule filename
-
 		// get existing rule from cache
 
 		BaseEntity existingRuleBe = VertxUtils.readFromDDT(realm, ruleCode, true, realmTokenMap.get(realm));
@@ -1953,13 +1935,6 @@ public class RulesLoader {
 			existingHashCode = existingRuleBe.getValue("PRI_HASHCODE", -1);
 		}
 
-		BaseEntityUtils beUtils = null;
-		if (realmBeUtilsMap.get(realm) == null) {
-			beUtils = new BaseEntityUtils(new GennyToken(realmTokenMap.get(realm)));
-			realmBeUtilsMap.put(realm, beUtils);
-		} else {
-			beUtils = realmBeUtilsMap.get(realm);
-		}
 		if (existingRuleBe == null) {
 			if ("FRM_QUE_GRP_PLACED_GRP".contentEquals(ruleCode)) {
 				log.info("got to here:");
@@ -2022,6 +1997,59 @@ public class RulesLoader {
 			}
 			ret = true;
 		}
+		return ret;
+	}
+	private static Boolean processRule(String realm, RuleDescr rule, Tuple3<String, String, String> ruleTuple) {
+		Boolean ret = false;
+		String filename = ruleTuple._2;
+		String ruleText = ruleTuple._3;
+		Pattern p = Pattern.compile("(FRM_[A-Z0-9_-]+\\s|THM_[A-Z0-9_-]+\\s)");
+
+		// If Rule is a theme or Frame
+		String ruleName = filename.replaceAll("\\.[^.]*$", "");
+		String ruleCode = "RUL_" + ruleName;
+
+		if (ruleCode.startsWith("RUL_FRM_") || ruleCode.startsWith("RUL_THM")) {
+			// Parse rule text to identify child rules
+			Set<String> children = new HashSet<String>();
+			Matcher m = p.matcher(ruleText);
+			while (m.find()) {
+				String child = m.group();
+				child = child.trim();
+				if (!child.equals(ruleName)) {
+					children.add(child);
+				}
+
+			}
+			if (!children.isEmpty()) {
+				for (String child : children) {
+					gbPC.connect(ruleName).to(child).withEdge("PARENT");
+					gbCP.connect(child).to(ruleName).withEdge("CHILD");
+					log.info("Rule : " + ruleName + " --- child -> " + child);
+					directedGraph.addVertex(ruleName);
+					directedGraph.addVertex(child);
+					directedGraph.addEdge(ruleName, child);
+				}
+			}
+
+		}
+
+		if (ruleCode.startsWith("RUL_FRM_")) {
+			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actually
+
+		}
+		if (ruleCode.startsWith("RUL_THM_")) {
+			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actuall
+																									// fires
+		}
+
+		if (!persistRules) {
+			return false;
+		}
+
+		ret = persistRules(realm, rule, ruleTuple);
 		return ret;
 	}
 
