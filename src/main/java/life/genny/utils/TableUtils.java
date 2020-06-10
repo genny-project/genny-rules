@@ -130,6 +130,18 @@ public class TableUtils {
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = fetchSearchResults(searchBE);
+		
+		if (searchBE.getBaseEntityAttributes()==null) { // we fetched from search faster by specifying no columns
+			// fetch results from cache
+			String realm = serviceToken.getRealm();
+			List<BaseEntity> beList = new ArrayList<BaseEntity>();
+			for (BaseEntity be : msg.getItems()) {
+				BaseEntity fromCacheBe = VertxUtils.getObject(realm, "", be.getCode(), BaseEntity.class, serviceToken.getToken());
+				beList.add(fromCacheBe);
+			}
+			msg.setItems(beList.toArray(new BaseEntity[0]));
+		}
+		
 		if (cache) {
 			ret.add(msg);
 		} else {
