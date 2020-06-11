@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
 
 import com.google.gson.reflect.TypeToken;
 
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
@@ -75,9 +78,9 @@ public class TableUtils {
 	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, String searchBeCode,
 			Answer answer) {
 		SearchEntity searchBE = getSessionSearch(searchBeCode);
-		return performSearch(userToken, serviceToken, searchBE,
-				answer);
+		return performSearch(userToken, serviceToken, searchBE, answer);
 	}
+
 	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, SearchEntity searchBE,
 			Answer answer) {
 		QBulkMessage ret = new QBulkMessage();
@@ -100,7 +103,7 @@ public class TableUtils {
 
 		performSearch(userToken, serviceToken, searchBE, answer, filterCode, filterValue);
 	}
-	
+
 	public void performSearch(GennyToken userToken, GennyToken serviceToken, SearchEntity searchBE, Answer answer,
 			final String filterCode, final String filterValue) {
 		beUtils.setGennyToken(userToken);
@@ -110,7 +113,7 @@ public class TableUtils {
 	public QBulkMessage performSearch(GennyToken serviceToken, String searchBeCode, Answer answer,
 			final String filterCode, final String filterValue) {
 		SearchEntity searchBE = getSessionSearch(searchBeCode);
-		
+
 		return performSearch(serviceToken, searchBE, answer, filterCode, filterValue, false);
 	}
 
@@ -122,44 +125,131 @@ public class TableUtils {
 	public QBulkMessage performSearch(GennyToken serviceToken, final SearchEntity searchBE, Answer answer,
 			final String filterCode, final String filterValue, Boolean cache) {
 		QBulkMessage ret = new QBulkMessage();
-		
-		
-		
-		
-		beUtils.setServiceToken(serviceToken);
 
+		beUtils.setServiceToken(serviceToken);
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
-		
-		if (searchBE.getBaseEntityAttributes()==null) { // we fetched from search faster by specifying no columns
-			msg = fetchSearchResults(searchBE);
-//			String hql = "select ea from EntityAttribute ea, EntityAttribute eb where ea.baseEntityCode=eb.baseEntityCode ";
-//	 		hql += " and eb.attributeCode = '"+roleAttribute+"' and eb.valueString = "+();
-//	 		hql += " and ea.baseEntityCode like 'JNL_%'  ";
-//	 		hql += " and ((ea.updated >= '"+dtStr+"') or (ea.updated is null and ea.created >= '"+dtStr+"'))";
-//			hql = Base64.getUrlEncoder().encodeToString(hql.getBytes());
-//			String resultJson;
-//			QDataBaseEntityMessage resultMsg = null;
-//			try {
-//				resultJson = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search22/"+hql, serviceToken.getToken(),120);
-//				msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-//				
-//			} catch (Exception e1) {
-//				e1.printStackTrace();
-//			}		
-			// fetch results from cache
-			String realm = serviceToken.getRealm();
-			List<BaseEntity> beList = new ArrayList<BaseEntity>();
-			for (BaseEntity be : msg.getItems()) {
-				BaseEntity fromCacheBe = VertxUtils.getObject(realm, "", be.getCode(), BaseEntity.class, serviceToken.getToken());
-				beList.add(fromCacheBe);
+
+		if (GennySettings.searchAlt) {
+
+			String beFilter1 = null;
+			String beFilter2 = null;
+			String attributeFilterValue1 = "";
+			String attributeFilterCode1 = null;
+			String attributeFilterValue2 = "";
+			String attributeFilterCode2 = null;
+			String sortCode = "PRI_NAME";
+			String sortValue = "ASC";
+			Integer pageStart = searchBE.getValue("SCH_PAGE_START", 0);
+			Integer pageSize = searchBE.getValue("SCH_PAGE_SIZE", GennySettings.defaultPageSize);
+
+			List<String> attributeFilter = new ArrayList<String>();
+			for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+
+				if (ea.getAttributeCode().startsWith("PRI_CODE")) {
+					if (beFilter1 == null) {
+						beFilter1 = ea.getAsString();
+					} else if (beFilter2 == null) {
+						beFilter2 = ea.getAsString();
+					}
+				} else if ((ea.getAttributeCode().startsWith("SRT_"))) {
+					sortCode = (ea.getAttributeCode().substring("SRT_".length()));
+					sortValue = ea.getValueString();
+
+				} else if ((ea.getAttributeCode().startsWith("COL_")) || (ea.getAttributeCode().startsWith("CAL_"))) {
+					attributeFilter.add(ea.getAttributeCode().substring("COL_".length()));
+
+				} else if (ea.getAttributeCode().startsWith("PRI_") && (!ea.getAttributeCode().equals("PRI_CODE"))) {
+					if (attributeFilterCode1 == null) {
+						if (ea.getValueString() != null) {
+							attributeFilterValue1 = " eb.valueString " + ea.getAttributeName() + " '"
+									+ ea.getValueString() + "'";
+						} else if (ea.getValueBoolean() != null) {
+							attributeFilterValue1 = " eb.valueBoolean = " + (ea.getValueBoolean() ? "true" : "false");
+						}
+						attributeFilterCode1 = ea.getAttributeCode();
+
+					} else {
+						if (attributeFilterCode2 == null) {
+							if (ea.getValueString() != null) {
+								attributeFilterValue2 = " ec.valueString " + ea.getAttributeName() + " '"
+										+ ea.getValueString() + "'";
+							} else if (ea.getValueBoolean() != null) {
+								attributeFilterValue2 = " ec.valueBoolean = "
+										+ (ea.getValueBoolean() ? "true" : "false");
+							}
+							attributeFilterCode2 = ea.getAttributeCode();
+						}
+					}
+				}
 			}
-			msg.setItems(beList.toArray(new BaseEntity[0]));
+			String hql = "select distinct ea.baseEntityCode from EntityAttribute ea ";
+			hql += ", EntityAttribute eb ";
+			if (attributeFilterCode2 != null) {
+				hql += ", EntityAttribute ec ";
+			}
+			hql += " where ea.baseEntityCode=eb.baseEntityCode ";
+			hql += " and (ea.baseEntityCode like '" + beFilter1 + "'  ";
+			hql += " or ea.baseEntityCode like '" + beFilter2 + "')  ";
+			hql += " and eb.attributeCode = '" + attributeFilterCode1 + "' and " + attributeFilterValue1;
+			if (attributeFilterCode2 != null) {
+				hql += " and ea.baseEntityCode=ec.baseEntityCode ";
+				hql += " and ec.attributeCode = '" + attributeFilterCode2 + "' and " + attributeFilterValue2;
+			}
+			hql += " order by " + sortCode + " " + sortValue;
+
+			String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
+			JsonObject resultJson;
+			try {
+				String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl
+						+ "/qwanda/baseentitys/search24/" + hql2 + "/" + pageStart + "/" + pageSize,
+						serviceToken.getToken(), 120);
+
+				String coreSearchCode = StringUtils.removeEnd(searchBE.getCode(),
+						beUtils.getGennyToken().getSessionCode());
+				resultJson = new JsonObject(resultJsonStr);
+				Long total = 1000L; // resultJson.getLong("total");
+				// check the cache
+				JsonObject countJson = VertxUtils.readCachedJson(serviceToken.getRealm(), "COUNT_" + coreSearchCode,
+						serviceToken.getToken());
+				String countJsonStr = null;
+				if ("OK".equals(countJson.getString("status"))) {
+					countJsonStr = countJson.getString("value");
+				}
+				total = 1964L;
+				if (countJsonStr == null) {
+					countJsonStr = QwandaUtils.apiGet(
+							GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search24/" + hql2,
+							serviceToken.getToken(), 120);
+					VertxUtils.writeCachedJson(serviceToken.getRealm(), "COUNT_" + coreSearchCode, countJsonStr,
+							serviceToken.getToken());
+				}
+				total = Long.parseLong(countJsonStr);
+
+				JsonArray result = resultJson.getJsonArray("codes");
+				List<String> resultCodes = new ArrayList<String>();
+				for (int i = 0; i < result.size(); i++) {
+					String code = result.getString(i);
+					resultCodes.add(code);
+				}
+				String[] filterArray = attributeFilter.toArray(new String[0]);
+				List<BaseEntity> beList = resultCodes.stream().map(e -> {
+					BaseEntity be = beUtils.getBaseEntityByCode(e);
+					be = VertxUtils.privacyFilter(be, filterArray);
+					return be;
+				}).collect(Collectors.toList());
+				msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
+				msg.setTotal(total);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+
 		} else {
+
 			msg = fetchSearchResults(searchBE);
 		}
-		
+
 		if (cache) {
 			ret.add(msg);
 		} else {
@@ -194,7 +284,7 @@ public class TableUtils {
 		QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns, cache);
 		ret.add(qb);
 		log.info("calling sendTableContexts");
-		
+
 		QDataBaseEntityMessage qm = sendTableContexts(cache);
 		ret.add(qm);
 		/* showTableFooter(searchBE); */
@@ -1644,7 +1734,7 @@ public class TableUtils {
 
 	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache) {
 		long starttime = System.currentTimeMillis();
-		
+
 		System.out.println("Cache enabled ? ::" + cache);
 		System.out.println("FINAL CODE   ::   " + code);
 
@@ -1670,9 +1760,9 @@ public class TableUtils {
 
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
-		
-		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(), searchBE,
-				beUtils.getGennyToken().getToken());
+
+		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH",
+				beUtils.getGennyToken().getSessionCode(), searchBE, beUtils.getGennyToken().getToken());
 
 		long s3time = System.currentTimeMillis();
 
@@ -1733,7 +1823,8 @@ public class TableUtils {
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 
 		if (cache) {
-			System.out.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
+			System.out.println(
+					"Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 			String json = JsonUtils.toJson(aggregatedMessages);
 			VertxUtils.writeMsg("webcmds", json);
 		}
@@ -1745,82 +1836,82 @@ public class TableUtils {
 		System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
 		return (endtime - starttime);
 	}
-	
+
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache) {
 		long starttime = System.currentTimeMillis();
 		try {
-		log.info("Starting searchTable for searchBE : "+searchBE.getCode()+" and cache="+(cache?"ON":"OFF"));
-		/* get current search */
-		TableUtils tableUtils = new TableUtils(beUtils);
+			log.info("Starting searchTable for searchBE : " + searchBE.getCode() + " and cache="
+					+ (cache ? "ON" : "OFF"));
+			/* get current search */
+			TableUtils tableUtils = new TableUtils(beUtils);
 
+			ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
+			CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 
-		ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
-		CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
+			TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
+			SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache);
 
-		TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-		SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache);
+			List<Callable<QBulkMessage>> callables = Arrays.asList(tfc, sc);
 
-		List<Callable<QBulkMessage>> callables = Arrays.asList(tfc, sc);
+			QBulkMessage aggregatedMessages = new QBulkMessage();
 
-		QBulkMessage aggregatedMessages = new QBulkMessage();
+			long startProcessingTime = System.currentTimeMillis();
+			long totalProcessingTime;
 
-		long startProcessingTime = System.currentTimeMillis();
-		long totalProcessingTime;
+			if (GennySettings.useConcurrencyMsgs && false) { // TODO
+				log.info("Starting Concurrent Tasks");
 
-		if (GennySettings.useConcurrencyMsgs) {
-			log.info("Starting Concurrent Tasks");
-
-			for (Callable<QBulkMessage> callable : callables) {
-				service.submit(callable);
-			}
-			log.info("Concurrent Tasks Submitted");
-			try {
-				Future<QBulkMessage> future = service.take();
-				QBulkMessage firstThreadResponse = future.get();
-				aggregatedMessages.add(firstThreadResponse);
-				totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
-
-				/*
-				 * assertTrue("First response should be from the fast thread",
-				 * "fast thread".equals(firstThreadResponse.getData_type()));
-				 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
-				 */
-				log.info("Thread finished after: " + totalProcessingTime + " milliseconds");
-
-				future = service.take();
-				QBulkMessage secondThreadResponse = future.get();
-				aggregatedMessages.add(secondThreadResponse);
-				log.info("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
-			} catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
-			}
-
-			WORKER_THREAD_POOL.shutdown();
-			try {
-				if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
-					WORKER_THREAD_POOL.shutdownNow();
+				for (Callable<QBulkMessage> callable : callables) {
+					service.submit(callable);
 				}
-			} catch (InterruptedException ex) {
-				WORKER_THREAD_POOL.shutdownNow();
-				Thread.currentThread().interrupt();
+				log.info("Concurrent Tasks Submitted");
+				try {
+					Future<QBulkMessage> future = service.take();
+					QBulkMessage firstThreadResponse = future.get();
+					aggregatedMessages.add(firstThreadResponse);
+					totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+
+					/*
+					 * assertTrue("First response should be from the fast thread",
+					 * "fast thread".equals(firstThreadResponse.getData_type()));
+					 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
+					 */
+					log.info("Thread finished after: " + totalProcessingTime + " milliseconds");
+
+					future = service.take();
+					QBulkMessage secondThreadResponse = future.get();
+					aggregatedMessages.add(secondThreadResponse);
+					log.info("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
+				} catch (InterruptedException | ExecutionException e) {
+					e.printStackTrace();
+				}
+
+				WORKER_THREAD_POOL.shutdown();
+				try {
+					if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
+						WORKER_THREAD_POOL.shutdownNow();
+					}
+				} catch (InterruptedException ex) {
+					WORKER_THREAD_POOL.shutdownNow();
+					Thread.currentThread().interrupt();
+				}
+			} else {
+				log.info("Starting Non Concurrent Tasks");
+				aggregatedMessages.add(tfc.call());
+				aggregatedMessages.add(sc.call());
+
 			}
-		} else {
-			log.info("Starting Non Concurrent Tasks");
-			aggregatedMessages.add(tfc.call());
-			aggregatedMessages.add(sc.call());
+			totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+			log.info("All threads finished after: " + totalProcessingTime + " milliseconds");
+			aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 
-		}
-		totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
-		log.info("All threads finished after: " + totalProcessingTime + " milliseconds");
-		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
-
-		if (cache) {
-			log.info("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
-			String json = JsonUtils.toJson(aggregatedMessages);
-			VertxUtils.writeMsg("webcmds", json);
-		}
-		} catch (ClassCastException e)
-		{
+			if (cache) {
+				log.info(
+						"Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
+				String json = JsonUtils.toJson(aggregatedMessages);
+				VertxUtils.writeMsg("webcmds", json);
+			}
+		} catch (ClassCastException e) {
 			log.error(e.getLocalizedMessage());
 		}
 		/* update(output); */
