@@ -862,7 +862,7 @@ public class BucketUtils {
 
 	Ask[] interviewedAsk= {viewProfileAsk, viewApplicationAsk, offerAsk, onHoldAsk, rejectAsk, withdrawnAsk};
 
-	Ask[] offeredAsk= {viewProfileAsk, viewApplicationAsk, editAgreementAsk, viewAgreementAsk, onHoldAsk, rejectAsk, withdrawnAsk};
+	Ask[] offeredAsk= {viewProfileAsk, viewApplicationAsk, editAgreementAsk, viewAgreementAsk, placeAsk, onHoldAsk, rejectAsk, withdrawnAsk};
 	
 	Ask[] placedAsk= {viewProfileAsk, viewApplicationAsk, viewAgreementAsk, onHoldAsk, rejectAsk, withdrawnAsk};
 
