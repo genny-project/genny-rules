@@ -214,7 +214,7 @@ public class TableUtils {
 				JsonObject countJson = VertxUtils.readCachedJson(serviceToken.getRealm(), "COUNT_" + coreSearchCode,
 						serviceToken.getToken());
 				String countJsonStr = null;
-				if ("OK".equals(countJson.getString("status"))) {
+				if ("OK".equalsIgnoreCase(countJson.getString("status"))) {
 					countJsonStr = countJson.getString("value");
 				}
 				total = 1964L;
