@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import com.google.gson.reflect.TypeToken;
 
+import io.vavr.Tuple2;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -130,120 +131,31 @@ public class TableUtils {
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
+		// Get count
+		String coreSearchCode = StringUtils.removeEnd(searchBE.getCode(),
+				beUtils.getGennyToken().getSessionCode());
+		JsonObject resultJson = new JsonObject(resultJsonStr);
+		Long total = 1000L; // resultJson.getLong("total");
+		// check the cache
+		JsonObject countJson = VertxUtils.readCachedJson(serviceToken.getRealm(), "COUNT_" + coreSearchCode,
+				serviceToken.getToken());
+		String countJsonStr = null;
+		if ("OK".equalsIgnoreCase(countJson.getString("status"))) {
+			countJsonStr = countJson.getString("value");
+		}
+		total = 1964L;
+		if (countJsonStr == null) {
+			countJsonStr = QwandaUtils.apiGet(
+					GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search24/" + hql2,
+					serviceToken.getToken(), 120);
+			VertxUtils.writeCachedJson(serviceToken.getRealm(), "COUNT_" + coreSearchCode, countJsonStr,
+					serviceToken.getToken());
+		}
+		total = Long.parseLong(countJsonStr);
 
 		if (GennySettings.searchAlt) {
 
-			String beFilter1 = null;
-			String beFilter2 = null;
-			String attributeFilterValue1 = "";
-			String attributeFilterCode1 = null;
-			String attributeFilterValue2 = "";
-			String attributeFilterCode2 = null;
-			String sortCode = "PRI_NAME";
-			String sortValue = "ASC";
-			Integer pageStart = searchBE.getValue("SCH_PAGE_START", 0);
-			Integer pageSize = searchBE.getValue("SCH_PAGE_SIZE", GennySettings.defaultPageSize);
-
-			List<String> attributeFilter = new ArrayList<String>();
-			for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
-
-				if (ea.getAttributeCode().startsWith("PRI_CODE")) {
-					if (beFilter1 == null) {
-						beFilter1 = ea.getAsString();
-					} else if (beFilter2 == null) {
-						beFilter2 = ea.getAsString();
-					}
-				} else if ((ea.getAttributeCode().startsWith("SRT_"))) {
-					sortCode = (ea.getAttributeCode().substring("SRT_".length()));
-					sortValue = ea.getValueString();
-
-				} else if ((ea.getAttributeCode().startsWith("COL_")) || (ea.getAttributeCode().startsWith("CAL_"))) {
-					attributeFilter.add(ea.getAttributeCode().substring("COL_".length()));
-
-				} else if (ea.getAttributeCode().startsWith("PRI_") && (!ea.getAttributeCode().equals("PRI_CODE"))) {
-					if (attributeFilterCode1 == null) {
-						if (ea.getValueString() != null) {
-							attributeFilterValue1 = " eb.valueString " + ea.getAttributeName() + " '"
-									+ ea.getValueString() + "'";
-						} else if (ea.getValueBoolean() != null) {
-							attributeFilterValue1 = " eb.valueBoolean = " + (ea.getValueBoolean() ? "true" : "false");
-						}
-						attributeFilterCode1 = ea.getAttributeCode();
-
-					} else {
-						if (attributeFilterCode2 == null) {
-							if (ea.getValueString() != null) {
-								attributeFilterValue2 = " ec.valueString " + ea.getAttributeName() + " '"
-										+ ea.getValueString() + "'";
-							} else if (ea.getValueBoolean() != null) {
-								attributeFilterValue2 = " ec.valueBoolean = "
-										+ (ea.getValueBoolean() ? "true" : "false");
-							}
-							attributeFilterCode2 = ea.getAttributeCode();
-						}
-					}
-				}
-			}
-			String hql = "select distinct ea.baseEntityCode from EntityAttribute ea ";
-			hql += ", EntityAttribute eb ";
-			if (attributeFilterCode2 != null) {
-				hql += ", EntityAttribute ec ";
-			}
-			hql += " where ea.baseEntityCode=eb.baseEntityCode ";
-			hql += " and (ea.baseEntityCode like '" + beFilter1 + "'  ";
-			hql += " or ea.baseEntityCode like '" + beFilter2 + "')  ";
-			hql += " and eb.attributeCode = '" + attributeFilterCode1 + "' and " + attributeFilterValue1;
-			if (attributeFilterCode2 != null) {
-				hql += " and ea.baseEntityCode=ec.baseEntityCode ";
-				hql += " and ec.attributeCode = '" + attributeFilterCode2 + "' and " + attributeFilterValue2;
-			}
-			hql += " order by " + sortCode + " " + sortValue;
-
-			String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
-			JsonObject resultJson;
-			try {
-				String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl
-						+ "/qwanda/baseentitys/search24/" + hql2 + "/" + pageStart + "/" + pageSize,
-						serviceToken.getToken(), 120);
-
-				String coreSearchCode = StringUtils.removeEnd(searchBE.getCode(),
-						beUtils.getGennyToken().getSessionCode());
-				resultJson = new JsonObject(resultJsonStr);
-				Long total = 1000L; // resultJson.getLong("total");
-				// check the cache
-				JsonObject countJson = VertxUtils.readCachedJson(serviceToken.getRealm(), "COUNT_" + coreSearchCode,
-						serviceToken.getToken());
-				String countJsonStr = null;
-				if ("OK".equalsIgnoreCase(countJson.getString("status"))) {
-					countJsonStr = countJson.getString("value");
-				}
-				total = 1964L;
-				if (countJsonStr == null) {
-					countJsonStr = QwandaUtils.apiGet(
-							GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search24/" + hql2,
-							serviceToken.getToken(), 120);
-					VertxUtils.writeCachedJson(serviceToken.getRealm(), "COUNT_" + coreSearchCode, countJsonStr,
-							serviceToken.getToken());
-				}
-				total = Long.parseLong(countJsonStr);
-
-				JsonArray result = resultJson.getJsonArray("codes");
-				List<String> resultCodes = new ArrayList<String>();
-				for (int i = 0; i < result.size(); i++) {
-					String code = result.getString(i);
-					resultCodes.add(code);
-				}
-				String[] filterArray = attributeFilter.toArray(new String[0]);
-				List<BaseEntity> beList = resultCodes.stream().map(e -> {
-					BaseEntity be = beUtils.getBaseEntityByCode(e);
-					be = VertxUtils.privacyFilter(be, filterArray);
-					return be;
-				}).collect(Collectors.toList());
-				msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
-				msg.setTotal(total);
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
+			msg = searchUsingHql(serviceToken, searchBE, msg, total);
 
 		} else {
 
@@ -291,6 +203,118 @@ public class TableUtils {
 		return ret;
 	}
 
+	/**
+	 * @param serviceToken
+	 * @param searchBE
+	 * @param msg
+	 * @param total
+	 * @return
+	 */
+	private QDataBaseEntityMessage searchUsingHql(GennyToken serviceToken, final SearchEntity searchBE,
+			QDataBaseEntityMessage msg, Long total) {
+	
+		String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
+		JsonObject resultJson;
+		try {
+			
+			String hql = getHql(serviceToken, searchBE);
+			
+			String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl
+					+ "/qwanda/baseentitys/search24/" + hql2 + "/" + pageStart + "/" + pageSize,
+					serviceToken.getToken(), 120);
+
+
+
+			JsonArray result = resultJson.getJsonArray("codes");
+			List<String> resultCodes = new ArrayList<String>();
+			for (int i = 0; i < result.size(); i++) {
+				String code = result.getString(i);
+				resultCodes.add(code);
+			}
+			String[] filterArray = attributeFilter.toArray(new String[0]);
+			List<BaseEntity> beList = resultCodes.stream().map(e -> {
+				BaseEntity be = beUtils.getBaseEntityByCode(e);
+				be = VertxUtils.privacyFilter(be, filterArray);
+				return be;
+			}).collect(Collectors.toList());
+			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
+			msg.setTotal(total);
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		return msg;
+	}
+
+	public String getHql(SearchEntity searchBE, GennyToken userToken)
+	{
+		String beFilter1 = null;
+		String beFilter2 = null;
+		String attributeFilterValue1 = "";
+		String attributeFilterCode1 = null;
+		String attributeFilterValue2 = "";
+		String attributeFilterCode2 = null;
+		String sortCode = "PRI_NAME";
+		String sortValue = "ASC";
+		Integer pageStart = searchBE.getPageStart(0L);
+		Integer pageSize = searchBE.getPageSize(GennySettings.defaultPageSize);
+
+		List<String> attributeFilter = new ArrayList<String>();
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+
+			if (ea.getAttributeCode().startsWith("PRI_CODE")) {
+				if (beFilter1 == null) {
+					beFilter1 = ea.getAsString();
+				} else if (beFilter2 == null) {
+					beFilter2 = ea.getAsString();
+				}
+			} else if ((ea.getAttributeCode().startsWith("SRT_"))) {
+				sortCode = (ea.getAttributeCode().substring("SRT_".length()));
+				sortValue = ea.getValueString();
+
+			} else if ((ea.getAttributeCode().startsWith("COL_")) || (ea.getAttributeCode().startsWith("CAL_"))) {
+				attributeFilter.add(ea.getAttributeCode().substring("COL_".length()));
+
+			} else if (ea.getAttributeCode().startsWith("PRI_") && (!ea.getAttributeCode().equals("PRI_CODE"))) {
+				if (attributeFilterCode1 == null) {
+					if (ea.getValueString() != null) {
+						attributeFilterValue1 = " eb.valueString " + ea.getAttributeName() + " '"
+								+ ea.getValueString() + "'";
+					} else if (ea.getValueBoolean() != null) {
+						attributeFilterValue1 = " eb.valueBoolean = " + (ea.getValueBoolean() ? "true" : "false");
+					}
+					attributeFilterCode1 = ea.getAttributeCode();
+
+				} else {
+					if (attributeFilterCode2 == null) {
+						if (ea.getValueString() != null) {
+							attributeFilterValue2 = " ec.valueString " + ea.getAttributeName() + " '"
+									+ ea.getValueString() + "'";
+						} else if (ea.getValueBoolean() != null) {
+							attributeFilterValue2 = " ec.valueBoolean = "
+									+ (ea.getValueBoolean() ? "true" : "false");
+						}
+						attributeFilterCode2 = ea.getAttributeCode();
+					}
+				}
+			}
+		}
+		String hql = "select distinct ea.baseEntityCode from EntityAttribute ea ";
+		hql += ", EntityAttribute eb ";
+		if (attributeFilterCode2 != null) {
+			hql += ", EntityAttribute ec ";
+		}
+		hql += " where ea.baseEntityCode=eb.baseEntityCode ";
+		hql += " and (ea.baseEntityCode like '" + beFilter1 + "'  ";
+		hql += " or ea.baseEntityCode like '" + beFilter2 + "')  ";
+		hql += " and eb.attributeCode = '" + attributeFilterCode1 + "' and " + attributeFilterValue1;
+		if (attributeFilterCode2 != null) {
+			hql += " and ea.baseEntityCode=ec.baseEntityCode ";
+			hql += " and ec.attributeCode = '" + attributeFilterCode2 + "' and " + attributeFilterValue2;
+		}
+		hql += " order by " + sortCode + " " + sortValue;
+		return hql;
+	}
+	
 	public QDataBaseEntityMessage sendTableContexts(Boolean cache) {
 		QDataBaseEntityMessage ret = new QDataBaseEntityMessage();
 		log.info("Sending contexts for table");
