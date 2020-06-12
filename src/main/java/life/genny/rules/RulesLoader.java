@@ -79,10 +79,7 @@ import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.runtime.manager.context.EmptyContext;
 import org.kie.internal.task.api.UserGroupCallback;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.Persistence;
+import javax.persistence.*;
 import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -1058,7 +1055,7 @@ public class RulesLoader {
 		int rulesFired = 0;
 		GennyToken serviceToken = facts.getServiceToken();
 
-		EntityManager em = emf.createEntityManager();
+		EntityManager em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
 		EntityTransaction tx = em.getTransaction();
 
 		if (getKieBaseCache().get(serviceToken.getRealm()) == null) {
