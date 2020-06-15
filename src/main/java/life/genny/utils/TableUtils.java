@@ -217,9 +217,6 @@ public class TableUtils {
 				return be;
 			}).collect(Collectors.toList());
 			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
-			
-			sdfsdf
-			
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
