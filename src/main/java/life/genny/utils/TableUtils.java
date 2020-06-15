@@ -178,8 +178,8 @@ public class TableUtils {
 		ret.add(qb);
 		log.info("calling sendTableContexts");
 
-		QDataBaseEntityMessage qm = sendTableContexts(cache);
-		ret.add(qm);
+		/* QDataBaseEntityMessage qm = sendTableContexts(cache);
+		ret.add(qm); */
 		/* showTableFooter(searchBE); */
 		return ret;
 	}
@@ -593,266 +593,28 @@ public class TableUtils {
 		QBulkMessage ret = new QBulkMessage();
 		log.info("inside showTableContent");
 
-		Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything", ".*");
-
-		List<Validation> tableRowValidations = new ArrayList<>();
-		tableRowValidations.add(tableRowValidation);
-
-		ValidationList tableRowValidationList = new ValidationList();
-		tableRowValidationList.setValidationList(tableRowValidations);
-
-		Context CTX_THM_TABLE_BORDER = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_CONTENT_BORDER", "THM_TABLE_CONTENT_BORDER"), VisualControlType.GROUP_WRAPPER,
-				1.0);
-		CTX_THM_TABLE_BORDER.setDataType("Table Row Group");
-
-		DataType tableRowDataType = new DataType("DTT_TABLE_ROW_GRP", tableRowValidationList, "Table Row Group", "");
-
-		Context horizontalContext = new Context(ContextType.THEME,
-				new BaseEntity("THM_DISPLAY_HORIZONTAL", "THM_DISPLAY_HORIZONTAL"), VisualControlType.VCL_DEFAULT, 1.0);
-		horizontalContext.setDataType("Table Header Group");
-
-		Context tableRowContentWrapperContext = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CONTENT_WRAPPER", "THM_TABLE_ROW_CONTENT_WRAPPER"),
-				VisualControlType.GROUP, 1.0);
-		tableRowContentWrapperContext.setDataType("Table Row Group");
-
-		Context tableRowContext = new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
-				VisualControlType.GROUP_WRAPPER, 1.0);
-		tableRowContext.setDataType("Table Row Group");
-
-		Context tableRowCellContext = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL", "THM_TABLE_ROW_CELL"), VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellContext.setDataType("Event");
-		tableRowCellContext.setWeight(3.0);
-
-		Context tableRowCellName = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellName.setDttCode("DTT_TEXT_NAME");
-
-		Context tableRowCellLandline = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"),
-				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellLandline.setDataType("Landline");
-
-		Context tableRowCellMobile = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_MOBILE", "THM_TABLE_ROW_CELL_MOBILE"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellMobile.setDataType("Mobile");
-
-		Context tableRowCellPhone = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellPhone.setDttCode("DTT_PHONE");
-
-		Context tableRowCellAddress = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
-				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellAddress.setDataType("Address");
-
-		Context tableRowCellEmail = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_EMAIL", "THM_TABLE_ROW_CELL_EMAIL"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellEmail.setDataType("Email");
-
-		Context tableRowCellView = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellView.setDttCode("DTT_EVENT_VIEW");
-		tableRowCellView.setWeight(2.0);
-
-		Context tableRowCellViewJournal = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_VIEW_JOURNAL", "THM_TABLE_ROW_CELL_VIEW_JOURNAL"),
-				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellViewJournal.setDttCode("DTT_EVENT_VIEW_JOURNAL");
-		tableRowCellViewJournal.setWeight(2.0);
-
-		Context tableRowCellApply = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellApply.setDttCode("DTT_EVENT_APPLY");
-
-		Context tableRowCellStatus = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellStatus.setDttCode("DTT_TEXT_STATUS");
-
-		Context tableRowCellDate = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_DATE", "THM_TABLE_ROW_CELL_DATE"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellDate.setDttCode("DTT_PAST_DATE");
-
-		Context tableRowCellHours = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_HOURS", "THM_TABLE_ROW_CELL_HOURS"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellHours.setDttCode("DTT_DOUBLE");
-
-		Context tableRowCellHtml = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_HTML", "THM_TABLE_ROW_CELL_HTML"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellHtml.setDttCode("DTT_HTMLAREA");
-
-		Context tableRowCellText = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"), VisualControlType.VCL_WRAPPER,
-				2.0);
-		tableRowCellText.setDataType("Text");
-
-		List<Context> contexts = new ArrayList<Context>();
-		contexts.add(new Context(ContextType.THEME,
-				new BaseEntity("THM_WIDTH_100_PERCENT_NO_INHERIT", "THM_WIDTH_100_PERCENT_NO_INHERIT"),
-				VisualControlType.GROUP_WRAPPER, 1.0));
-		contexts.add(CTX_THM_TABLE_BORDER);
-		contexts.add(tableRowContentWrapperContext);
-		contexts.add(horizontalContext);
-		contexts.add(tableRowContext);
-		contexts.add(tableRowCellName);
-		contexts.add(tableRowCellLandline);
-		contexts.add(tableRowCellMobile);
-		contexts.add(tableRowCellPhone);
-		contexts.add(tableRowCellAddress);
-		contexts.add(tableRowCellEmail);
-		contexts.add(tableRowCellView);
-		contexts.add(tableRowCellViewJournal);
-		contexts.add(tableRowCellApply);
-		contexts.add(tableRowCellStatus);
-		contexts.add(tableRowCellText);
-		contexts.add(tableRowCellDate);
-		contexts.add(tableRowCellHours);
-		contexts.add(tableRowCellHtml);
-		contexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_CONTENT", "THM_TABLE_CONTENT"),
-				VisualControlType.GROUP, 1.0));
-
-		log.info("outside loop before the loop");
-
-		ContextList rowsContextList = new ContextList(contexts);
-
 		/* get the baseentity results */
 		List<BaseEntity> rowList = Arrays.asList(msg.getItems());
 
-		List<Ask> rowAsks = new ArrayList<Ask>();
 		TableData tableData = generateTableAsks(searchBE);
-
+		
 		Ask headerAsk = getHeaderAsk(searchBE);
-
-		List<Context> headerContexts = new ArrayList<Context>();
-
-		Context tableRowCellNameHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_NAME", "THM_TABLE_ROW_CELL_NAME"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellNameHeader.setDttCode("DTT_TEXT_NAME_HEADER");
-
-		Context tableRowCellLandlineHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_LANDLINE", "THM_TABLE_ROW_CELL_LANDLINE"),
-				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellLandlineHeader.setDttCode("DTT_LANDLINE_HEADER");
-
-		Context tableRowCellMobileHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_MOBILE", "THM_TABLE_ROW_CELL_MOBILE"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellMobileHeader.setDttCode("DTT_MOBILE_HEADER");
-
-		Context tableRowCellPhoneHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_PHONE", "THM_TABLE_ROW_CELL_PHONE"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellPhoneHeader.setDttCode("DTT_PHONE_HEADER");
-
-		Context tableRowCellAddressHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_ADDRESS", "THM_TABLE_ROW_CELL_ADDRESS"),
-				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellAddressHeader.setDttCode("DTT_ADDRESS_HEADER");
-
-		Context tableRowCellEmailHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_EMAIL", "THM_TABLE_ROW_CELL_EMAIL"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellEmailHeader.setDttCode("DTT_EMAIL_HEADER");
-
-		Context tableRowCellViewHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_VIEW", "THM_TABLE_ROW_CELL_VIEW"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellViewHeader.setDttCode("DTT_EVENT_VIEW_HEADER");
-		tableRowCellViewHeader.setWeight(2.0);
-
-		Context tableRowCellViewJournalHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_VIEW_JOURNAL", "THM_TABLE_ROW_CELL_VIEW_JOURNAL"),
-				VisualControlType.VCL_WRAPPER, 1.0);
-		tableRowCellViewJournalHeader.setDttCode("DTT_EVENT_VIEW_JOURNAL_HEADER");
-		// tableRowCellViewJournalHeader.setWeight(2.0);
-
-		Context tableRowCellApplyHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_APPLY", "THM_TABLE_ROW_CELL_APPLY"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellApplyHeader.setDttCode("DTT_EVENT_APPLY_HEADER");
-
-		Context tableRowCellStatusHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_STATUS", "THM_TABLE_ROW_CELL_STATUS"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellStatusHeader.setDttCode("DTT_TEXT_STATUS_HEADER");
-
-		Context tableRowCellTextHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_TEXT", "THM_TABLE_ROW_CELL_TEXT"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellTextHeader.setDttCode("DTT_TEXT_HEADER");
-
-		Context tableRowCellDateHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_DATE", "THM_TABLE_ROW_CELL_DATE"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellDateHeader.setDttCode("DTT_PAST_DATE_HEADER");
-
-		Context tableRowCellHoursHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_HOURS", "THM_TABLE_ROW_CELL_HOURS"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellHoursHeader.setDttCode("DTT_DOUBLE_HEADER");
-
-		Context tableRowCellHtmlHeader = new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_ROW_CELL_HTML", "THM_TABLE_ROW_CELL_HTML"), VisualControlType.VCL_WRAPPER,
-				1.0);
-		tableRowCellHtmlHeader.setDttCode("DTT_HTMLAREA_HEADER");
-
-		/* newly added contexts to header */
-		headerContexts.add(tableRowCellNameHeader);
-		headerContexts.add(tableRowCellLandlineHeader);
-		headerContexts.add(tableRowCellMobileHeader);
-		headerContexts.add(tableRowCellPhoneHeader);
-		headerContexts.add(tableRowCellAddressHeader);
-		headerContexts.add(tableRowCellEmailHeader);
-		headerContexts.add(tableRowCellViewHeader);
-		headerContexts.add(tableRowCellViewJournalHeader);
-		headerContexts.add(tableRowCellApplyHeader);
-		headerContexts.add(tableRowCellStatusHeader);
-		headerContexts.add(tableRowCellTextHeader);
-		headerContexts.add(tableRowCellDateHeader);
-		headerContexts.add(tableRowCellHoursHeader);
-		headerContexts.add(tableRowCellHtmlHeader);
-
-		headerContexts.add(new Context(ContextType.THEME,
-				new BaseEntity("THM_TABLE_HEADER_FONT", "THM_TABLE_HEADER_FONT"), VisualControlType.INPUT_FIELD, 1.0));
-		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_BORDER", "THM_TABLE_BORDER"),
-				VisualControlType.GROUP_WRAPPER, 1.0));
-		headerContexts
-				.add(new Context(ContextType.THEME, new BaseEntity("THM_WIDTH_100_PERCENT", "THM_WIDTH_100_PERCENT"),
-						VisualControlType.GROUP_CONTENT_WRAPPER, 1.0));
-		headerContexts.add(new Context(ContextType.THEME, new BaseEntity("THM_TABLE_ROW", "THM_TABLE_ROW"),
-				VisualControlType.GROUP_WRAPPER, 1.0));
-		headerAsk.setContextList(new ContextList(headerContexts));
-
+		
+		List<Ask> rowAsks = new ArrayList<Ask>();
 		rowAsks.add(headerAsk);
 		rowAsks.addAll(generateQuestions(rowList, columns, beUtils.getGennyToken().getUserCode()));
 
 		/* converting rowAsks list to array */
 		Ask[] rowAsksArr = rowAsks.stream().toArray(Ask[]::new);
 
-		/* Now send out the question rows and themes etc */
-
-		/* Link row asks to a single ask: QUE_TEST_TABLE_RESULTS_GRP */
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_RESULTS", "link",
 				new DataType(String.class));
 		Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group",
 				questionAttribute, true);
+
 		Ask tableResultAsk = new Ask(tableResultQuestion, beUtils.getGennyToken().getUserCode(),
 				beUtils.getGennyToken().getUserCode());
 		tableResultAsk.setChildAsks(rowAsksArr);
-		tableResultAsk.setContextList(rowsContextList);
 		tableResultAsk.setReadonly(true);
 		tableResultAsk.setRealm(beUtils.getGennyToken().getRealm());
 
@@ -1205,19 +967,6 @@ public class TableUtils {
 
 			/* set the child asks */
 			// columnHeaderAsk.setChildAsks(tableColumnChildAsksArray);
-
-			/* get paddingX theme */
-			BaseEntity paddingXTheme = beUtils.getBaseEntityByCode("THM_PADDING_X_10");
-
-			QDataBaseEntityMessage paddingXThemeMsg = new QDataBaseEntityMessage(paddingXTheme);
-			paddingXThemeMsg.setToken(beUtils.getGennyToken().getToken());
-
-			/* publish paddingXTheme */
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((paddingXThemeMsg)));
-
-			/* set Vertical Theme to columnHeaderAsk */
-			columnHeaderAsk = this.createVirtualContext(columnHeaderAsk, paddingXTheme, ContextType.THEME,
-					VisualControlType.GROUP_CONTENT_WRAPPER, themeMsgList);
 
 			asks.add(columnHeaderAsk);
 		}
