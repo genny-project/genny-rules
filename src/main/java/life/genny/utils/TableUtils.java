@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import com.google.gson.reflect.TypeToken;
 
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -131,31 +132,11 @@ public class TableUtils {
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
-		// Get count
-		String coreSearchCode = StringUtils.removeEnd(searchBE.getCode(),
-				beUtils.getGennyToken().getSessionCode());
-		JsonObject resultJson = new JsonObject(resultJsonStr);
-		Long total = 1000L; // resultJson.getLong("total");
-		// check the cache
-		JsonObject countJson = VertxUtils.readCachedJson(serviceToken.getRealm(), "COUNT_" + coreSearchCode,
-				serviceToken.getToken());
-		String countJsonStr = null;
-		if ("OK".equalsIgnoreCase(countJson.getString("status"))) {
-			countJsonStr = countJson.getString("value");
-		}
-		total = 1964L;
-		if (countJsonStr == null) {
-			countJsonStr = QwandaUtils.apiGet(
-					GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search24/" + hql2,
-					serviceToken.getToken(), 120);
-			VertxUtils.writeCachedJson(serviceToken.getRealm(), "COUNT_" + coreSearchCode, countJsonStr,
-					serviceToken.getToken());
-		}
-		total = Long.parseLong(countJsonStr);
+
 
 		if (GennySettings.searchAlt) {
 
-			msg = searchUsingHql(serviceToken, searchBE, msg, total);
+			msg = searchUsingHql(serviceToken, searchBE, msg);
 
 		} else {
 
@@ -211,19 +192,17 @@ public class TableUtils {
 	 * @return
 	 */
 	private QDataBaseEntityMessage searchUsingHql(GennyToken serviceToken, final SearchEntity searchBE,
-			QDataBaseEntityMessage msg, Long total) {
+			QDataBaseEntityMessage msg) {
 	
-		String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
-		JsonObject resultJson;
+		Tuple2<String,List<String>> data = this.getHql(beUtils.getGennyToken(), searchBE);
+		String hql = data._1;
+		hql = Base64.getUrlEncoder().encodeToString(hql.getBytes());
 		try {
-			
-			String hql = getHql(serviceToken, searchBE);
-			
 			String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl
-					+ "/qwanda/baseentitys/search24/" + hql2 + "/" + pageStart + "/" + pageSize,
+					+ "/qwanda/baseentitys/search24/" + hql + "/" + searchBE.getPageStart(0) + "/" + searchBE.getPageSize(GennySettings.defaultPageSize),
 					serviceToken.getToken(), 120);
 
-
+			JsonObject resultJson = new JsonObject(resultJsonStr);
 
 			JsonArray result = resultJson.getJsonArray("codes");
 			List<String> resultCodes = new ArrayList<String>();
@@ -231,22 +210,27 @@ public class TableUtils {
 				String code = result.getString(i);
 				resultCodes.add(code);
 			}
-			String[] filterArray = attributeFilter.toArray(new String[0]);
+			String[] filterArray = data._2.toArray(new String[0]);
 			List<BaseEntity> beList = resultCodes.stream().map(e -> {
 				BaseEntity be = beUtils.getBaseEntityByCode(e);
 				be = VertxUtils.privacyFilter(be, filterArray);
 				return be;
 			}).collect(Collectors.toList());
 			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
-			msg.setTotal(total);
+			
+			sdfsdf
+			
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
 		return msg;
 	}
 
-	public String getHql(SearchEntity searchBE, GennyToken userToken)
+	public Tuple2<String,List<String>> getHql(GennyToken userToken,SearchEntity searchBE )
+
 	{
+		List<String> attributeFilter = new ArrayList<String>();
+
 		String beFilter1 = null;
 		String beFilter2 = null;
 		String attributeFilterValue1 = "";
@@ -255,10 +239,9 @@ public class TableUtils {
 		String attributeFilterCode2 = null;
 		String sortCode = "PRI_NAME";
 		String sortValue = "ASC";
-		Integer pageStart = searchBE.getPageStart(0L);
+		Integer pageStart = searchBE.getPageStart(0);
 		Integer pageSize = searchBE.getPageSize(GennySettings.defaultPageSize);
 
-		List<String> attributeFilter = new ArrayList<String>();
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 
 			if (ea.getAttributeCode().startsWith("PRI_CODE")) {
@@ -312,7 +295,7 @@ public class TableUtils {
 			hql += " and ec.attributeCode = '" + attributeFilterCode2 + "' and " + attributeFilterValue2;
 		}
 		hql += " order by " + sortCode + " " + sortValue;
-		return hql;
+		return Tuple.of(hql,attributeFilter);
 	}
 	
 	public QDataBaseEntityMessage sendTableContexts(Boolean cache) {
