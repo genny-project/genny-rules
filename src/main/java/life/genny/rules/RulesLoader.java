@@ -1051,11 +1051,11 @@ public class RulesLoader {
 
 	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts)
 			throws InterruptedException {
-//		TimeUnit.SECONDS.sleep(2);
+		TimeUnit.SECONDS.sleep(2);
 		int rulesFired = 0;
 		GennyToken serviceToken = facts.getServiceToken();
 
-		EntityManager em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
+		EntityManager em = emf.createEntityManager();
 		EntityTransaction tx = em.getTransaction();
 
 		if (getKieBaseCache().get(serviceToken.getRealm()) == null) {
