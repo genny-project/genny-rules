@@ -1622,10 +1622,9 @@ public class TableUtils {
 		ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
 		CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 
-		TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
 		SearchCallable sc = new SearchCallable(tableUtils, searchBE.getCode(), beUtils, cache);
 
-		List<Callable<QBulkMessage>> callables = Arrays.asList(tfc, sc);
+		List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
 
 		QBulkMessage aggregatedMessages = new QBulkMessage();
 
@@ -1667,7 +1666,7 @@ public class TableUtils {
 				Thread.currentThread().interrupt();
 			}
 		} else {
-			aggregatedMessages.add(tfc.call());
+			/* aggregatedMessages.add(tfc.call()); */
 			aggregatedMessages.add(sc.call());
 
 		}
