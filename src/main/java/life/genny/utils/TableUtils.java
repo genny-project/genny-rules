@@ -188,7 +188,6 @@ public class TableUtils {
 	 * @param serviceToken
 	 * @param searchBE
 	 * @param msg
-	 * @param total
 	 * @return
 	 */
 	private QDataBaseEntityMessage searchUsingHql(GennyToken serviceToken, final SearchEntity searchBE,
@@ -580,12 +579,9 @@ public class TableUtils {
 
 	/**
 	 * @param serviceToken
-	 * @param beUtils
 	 * @param searchBE
 	 * @param msg
 	 * @param columns
-	 * @param askMsgs
-	 * @param headerAskMsg
 	 */
 	private QBulkMessage showTableContent(GennyToken serviceToken, SearchEntity searchBE, QDataBaseEntityMessage msg,
 			Map<String, String> columns) {
@@ -898,10 +894,9 @@ public class TableUtils {
 		return ret;
 	}
 
-	/**
-	 * @param beUtils
-	 * @param searchBE
-	 */
+//	/**
+//	 * @param searchBE
+//	 */
 //	private void showTableFooter(SearchEntity searchBE) {
 //		/* need to send the footer question again here */
 //		Attribute totalAttribute = new Attribute("PRI_TOTAL_RESULTS", "link", new DataType(String.class));
