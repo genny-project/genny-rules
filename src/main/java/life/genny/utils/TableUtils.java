@@ -360,7 +360,11 @@ public class TableUtils {
 		hql += " and eb.attributeCode = '" + attributeFilterCode1 + "' and " + attributeFilterValue1;
 		if (attributeFilterCode2 != null) {
 			hql += " and ea.baseEntityCode=ec.baseEntityCode ";
-			hql += " and ec.attributeCode = '" + attributeFilterCode2 + "' and " + attributeFilterValue2;
+			if (attributeFilterValue2.equals("")) {
+				hql += " and ec.attributeCode = '" + attributeFilterCode2 + "'";
+			} else {
+				hql += " and ec.attributeCode = '" + attributeFilterCode2 + "' and " + attributeFilterValue2;
+			}
 		}
 		if (sortCode != null) {
 			hql += " and ea.baseEntityCode=ed.baseEntityCode and ed.attributeCode='"+sortCode+"' ";
