@@ -144,6 +144,7 @@ public class TableUtils {
 		}
 
 		if (cache) {
+			/* Add searchBe msg */
 			ret.add(msg);
 		} else {
 			msg.setToken(beUtils.getGennyToken().getToken());
@@ -622,7 +623,7 @@ public class TableUtils {
 		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
 
 		/* send the frame FRM_TABLE_CONTENT */
-		log.info("*************** Sending the FRM_TABLE_CONTENT msg after toMessage ***************");
+		/* log.info("*************** Sending the FRM_TABLE_CONTENT msg after toMessage ***************");
 
 		QDataBaseEntityMessage msg3 = changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk, serviceToken,
 				beUtils.getGennyToken(), tableResultAskMsgs);
@@ -634,7 +635,7 @@ public class TableUtils {
 			msg3.setToken(beUtils.getGennyToken().getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
 		}
-
+ */
 		/* send the results questionGroup */
 		log.info("*************** Sending the QUE_TABLE_RESULTS_GRP askMsg ***************");
 		QDataAskMessage askMsg = new QDataAskMessage(tableResultAsk);
