@@ -1409,6 +1409,7 @@ public class RulesLoader {
 		handlers.put("Awesome", new AwesomeHandler());
 		handlers.put("GetProcessesUsingVariable", new GetProcessesUsingVariable());
 		handlers.put("Notification", new NotificationWorkItemHandler());
+		handlers.put("NotificationHub", new NotificationHubWorkItemHandler());
 		handlers.put("ShowAllForms", new ShowAllFormsHandler());
 		handlers.put("ShowFrame", new ShowFrame());
 		handlers.put("ShowFrames", new ShowFrames());
