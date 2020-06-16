@@ -218,11 +218,12 @@ public class TableUtils {
 		long endtime2 = starttime;
 
 		Tuple2<String,List<String>> data = this.getHql(beUtils.getGennyToken(), searchBE);
-		
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE ="+(endtime1-starttime)+" ms");
 
 		String hql = data._1;
+		log.info("hql = "+hql);
+
 		hql = Base64.getUrlEncoder().encodeToString(hql.getBytes());
 		try {
 			String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl
