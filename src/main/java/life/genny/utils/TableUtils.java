@@ -357,10 +357,10 @@ public class TableUtils {
 			hql += " or ea.baseEntityCode like '" + beFilter2 +"'";
 		}
 		hql += ")  ";
-		hql += " and eb.attributeCode = '" + attributeFilterCode1 + "' and " + attributeFilterValue1;
+		hql += " and eb.attributeCode = '" + attributeFilterCode1 + "'"+((!StringUtils.isBlank(attributeFilterValue1))?(" and " + attributeFilterValue1):"");
 		if (attributeFilterCode2 != null) {
 			hql += " and ea.baseEntityCode=ec.baseEntityCode ";
-			hql += " and ec.attributeCode = '" + attributeFilterCode2 + "' and " + attributeFilterValue2;
+			hql += " and ec.attributeCode = '" + attributeFilterCode2 + "'"+((!StringUtils.isBlank(attributeFilterValue2))?(" and " + attributeFilterValue2):"");
 		}
 		if (sortCode != null) {
 			hql += " and ea.baseEntityCode=ed.baseEntityCode and ed.attributeCode='"+sortCode+"' ";
