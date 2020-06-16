@@ -67,6 +67,8 @@ public class TableUtils {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+	
+	public static Boolean searchAlt = false;
 
 	static Integer MAX_SEARCH_HISTORY_SIZE = 10;
 	static Integer MAX_SEARCH_BAR_TEXT_SIZE = 20;
@@ -127,6 +129,7 @@ public class TableUtils {
 	public QBulkMessage performSearch(GennyToken serviceToken, final SearchEntity searchBE, Answer answer,
 			final String filterCode, final String filterValue, Boolean cache) {
 		QBulkMessage ret = new QBulkMessage();
+		long starttime = System.currentTimeMillis();
 
 		beUtils.setServiceToken(serviceToken);
 
@@ -134,7 +137,7 @@ public class TableUtils {
 		QDataBaseEntityMessage msg = null;
 
 
-		if (GennySettings.searchAlt) {
+		if (GennySettings.searchAlt || searchAlt) {
 
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 
@@ -142,6 +145,8 @@ public class TableUtils {
 
 			msg = fetchSearchResults(searchBE);
 		}
+		long endtime1 = System.currentTimeMillis();
+		log.info("Time taken to search Results from SearchBE ="+(endtime1-starttime)+" ms");
 
 		if (cache) {
 			ret.add(msg);
@@ -149,9 +154,14 @@ public class TableUtils {
 			msg.setToken(beUtils.getGennyToken().getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 		}
+		long endtime2 = System.currentTimeMillis();
+		log.info("Time taken to send Results ="+(endtime2-endtime1)+" ms");
 
 		/* publishing the searchBE to frontEnd */
 		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", (msg.getTotal()) + ""); // if result
+		long endtime3 = System.currentTimeMillis();
+		log.info("Time taken to updateBE ="+(endtime3-endtime2)+" ms");
+
 		// count = 0
 		// then
 		// frontend
@@ -166,7 +176,13 @@ public class TableUtils {
 			searchBeMsg.setToken(beUtils.getGennyToken().getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
 		}
+		long endtime4 = System.currentTimeMillis();
+		log.info("Time taken to send Results ="+(endtime4-endtime3)+" ms");
+
 		Map<String, String> columns = getTableColumns(searchBE);
+
+		long endtime5 = System.currentTimeMillis();
+		log.info("Time taken to getTableColumns ="+(endtime5-endtime4)+" ms");
 
 		/*
 		 * Display the table header
@@ -178,7 +194,13 @@ public class TableUtils {
 		ret.add(qb);
 		log.info("calling sendTableContexts");
 
+		long endtime6 = System.currentTimeMillis();
+		log.info("Time taken to showTableContent ="+(endtime6-endtime5)+" ms");
+
 		QDataBaseEntityMessage qm = sendTableContexts(cache);
+		long endtime7 = System.currentTimeMillis();
+		log.info("Time taken to sendTableContexts ="+(endtime7-endtime6)+" ms");
+
 		ret.add(qm);
 		/* showTableFooter(searchBE); */
 		return ret;
@@ -192,14 +214,23 @@ public class TableUtils {
 	 */
 	private QDataBaseEntityMessage searchUsingHql(GennyToken serviceToken, final SearchEntity searchBE,
 			QDataBaseEntityMessage msg) {
-	
+		long starttime = System.currentTimeMillis();
+		long endtime2 = starttime;
+
 		Tuple2<String,List<String>> data = this.getHql(beUtils.getGennyToken(), searchBE);
+		
+		long endtime1 = System.currentTimeMillis();
+		log.info("Time taken to getHql from SearchBE ="+(endtime1-starttime)+" ms");
+
 		String hql = data._1;
 		hql = Base64.getUrlEncoder().encodeToString(hql.getBytes());
 		try {
 			String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl
 					+ "/qwanda/baseentitys/search24/" + hql + "/" + searchBE.getPageStart(0) + "/" + searchBE.getPageSize(GennySettings.defaultPageSize),
 					serviceToken.getToken(), 120);
+
+			endtime2 = System.currentTimeMillis();
+			log.info("Time taken to fetch Data ="+(endtime2-endtime1)+" ms");
 
 			JsonObject resultJson = new JsonObject(resultJsonStr);
 
@@ -219,10 +250,13 @@ public class TableUtils {
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
+		long endtime3 = System.currentTimeMillis();
+		log.info("Time taken to get cached Bes added to list ="+(endtime3-endtime2)+" ms");
+
 		return msg;
 	}
 
-	public Tuple2<String,List<String>> getHql(GennyToken userToken,SearchEntity searchBE )
+	static public Tuple2<String,List<String>> getHql(GennyToken userToken,SearchEntity searchBE )
 
 	{
 		List<String> attributeFilter = new ArrayList<String>();
@@ -233,8 +267,9 @@ public class TableUtils {
 		String attributeFilterCode1 = null;
 		String attributeFilterValue2 = "";
 		String attributeFilterCode2 = null;
-		String sortCode = "PRI_NAME";
-		String sortValue = "ASC";
+		String sortCode = null;
+		String sortValue = null;
+		String sortType = null;
 		Integer pageStart = searchBE.getPageStart(0);
 		Integer pageSize = searchBE.getPageSize(GennySettings.defaultPageSize);
 
@@ -249,6 +284,23 @@ public class TableUtils {
 			} else if ((ea.getAttributeCode().startsWith("SRT_"))) {
 				sortCode = (ea.getAttributeCode().substring("SRT_".length()));
 				sortValue = ea.getValueString();
+				if (ea.getValueString() != null) {
+					sortType = "ed.valueString";
+				} else if (ea.getValueBoolean() != null) {
+					sortType = "ed.valueBoolean";
+				} else if (ea.getValueDouble() != null) {
+					sortType = "ed.valueDouble";
+				} else if (ea.getValueInteger() != null) {
+					sortType = "ed.valueInteger";
+				} else if (ea.getValueLong() != null) {
+					sortType = "ed.valueLong";
+				} else if (ea.getValueDateTime() != null) {
+					sortType = "ed.valueDateTime";
+				} else if (ea.getValueDate() != null) {
+					sortType = "ed.valueDate";
+				} else if (ea.getValueTime() != null) {
+					sortType = "ed.valueTime";
+				}
 
 			} else if ((ea.getAttributeCode().startsWith("COL_")) || (ea.getAttributeCode().startsWith("CAL_"))) {
 				attributeFilter.add(ea.getAttributeCode().substring("COL_".length()));
@@ -260,9 +312,23 @@ public class TableUtils {
 								+ ea.getValueString() + "'";
 					} else if (ea.getValueBoolean() != null) {
 						attributeFilterValue1 = " eb.valueBoolean = " + (ea.getValueBoolean() ? "true" : "false");
+					} else if (ea.getValueDouble() != null) {
+						attributeFilterValue1 = " eb.valueDouble =ls"
+								+ ":q"
+								+ " "
+								+ ea.getValueDouble() + "";
+					} else if (ea.getValueInteger() != null) {
+						attributeFilterValue1 = " eb.valueInteger = "
+								+ ea.getValueInteger() + "";
+										attributeFilterCode1 = ea.getAttributeCode();
+					} else if (ea.getValueDate() != null) {
+						attributeFilterValue1 = " eb.valueDate = "
+								+ ea.getValueDate() + "";
+					} else if (ea.getValueDateTime() != null) {
+						attributeFilterValue1 = " eb.valueDateTime = "
+								+ ea.getValueDateTime() + "";
 					}
 					attributeFilterCode1 = ea.getAttributeCode();
-
 				} else {
 					if (attributeFilterCode2 == null) {
 						if (ea.getValueString() != null) {
@@ -282,15 +348,24 @@ public class TableUtils {
 		if (attributeFilterCode2 != null) {
 			hql += ", EntityAttribute ec ";
 		}
+		if (sortCode != null) {
+			hql += ", EntityAttribute ed ";
+		}
 		hql += " where ea.baseEntityCode=eb.baseEntityCode ";
 		hql += " and (ea.baseEntityCode like '" + beFilter1 + "'  ";
-		hql += " or ea.baseEntityCode like '" + beFilter2 + "')  ";
+		if (beFilter2!=null) {
+			hql += " or ea.baseEntityCode like '" + beFilter2 +"'";
+		}
+		hql += ")  ";
 		hql += " and eb.attributeCode = '" + attributeFilterCode1 + "' and " + attributeFilterValue1;
 		if (attributeFilterCode2 != null) {
 			hql += " and ea.baseEntityCode=ec.baseEntityCode ";
 			hql += " and ec.attributeCode = '" + attributeFilterCode2 + "' and " + attributeFilterValue2;
 		}
-		hql += " order by " + sortCode + " " + sortValue;
+		if (sortCode != null) {
+			hql += " and ea.baseEntityCode=ed.baseEntityCode and ed.attributeCode='"+sortCode+"' ";
+			hql += " order by "+sortType+ " " + sortValue;
+		}
 		return Tuple.of(hql,attributeFilter);
 	}
 	
@@ -1850,8 +1925,8 @@ public class TableUtils {
 			TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
 			SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache);
 
-			List<Callable<QBulkMessage>> callables = Arrays.asList(tfc, sc);
-
+			//List<Callable<QBulkMessage>> callables = Arrays.asList(tfc, sc);
+			List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
 			QBulkMessage aggregatedMessages = new QBulkMessage();
 
 			long startProcessingTime = System.currentTimeMillis();
@@ -1896,7 +1971,7 @@ public class TableUtils {
 				}
 			} else {
 				log.info("Starting Non Concurrent Tasks");
-				aggregatedMessages.add(tfc.call());
+			//	aggregatedMessages.add(tfc.call());
 				aggregatedMessages.add(sc.call());
 
 			}
