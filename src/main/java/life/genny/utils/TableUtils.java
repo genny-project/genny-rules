@@ -144,7 +144,7 @@ public class TableUtils {
 		}
 
 		if (cache) {
-			/* Add searchBe msg */
+			/* Add baseentity msg after search is done */
 			ret.add(msg);
 		} else {
 			msg.setToken(beUtils.getGennyToken().getToken());
@@ -162,6 +162,7 @@ public class TableUtils {
 		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
 
 		if (cache) {
+			/* Add the searchBe msg */
 			ret.add(searchBeMsg);
 		} else {
 			searchBeMsg.setToken(beUtils.getGennyToken().getToken());
@@ -176,6 +177,7 @@ public class TableUtils {
 		/* QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg); */
 		log.info("calling showTableContent");
 		QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns, cache);
+		/* Adds the rowAsk and table title ask message */
 		ret.add(qb);
 		log.info("calling sendTableContexts");
 
@@ -642,6 +644,7 @@ public class TableUtils {
 		askMsg.setReplace(true);
 
 		if (cache) {
+			/* Add table row ask msg */
 			ret.add(askMsg);
 		} else {
 			askMsg.setToken(beUtils.getGennyToken().getToken());
@@ -652,6 +655,7 @@ public class TableUtils {
 		QDataAskMessage qAskMsg = sendQuestion("QUE_TABLE_TITLE_TEST", beUtils.getGennyToken().getUserCode(),
 				searchBE.getCode(), "SCH_TITLE", beUtils.getGennyToken(), cache);
 		if (cache) {
+			/* Add the title askMsg */
 			ret.add(qAskMsg);
 		}
 		return ret;
