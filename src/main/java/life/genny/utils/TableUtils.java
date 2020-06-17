@@ -146,7 +146,7 @@ public class TableUtils {
 			msg = fetchSearchResults(searchBE);
 		}
 		long endtime1 = System.currentTimeMillis();
-		log.info("Time taken to search Results from SearchBE ="+(endtime1-starttime)+" ms");
+		log.info("Time taken to search Results from SearchBE ="+(endtime1-starttime)+" ms with total="+msg.getTotal());
 
 		if (cache) {
 			ret.add(msg);
