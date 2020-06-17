@@ -248,6 +248,8 @@ public class TableUtils {
 				return be;
 			}).collect(Collectors.toList());
 			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
+			Long total = resultJson.getLong("total");
+			msg.setTotal(total);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
