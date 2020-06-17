@@ -356,11 +356,13 @@ public class TableUtils {
 		if (sortCode != null) {
 			hql += ", EntityAttribute ed ";
 		}
-		hql += " where true ";
+		hql += " where ";
 		if (attributeFilterCode1 != null) {
-			hql += " and ea.baseEntityCode=eb.baseEntityCode ";
+			hql += " ea.baseEntityCode=eb.baseEntityCode ";
+			hql += " and (ea.baseEntityCode like '" + beFilter1 + "'  ";
+		} else {
+			hql += " (ea.baseEntityCode like '" + beFilter1 + "'  ";
 		}
-		hql += " and (ea.baseEntityCode like '" + beFilter1 + "'  ";
 		if (beFilter2!=null) {
 			hql += " or ea.baseEntityCode like '" + beFilter2 +"'";
 		}
