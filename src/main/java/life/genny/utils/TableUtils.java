@@ -623,21 +623,7 @@ public class TableUtils {
 
 		Set<QDataAskMessage> tableResultAskMsgs = new HashSet<QDataAskMessage>();
 		tableResultAskMsgs.add(new QDataAskMessage(tableResultAsk));
-
-		/* send the frame FRM_TABLE_CONTENT */
-		/* log.info("*************** Sending the FRM_TABLE_CONTENT msg after toMessage ***************");
-
-		QDataBaseEntityMessage msg3 = changeQuestion(searchBE, "FRM_TABLE_CONTENT", tableResultAsk, serviceToken,
-				beUtils.getGennyToken(), tableResultAskMsgs);
-		msg3.setReplace(true);
-
-		if (cache) {
-			ret.add(msg3);
-		} else {
-			msg3.setToken(beUtils.getGennyToken().getToken());
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg3));
-		}
- */
+	
 		/* send the results questionGroup */
 		log.info("*************** Sending the QUE_TABLE_RESULTS_GRP askMsg ***************");
 		QDataAskMessage askMsg = new QDataAskMessage(tableResultAsk);
@@ -1240,31 +1226,6 @@ public class TableUtils {
 		List<Ask> askList = new ArrayList<>();
 		TableUtils tableUtils = new TableUtils(beUtils);
 
-		/* get the themes */
-		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class,
-				beUtils.getServiceToken().getToken());
-		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY",
-				Theme.class, beUtils.getServiceToken().getToken());
-
-		/* get the sort icon */
-		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
-		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
-		BaseEntity ICN_DESCRIPTION = beUtils.getBaseEntityByCode("ICN_DESCRIPTION");
-
-		List<Context> viewContextList = new ArrayList<>();
-		viewContextList.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
-		viewContextList.add(new Context(ContextType.ICON, ICN_VIEW, VisualControlType.VCL_ICON, 1.0));
-
-		List<Context> applyContextList = new ArrayList<>();
-		applyContextList
-				.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
-		applyContextList.add(new Context(ContextType.ICON, ICN_ADD, VisualControlType.VCL_ICON, 1.0));
-
-		List<Context> documentContextList = new ArrayList<>();
-		documentContextList
-				.add(new Context(ContextType.THEME, this.getThemeBe(THM_ICON_ONLY), VisualControlType.VCL, 1.0));
-		documentContextList.add(new Context(ContextType.ICON, ICN_DESCRIPTION, VisualControlType.VCL_ICON, 1.0));
-
 		if (columns != null) {
 			if (bes != null && bes.isEmpty() == false) {
 
@@ -1288,38 +1249,10 @@ public class TableUtils {
 									attributeName, attr, true);
 							Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 							childAsk.setReadonly(true);
-
-							/* switch case to add icons */
-							switch (attr.getCode()) {
-							case "PRI_EVENT_VIEW":
-								// log.info("attribute code is PRI_EVENT_VIEW attaching the context now");
-								childAsk.setContextList(new ContextList(viewContextList));
-								childAsk.setReadonly(false);
-
-								break;
-							case "PRI_EVENT_APPLY":
-								// log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
-								childAsk.setContextList(new ContextList(applyContextList));
-								childAsk.setReadonly(false);
-
-								break;
-							case "PRI_EVENT_JOURNAL_VIEW":
-								// log.info("attribute code is PRI_EVENT_APPLY attaching the context now");
-								childAsk.setContextList(new ContextList(documentContextList));
-								childAsk.setReadonly(false);
-
-								break;
-
-							default:
-								break;
-							}
-
-							/* add the entityAttribute ask to list */
 							childAskList.add(childAsk);
 						} else {
 							log.error("Attribute : " + attributeCode + " DOES NOT EXIST IN AttributeMap");
 						}
-
 					}
 
 					/* converting childAsks list to array */
