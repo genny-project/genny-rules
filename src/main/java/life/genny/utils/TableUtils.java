@@ -347,20 +347,27 @@ public class TableUtils {
 			}
 		}
 		String hql = "select distinct ea.baseEntityCode from EntityAttribute ea ";
-		hql += ", EntityAttribute eb ";
+		if (attributeFilterCode1 != null) {
+			hql += ", EntityAttribute eb ";
+		}
 		if (attributeFilterCode2 != null) {
 			hql += ", EntityAttribute ec ";
 		}
 		if (sortCode != null) {
 			hql += ", EntityAttribute ed ";
 		}
-		hql += " where ea.baseEntityCode=eb.baseEntityCode ";
+		hql += " where true ";
+		if (attributeFilterCode1 != null) {
+			hql += " and ea.baseEntityCode=eb.baseEntityCode ";
+		}
 		hql += " and (ea.baseEntityCode like '" + beFilter1 + "'  ";
 		if (beFilter2!=null) {
 			hql += " or ea.baseEntityCode like '" + beFilter2 +"'";
 		}
 		hql += ")  ";
-		hql += " and eb.attributeCode = '" + attributeFilterCode1 + "'"+((!StringUtils.isBlank(attributeFilterValue1))?(" and " + attributeFilterValue1):"");
+		if (attributeFilterCode1 != null) {
+			hql += " and eb.attributeCode = '" + attributeFilterCode1 + "'"+((!StringUtils.isBlank(attributeFilterValue1))?(" and " + attributeFilterValue1):"");
+		}
 		if (attributeFilterCode2 != null) {
 			hql += " and ea.baseEntityCode=ec.baseEntityCode ";
 			hql += " and ec.attributeCode = '" + attributeFilterCode2 + "'"+((!StringUtils.isBlank(attributeFilterValue2))?(" and " + attributeFilterValue2):"");
