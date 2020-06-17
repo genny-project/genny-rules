@@ -306,7 +306,7 @@ public class TableUtils {
 			} else if ((ea.getAttributeCode().startsWith("COL_")) || (ea.getAttributeCode().startsWith("CAL_"))) {
 				attributeFilter.add(ea.getAttributeCode().substring("COL_".length()));
 
-			} else if (ea.getAttributeCode().startsWith("PRI_") && (!ea.getAttributeCode().equals("PRI_CODE")) && (!ea.getAttributeCode().equals("PRI_INDEX"))) {
+			} else if (ea.getAttributeCode().startsWith("PRI_") && (!ea.getAttributeCode().equals("PRI_CODE"))&& (!ea.getAttributeCode().equals("PRI_TOTAL_RESULTS")) && (!ea.getAttributeCode().equals("PRI_INDEX"))) {
 				if (attributeFilterCode1 == null) {
 					if (ea.getValueString() != null) {
 						attributeFilterValue1 = " eb.valueString " + ea.getAttributeName() + " '"
