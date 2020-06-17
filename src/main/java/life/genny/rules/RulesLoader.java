@@ -140,6 +140,13 @@ public class RulesLoader {
 
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
+	private final static ArrayList<Tuple2<Object, String>> msgTokenList = new ArrayList<>();
+
+	public void addNewItem(Tuple2<Object, String> tuple) {
+		synchronized (msgTokenList) {
+			msgTokenList.add(tuple);
+		}
+	}
 
 	public static void shutdown() {
 		runtimeManager.close();
@@ -1362,6 +1369,14 @@ public class RulesLoader {
 			executeStatefulForIintEvent(globals, facts);
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	public void processMsgs() {
+		synchronized (msgTokenList) {
+			for (Tuple2<Object, String> tuple2 : msgTokenList) {
+				processMsg(tuple2._1, tuple2._2);
+			}
 		}
 	}
 
