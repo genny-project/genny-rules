@@ -1373,7 +1373,7 @@ public class RulesLoader {
 			e.printStackTrace();
 		}
 	}
-	public void processMsgs() {
+	public synchronized void processMsgs() {
 		Tuple3<Object, String, UUID> tuple3 = concurrentLinkedQueue.poll();
 		if (tuple3 != null) {
 			processMsg(tuple3._1, tuple3._2);
@@ -1405,7 +1405,6 @@ public class RulesLoader {
 					// RulesLoader.executeStateful(globals, facts);
 					RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
 				} else {
-
 					SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
 					executeStateful(globals, facts);
 				}
