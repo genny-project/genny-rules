@@ -25,9 +25,10 @@ public class RequestProcessor extends Thread {
         log.info("RequestProcessor started.");
         while (true) {
             try {
-                Tuple3<Object, String, UUID> tuple = rulesLoader.getSynchronousQueue().take();
-                log.info("Process request uuid:" + tuple._3.toString());
-                rulesLoader.processMsg(tuple._1, tuple._2);
+//                Tuple3<Object, String, UUID> tuple = rulesLoader.getSynchronousQueue().take();
+//                log.info("Process request uuid:" + tuple._3.toString());
+//                rulesLoader.processMsg(tuple._1, tuple._2);
+                sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

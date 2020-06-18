@@ -86,6 +86,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -95,11 +96,6 @@ import java.util.stream.Collectors;
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
-
-	public RulesLoader() {
-		RequestProcessor requestProcessor = new RequestProcessor(this);
-		requestProcessor.start();
-	}
 
 	static String RESOURCE_PATH = "src/main/resources/life/genny/rules/";
 	private static int processInstanceStat = -999;
@@ -147,15 +143,11 @@ public class RulesLoader {
 
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
-	private final static SynchronousQueue<Tuple3<Object, String, UUID>> synchronousQueue = new SynchronousQueue<>();
+	private final static ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> concurrentLinkedQueue= new ConcurrentLinkedQueue<>();
 
-	public void addNewItem(Tuple3<Object, String, UUID> tuple) throws InterruptedException {
+	public void addNewItem(Tuple3<Object, String, UUID> tuple) {
 		log.info("Add new request, uuid:" + tuple._3.toString());
-		synchronousQueue.put(tuple);
-	}
-
-	public SynchronousQueue<Tuple3<Object, String, UUID>> getSynchronousQueue() {
-		return synchronousQueue;
+		concurrentLinkedQueue.add(tuple);
 	}
 
 	public static void shutdown() {
@@ -1379,6 +1371,12 @@ public class RulesLoader {
 			executeStatefulForIintEvent(globals, facts);
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+	public void processMsgs() {
+		Tuple3<Object, String, UUID> tuple3 = concurrentLinkedQueue.poll();
+		if (tuple3 != null) {
+			processMsg(tuple3._1, tuple3._2);
 		}
 	}
 
