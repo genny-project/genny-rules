@@ -1353,16 +1353,16 @@ public class TableUtils {
 			String attributeCode = column.getKey();
 			String attributeName = column.getValue();
 
-			Attribute headerAttr;
-			headerAttr = RulesUtils.attributeMap.get(attributeCode + "_HEADER");
-			if (headerAttr == null) {
-				log.info("Header attribute is null");
-				log.info(attributeCode + "_HEADER is null");
-				headerAttr = nameAttr;
-			}
+			// Attribute headerAttr;
+			// headerAttr = RulesUtils.attributeMap.get(attributeCode + "_HEADER");
+			// if (headerAttr == null) {
+			// 	log.info("Header attribute is null");
+			// 	log.info(attributeCode + "_HEADER is null");
+			// 	headerAttr = nameAttr;
+			// }
 
 			/* Initialize Column Header Ask group */
-			Question headerQues = new Question("QUE_" + attributeCode, attributeName, headerAttr, true);
+			Question headerQues = new Question("QUE_" + attributeCode, attributeName, nameAttr, true);
 			Ask headerAsk = new Ask(headerQues, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 			asks.add(headerAsk);
 
