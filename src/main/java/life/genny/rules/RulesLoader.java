@@ -1376,6 +1376,7 @@ public class RulesLoader {
 	public synchronized void processMsgs() {
 		Tuple3<Object, String, UUID> tuple3 = concurrentLinkedQueue.poll();
 		if (tuple3 != null) {
+			log.info("Process request uuid:" + tuple3._3.toString());
 			processMsg(tuple3._1, tuple3._2);
 		}
 	}
