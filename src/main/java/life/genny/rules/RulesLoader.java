@@ -33,6 +33,7 @@ import life.genny.rules.listeners.GennyRuleTimingListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
 
+import life.genny.rules.processor.RequestProcessor;
 import life.genny.utils.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
@@ -85,6 +86,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -93,6 +95,11 @@ import java.util.stream.Collectors;
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
+
+	public RulesLoader() {
+		RequestProcessor requestProcessor = new RequestProcessor(this);
+		requestProcessor.start();
+	}
 
 	static String RESOURCE_PATH = "src/main/resources/life/genny/rules/";
 	private static int processInstanceStat = -999;
@@ -140,12 +147,14 @@ public class RulesLoader {
 
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
-	private final static ArrayList<Tuple2<Object, String>> msgTokenList = new ArrayList<>();
+	private final static SynchronousQueue<Tuple2<Object, String>> synchronousQueue = new SynchronousQueue<>();
 
-	public void addNewItem(Tuple2<Object, String> tuple) {
-		synchronized (msgTokenList) {
-			msgTokenList.add(tuple);
-		}
+	public void addNewItem(Tuple2<Object, String> tuple) throws InterruptedException {
+		synchronousQueue.put(tuple);
+	}
+
+	public SynchronousQueue<Tuple2<Object, String>> getSynchronousQueue() {
+		return synchronousQueue;
 	}
 
 	public static void shutdown() {
@@ -1369,14 +1378,6 @@ public class RulesLoader {
 			executeStatefulForIintEvent(globals, facts);
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-	}
-
-	public void processMsgs() {
-		synchronized (msgTokenList) {
-			for (Tuple2<Object, String> tuple2 : msgTokenList) {
-				processMsg(tuple2._1, tuple2._2);
-			}
 		}
 	}
 
