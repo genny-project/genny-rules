@@ -147,13 +147,14 @@ public class RulesLoader {
 
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
-	private final static SynchronousQueue<Tuple2<Object, String>> synchronousQueue = new SynchronousQueue<>();
+	private final static SynchronousQueue<Tuple3<Object, String, UUID>> synchronousQueue = new SynchronousQueue<>();
 
-	public void addNewItem(Tuple2<Object, String> tuple) throws InterruptedException {
+	public void addNewItem(Tuple3<Object, String, UUID> tuple) throws InterruptedException {
+		log.info("Add new request, uuid:" + tuple._3.toString());
 		synchronousQueue.put(tuple);
 	}
 
-	public SynchronousQueue<Tuple2<Object, String>> getSynchronousQueue() {
+	public SynchronousQueue<Tuple3<Object, String, UUID>> getSynchronousQueue() {
 		return synchronousQueue;
 	}
 
