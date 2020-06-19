@@ -22,14 +22,17 @@ public class RequestProcessor extends Thread {
 
     @Override
     public void run() {
-        log.info("RequestProcessor started.");
+        log.info("RequestProcessor started. RulesLoader instance:" + rulesLoader.toString());
         while (true) {
             try {
-//                Tuple3<Object, String, UUID> tuple = rulesLoader.getSynchronousQueue().take();
-//                log.info("Process request uuid:" + tuple._3.toString());
-//                rulesLoader.processMsg(tuple._1, tuple._2);
-                sleep(100);
-            } catch (InterruptedException e) {
+                Tuple3<Object, String, UUID> tuple = rulesLoader.getConcurrentLinkedQueue().poll();
+                if (tuple != null) {
+                    log.info("Process request uuid:" + tuple._3.toString() + ", RulesLoader instance:" + rulesLoader.toString());
+                    rulesLoader.processMsg(tuple._1, tuple._2);
+                    Thread.sleep(100);
+                }
+            } catch (InterruptedException | IllegalArgumentException e) {
+                log.error("Exception occurred: RulesLoader instance:" + rulesLoader.toString());
                 e.printStackTrace();
             }
         }

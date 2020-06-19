@@ -145,9 +145,20 @@ public class RulesLoader {
 	private final String debugStr = "DEBUG,";
 	private final static ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> concurrentLinkedQueue= new ConcurrentLinkedQueue<>();
 
+
+	public RulesLoader() {
+		RequestProcessor requestProcessor = new RequestProcessor(this);
+		requestProcessor.start();
+	}
+
+
 	public void addNewItem(Tuple3<Object, String, UUID> tuple) {
 		log.info("Add new request, uuid:" + tuple._3.toString());
 		concurrentLinkedQueue.add(tuple);
+	}
+
+	public ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> getConcurrentLinkedQueue() {
+		return concurrentLinkedQueue;
 	}
 
 	public static void shutdown() {
