@@ -1055,7 +1055,7 @@ public class RulesLoader {
 		int rulesFired = 0;
 		GennyToken serviceToken = facts.getServiceToken();
 
-		EntityManager em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
+		EntityManager em = emf.createEntityManager();
 		EntityTransaction tx = em.getTransaction();
 
 		if (getKieBaseCache().get(serviceToken.getRealm()) == null) {
@@ -1409,6 +1409,7 @@ public class RulesLoader {
 		handlers.put("Awesome", new AwesomeHandler());
 		handlers.put("GetProcessesUsingVariable", new GetProcessesUsingVariable());
 		handlers.put("Notification", new NotificationWorkItemHandler());
+		handlers.put("NotificationHub", new NotificationHubWorkItemHandler());
 		handlers.put("ShowAllForms", new ShowAllFormsHandler());
 		handlers.put("ShowFrame", new ShowFrame());
 		handlers.put("ShowFrames", new ShowFrames());

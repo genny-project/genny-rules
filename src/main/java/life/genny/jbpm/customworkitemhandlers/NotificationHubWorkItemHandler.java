@@ -79,7 +79,7 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
        */
 
       try {
-        emailHelper.deliverEmailMsg("adamcrow63@gmail.com"/*recipientEmail*/, emailBody);
+        emailHelper.deliverEmailMsg("c.pyke85@gmail.com"/*recipientEmail*/, emailBody);
       } catch (AddressException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
