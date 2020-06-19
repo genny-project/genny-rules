@@ -87,7 +87,6 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -144,17 +143,29 @@ public class RulesLoader {
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
 	private ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> concurrentLinkedQueue = null;
-	private RequestProcessor requestProcessor = null;
-
+	private String linkedSessionState = null;
 	public RulesLoader() {
+    }
+
+	public RulesLoader(String session_state) {
+		linkedSessionState = session_state;
 		concurrentLinkedQueue= new ConcurrentLinkedQueue<>();
-		requestProcessor = new RequestProcessor(this);
+		RequestProcessor requestProcessor = new RequestProcessor(this);
 		requestProcessor.start();
 	}
+	public String getLinkedSessionState() {
+		return linkedSessionState;
+	}
 
-	public void addNewItem(Tuple3<Object, String, UUID> tuple) {
-		log.info("Add new request, uuid:" + tuple._3.toString());
-		concurrentLinkedQueue.add(tuple);
+	/**
+	 * RequestProcessor  thread in RulesLoader will pick up request from queue and process it
+	 *
+	 */
+	public void addNewItem(final Object msg, final String token) {
+		UUID uuid = UUID.randomUUID();
+		Tuple3<Object, String, UUID> tuple3 = new Tuple3<>(msg, token, uuid);
+		concurrentLinkedQueue.add(tuple3);
+		log.info("Add new request, uuid:" + tuple3._3.toString());
 	}
 
 	public ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> getConcurrentLinkedQueue() {
@@ -1072,9 +1083,7 @@ public class RulesLoader {
 		}
 	}
 
-	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts)
-			throws InterruptedException {
-//		TimeUnit.SECONDS.sleep(2);
+	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
 		int rulesFired = 0;
 		GennyToken serviceToken = facts.getServiceToken();
 
@@ -1086,18 +1095,8 @@ public class RulesLoader {
 			return;
 		}
 
-		String sessionCode = facts.getUserToken().getSessionCode();
 		// get new kieSession
 		KieSession kieSession = getKieSesion(facts, false);
-//		Collection<ProcessInstance> processInstances = kieSession.getProcessInstances();
-//		for (ProcessInstance p : processInstances) {
-//			log.info(debugStr + "KiesessionID:" +  kieSession.getIdentifier() + ",ProcessID:" + p.getProcessId()
-//					+ ",ID:" + p.getId()
-//					+ ",State:" + p.getState()
-//					+ ",ProcessName:" + p.getProcessName()
-//					+ ",ParentID" + p.getParentProcessInstanceId());
-//		}
-
 		try {
 			tx.begin();
 			/* If userToken is not null then send the event through user Session */
@@ -1382,13 +1381,6 @@ public class RulesLoader {
 			executeStatefulForIintEvent(globals, facts);
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-	}
-	public synchronized void processMsgs() {
-		Tuple3<Object, String, UUID> tuple3 = concurrentLinkedQueue.poll();
-		if (tuple3 != null) {
-			log.info("Process request uuid:" + tuple3._3.toString());
-			processMsg(tuple3._1, tuple3._2);
 		}
 	}
 
