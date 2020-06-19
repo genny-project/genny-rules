@@ -143,14 +143,14 @@ public class RulesLoader {
 
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
-	private final static ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> concurrentLinkedQueue= new ConcurrentLinkedQueue<>();
-
+	private ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> concurrentLinkedQueue = null;
+	private RequestProcessor requestProcessor = null;
 
 	public RulesLoader() {
-		RequestProcessor requestProcessor = new RequestProcessor(this);
+		concurrentLinkedQueue= new ConcurrentLinkedQueue<>();
+		requestProcessor = new RequestProcessor(this);
 		requestProcessor.start();
 	}
-
 
 	public void addNewItem(Tuple3<Object, String, UUID> tuple) {
 		log.info("Add new request, uuid:" + tuple._3.toString());
