@@ -33,6 +33,7 @@ import life.genny.rules.listeners.GennyRuleTimingListener;
 import life.genny.rules.listeners.JbpmInitListener;
 import life.genny.rules.listeners.NodeStatusLog;
 
+import life.genny.rules.processor.RequestProcessor;
 import life.genny.utils.*;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
@@ -85,6 +86,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -95,6 +97,7 @@ public class RulesLoader {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 	static String RESOURCE_PATH = "src/main/resources/life/genny/rules/";
+	private static int processInstanceStat = -999;
 
 	public static Map<String, KieBase> kieBaseCache = new ConcurrentHashMap<String, KieBase>();;
 	static {
@@ -139,6 +142,35 @@ public class RulesLoader {
 
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
+	private ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> concurrentLinkedQueue = null;
+	private String linkedSessionState = null;
+	public RulesLoader() {
+    }
+
+	public RulesLoader(String session_state) {
+		linkedSessionState = session_state;
+		concurrentLinkedQueue= new ConcurrentLinkedQueue<>();
+		RequestProcessor requestProcessor = new RequestProcessor(this);
+		requestProcessor.start();
+	}
+	public String getLinkedSessionState() {
+		return linkedSessionState;
+	}
+
+	/**
+	 * RequestProcessor  thread in RulesLoader will pick up request from queue and process it
+	 *
+	 */
+	public void addNewItem(final Object msg, final String token) {
+		UUID uuid = UUID.randomUUID();
+		Tuple3<Object, String, UUID> tuple3 = new Tuple3<>(msg, token, uuid);
+		concurrentLinkedQueue.add(tuple3);
+		log.info("Add new request, uuid:" + tuple3._3.toString());
+	}
+
+	public ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> getConcurrentLinkedQueue() {
+		return concurrentLinkedQueue;
+	}
 
 	public static void shutdown() {
 		runtimeManager.close();
@@ -786,16 +818,9 @@ public class RulesLoader {
 		kieSession.getWorkItemManager().registerWorkItemHandler("AskQuestionTask",
 				new AskQuestionTaskWorkItemHandler(RulesLoader.class, kieSession, taskService));
 
+		// the env should be the same for all kieSessions
 		kieSession.getWorkItemManager().registerWorkItemHandler("ProcessAnswers",
-				new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService)); // the
-																													// env
-																													// should
-																													// be
-																													// the
-																													// same
-																													// for
-																													// all
-																													// kieSessions
+				new ProcessAnswersWorkItemHandler(RulesLoader.class, kieSession.getEnvironment(), taskService));
 
 		kieSession.getWorkItemManager().registerWorkItemHandler("CheckTasks",
 				new CheckTasksWorkItemHandler(RulesLoader.class, kieSession, taskService));
@@ -962,7 +987,7 @@ public class RulesLoader {
 
 		BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
 		if (user != null) {
-			log.info("User:" + user.getCode() + "fetched.");
+			log.info("User:" + user.getCode() + " fetched.");
 
 			List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
 			log.info(allowable.size() + " Alloweds generated ");
@@ -981,11 +1006,17 @@ public class RulesLoader {
 		int processState = -1;
 
 		log.info("Looking up ProcessId by session " + session_state);
-		Optional<Long> processIdBysessionId = getProcessIdBysessionId(serviceToken.getRealm(), session_state);
+		Optional<Long> processIdBySessionId = getProcessIdBysessionId(serviceToken.getRealm(), session_state);
 
-		if (processIdBysessionId.isPresent()) {
-			processId = processIdBysessionId.get();
+		if (processIdBySessionId.isPresent()) {
+			processId = processIdBySessionId.get();
 			processState = kieSession.getProcessInstance(processId).getState();
+			if (processInstanceStat != processState) {
+				log.info(debugStr + "Found ProcessInstanceState change, Session state:" + session_state
+						+  ", ProcessID:" + processId + ", current processState:"
+						+ processState + ", previous processState:" + processInstanceStat);
+				processInstanceStat = processState;
+			}
 
 //			while(processState != ProcessInstance.STATE_COMPLETED) {
 //				log.warn("Current process:" + processId + " not completed, state is:" + processState + ", wait 1 second.");
@@ -1000,6 +1031,8 @@ public class RulesLoader {
 				/* If the message is data message then send in to data channel */
 				processQDataMessageEvent(facts, processId, kieSession);
 			}
+
+			log.info(debugStr + "Session state:" + session_state +  ", ProcessID:" + processId + ", current processState:" + processState);
 		} else {
 			if (facts.getMessage() instanceof QEventMessage
 					&& ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
@@ -1017,6 +1050,7 @@ public class RulesLoader {
 				kieSession.delete(allow);
 			}
 		}
+		log.info(debugStr + "Finish sendEventThroughUserSession");
 	}
 
 	public void executeStatefulForIintEvent(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
@@ -1049,9 +1083,7 @@ public class RulesLoader {
 		}
 	}
 
-	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts)
-			throws InterruptedException {
-		TimeUnit.SECONDS.sleep(2);
+	public synchronized void executeStateful(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
 		int rulesFired = 0;
 		GennyToken serviceToken = facts.getServiceToken();
 
@@ -1063,18 +1095,8 @@ public class RulesLoader {
 			return;
 		}
 
-		String sessionCode = facts.getUserToken().getSessionCode();
 		// get new kieSession
 		KieSession kieSession = getKieSesion(facts, false);
-//		Collection<ProcessInstance> processInstances = kieSession.getProcessInstances();
-//		for (ProcessInstance p : processInstances) {
-//			log.info(debugStr + "KiesessionID:" +  kieSession.getIdentifier() + ",ProcessID:" + p.getProcessId()
-//					+ ",ID:" + p.getId()
-//					+ ",State:" + p.getState()
-//					+ ",ProcessName:" + p.getProcessName()
-//					+ ",ParentID" + p.getParentProcessInstanceId());
-//		}
-
 		try {
 			tx.begin();
 			/* If userToken is not null then send the event through user Session */
@@ -1094,14 +1116,17 @@ public class RulesLoader {
 		} catch (final Throwable t) {
 			log.error(t.getLocalizedMessage());
 		} finally {
-			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
 			// commit
 			if (tx.isActive()) {
 				tx.commit();
+				log.info("Commit as transcation is active");
 			}
-			if (em.isOpen())
+			if (em.isOpen()) {
 				em.close();
+				log.info("Close entity manager as manager is open");
+			}
 			// runtimeManager.disposeRuntimeEngine(runtimeEngine);
+			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
 		}
 	}
 //		else {
@@ -1384,7 +1409,6 @@ public class RulesLoader {
 					// RulesLoader.executeStateful(globals, facts);
 					RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
 				} else {
-
 					SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
 					executeStateful(globals, facts);
 				}
