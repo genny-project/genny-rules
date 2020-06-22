@@ -22,10 +22,21 @@ public class SearchCallable implements Callable<QBulkMessage> {
     String filterCode=null;
     String filterValue=null;
 
+    public SearchCallable(TableUtils tableUtils,SearchEntity searchBE,BaseEntityUtils beUtils) {
+        this(tableUtils, searchBE, beUtils, false);
+    }
 
     public SearchCallable(TableUtils tableUtils,SearchEntity searchBE,BaseEntityUtils beUtils, String filterCode, String filterValue) {
         this(tableUtils, searchBE, beUtils, false, filterCode, filterValue);
     }
+    
+    public SearchCallable(TableUtils tableUtils,SearchEntity searchBE,BaseEntityUtils beUtils, Boolean cache) {
+        this.tableUtils = tableUtils;
+        this.beUtils = beUtils;
+        this.searchBE = searchBE;
+        this.cache = cache;
+    }
+
     public SearchCallable(TableUtils tableUtils,SearchEntity searchBE,BaseEntityUtils beUtils, Boolean cache, String filterCode, String filterValue) {
         this.tableUtils = tableUtils;
         this.beUtils = beUtils;
