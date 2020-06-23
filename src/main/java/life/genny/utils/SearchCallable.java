@@ -19,16 +19,31 @@ public class SearchCallable implements Callable<QBulkMessage> {
     private SearchEntity searchBE;
     private BaseEntityUtils beUtils;
     Boolean cache= false;
-
+    String filterCode=null;
+    String filterValue=null;
 
     public SearchCallable(TableUtils tableUtils,SearchEntity searchBE,BaseEntityUtils beUtils) {
         this(tableUtils, searchBE, beUtils, false);
     }
+
+    public SearchCallable(TableUtils tableUtils,SearchEntity searchBE,BaseEntityUtils beUtils, String filterCode, String filterValue) {
+        this(tableUtils, searchBE, beUtils, false, filterCode, filterValue);
+    }
+    
     public SearchCallable(TableUtils tableUtils,SearchEntity searchBE,BaseEntityUtils beUtils, Boolean cache) {
         this.tableUtils = tableUtils;
         this.beUtils = beUtils;
         this.searchBE = searchBE;
         this.cache = cache;
+    }
+
+    public SearchCallable(TableUtils tableUtils,SearchEntity searchBE,BaseEntityUtils beUtils, Boolean cache, String filterCode, String filterValue) {
+        this.tableUtils = tableUtils;
+        this.beUtils = beUtils;
+        this.searchBE = searchBE;
+        this.cache = cache;
+        this.filterCode = filterCode;
+        this.filterValue = filterValue;
     }
 
     public QBulkMessage call()  {
@@ -37,10 +52,11 @@ public class SearchCallable implements Callable<QBulkMessage> {
     	 
     	 
  		QBulkMessage qbm1 = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "SPEEDUP",
-				searchBE.getCode(), QBulkMessage.class);
-
+                searchBE.getCode(), QBulkMessage.class);
+          
     	 if ((qbm1 == null)|| true) {
-            qbm1 = tableUtils.performSearch(beUtils.getServiceToken(), beUtils.getServiceToken(), searchBE, null, cache);
+            qbm1 = tableUtils.performSearch( beUtils.getServiceToken(), searchBE, null, filterCode
+            ,filterValue, cache);
 			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(), qbm1,
 					beUtils.getGennyToken().getToken());
     	 }else {
