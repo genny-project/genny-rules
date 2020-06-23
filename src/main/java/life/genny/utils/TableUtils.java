@@ -527,6 +527,9 @@ public class TableUtils {
 	}
 
 	public SearchEntity getSessionSearch(final String searchCode) {
+		return getSessionSearch(searchCode, null,null);
+	}
+	public SearchEntity getSessionSearch(final String searchCode, final String filterCode, final String filterValue) {
 		String sessionSearchCode = searchCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
 
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
@@ -542,7 +545,18 @@ public class TableUtils {
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
 		 */
+		if (filterCode != null && filterValue != null) {
+			System.out.println("Adding filterCode and filterValue to searchBE");
+			searchBE.addFilter(filterCode, SearchEntity.StringFilter.EQUAL, filterValue);
+		}
+
+		/*
+		 * Save Session Search in cache , ideally this should be in OutputParam and
+		 * saved to workflow
+		 */
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
+				beUtils.getGennyToken().getToken());
+		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
 		return searchBE;
@@ -1505,6 +1519,8 @@ public class TableUtils {
 
 		String searchBeCode = "SBE_" + code;
 		System.out.println("SBE CODE   ::   " + searchBeCode);
+		System.out.println("filterCode    ::   " + filterCode);
+		System.out.println("filterValue   ::   " + filterValue);
 
 		String frameCode = "FRM_TABLE_" + code;
 		System.out.println("FRAME CODE   ::   " + frameCode);
@@ -1512,7 +1528,7 @@ public class TableUtils {
 		long s1time = System.currentTimeMillis();
 		/* get current search */
 		TableUtils tableUtils = new TableUtils(beUtils);
-		SearchEntity searchBE = tableUtils.getSessionSearch(searchBeCode);
+		SearchEntity searchBE = tableUtils.getSessionSearch(searchBeCode, filterCode, filterValue);
 
 		long s2time = System.currentTimeMillis();
 		Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START", "0");
