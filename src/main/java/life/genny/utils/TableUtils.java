@@ -1515,15 +1515,8 @@ public class TableUtils {
 		long starttime = System.currentTimeMillis();
 
 		System.out.println("Cache enabled ? ::" + cache);
-		System.out.println("FINAL CODE   ::   " + code);
-
 		String searchBeCode = "SBE_" + code;
 		System.out.println("SBE CODE   ::   " + searchBeCode);
-		System.out.println("filterCode    ::   " + filterCode);
-		System.out.println("filterValue   ::   " + filterValue);
-
-		String frameCode = "FRM_TABLE_" + code;
-		System.out.println("FRAME CODE   ::   " + frameCode);
 
 		long s1time = System.currentTimeMillis();
 		/* get current search */
@@ -1559,6 +1552,8 @@ public class TableUtils {
 		long totalProcessingTime;
 
 		if (GennySettings.useConcurrencyMsgs) {
+			System.out.println("useConcurrencyMsgs is enabled");
+
 			for (Callable<QBulkMessage> callable : callables) {
 				service.submit(callable);
 			}
@@ -1594,6 +1589,7 @@ public class TableUtils {
 			}
 		} else {
 			// aggregatedMessages.add(tfc.call());
+			System.out.println("useConcurrencyMsgs is NOT enabled");
 			aggregatedMessages.add(sc.call());
 
 		}
@@ -1602,8 +1598,7 @@ public class TableUtils {
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 
 		if (cache) {
-			System.out
-					.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
+			System.out.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 			String json = JsonUtils.toJson(aggregatedMessages);
 			VertxUtils.writeMsg("webcmds", json);
 		}
