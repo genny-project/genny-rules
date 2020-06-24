@@ -177,24 +177,24 @@ public class TableUtils {
 			searchBeMsg.setToken(beUtils.getGennyToken().getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
 		}
-		long endtime4 = System.currentTimeMillis();
-		log.info("Time taken to send Results =" + (endtime4 - endtime3) + " ms");
+		// long endtime4 = System.currentTimeMillis();
+		// log.info("Time taken to send Results =" + (endtime4 - endtime3) + " ms");
 
-		Map<String, String> columns = getTableColumns(searchBE);
+		// Map<String, String> columns = getTableColumns(searchBE);
 
-		long endtime5 = System.currentTimeMillis();
-		log.info("Time taken to getTableColumns =" + (endtime5 - endtime4) + " ms");
+		// long endtime5 = System.currentTimeMillis();
+		// log.info("Time taken to getTableColumns =" + (endtime5 - endtime4) + " ms");
 
-		/*
-		 * Display the table header
-		 */
+		// /*
+		//  * Display the table header
+		//  */
 
-		/* QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg); */
-		log.info("calling showTableContent");
-		QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns, cache);
-		/* Adds the rowAsk and table title ask message */
-		ret.add(qb);
-		log.info("calling sendTableContexts");
+		// /* QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg); */
+		// log.info("calling showTableContent");
+		// QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns, cache);
+		// /* Adds the rowAsk and table title ask message */
+		// ret.add(qb);
+		// log.info("calling sendTableContexts");
 
 		/*
 		 * QDataBaseEntityMessage qm = sendTableContexts(cache); ret.add(qm);
