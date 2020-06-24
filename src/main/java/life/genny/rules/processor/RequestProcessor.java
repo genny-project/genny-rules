@@ -26,6 +26,8 @@ public class RequestProcessor extends Thread {
             log.info("Finished process request uuid:" + tuple._3.toString()
                     + ", RulesLoader instance:" + rulesLoader.toString()
                     + ", Linked session state:" + rulesLoader.getLinkedSessionState());
+            // Only for debug, disable when in production
+            log.info("Queue size is:" + rulesLoader.getConcurrentLinkedQueue().size());
         }
     }
 }
