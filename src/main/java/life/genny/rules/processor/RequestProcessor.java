@@ -18,16 +18,22 @@ public class RequestProcessor extends Thread {
 
     @Override
     public void run() {
-        log.info("RequestProcessor started. RulesLoader instance:" + rulesLoader.toString()
-                + ", Linked session state:" + rulesLoader.getLinkedSessionState());
-        Tuple3<Object, String, UUID> tuple = rulesLoader.getConcurrentLinkedQueue().poll();
-        if (tuple != null) {
-            rulesLoader.processMsg(tuple._1, tuple._2);
-            log.info("Finished process request uuid:" + tuple._3.toString()
-                    + ", RulesLoader instance:" + rulesLoader.toString()
-                    + ", Linked session state:" + rulesLoader.getLinkedSessionState());
-            // Only for debug, disable when in production
-            log.info("Queue size is:" + rulesLoader.getConcurrentLinkedQueue().size());
+        while (true) {
+            try {
+                //Retrieves and removes the head of this queue, waiting if necessary until an element becomes
+                //     available.
+                Tuple3<Object, String, UUID> tuple = rulesLoader.getLinkedBlockingQueue().take();
+                log.info("RequestProcessor started. RulesLoader instance:" + rulesLoader.toString()
+                        + ", Linked session state:" + rulesLoader.getLinkedSessionState());
+                rulesLoader.processMsg(tuple._1, tuple._2);
+                log.info("Finished process request uuid:" + tuple._3.toString()
+                        + ", RulesLoader instance:" + rulesLoader.toString()
+                        + ", Linked session state:" + rulesLoader.getLinkedSessionState());
+                // Only for debug, disable when in production
+                log.info("Queue size is:" + rulesLoader.getLinkedBlockingQueue().size());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

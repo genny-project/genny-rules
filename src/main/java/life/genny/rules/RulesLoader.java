@@ -87,6 +87,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -142,14 +143,18 @@ public class RulesLoader {
 
 	// public static Boolean rulesChanged = true;
 	private final String debugStr = "DEBUG,";
-	private ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> concurrentLinkedQueue = null;
+	private LinkedBlockingQueue<Tuple3<Object, String, UUID>> linkedBlockingQueue = null;
 	private String linkedSessionState = null;
 	public RulesLoader() {
     }
 
 	public RulesLoader(String session_state) {
 		linkedSessionState = session_state;
-		concurrentLinkedQueue= new ConcurrentLinkedQueue<>();
+		linkedBlockingQueue= new LinkedBlockingQueue<>();
+
+		// create thread to process equest
+		RequestProcessor requestProcessor = new RequestProcessor(this);
+		requestProcessor.start();
 	}
 	public String getLinkedSessionState() {
 		return linkedSessionState;
@@ -162,16 +167,16 @@ public class RulesLoader {
 	public void addNewItem(final Object msg, final String token) {
 		UUID uuid = UUID.randomUUID();
 		Tuple3<Object, String, UUID> tuple3 = new Tuple3<>(msg, token, uuid);
-		concurrentLinkedQueue.add(tuple3);
-
-		// create thread to process this request
-		RequestProcessor requestProcessor = new RequestProcessor(this);
-		requestProcessor.start();
+		try {
+			linkedBlockingQueue.put(tuple3);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		log.info("Add new request, uuid:" + tuple3._3.toString());
 	}
 
-	public ConcurrentLinkedQueue<Tuple3<Object, String, UUID>> getConcurrentLinkedQueue() {
-		return concurrentLinkedQueue;
+	public LinkedBlockingQueue<Tuple3<Object, String, UUID>> getLinkedBlockingQueue() {
+		return linkedBlockingQueue;
 	}
 
 	public static void shutdown() {
