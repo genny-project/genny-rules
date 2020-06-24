@@ -20,19 +20,12 @@ public class RequestProcessor extends Thread {
     public void run() {
         log.info("RequestProcessor started. RulesLoader instance:" + rulesLoader.toString()
                 + ", Linked session state:" + rulesLoader.getLinkedSessionState());
-        while (true) {
-            try {
-                Tuple3<Object, String, UUID> tuple = rulesLoader.getConcurrentLinkedQueue().poll();
-                if (tuple != null) {
-                    log.info("Process request uuid:" + tuple._3.toString()
-                            + ", RulesLoader instance:" + rulesLoader.toString()
-                            + ", Linked session state:" + rulesLoader.getLinkedSessionState());
-                    rulesLoader.processMsg(tuple._1, tuple._2);
-                }
-            } catch (IllegalArgumentException e) {
-                log.error("Exception occurred: RulesLoader instance:" + rulesLoader.toString());
-                e.printStackTrace();
-            }
+        Tuple3<Object, String, UUID> tuple = rulesLoader.getConcurrentLinkedQueue().poll();
+        if (tuple != null) {
+            rulesLoader.processMsg(tuple._1, tuple._2);
+            log.info("Finished process request uuid:" + tuple._3.toString()
+                    + ", RulesLoader instance:" + rulesLoader.toString()
+                    + ", Linked session state:" + rulesLoader.getLinkedSessionState());
         }
     }
 }

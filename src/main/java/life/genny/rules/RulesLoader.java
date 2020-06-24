@@ -150,8 +150,6 @@ public class RulesLoader {
 	public RulesLoader(String session_state) {
 		linkedSessionState = session_state;
 		concurrentLinkedQueue= new ConcurrentLinkedQueue<>();
-		RequestProcessor requestProcessor = new RequestProcessor(this);
-		requestProcessor.start();
 	}
 	public String getLinkedSessionState() {
 		return linkedSessionState;
@@ -165,6 +163,10 @@ public class RulesLoader {
 		UUID uuid = UUID.randomUUID();
 		Tuple3<Object, String, UUID> tuple3 = new Tuple3<>(msg, token, uuid);
 		concurrentLinkedQueue.add(tuple3);
+
+		// create thread to process this request
+		RequestProcessor requestProcessor = new RequestProcessor(this);
+		requestProcessor.start();
 		log.info("Add new request, uuid:" + tuple3._3.toString());
 	}
 
