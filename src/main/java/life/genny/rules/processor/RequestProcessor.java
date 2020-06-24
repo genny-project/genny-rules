@@ -30,7 +30,7 @@ public class RequestProcessor extends Thread {
                         + ", RulesLoader instance:" + rulesLoader.toString()
                         + ", Linked session state:" + rulesLoader.getLinkedSessionState());
                 // Only for debug, disable when in production
-                log.info("Queue size is:" + rulesLoader.getLinkedBlockingQueue().size());
+                log.debug("Queue size is:" + rulesLoader.getLinkedBlockingQueue().size());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
