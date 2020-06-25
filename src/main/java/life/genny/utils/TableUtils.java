@@ -136,11 +136,11 @@ public class TableUtils {
 		QDataBaseEntityMessage msg = null;
 
 		if (GennySettings.searchAlt || searchAlt) {
-
+			log.info("Search Alt!");
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 
 		} else {
-
+			log.info("Old Search");
 			msg = fetchSearchResults(searchBE);
 		}
 		long endtime1 = System.currentTimeMillis();
