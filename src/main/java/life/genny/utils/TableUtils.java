@@ -857,8 +857,6 @@ public class TableUtils {
 		/* get table columns */
 		Map<String, String> columns = getTableColumns(searchBe);
 
-		/* get vertical display theme */
-		BaseEntity verticalTheme = beUtils.getBaseEntityByCode("THM_DISPLAY_VERTICAL");
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
 
@@ -910,8 +908,6 @@ public class TableUtils {
 		Ask tableHeaderAsk = new Ask(tableHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 		tableHeaderAsk.setChildAsks(asksArray);
 		tableHeaderAsk.setName(searchBe.getName());
-
-		tableHeaderAsk = this.createVirtualContext(tableHeaderAsk, verticalTheme, ContextType.THEME, themeMsgList);
 
 		return tableHeaderAsk;
 	}
@@ -990,37 +986,6 @@ public class TableUtils {
 		return ask;
 	}
 
-	private Ask getAskForTableHeaderSort(SearchEntity searchBe, String attributeCode, String attributeName,
-			Attribute eventAttribute, List<QDataBaseEntityMessage> themeMsgList) {
-
-		/* creating Ask for table header column sort */
-		Question columnSortQues = new Question("QUE_SORT_" + attributeCode, attributeName, eventAttribute, false);
-		Ask columnSortAsk = new Ask(columnSortQues, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
-
-		/* ADDING DEFAULT TABLE HEADER THEMES */
-
-		/* showing the icon */
-		BaseEntity sortIconBe = beUtils.getBaseEntityByCode("ICN_SORT");
-
-		/* create visual baseentity for question with label */
-		BaseEntity visualBaseEntity = beUtils.getBaseEntityByCode("THM_TABLE_HEADER_VISUAL_CONTROL");
-
-		/* get the BaseEntity for wrapper context */
-		BaseEntity horizontalWrapperBe = beUtils.getBaseEntityByCode("THM_DISPLAY_HORIZONTAL");
-
-		/* get the theme for Label and Sort */
-		BaseEntity headerLabelSortThemeBe = beUtils.getBaseEntityByCode("THM_TABLE_HEADER_SORT_THEME");
-
-		/* set the contexts to the ask */
-		createVirtualContext(columnSortAsk, horizontalWrapperBe, ContextType.THEME, VisualControlType.VCL_WRAPPER,
-				themeMsgList);
-		createVirtualContext(columnSortAsk, sortIconBe, ContextType.ICON, VisualControlType.VCL_ICON, themeMsgList);
-		createVirtualContext(columnSortAsk, visualBaseEntity, ContextType.THEME, VisualControlType.VCL_INPUT, themeMsgList);
-		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.VCL_LABEL,
-				themeMsgList);
-
-		return columnSortAsk;
-	}
 
 	/**
 	 * @param serviceToken
@@ -1319,26 +1284,6 @@ public class TableUtils {
 		return headerAsk;
 	}
 
-	/* returns baseentity of a theme */
-	public BaseEntity getThemeBe(Theme theme) {
-
-		BaseEntity themeBe = null;
-		themeBe = theme.getBaseEntity();
-		if (theme.getAttributes() != null) {
-			for (ThemeAttribute themeAttribute : theme.getAttributes()) {
-
-				try {
-					themeBe.addAttribute(new EntityAttribute(themeBe,
-							new Attribute(themeAttribute.getCode(), themeAttribute.getCode(), new DataType("DTT_THEME")), 1.0,
-							themeAttribute.getJson()));
-				} catch (BadDataException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-		return themeBe;
-	}
 
 	public void awaitTerminationAfterShutdown(ExecutorService threadPool) {
 		threadPool.shutdown();
