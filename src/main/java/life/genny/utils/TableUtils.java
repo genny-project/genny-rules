@@ -230,25 +230,38 @@ public class TableUtils {
 			endtime2 = System.currentTimeMillis();
 			log.info("Time taken to fetch Data =" + (endtime2 - endtime1) + " ms");
 
-			JsonObject resultJson = new JsonObject(resultJsonStr);
-
-			JsonArray result = resultJson.getJsonArray("codes");
-			List<String> resultCodes = new ArrayList<String>();
-			for (int i = 0; i < result.size(); i++) {
-				String code = result.getString(i);
-				resultCodes.add(code);
+			JsonObject resultJson = null;
+			
+			try {
+				resultJson = new JsonObject(resultJsonStr);
+				JsonArray result = resultJson.getJsonArray("codes");
+				List<String> resultCodes = new ArrayList<String>();
+				for (int i = 0; i < result.size(); i++) {
+					String code = result.getString(i);
+					resultCodes.add(code);
+				}
+				String[] filterArray = data._2.toArray(new String[0]);
+				List<BaseEntity> beList = resultCodes.stream().map(e -> {
+					BaseEntity be = beUtils.getBaseEntityByCode(e);
+					be = VertxUtils.privacyFilter(be, filterArray);
+					return be;
+				}).collect(Collectors.toList());
+				msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
+				Long total = resultJson.getLong("total");
+				msg.setTotal(total);
+				msg.setReplace(true);
+				msg.setParentCode(searchBE.getCode());
+			} catch (Exception e1) {
+				log.error("Bad Json -> ["+resultJsonStr);
+				msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
+				Long total = 0L;
+				msg.setTotal(total);
+				msg.setReplace(true);
+				msg.setParentCode(searchBE.getCode());
+				
 			}
-			String[] filterArray = data._2.toArray(new String[0]);
-			List<BaseEntity> beList = resultCodes.stream().map(e -> {
-				BaseEntity be = beUtils.getBaseEntityByCode(e);
-				be = VertxUtils.privacyFilter(be, filterArray);
-				return be;
-			}).collect(Collectors.toList());
-			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
-			Long total = resultJson.getLong("total");
-			msg.setTotal(total);
-			msg.setReplace(true);
-			msg.setParentCode(searchBE.getCode());
+
+
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
