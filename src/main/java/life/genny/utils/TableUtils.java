@@ -350,7 +350,11 @@ public class TableUtils {
 				}
 			}
 		}
-		String hql = "select distinct ea.baseEntityCode from EntityAttribute ea ";
+		String sortBit = "";
+		if (sortCode != null) {
+			sortBit = ",sortType ";
+		}
+		String hql = "select distinct ea.baseEntityCode "+sortBit+" from EntityAttribute ea ";
 		if (attributeFilterCode1 != null) {
 			hql += ", EntityAttribute eb ";
 		}
