@@ -372,160 +372,6 @@ public class TableUtils {
 		return Tuple.of(hql, attributeFilter);
 	}
 
-	public QDataBaseEntityMessage sendTableContexts(Boolean cache) {
-		QDataBaseEntityMessage ret = new QDataBaseEntityMessage();
-		log.info("Sending contexts for table");
-
-		Theme THM_ICON = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON", Theme.class,
-				beUtils.getServiceToken().getToken());
-		Theme THM_ICON_ONLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_ICON_ONLY", Theme.class,
-				beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_HEADER_FONT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_HEADER_FONT", Theme.class, beUtils.getServiceToken().getToken());
-
-		Theme THM_TABLE_CONTENT_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_CONTENT_BORDER", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_DISPLAY_HORIZONTAL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_DISPLAY_HORIZONTAL", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CONTENT_WRAPPER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CONTENT_WRAPPER", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_WIDTH_100_PERCENT_NO_INHERIT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_WIDTH_100_PERCENT_NO_INHERIT", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW", Theme.class,
-				beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_ROW_CELL",
-				Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_CONTENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_CONTENT",
-				Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "", "THM_TABLE_BORDER",
-				Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_WIDTH_100_PERCENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_WIDTH_100_PERCENT", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_FOOTER_BORDER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_FOOTER_BORDER", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_EVENT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_EVENT", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_TEXT = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_TEXT", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_TEXT_HEADER = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_TEXT_HEADER", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_LANDLINE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_LANDLINE", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_PHONE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_PHONE", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_MOBILE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_MOBILE", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_ADDRESS = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_ADDRESS", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_EMAIL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_EMAIL", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_VIEW = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_VIEW", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_VIEW_JOURNAL = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_VIEW_JOURNAL", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_APPLY = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_APPLY", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_STATUS = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_STATUS", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_NAME = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_NAME", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_DATE = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_DATE", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_HOURS = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_HOURS", Theme.class, beUtils.getServiceToken().getToken());
-		Theme THM_TABLE_ROW_CELL_HTML = VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-				"THM_TABLE_ROW_CELL_HTML", Theme.class, beUtils.getServiceToken().getToken());
-		// Theme THM_TABLE_HEADER_CELL_EVENT =
-		// VertxUtils.getObject(beUtils.getServiceToken().getRealm(), "",
-		// "THM_TABLE_HEADER_CELL_EVENT", Theme.class,
-		// beUtils.getServiceToken().getToken());
-
-		/* get the icons */
-		BaseEntity ICN_VIEW = beUtils.getBaseEntityByCode("ICN_VIEW");
-		BaseEntity ICN_ADD = beUtils.getBaseEntityByCode("ICN_ADD");
-		BaseEntity ICN_DESCRIPTION = beUtils.getBaseEntityByCode("ICN_DESCRIPTION");
-
-		/* get the themes */
-		BaseEntity THM_ICON_BE = this.getThemeBe(THM_ICON);
-		BaseEntity THM_ICON_ONLY_BE = this.getThemeBe(THM_ICON_ONLY);
-		BaseEntity THM_TABLE_HEADER_FONT_BE = this.getThemeBe(THM_TABLE_HEADER_FONT);
-		BaseEntity THM_TABLE_CONTENT_BORDER_BE = this.getThemeBe(THM_TABLE_CONTENT_BORDER);
-		BaseEntity THM_DISPLAY_HORIZONTAL_BE = this.getThemeBe(THM_DISPLAY_HORIZONTAL);
-		BaseEntity THM_TABLE_ROW_CONTENT_WRAPPER_BE = this.getThemeBe(THM_TABLE_ROW_CONTENT_WRAPPER);
-		BaseEntity THM_WIDTH_100_PERCENT_NO_INHERIT_BE = this.getThemeBe(THM_WIDTH_100_PERCENT_NO_INHERIT);
-		BaseEntity THM_TABLE_ROW_BE = this.getThemeBe(THM_TABLE_ROW);
-		BaseEntity THM_TABLE_ROW_CELL_BE = this.getThemeBe(THM_TABLE_ROW_CELL);
-		BaseEntity THM_TABLE_CONTENT_BE = this.getThemeBe(THM_TABLE_CONTENT);
-		BaseEntity THM_TABLE_BORDER_BE = this.getThemeBe(THM_TABLE_BORDER);
-		BaseEntity THM_WIDTH_100_PERCENT_BE = this.getThemeBe(THM_WIDTH_100_PERCENT);
-		BaseEntity THM_TABLE_FOOTER_BORDER_BE = this.getThemeBe(THM_TABLE_FOOTER_BORDER);
-		BaseEntity THM_TABLE_ROW_CELL_EVENT_BE = this.getThemeBe(THM_TABLE_ROW_CELL_EVENT);
-		BaseEntity THM_TABLE_ROW_CELL_TEXT_BE = this.getThemeBe(THM_TABLE_ROW_CELL_TEXT);
-		BaseEntity THM_TABLE_ROW_CELL_TEXT_HEADER_BE = this.getThemeBe(THM_TABLE_ROW_CELL_TEXT_HEADER);
-		BaseEntity THM_TABLE_ROW_CELL_LANDLINE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_LANDLINE);
-		BaseEntity THM_TABLE_ROW_CELL_MOBILE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_MOBILE);
-		BaseEntity THM_TABLE_ROW_CELL_PHONE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_PHONE);
-		BaseEntity THM_TABLE_ROW_CELL_ADDRESS_BE = this.getThemeBe(THM_TABLE_ROW_CELL_ADDRESS);
-		BaseEntity THM_TABLE_ROW_CELL_EMAIL_BE = this.getThemeBe(THM_TABLE_ROW_CELL_EMAIL);
-		BaseEntity THM_TABLE_ROW_CELL_VIEW_BE = this.getThemeBe(THM_TABLE_ROW_CELL_VIEW);
-		BaseEntity THM_TABLE_ROW_CELL_VIEW_JOURNAL_BE = this.getThemeBe(THM_TABLE_ROW_CELL_VIEW_JOURNAL);
-		BaseEntity THM_TABLE_ROW_CELL_APPLY_BE = this.getThemeBe(THM_TABLE_ROW_CELL_APPLY);
-		BaseEntity THM_TABLE_ROW_CELL_STATUS_BE = this.getThemeBe(THM_TABLE_ROW_CELL_STATUS);
-		BaseEntity THM_TABLE_ROW_CELL_NAME_BE = this.getThemeBe(THM_TABLE_ROW_CELL_NAME);
-		BaseEntity THM_TABLE_ROW_CELL_DATE_BE = this.getThemeBe(THM_TABLE_ROW_CELL_DATE);
-		BaseEntity THM_TABLE_ROW_CELL_HOURS_BE = this.getThemeBe(THM_TABLE_ROW_CELL_HOURS);
-		BaseEntity THM_TABLE_ROW_CELL_HTML_BE = this.getThemeBe(THM_TABLE_ROW_CELL_HTML);
-
-		List<BaseEntity> themes = new ArrayList<BaseEntity>();
-		themes.add(THM_ICON_BE);
-		themes.add(THM_ICON_ONLY_BE);
-		themes.add(THM_TABLE_HEADER_FONT_BE);
-		themes.add(THM_TABLE_CONTENT_BORDER_BE);
-		themes.add(THM_DISPLAY_HORIZONTAL_BE);
-		themes.add(THM_TABLE_ROW_CONTENT_WRAPPER_BE);
-		themes.add(THM_WIDTH_100_PERCENT_NO_INHERIT_BE);
-		themes.add(THM_TABLE_ROW_BE);
-		themes.add(THM_TABLE_ROW_CELL_BE);
-		themes.add(THM_TABLE_CONTENT_BE);
-		themes.add(THM_TABLE_BORDER_BE);
-		themes.add(THM_WIDTH_100_PERCENT_BE);
-		themes.add(THM_TABLE_ROW_CELL_EVENT_BE);
-		themes.add(THM_TABLE_ROW_CELL_TEXT_BE);
-		themes.add(THM_TABLE_ROW_CELL_TEXT_HEADER_BE);
-		themes.add(THM_TABLE_ROW_CELL_LANDLINE_BE);
-		themes.add(THM_TABLE_ROW_CELL_MOBILE_BE);
-		themes.add(THM_TABLE_ROW_CELL_PHONE_BE);
-		themes.add(THM_TABLE_ROW_CELL_ADDRESS_BE);
-		themes.add(THM_TABLE_ROW_CELL_EMAIL_BE);
-		themes.add(THM_TABLE_ROW_CELL_VIEW_BE);
-		themes.add(THM_TABLE_ROW_CELL_VIEW_JOURNAL_BE);
-		themes.add(THM_TABLE_ROW_CELL_APPLY_BE);
-		themes.add(THM_TABLE_ROW_CELL_STATUS_BE);
-		themes.add(THM_TABLE_ROW_CELL_NAME_BE);
-		themes.add(THM_TABLE_ROW_CELL_DATE_BE);
-		themes.add(THM_TABLE_ROW_CELL_HOURS_BE);
-		themes.add(THM_TABLE_ROW_CELL_HTML_BE);
-
-		/* also add the icon BE to the list */
-		themes.add(ICN_VIEW);
-		themes.add(ICN_ADD);
-		themes.add(ICN_DESCRIPTION);
-
-		log.info("**************** Themes in the list :: " + themes.size() + " ********************");
-
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(themes);
-		msg.setReplace(true);
-		if (cache) {
-			ret = msg;
-		} else {
-			msg.setToken(beUtils.getGennyToken().getToken());
-			log.info("**************** Sending all the themes and icons now ********************");
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-			log.info("**************** Sent all the themes and icons ********************");
-		}
-		return ret;
-	}
-
 	public SearchEntity getSessionSearch(final String searchCode) {
 		return getSessionSearch(searchCode, null,null);
 	}
@@ -1011,8 +857,6 @@ public class TableUtils {
 		/* get table columns */
 		Map<String, String> columns = getTableColumns(searchBe);
 
-		/* get vertical display theme */
-		BaseEntity verticalTheme = beUtils.getBaseEntityByCode("THM_DISPLAY_VERTICAL");
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
 
@@ -1064,8 +908,6 @@ public class TableUtils {
 		Ask tableHeaderAsk = new Ask(tableHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 		tableHeaderAsk.setChildAsks(asksArray);
 		tableHeaderAsk.setName(searchBe.getName());
-
-		tableHeaderAsk = this.createVirtualContext(tableHeaderAsk, verticalTheme, ContextType.THEME, themeMsgList);
 
 		return tableHeaderAsk;
 	}
@@ -1144,37 +986,6 @@ public class TableUtils {
 		return ask;
 	}
 
-	private Ask getAskForTableHeaderSort(SearchEntity searchBe, String attributeCode, String attributeName,
-			Attribute eventAttribute, List<QDataBaseEntityMessage> themeMsgList) {
-
-		/* creating Ask for table header column sort */
-		Question columnSortQues = new Question("QUE_SORT_" + attributeCode, attributeName, eventAttribute, false);
-		Ask columnSortAsk = new Ask(columnSortQues, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
-
-		/* ADDING DEFAULT TABLE HEADER THEMES */
-
-		/* showing the icon */
-		BaseEntity sortIconBe = beUtils.getBaseEntityByCode("ICN_SORT");
-
-		/* create visual baseentity for question with label */
-		BaseEntity visualBaseEntity = beUtils.getBaseEntityByCode("THM_TABLE_HEADER_VISUAL_CONTROL");
-
-		/* get the BaseEntity for wrapper context */
-		BaseEntity horizontalWrapperBe = beUtils.getBaseEntityByCode("THM_DISPLAY_HORIZONTAL");
-
-		/* get the theme for Label and Sort */
-		BaseEntity headerLabelSortThemeBe = beUtils.getBaseEntityByCode("THM_TABLE_HEADER_SORT_THEME");
-
-		/* set the contexts to the ask */
-		createVirtualContext(columnSortAsk, horizontalWrapperBe, ContextType.THEME, VisualControlType.VCL_WRAPPER,
-				themeMsgList);
-		createVirtualContext(columnSortAsk, sortIconBe, ContextType.ICON, VisualControlType.VCL_ICON, themeMsgList);
-		createVirtualContext(columnSortAsk, visualBaseEntity, ContextType.THEME, VisualControlType.VCL_INPUT, themeMsgList);
-		createVirtualContext(columnSortAsk, headerLabelSortThemeBe, ContextType.THEME, VisualControlType.VCL_LABEL,
-				themeMsgList);
-
-		return columnSortAsk;
-	}
 
 	/**
 	 * @param serviceToken
@@ -1473,26 +1284,6 @@ public class TableUtils {
 		return headerAsk;
 	}
 
-	/* returns baseentity of a theme */
-	public BaseEntity getThemeBe(Theme theme) {
-
-		BaseEntity themeBe = null;
-		themeBe = theme.getBaseEntity();
-		if (theme.getAttributes() != null) {
-			for (ThemeAttribute themeAttribute : theme.getAttributes()) {
-
-				try {
-					themeBe.addAttribute(new EntityAttribute(themeBe,
-							new Attribute(themeAttribute.getCode(), themeAttribute.getCode(), new DataType("DTT_THEME")), 1.0,
-							themeAttribute.getJson()));
-				} catch (BadDataException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
-		return themeBe;
-	}
 
 	public void awaitTerminationAfterShutdown(ExecutorService threadPool) {
 		threadPool.shutdown();
