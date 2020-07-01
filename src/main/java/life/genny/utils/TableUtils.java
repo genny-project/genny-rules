@@ -247,6 +247,8 @@ public class TableUtils {
 			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
 			Long total = resultJson.getLong("total");
 			msg.setTotal(total);
+			msg.setReplace(true);
+			msg.setParentCode(searchBE.getCode());
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
