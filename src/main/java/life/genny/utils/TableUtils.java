@@ -351,10 +351,10 @@ public class TableUtils {
 			}
 		}
 		String sortBit = "";
-		if (sortCode != null) {
-			sortBit = ","+sortType +" ";
-		}
-		String hql = "select distinct (ea.baseEntityCode) "+sortBit+" from EntityAttribute ea ";
+//		if (sortCode != null) {
+//			sortBit = ","+sortType +" ";
+//		}
+		String hql = "select distinct ea.baseEntityCode "+sortBit+" from EntityAttribute ea ";
 		if (attributeFilterCode1 != null) {
 			hql += ", EntityAttribute eb ";
 		}
