@@ -278,13 +278,17 @@ public class TableUtils {
 
 		String beFilter1 = null;
 		String beFilter2 = null;
+		String beFilter3 = null;
 		String attributeFilterValue1 = "";
 		String attributeFilterCode1 = null;
 		String attributeFilterValue2 = "";
 		String attributeFilterCode2 = null;
+		String attributeFilterValue3 = "";
+		String attributeFilterCode3 = null;
 		String sortCode = null;
 		String sortValue = null;
 		String sortType = null;
+		String wildcardValue = null;
 		Integer pageStart = searchBE.getPageStart(0);
 		Integer pageSize = searchBE.getPageSize(GennySettings.defaultPageSize);
 
@@ -300,25 +304,32 @@ public class TableUtils {
 				sortCode = (ea.getAttributeCode().substring("SRT_".length()));
 				sortValue = ea.getValueString();
 				if (ea.getValueString() != null) {
-					sortType = "ed.valueString";
+					sortType = "ez.valueString";
 				} else if (ea.getValueBoolean() != null) {
-					sortType = "ed.valueBoolean";
+					sortType = "ez.valueBoolean";
 				} else if (ea.getValueDouble() != null) {
-					sortType = "ed.valueDouble";
+					sortType = "ez.valueDouble";
 				} else if (ea.getValueInteger() != null) {
-					sortType = "ed.valueInteger";
+					sortType = "ez.valueInteger";
 				} else if (ea.getValueLong() != null) {
-					sortType = "ed.valueLong";
+					sortType = "ez.valueLong";
 				} else if (ea.getValueDateTime() != null) {
-					sortType = "ed.valueDateTime";
+					sortType = "ez.valueDateTime";
 				} else if (ea.getValueDate() != null) {
-					sortType = "ed.valueDate";
+					sortType = "ez.valueDate";
 				} else if (ea.getValueTime() != null) {
-					sortType = "ed.valueTime";
+					sortType = "ez.valueTime";
 				}
 
 			} else if ((ea.getAttributeCode().startsWith("COL_")) || (ea.getAttributeCode().startsWith("CAL_"))) {
 				attributeFilter.add(ea.getAttributeCode().substring("COL_".length()));
+			} else if (ea.getAttributeCode().startsWith("SCH_WILDCARD")) {
+				if (ea.getValueString() != null) {
+					if (!StringUtils.isBlank(ea.getValueString())) {
+						wildcardValue = ea.getValueString() ;
+						wildcardValue = wildcardValue.replaceAll(("[^A-Za-z0-9 ]"), "");
+					} 
+				} 
 
 			} else if (ea.getAttributeCode().startsWith("PRI_") && (!ea.getAttributeCode().equals("PRI_CODE"))
 					&& (!ea.getAttributeCode().equals("PRI_TOTAL_RESULTS")) && (!ea.getAttributeCode().equals("PRI_INDEX"))) {
@@ -347,6 +358,16 @@ public class TableUtils {
 						}
 						attributeFilterCode2 = ea.getAttributeCode();
 					}
+					else {
+						if (attributeFilterCode3 == null) {
+							if (ea.getValueString() != null) {
+								attributeFilterValue3 = " ec.valueString " + ea.getAttributeName() + " '" + ea.getValueString() + "'";
+							} else if (ea.getValueBoolean() != null) {
+								attributeFilterValue3 = " ec.valueBoolean = " + (ea.getValueBoolean() ? "true" : "false");
+							}
+							attributeFilterCode3 = ea.getAttributeCode();
+						}
+					}
 				}
 			}
 		}
@@ -361,8 +382,15 @@ public class TableUtils {
 		if (attributeFilterCode2 != null) {
 			hql += ", EntityAttribute ec ";
 		}
-		if (sortCode != null) {
+		if (attributeFilterCode3 != null) {
 			hql += ", EntityAttribute ed ";
+		}
+		if (wildcardValue != null) {
+			hql += ", EntityAttribute ew ";
+		}
+
+		if (sortCode != null) {
+			hql += ", EntityAttribute ez ";
 		}
 		hql += " where ";
 		if (attributeFilterCode1 != null) {
@@ -374,6 +402,10 @@ public class TableUtils {
 		if (beFilter2 != null) {
 			hql += " or ea.baseEntityCode like '" + beFilter2 + "'";
 		}
+		if (beFilter3 != null) {
+			hql += " or ea.baseEntityCode like '" + beFilter3 + "'";
+		}
+
 		hql += ")  ";
 		if (attributeFilterCode1 != null) {
 			hql += " and eb.attributeCode = '" + attributeFilterCode1 + "'"
@@ -384,8 +416,18 @@ public class TableUtils {
 			hql += " and ec.attributeCode = '" + attributeFilterCode2 + "'"
 					+ ((!StringUtils.isBlank(attributeFilterValue2)) ? (" and " + attributeFilterValue2) : "");
 		}
+		if (attributeFilterCode3 != null) {
+			hql += " and ea.baseEntityCode=ec.baseEntityCode ";
+			hql += " and ed.attributeCode = '" + attributeFilterCode3 + "'"
+					+ ((!StringUtils.isBlank(attributeFilterValue3)) ? (" and " + attributeFilterValue3) : "");
+		}
+
+		if (wildcardValue != null) {
+			hql += " and ea.baseEntityCode=ew.baseEntityCode and ew.valueString like '%" + wildcardValue + "%' ";
+		}
+
 		if (sortCode != null) {
-			hql += " and ea.baseEntityCode=ed.baseEntityCode and ed.attributeCode='" + sortCode + "' ";
+			hql += " and ea.baseEntityCode=ez.baseEntityCode and ez.attributeCode='" + sortCode + "' ";
 			hql += " order by " + sortType + " " + sortValue;
 		}
 		return Tuple.of(hql, attributeFilter);
