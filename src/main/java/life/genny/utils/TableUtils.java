@@ -413,7 +413,7 @@ public class TableUtils {
 		}
 		if (searchBE.getCode().startsWith("SBE_SEARCHBAR")) {
 			// search across people and companies
-			hql += " and (ea.baseEntityCode like 'PER_%' or ea.baseentityCode like 'CPY_%') ";
+			hql += " and (ea.baseEntityCode like 'PER_%' or ea.baseEntityCode like 'CPY_%') ";
 		}
 
 		if (beFilter2 != null) {
