@@ -281,6 +281,7 @@ public class TableUtils {
 		String beFilter1 = null;
 		String beFilter2 = null;
 		String beFilter3 = null;
+		String beSorted = null;
 		String attributeFilterValue1 = "";
 		String attributeFilterCode1 = null;
 		String attributeFilterValue2 = "";
@@ -302,7 +303,26 @@ public class TableUtils {
 				} else if (beFilter2 == null) {
 					beFilter2 = ea.getAsString();
 				}
+			
 			} else if ((ea.getAttributeCode().startsWith("SRT_"))) {
+				if (ea.getAttributeCode().startsWith("SRT_PRI_CREATED")) {
+					beSorted = " order by ea.created";
+					sortValue = ea.getValueString();
+				} 
+				else if (ea.getAttributeCode().startsWith("SRT_PRI_UPDATED")) {
+					beSorted = " order by ea.updated";
+					sortValue = ea.getValueString();
+				}
+				else if (ea.getAttributeCode().startsWith("SRT_PRI_CODE")) {
+					beSorted = " order by ea.code";
+					sortValue = ea.getValueString();
+				}
+				else if (ea.getAttributeCode().startsWith("SRT_PRI_NAME")) {
+					beSorted = " order by ea.name";
+					sortValue = ea.getValueString();
+				}
+
+				else {
 				sortCode = (ea.getAttributeCode().substring("SRT_".length()));
 				sortValue = ea.getValueString();
 				if (ea.getValueString() != null) {
@@ -321,6 +341,7 @@ public class TableUtils {
 					sortType = "ez.valueDate";
 				} else if (ea.getValueTime() != null) {
 					sortType = "ez.valueTime";
+				}
 				}
 
 			} else if ((ea.getAttributeCode().startsWith("COL_")) || (ea.getAttributeCode().startsWith("CAL_"))) {
@@ -411,6 +432,9 @@ public class TableUtils {
 				hql += " (ea.baseEntityCode like '" + beFilter1 + "'  ";
 			}
 		}
+
+		
+		
 		if (searchBE.getCode().startsWith("SBE_SEARCHBAR")) {
 			// search across people and companies
 			hql += " and (ea.baseEntityCode like 'PER_%' or ea.baseEntityCode like 'CPY_%') ";
@@ -425,6 +449,8 @@ public class TableUtils {
 		if (beFilter1 != null) {
 			hql += ")  ";
 		}
+		
+		
 		if (attributeFilterCode1 != null) {
 			hql += " and eb.attributeCode = '" + attributeFilterCode1 + "'"
 					+ ((!StringUtils.isBlank(attributeFilterValue1)) ? (" and " + attributeFilterValue1) : "");
@@ -444,6 +470,10 @@ public class TableUtils {
 			hql += " and ea.baseEntityCode=ew.baseEntityCode and ew.valueString like '%" + wildcardValue + "%' ";
 		}
 
+		if (beSorted != null) {
+			hql += " order by " + sortType + " " + sortValue;
+
+		} else 
 		if (sortCode != null) {
 			hql += " and ea.baseEntityCode=ez.baseEntityCode and ez.attributeCode='" + sortCode + "' ";
 			hql += " order by " + sortType + " " + sortValue;
