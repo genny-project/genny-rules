@@ -357,9 +357,10 @@ public class TableUtils {
 			} else if (ea.getAttributeCode().startsWith("PRI_") && (!ea.getAttributeCode().equals("PRI_CODE"))
 					&& (!ea.getAttributeCode().equals("PRI_TOTAL_RESULTS"))
 					&& (!ea.getAttributeCode().equals("PRI_INDEX"))) {
+				String condition = SearchEntity.convertFromSaveable(ea.getAttributeName());
 				if (attributeFilterCode1 == null) {
 					if (ea.getValueString() != null) {
-						attributeFilterValue1 = " eb.valueString " + ea.getAttributeName() + " '" + ea.getValueString()
+						attributeFilterValue1 = " eb.valueString " + condition + " '" + ea.getValueString()
 								+ "'";
 					} else if (ea.getValueBoolean() != null) {
 						attributeFilterValue1 = " eb.valueBoolean = " + (ea.getValueBoolean() ? "true" : "false");
@@ -377,7 +378,7 @@ public class TableUtils {
 				} else {
 					if (attributeFilterCode2 == null) {
 						if (ea.getValueString() != null) {
-							attributeFilterValue2 = " ec.valueString " + ea.getAttributeName() + " '"
+							attributeFilterValue2 = " ec.valueString " + condition + " '"
 									+ ea.getValueString() + "'";
 						} else if (ea.getValueBoolean() != null) {
 							attributeFilterValue2 = " ec.valueBoolean = " + (ea.getValueBoolean() ? "true" : "false");
@@ -386,7 +387,7 @@ public class TableUtils {
 					} else {
 						if (attributeFilterCode3 == null) {
 							if (ea.getValueString() != null) {
-								attributeFilterValue3 = " ec.valueString " + ea.getAttributeName() + " '"
+								attributeFilterValue3 = " ec.valueString " + condition + " '"
 										+ ea.getValueString() + "'";
 							} else if (ea.getValueBoolean() != null) {
 								attributeFilterValue3 = " ec.valueBoolean = "
