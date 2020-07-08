@@ -858,6 +858,8 @@ public class TableUtils {
 	
 	public QDataBaseEntityMessage fetchSearchResults(SearchEntity searchBE) {
 
+		log.info("Inside fetchSearchResults without serviceToken");
+
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
 		msg.setReplace(true);
 		if (beUtils.getGennyToken() == null) {
