@@ -64,6 +64,9 @@ import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
+import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TableUtils {
 
@@ -216,7 +219,7 @@ public class TableUtils {
 		facts.put("searchBE", searchBE);
 		RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
 
-		Map<String, Object> results = ruleFlowGroupHandler.executeRules(serviceToken, userToken, facts, "SearchFilters",
+		Map<String, Object> results = ruleFlowGroupHandler.executeRules(serviceToken, beUtils.getGennyToken(), facts, "SearchFilters",
 				"TableUtils:GetFilters");
 
 		Object obj = results.get("payload");
@@ -224,16 +227,17 @@ public class TableUtils {
 			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
 			
 			// Check if bulkMsg not empty
-			if (!bulkMsg.getMessages().isEmpty()) {
+			if (bulkMsg.getMessages().length >0) {
 
 				// Get the first QDataBaseEntityMessage from bulkMsg
 				QDataBaseEntityMessage msg = bulkMsg.getMessages()[0];
 				
 				// Check if msg is not empty
-				if (!msg.getItems().isEmpty()) {
+				if (msg.getItems().length >0) {
 
 					// Extract the baseEntityAttributes from the first BaseEntity
-					filters = msg.getItems()[0].getBaseEntityAttributes();
+					Set<EntityAttribute> filtersSet = msg.getItems()[0].getBaseEntityAttributes();
+					filters.addAll(filtersSet);
 				}
 			}
 		}
@@ -256,6 +260,7 @@ public class TableUtils {
 
 		if(!filters.isEmpty()){
 			log.info("User Filters are NOT empty");
+			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
 			for (EntityAttribute filter : filters) {
 				searchBE.getBaseEntityAttributes().add(filter);
 			}
@@ -1573,13 +1578,8 @@ public class TableUtils {
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 
 		if (cache) {
-<<<<<<< HEAD
-			System.out
-					.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
-=======
 			System.out.println(
 					"Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
->>>>>>> v7.0.0
 			String json = JsonUtils.toJson(aggregatedMessages);
 			VertxUtils.writeMsg("webcmds", json);
 		}
