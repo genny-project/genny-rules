@@ -147,7 +147,7 @@ public class TableUtils {
 
 		} else {
 			log.info("Old Search");
-			msg = fetchSearchResults(searchBE);
+			msg = fetchSearchResults(serviceToken, searchBE);
 		}
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to search Results from SearchBE =" + (endtime1 - starttime) + " ms with total="
@@ -837,6 +837,21 @@ public class TableUtils {
 		return columns;
 	}
 
+	public QDataBaseEntityMessage fetchSearchResults(GennyToken serviceToken, SearchEntity searchBE) {
+
+		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+		if(!filters.isEmpty()){
+			log.info("User Filters are NOT empty");
+			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
+			for (EntityAttribute filter : filters) {
+				searchBE.getBaseEntityAttributes().add(filter);
+			}
+		}else{
+			log.info("User Filters are empty");
+		}
+		return this.fetchSearchResults(searchBE);
+	}
+	
 	public QDataBaseEntityMessage fetchSearchResults(SearchEntity searchBE) {
 
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
