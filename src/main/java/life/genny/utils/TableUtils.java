@@ -262,7 +262,7 @@ public class TableUtils {
 			log.info("User Filters are NOT empty");
 			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
 			for (EntityAttribute filter : filters) {
-				searchBE.getBaseEntityAttributes().add(filter);
+				searchBE.getBaseEntityAttributes().add(filter);// ????
 			}
 		}else{
 			log.info("User Filters are empty");
@@ -838,8 +838,12 @@ public class TableUtils {
 	}
 
 	public QDataBaseEntityMessage fetchSearchResults(GennyToken serviceToken, SearchEntity searchBE) {
-
+		
+		log.info("Inside fetchSearchResults");
+		
 		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+		log.info("User Filters length  :: "+filters.size());
+
 		if(!filters.isEmpty()){
 			log.info("User Filters are NOT empty");
 			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
