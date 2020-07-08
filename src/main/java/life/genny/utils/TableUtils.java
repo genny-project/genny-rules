@@ -33,6 +33,8 @@ import io.vertx.core.json.JsonObject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.apache.tools.ant.types.CommandlineJava.SysProperties;
+import org.hibernate.loader.plan.build.internal.returns.EntityAttributeFetchImpl;
 
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.models.Frame3;
@@ -186,12 +188,13 @@ public class TableUtils {
 		// log.info("Time taken to getTableColumns =" + (endtime5 - endtime4) + " ms");
 
 		// /*
-		//  * Display the table header
-		//  */
+		// * Display the table header
+		// */
 
 		// /* QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg); */
 		// log.info("calling showTableContent");
-		// QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns, cache);
+		// QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns,
+		// cache);
 		// /* Adds the rowAsk and table title ask message */
 		// ret.add(qb);
 		// log.info("calling sendTableContexts");
@@ -201,6 +204,40 @@ public class TableUtils {
 		 */
 		/* showTableFooter(searchBE); */
 		return ret;
+	}
+
+	private List<EntityAttribute> getUserFilters(GennyToken serviceToken, final SearchEntity searchBE) {
+		List<EntityAttribute> filters = new ArrayList<EntityAttribute>();
+
+		Map<String, Object> facts = new ConcurrentHashMap<String, Object>();
+		facts.put("serviceToken", serviceToken);
+		facts.put("userToken", beUtils.getGennyToken());
+		facts.put("searchBE", searchBE);
+		RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
+
+		Map<String, Object> results = ruleFlowGroupHandler.executeRules(serviceToken, userToken, facts, "SearchFilters",
+				"TableUtils:GetFilters");
+
+		Object obj = results.get("payload");
+		if (obj instanceof QBulkMessage) {
+			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
+			
+			// Check if bulkMsg not empty
+			if (!bulkMsg.getMessages().isEmpty()) {
+
+				// Get the first QDataBaseEntityMessage from bulkMsg
+				QDataBaseEntityMessage msg = bulkMsg.getMessages()[0];
+				
+				// Check if msg is not empty
+				if (!msg.getItems().isEmpty()) {
+
+					// Extract the baseEntityAttributes from the first BaseEntity
+					filters = msg.getItems()[0].getBaseEntityAttributes();
+				}
+			}
+		}
+		return filters;
+
 	}
 
 	/**
@@ -214,6 +251,16 @@ public class TableUtils {
 		long starttime = System.currentTimeMillis();
 		long endtime2 = starttime;
 
+		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+
+		if(!filters.isEmpty()){
+			log.info("User Filters are NOT empty");
+			for (EntityAttribute filter : filters) {
+				searchBE.getBaseEntityAttributes().add(filter);
+			}
+		}else{
+			log.info("User Filters are empty");
+		}
 		Tuple2<String, List<String>> data = this.getHql(beUtils.getGennyToken(), searchBE);
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE =" + (endtime1 - starttime) + " ms");
@@ -230,38 +277,23 @@ public class TableUtils {
 			endtime2 = System.currentTimeMillis();
 			log.info("Time taken to fetch Data =" + (endtime2 - endtime1) + " ms");
 
-			JsonObject resultJson = null;
-			
-			try {
-				resultJson = new JsonObject(resultJsonStr);
-				JsonArray result = resultJson.getJsonArray("codes");
-				List<String> resultCodes = new ArrayList<String>();
-				for (int i = 0; i < result.size(); i++) {
-					String code = result.getString(i);
-					resultCodes.add(code);
-				}
-				String[] filterArray = data._2.toArray(new String[0]);
-				List<BaseEntity> beList = resultCodes.stream().map(e -> {
-					BaseEntity be = beUtils.getBaseEntityByCode(e);
-					be = VertxUtils.privacyFilter(be, filterArray);
-					return be;
-				}).collect(Collectors.toList());
-				msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
-				Long total = resultJson.getLong("total");
-				msg.setTotal(total);
-				msg.setReplace(true);
-				msg.setParentCode(searchBE.getCode());
-			} catch (Exception e1) {
-				log.error("Bad Json -> ["+resultJsonStr);
-				msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
-				Long total = 0L;
-				msg.setTotal(total);
-				msg.setReplace(true);
-				msg.setParentCode(searchBE.getCode());
-				
+			JsonObject resultJson = new JsonObject(resultJsonStr);
+
+			JsonArray result = resultJson.getJsonArray("codes");
+			List<String> resultCodes = new ArrayList<String>();
+			for (int i = 0; i < result.size(); i++) {
+				String code = result.getString(i);
+				resultCodes.add(code);
 			}
-
-
+			String[] filterArray = data._2.toArray(new String[0]);
+			List<BaseEntity> beList = resultCodes.stream().map(e -> {
+				BaseEntity be = beUtils.getBaseEntityByCode(e);
+				be = VertxUtils.privacyFilter(be, filterArray);
+				return be;
+			}).collect(Collectors.toList());
+			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
+			Long total = resultJson.getLong("total");
+			msg.setTotal(total);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
@@ -350,11 +382,7 @@ public class TableUtils {
 				}
 			}
 		}
-		String sortBit = "";
-//		if (sortCode != null) {
-//			sortBit = ","+sortType +" ";
-//		}
-		String hql = "select distinct ea.baseEntityCode "+sortBit+" from EntityAttribute ea ";
+		String hql = "select distinct ea.baseEntityCode from EntityAttribute ea ";
 		if (attributeFilterCode1 != null) {
 			hql += ", EntityAttribute eb ";
 		}
@@ -392,8 +420,9 @@ public class TableUtils {
 	}
 
 	public SearchEntity getSessionSearch(final String searchCode) {
-		return getSessionSearch(searchCode, null,null);
+		return getSessionSearch(searchCode, null, null);
 	}
+
 	public SearchEntity getSessionSearch(final String searchCode, final String filterCode, final String filterValue) {
 		String sessionSearchCode = searchCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
 
@@ -876,7 +905,6 @@ public class TableUtils {
 		/* get table columns */
 		Map<String, String> columns = getTableColumns(searchBe);
 
-
 		for (Map.Entry<String, String> column : columns.entrySet()) {
 
 			String attributeCode = column.getKey();
@@ -1004,7 +1032,6 @@ public class TableUtils {
 		ask.setContextList(contextList);
 		return ask;
 	}
-
 
 	/**
 	 * @param serviceToken
@@ -1303,7 +1330,6 @@ public class TableUtils {
 		return headerAsk;
 	}
 
-
 	public void awaitTerminationAfterShutdown(ExecutorService threadPool) {
 		threadPool.shutdown();
 		try {
@@ -1408,7 +1434,8 @@ public class TableUtils {
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 
 		if (cache) {
-			System.out.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
+			System.out
+					.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 			String json = JsonUtils.toJson(aggregatedMessages);
 			VertxUtils.writeMsg("webcmds", json);
 		}
