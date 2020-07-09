@@ -1060,7 +1060,7 @@ public class RulesLoader {
 		log.info(debugStr + "Finish sendEventThroughUserSession");
 	}
 
-	public void executeStatefulForIintEvent(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
+	public void executeStatefulForInitEvent(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
 		int rulesFired = 0;
 		GennyToken serviceToken = facts.getServiceToken();
 
@@ -1385,7 +1385,7 @@ public class RulesLoader {
 		SessionFacts facts = new SessionFacts(gennyServiceToken, null, msg);
 
 		try {
-			executeStatefulForIintEvent(globals, facts);
+			executeStatefulForInitEvent(globals, facts);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
