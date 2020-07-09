@@ -234,12 +234,14 @@ public class TableUtils {
 			// Check if bulkMsg not empty
 			if (bulkMsg.getMessages().length >0) {
 
+				log.info("QDataBaseEntityMessage exists inside QBulkMessage   ::    "  + bulkMsg.getMessages().length);
 				// Get the first QDataBaseEntityMessage from bulkMsg
 				QDataBaseEntityMessage msg = bulkMsg.getMessages()[0];
 				
 				// Check if msg is not empty
 				if (msg.getItems().length >0) {
-
+					
+					log.info("BaseEntity exists inside QDataBaseEntityMessage   ::    "  + msg.getItems().length);
 					// Extract the baseEntityAttributes from the first BaseEntity
 					Set<EntityAttribute> filtersSet = msg.getItems()[0].getBaseEntityAttributes();
 					filters.addAll(filtersSet);
