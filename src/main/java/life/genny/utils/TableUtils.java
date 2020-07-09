@@ -141,20 +141,20 @@ public class TableUtils {
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
 
-		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
-		log.info("User Filters length  :: "+filters.size());
+		// List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+		// log.info("User Filters length  :: "+filters.size());
 
-		if(!filters.isEmpty()){
-			log.info("User Filters are NOT empty");
-			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
-			for (EntityAttribute filter : filters) {
-				searchBE.getBaseEntityAttributes().add(filter);// ????
-			}
-			log.info("searchBE after adding filters");
-			log.info(searchBE);
-		}else{
-			log.info("User Filters are empty");
-		}
+		// if(!filters.isEmpty()){
+		// 	log.info("User Filters are NOT empty");
+		// 	log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
+		// 	for (EntityAttribute filter : filters) {
+		// 		searchBE.getBaseEntityAttributes().add(filter);// ????
+		// 	}
+		// 	log.info("searchBE after adding filters");
+		// 	log.info(searchBE);
+		// }else{
+		// 	log.info("User Filters are empty");
+		// }
 
 		if (GennySettings.searchAlt || searchAlt) {
 			log.info("Search Alt!");
