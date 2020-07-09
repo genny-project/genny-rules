@@ -141,13 +141,28 @@ public class TableUtils {
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
 
+		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+		log.info("User Filters length  :: "+filters.size());
+
+		if(!filters.isEmpty()){
+			log.info("User Filters are NOT empty");
+			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
+			for (EntityAttribute filter : filters) {
+				searchBE.getBaseEntityAttributes().add(filter);// ????
+			}
+			log.info("searchBE after adding filters");
+			log.info(searchBE);
+		}else{
+			log.info("User Filters are empty");
+		}
+
 		if (GennySettings.searchAlt || searchAlt) {
 			log.info("Search Alt!");
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 
 		} else {
 			log.info("Old Search");
-			msg = fetchSearchResults(serviceToken, searchBE);
+			msg = fetchSearchResults(searchBE);
 		}
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to search Results from SearchBE =" + (endtime1 - starttime) + " ms with total="
@@ -263,20 +278,7 @@ public class TableUtils {
 			QDataBaseEntityMessage msg) {
 		long starttime = System.currentTimeMillis();
 		long endtime2 = starttime;
-
-		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
-
-		if(!filters.isEmpty()){
-			log.info("User Filters are NOT empty");
-			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
-			for (EntityAttribute filter : filters) {
-				searchBE.getBaseEntityAttributes().add(filter);// ????
-			}
-			log.info("searchBE after adding filters");
-			log.info(searchBE);
-		}else{
-			log.info("User Filters are empty");
-		}
+		
 		Tuple2<String, List<String>> data = this.getHql(beUtils.getGennyToken(), searchBE);
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE =" + (endtime1 - starttime) + " ms");
@@ -847,28 +849,7 @@ public class TableUtils {
 		return columns;
 	}
 
-	public QDataBaseEntityMessage fetchSearchResults(GennyToken serviceToken, SearchEntity searchBE) {
-		
-		log.info("Inside fetchSearchResults");
-		
-		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
-		log.info("User Filters length  :: "+filters.size());
-
-		if(!filters.isEmpty()){
-			log.info("User Filters are NOT empty");
-			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
-			for (EntityAttribute filter : filters) {
-				searchBE.getBaseEntityAttributes().add(filter);
-			}
-		}else{
-			log.info("User Filters are empty");
-		}
-		return this.fetchSearchResults(searchBE);
-	}
-	
 	public QDataBaseEntityMessage fetchSearchResults(SearchEntity searchBE) {
-
-		log.info("Inside fetchSearchResults without serviceToken");
 
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
 		msg.setReplace(true);
