@@ -248,6 +248,7 @@ public class TableUtils {
 				}
 			}
 		}
+		log.info("filters   ::   " +filters);
 		return filters;
 
 	}
@@ -271,6 +272,8 @@ public class TableUtils {
 			for (EntityAttribute filter : filters) {
 				searchBE.getBaseEntityAttributes().add(filter);// ????
 			}
+			log.info("searchBE after adding filters");
+			log.info(searchBE);
 		}else{
 			log.info("User Filters are empty");
 		}
