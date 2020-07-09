@@ -217,12 +217,17 @@ public class TableUtils {
 		facts.put("serviceToken", serviceToken);
 		facts.put("userToken", beUtils.getGennyToken());
 		facts.put("searchBE", searchBE);
-		RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
 
-		Map<String, Object> results = ruleFlowGroupHandler.executeRules(serviceToken, beUtils.getGennyToken(), facts, "SearchFilters",
+		log.info("facts   ::  " +facts);
+		RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
+		
+		log.info("serviceToken " +beUtils.getServiceToken());
+		Map<String, Object> results = ruleFlowGroupHandler.executeRules(beUtils.getServiceToken(), beUtils.getGennyToken(), facts, "SearchFilters",
 				"TableUtils:GetFilters");
 
 		Object obj = results.get("payload");
+		log.info("obj   ::   " +obj);
+		
 		if (obj instanceof QBulkMessage) {
 			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
 			
