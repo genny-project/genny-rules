@@ -214,7 +214,7 @@ public class TableUtils {
 		List<EntityAttribute> filters = new ArrayList<EntityAttribute>();
 
 		Map<String, Object> facts = new ConcurrentHashMap<String, Object>();
-		facts.put("serviceToken", serviceToken);
+		facts.put("serviceToken", beUtils.getServiceToken());
 		facts.put("userToken", beUtils.getGennyToken());
 		facts.put("searchBE", searchBE);
 
@@ -227,7 +227,7 @@ public class TableUtils {
 
 		Object obj = results.get("payload");
 		log.info("obj   ::   " +obj);
-		
+
 		if (obj instanceof QBulkMessage) {
 			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
 			
