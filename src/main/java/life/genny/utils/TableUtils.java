@@ -68,7 +68,7 @@ public class TableUtils {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
-	public static Boolean searchAlt = false;
+	public static Boolean searchAlt = true;
 
 	static Integer MAX_SEARCH_HISTORY_SIZE = 10;
 	static Integer MAX_SEARCH_BAR_TEXT_SIZE = 20;
@@ -136,7 +136,7 @@ public class TableUtils {
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
 
-		if (GennySettings.searchAlt || searchAlt) {
+		if (GennySettings.searchAlt && searchAlt) {
 			log.info("Search Alt!");
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 
