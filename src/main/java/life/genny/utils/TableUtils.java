@@ -314,11 +314,11 @@ public class TableUtils {
 					sortValue = ea.getValueString();
 				}
 				else if (ea.getAttributeCode().startsWith("SRT_PRI_CODE")) {
-					beSorted = " order by ea.code";
+					beSorted = " order by ea.baseEntityCode";
 					sortValue = ea.getValueString();
 				}
 				else if (ea.getAttributeCode().startsWith("SRT_PRI_NAME")) {
-					beSorted = " order by ea.name";
+					beSorted = " order by ea.pk.baseEntity.name";
 					sortValue = ea.getValueString();
 				}
 
