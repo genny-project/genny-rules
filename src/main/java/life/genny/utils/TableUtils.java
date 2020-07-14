@@ -472,7 +472,7 @@ public class TableUtils {
 		}
 
 		if (beSorted != null) {
-			hql += " order by " + sortType + " " + sortValue;
+			hql += " "+beSorted + " " + sortValue;
 
 		} else 
 		if (sortCode != null) {
