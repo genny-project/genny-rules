@@ -33,6 +33,8 @@ import io.vertx.core.json.JsonObject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.apache.tools.ant.types.CommandlineJava.SysProperties;
+import org.hibernate.loader.plan.build.internal.returns.EntityAttributeFetchImpl;
 
 import life.genny.jbpm.customworkitemhandlers.ShowFrame;
 import life.genny.models.Frame3;
@@ -62,6 +64,9 @@ import life.genny.qwanda.validation.ValidationList;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
+import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TableUtils {
 
@@ -136,6 +141,21 @@ public class TableUtils {
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
 
+		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+		log.info("User Filters length  :: "+filters.size());
+
+		if(!filters.isEmpty()){
+			log.info("User Filters are NOT empty");
+			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
+			for (EntityAttribute filter : filters) {
+				searchBE.getBaseEntityAttributes().add(filter);// ????
+			}
+			/* log.info("searchBE after adding filters"); */
+			log.info(searchBE);
+		}else{
+			log.info("User Filters are empty");
+		}
+
 		if (GennySettings.searchAlt && searchAlt) {
 			log.info("Search Alt!");
 			msg = searchUsingHql(serviceToken, searchBE, msg);
@@ -205,6 +225,49 @@ public class TableUtils {
 		return ret;
 	}
 
+	private List<EntityAttribute> getUserFilters(GennyToken serviceToken, final SearchEntity searchBE) {
+		List<EntityAttribute> filters = new ArrayList<EntityAttribute>();
+
+		Map<String, Object> facts = new ConcurrentHashMap<String, Object>();
+		facts.put("serviceToken", beUtils.getServiceToken());
+		facts.put("userToken", beUtils.getGennyToken());
+		facts.put("searchBE", searchBE);
+
+		log.info("facts   ::  " +facts);
+		RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
+		
+		log.info("serviceToken " +beUtils.getServiceToken());
+		Map<String, Object> results = ruleFlowGroupHandler.executeRules(beUtils.getServiceToken(), beUtils.getGennyToken(), facts, "SearchFilters",
+				"TableUtils:GetFilters");
+
+		Object obj = results.get("payload");
+		log.info("obj   ::   " +obj);
+
+		if (obj instanceof QBulkMessage) {
+			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
+			
+			// Check if bulkMsg not empty
+			if (bulkMsg.getMessages().length >0) {
+
+				log.info("QDataBaseEntityMessage exists inside QBulkMessage   ::    "  + bulkMsg.getMessages().length);
+				// Get the first QDataBaseEntityMessage from bulkMsg
+				QDataBaseEntityMessage msg = bulkMsg.getMessages()[0];
+				
+				// Check if msg is not empty
+				if (msg.getItems().length >0) {
+					
+					log.info("BaseEntity exists inside QDataBaseEntityMessage   ::    "  + msg.getItems().length);
+					// Extract the baseEntityAttributes from the first BaseEntity
+					Set<EntityAttribute> filtersSet = msg.getItems()[0].getBaseEntityAttributes();
+					filters.addAll(filtersSet);
+				}
+			}
+		}
+		log.info("filters   ::   " +filters);
+		return filters;
+
+	}
+
 	/**
 	 * @param serviceToken
 	 * @param searchBE
@@ -215,7 +278,7 @@ public class TableUtils {
 			QDataBaseEntityMessage msg) {
 		long starttime = System.currentTimeMillis();
 		long endtime2 = starttime;
-
+		
 		Tuple2<String, List<String>> data = this.getHql(beUtils.getGennyToken(), searchBE);
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE =" + (endtime1 - starttime) + " ms");
@@ -264,6 +327,21 @@ public class TableUtils {
 
 			}
 
+			JsonArray result = resultJson.getJsonArray("codes");
+			List<String> resultCodes = new ArrayList<String>();
+			for (int i = 0; i < result.size(); i++) {
+				String code = result.getString(i);
+				resultCodes.add(code);
+			}
+			String[] filterArray = data._2.toArray(new String[0]);
+			List<BaseEntity> beList = resultCodes.stream().map(e -> {
+				BaseEntity be = beUtils.getBaseEntityByCode(e);
+				be = VertxUtils.privacyFilter(be, filterArray);
+				return be;
+			}).collect(Collectors.toList());
+			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
+			Long total = resultJson.getLong("total");
+			msg.setTotal(total);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
