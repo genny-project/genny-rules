@@ -73,7 +73,7 @@ public class TableUtils {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
-	public static Boolean searchAlt = false;
+	public static Boolean searchAlt = true;
 
 	static Integer MAX_SEARCH_HISTORY_SIZE = 10;
 	static Integer MAX_SEARCH_BAR_TEXT_SIZE = 20;
@@ -156,7 +156,7 @@ public class TableUtils {
 			log.info("User Filters are empty");
 		}
 
-		if (GennySettings.searchAlt || searchAlt) {
+		if (GennySettings.searchAlt && searchAlt) {
 			log.info("Search Alt!");
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 
@@ -392,11 +392,11 @@ public class TableUtils {
 					sortValue = ea.getValueString();
 				}
 				else if (ea.getAttributeCode().startsWith("SRT_PRI_CODE")) {
-					beSorted = " order by ea.code";
+					beSorted = " order by ea.baseEntityCode";
 					sortValue = ea.getValueString();
 				}
 				else if (ea.getAttributeCode().startsWith("SRT_PRI_NAME")) {
-					beSorted = " order by ea.name";
+					beSorted = " order by ea.pk.baseEntity.name";
 					sortValue = ea.getValueString();
 				}
 
@@ -550,7 +550,7 @@ public class TableUtils {
 		}
 
 		if (beSorted != null) {
-			hql += " order by " + sortType + " " + sortValue;
+			hql += " "+beSorted + " " + sortValue;
 
 		} else 
 		if (sortCode != null) {
