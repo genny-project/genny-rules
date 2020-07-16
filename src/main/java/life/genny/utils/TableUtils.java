@@ -254,6 +254,8 @@ public class TableUtils {
 				msg.setTotal(total);
 				msg.setReplace(true);
 				msg.setParentCode(searchBE.getCode());
+				log.info("Search Results = "+resultCodes.size()+" out of total "+total);
+				
 			} catch (Exception e1) {
 				log.error("Bad Json -> [" + resultJsonStr);
 				msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
