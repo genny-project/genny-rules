@@ -156,7 +156,7 @@ public class TableUtils {
 			log.info("User Filters are empty");
 		}
 
-		if (searchAlt || (GennySettings.searchAlt)) {
+		if (searchAlt && (GennySettings.searchAlt)) {
 			log.info("Search Alt!");
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 
