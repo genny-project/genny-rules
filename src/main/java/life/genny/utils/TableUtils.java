@@ -156,7 +156,7 @@ public class TableUtils {
 			log.info("User Filters are empty");
 		}
 
-		if (GennySettings.searchAlt && searchAlt) {
+		if (searchAlt && (GennySettings.searchAlt)) {
 			log.info("Search Alt!");
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 
@@ -164,6 +164,7 @@ public class TableUtils {
 			log.info("Old Search");
 			msg = fetchSearchResults(searchBE);
 		}
+		log.info("MSG ParentCode = "+msg.getParentCode());
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to search Results from SearchBE =" + (endtime1 - starttime) + " ms with total="
 				+ msg.getTotal());
@@ -343,6 +344,9 @@ public class TableUtils {
 			}).collect(Collectors.toList());
 			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
 			Long total = resultJson.getLong("total");
+			msg.setReplace(true);
+			msg.setParentCode(searchBE.getCode());
+
 			msg.setTotal(total);
 		} catch (Exception e1) {
 			e1.printStackTrace();
