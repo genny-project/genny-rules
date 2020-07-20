@@ -138,7 +138,7 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 //		msg.setToken(userToken.getToken());
 // 		msg.setSend(true);
 //  		
-		VertxUtils.writeMsg("webcmds",msg);
+//		VertxUtils.writeMsg("webcmds",msg);
 
 	}
 
