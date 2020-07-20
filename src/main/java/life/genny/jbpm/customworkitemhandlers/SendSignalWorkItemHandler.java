@@ -63,11 +63,10 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 		}
 		Long processId = null;
 
-		QCmdMessage msg = new QCmdMessage("START_PROCESS", "START_PROCESS");
-		msg.setToken(userToken.getToken());
- 		msg.setSend(true);
-  		
-		VertxUtils.writeMsg("webcmds",msg);
+//		QCmdMessage msg = new QCmdMessage("START_PROCESS", "START_PROCESS");
+//		msg.setToken(userToken.getToken());
+// 		msg.setSend(true); 		
+//		VertxUtils.writeMsg("webcmds",msg);
 
 		
 		SessionFacts sessionFacts = new SessionFacts(serviceToken,userToken,payload);
@@ -135,10 +134,10 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 		manager.completeWorkItem(workItem.getId(), resultMap);
 		
 		/* Notify the frontend that the process is over */
-		msg = new QCmdMessage("END_PROCESS", "END_PROCESS");
-		msg.setToken(userToken.getToken());
- 		msg.setSend(true);
-  		
+//		msg = new QCmdMessage("END_PROCESS", "END_PROCESS");
+//		msg.setToken(userToken.getToken());
+// 		msg.setSend(true);
+//  		
 		VertxUtils.writeMsg("webcmds",msg);
 
 	}
