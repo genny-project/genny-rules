@@ -20,7 +20,7 @@
 		<vertx.version>3.5.4</vertx.version>
 		<hazelcast.version>3.8.2</hazelcast.version>
 		<javax-cache.version>1.1.0</javax-cache.version>
-		<log4j-core-version>2.5</log4j-core-version>
+		<log4j-core-version>2.13.3</log4j-core-version>
 		<weld-vertx.version>1.2.0.Final</weld-vertx.version>
 		<jar.finalName>${project.name}</jar.finalName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
