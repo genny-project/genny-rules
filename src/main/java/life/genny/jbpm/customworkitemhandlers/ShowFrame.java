@@ -68,8 +68,12 @@ public class ShowFrame implements WorkItemHandler {
 		}
 		callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
-		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output);
-
+		Boolean cache = true;
+		QBulkMessage msg = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output,cache);  // use cache
+		if (cache) {
+			msg.setToken(userToken.getToken());
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+		}
 		// notify manager that work item has been completed
 		if (workItem == null) {
 			log.error(callingWorkflow + ": workItem is null");
