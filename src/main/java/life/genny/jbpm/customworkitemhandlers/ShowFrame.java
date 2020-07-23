@@ -597,11 +597,12 @@ public class ShowFrame implements WorkItemHandler {
 
 		}
 
+		String debugStr = askMsgs2Str;
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
-//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
+		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
 
 		Set<QDataAskMessage> askMsgs2 = null;
 
