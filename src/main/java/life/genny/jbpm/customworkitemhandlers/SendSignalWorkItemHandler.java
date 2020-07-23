@@ -20,9 +20,10 @@ import org.kie.api.runtime.process.WorkItemManager;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import life.genny.models.GennyToken;
-
+import life.genny.qwanda.message.QCmdMessage;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.SessionFacts;
+import life.genny.utils.VertxUtils;
 
 public class SendSignalWorkItemHandler implements WorkItemHandler {
 
@@ -49,6 +50,8 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 
 		/* items used to save the extracted input parameters from the custom task */
 		Map<String, Object> items = workItem.getParameters();
+		
+
 
 		Object payload = (Object) items.get("payloadObject");
 		GennyToken userToken = (GennyToken) items.get("userToken");
@@ -59,6 +62,11 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 			callingWorkflow = "";
 		}
 		Long processId = null;
+
+//		QCmdMessage msg = new QCmdMessage("START_PROCESS", "START_PROCESS");
+//		msg.setToken(userToken.getToken());
+// 		msg.setSend(true); 		
+//		VertxUtils.writeMsg("webcmds",msg);
 
 		
 		SessionFacts sessionFacts = new SessionFacts(serviceToken,userToken,payload);
@@ -124,6 +132,13 @@ public class SendSignalWorkItemHandler implements WorkItemHandler {
 		}
 		// notify manager that work item has been completed
 		manager.completeWorkItem(workItem.getId(), resultMap);
+		
+		/* Notify the frontend that the process is over */
+//		msg = new QCmdMessage("END_PROCESS", "END_PROCESS");
+//		msg.setToken(userToken.getToken());
+// 		msg.setSend(true);
+//  		
+//		VertxUtils.writeMsg("webcmds",msg);
 
 	}
 
