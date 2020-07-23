@@ -1708,7 +1708,6 @@ public class TableUtils {
 			for (EntityAttribute filter : filters) {
 				searchBE.getBaseEntityAttributes().add(filter);
 			}
-			log.info(searchBE);
 		}else{
 			log.info("User Filters are empty");
 		}
@@ -1727,7 +1726,7 @@ public class TableUtils {
 						Long total = json.getLong("total");
 
 						/* Create a new BaseEntity and add the count attribute */
-						BaseEntity countBE = new BaseEntity(searchBE.getCode().split("SBE_")[1], "Count " + searchBE.getName());
+						BaseEntity countBE = new BaseEntity("CNS_" + searchBE.getCode().split("SBE_")[1], "Count " + searchBE.getName());
 						Attribute attr = RulesUtils.getAttribute("PRI_COUNT_LONG", this.beUtils.getGennyToken().getToken());
 						EntityAttribute countAttr = new EntityAttribute();
 						countAttr.setAttribute(attr);
