@@ -303,17 +303,25 @@ public class TableUtils {
 				resultJson = new JsonObject(resultJsonStr);
 				JsonArray result = resultJson.getJsonArray("codes");
 				List<String> resultCodes = new ArrayList<String>();
+				String[] filterArray = data._2.toArray(new String[0]);
+				BaseEntity[] beArray = new BaseEntity[result.size()];
+
 				for (int i = 0; i < result.size(); i++) {
 					String code = result.getString(i);
 					resultCodes.add(code);
-				}
-				String[] filterArray = data._2.toArray(new String[0]);
-				List<BaseEntity> beList = resultCodes.stream().map(e -> {
-					BaseEntity be = beUtils.getBaseEntityByCode(e);
+					BaseEntity be = beUtils.getBaseEntityByCode(code);
 					be = VertxUtils.privacyFilter(be, filterArray);
-					return be;
-				}).collect(Collectors.toList());
-				msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
+					be.setIndex(i);
+					beArray[i] = be;
+					
+				}
+//				List<BaseEntity> beList = resultCodes.stream().map(e -> {
+//					BaseEntity be = beUtils.getBaseEntityByCode(e);
+//					be = VertxUtils.privacyFilter(be, filterArray);
+//					be.setIndex(index++);
+//					return be;
+//				}).collect(Collectors.toList());
+				msg = new QDataBaseEntityMessage(beArray);
 				Long total = resultJson.getLong("total");
 				msg.setTotal(total);
 				msg.setReplace(true);
@@ -330,24 +338,24 @@ public class TableUtils {
 
 			}
 
-			JsonArray result = resultJson.getJsonArray("codes");
-			List<String> resultCodes = new ArrayList<String>();
-			for (int i = 0; i < result.size(); i++) {
-				String code = result.getString(i);
-				resultCodes.add(code);
-			}
-			String[] filterArray = data._2.toArray(new String[0]);
-			List<BaseEntity> beList = resultCodes.stream().map(e -> {
-				BaseEntity be = beUtils.getBaseEntityByCode(e);
-				be = VertxUtils.privacyFilter(be, filterArray);
-				return be;
-			}).collect(Collectors.toList());
-			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
-			Long total = resultJson.getLong("total");
-			msg.setReplace(true);
-			msg.setParentCode(searchBE.getCode());
-
-			msg.setTotal(total);
+//			JsonArray result = resultJson.getJsonArray("codes");
+//			List<String> resultCodes = new ArrayList<String>();
+//			for (int i = 0; i < result.size(); i++) {
+//				String code = result.getString(i);
+//				resultCodes.add(code);
+//			}
+//			String[] filterArray = data._2.toArray(new String[0]);
+//			List<BaseEntity> beList = resultCodes.stream().map(e -> {
+//				BaseEntity be = beUtils.getBaseEntityByCode(e);
+//				be = VertxUtils.privacyFilter(be, filterArray);
+//				return be;
+//			}).collect(Collectors.toList());
+//			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
+//			Long total = resultJson.getLong("total");
+//			msg.setReplace(true);
+//			msg.setParentCode(searchBE.getCode());
+//
+//			msg.setTotal(total);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
