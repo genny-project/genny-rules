@@ -25,7 +25,6 @@ import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
-import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
@@ -76,13 +75,7 @@ public class ShowFrames implements WorkItemHandler {
 					String rootFrameCode = outputParam.getResultCode();
 					String targetFrameCode = outputParam.getTargetCode();
 					
-					Boolean cache = true;
-					QBulkMessage msg = ShowFrame.display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, outputParam,cache);  // use cache
-					if (cache) {
-						msg.setToken(userToken.getToken());
-						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-					}
-
+					ShowFrame.display(userToken, rootFrameCode, targetFrameCode, callingWorkflow,outputParam);
 				}
 			}
 
