@@ -1713,4 +1713,53 @@ public class TableUtils {
 		long endtime = System.currentTimeMillis();
 		return (endtime - starttime);
 	}
+
+	public void performAndSendCount(GennyToken serviceToken, SearchEntity searchBE) {
+
+		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+			log.info("User Filters length  :: "+filters.size());
+
+		if(!filters.isEmpty()){
+			log.info("User Filters are NOT empty");
+			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
+			for (EntityAttribute filter : filters) {
+				searchBE.getBaseEntityAttributes().add(filter);
+			}
+		}else{
+			log.info("User Filters are empty");
+		}
+
+		Tuple2<String, List<String>> data = TableUtils.getHql(this.beUtils.getGennyToken(), searchBE);
+	        String hql = data._1;
+			String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
+			try {
+				/* Hit the api for a count */
+				String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl
+						+ "/qwanda/baseentitys/count24/" + hql2,
+						serviceToken.getToken(), 120);
+				
+				// JsonObject json = new JsonObject(resultJsonStr);
+				// Long total = json.getLong("total");
+				System.out.println("Count = " + resultJsonStr);
+				Long total = Long.parseLong(resultJsonStr);
+
+				/* Create a new BaseEntity and add the count attribute */
+				BaseEntity countBE = new BaseEntity("CNS_" + searchBE.getCode().split("SBE_")[1], "Count " + searchBE.getName());
+				Attribute attr = RulesUtils.getAttribute("PRI_COUNT_LONG", this.beUtils.getGennyToken().getToken());
+				EntityAttribute countAttr = new EntityAttribute();
+				countAttr.setAttribute(attr);
+				countAttr.setValue(total);
+				countBE.getBaseEntityAttributes().add(countAttr);
+
+				/* Create and Send a BE MSG using the count value BE */
+				QDataBaseEntityMessage countMsg = new QDataBaseEntityMessage(countBE);
+
+				countMsg.setToken(this.beUtils.getGennyToken().getToken());
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(countMsg));
+
+	        			
+	        } catch (Exception e) {
+	        	System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
+	        }
+	}
 }
