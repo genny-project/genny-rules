@@ -229,7 +229,7 @@ public class TableUtils {
 		QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 		msgend.setToken(beUtils.getGennyToken().getToken());
  		msgend.setSend(true);  		
-		VertxUtils.writeMsg("webcmds",msg);
+		VertxUtils.writeMsg("webcmds",msgend);
 		
 		
 		return ret;
