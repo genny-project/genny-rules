@@ -968,6 +968,8 @@ public class TableUtils {
 						msg = new QDataBaseEntityMessage(items, parentCode, linkCode, total);
 						log.info("The result of getSearchResults was null Exception ::  " + msg);
 					} else {
+						msg = new QDataBaseEntityMessage(items, searchBE.getCode(), linkCode, total);
+						log.info(msg);
 						log.info("The result of getSearchResults was " + msg.getItems().length + " items , with total="
 								+ msg.getTotal());
 					}
