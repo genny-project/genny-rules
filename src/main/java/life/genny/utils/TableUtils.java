@@ -57,6 +57,7 @@ import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.message.QBulkMessage;
+import life.genny.qwanda.message.QCmdMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
@@ -223,6 +224,14 @@ public class TableUtils {
 		 * QDataBaseEntityMessage qm = sendTableContexts(cache); ret.add(qm);
 		 */
 		/* showTableFooter(searchBE); */
+		
+		// Now send the end_process msg
+		QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
+		msgend.setToken(beUtils.getGennyToken().getToken());
+ 		msgend.setSend(true);  		
+		VertxUtils.writeMsg("webcmds",msg);
+		
+		
 		return ret;
 	}
 
