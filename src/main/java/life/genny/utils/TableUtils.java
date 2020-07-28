@@ -199,6 +199,12 @@ public class TableUtils {
 		} else {
 			searchBeMsg.setToken(beUtils.getGennyToken().getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
+			// Now send the end_process msg
+			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
+			msgend.setToken(beUtils.getGennyToken().getToken());
+	 		msgend.setSend(true);  		
+			VertxUtils.writeMsg("webcmds",msgend);
+
 		}
 		// long endtime4 = System.currentTimeMillis();
 		// log.info("Time taken to send Results =" + (endtime4 - endtime3) + " ms");
@@ -225,11 +231,6 @@ public class TableUtils {
 		 */
 		/* showTableFooter(searchBE); */
 		
-		// Now send the end_process msg
-		QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
-		msgend.setToken(beUtils.getGennyToken().getToken());
- 		msgend.setSend(true);  		
-		VertxUtils.writeMsg("webcmds",msgend);
 		
 		
 		return ret;
@@ -1619,6 +1620,12 @@ public class TableUtils {
 					"Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 			String json = JsonUtils.toJson(aggregatedMessages);
 			VertxUtils.writeMsg("webcmds", json);
+			// Now send the end_process msg
+			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
+			msgend.setToken(beUtils.getGennyToken().getToken());
+	 		msgend.setSend(true);  		
+			VertxUtils.writeMsg("webcmds",msgend);
+
 		}
 
 		/* update(output); */
@@ -1707,6 +1714,12 @@ public class TableUtils {
 						"Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 				String json = JsonUtils.toJson(aggregatedMessages);
 				VertxUtils.writeMsg("webcmds", json);
+				// Now send the end_process msg
+				QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
+				msgend.setToken(beUtils.getGennyToken().getToken());
+		 		msgend.setSend(true);  		
+				VertxUtils.writeMsg("webcmds",msgend);
+
 			}
 		} catch (ClassCastException e) {
 			log.error(e.getLocalizedMessage());
