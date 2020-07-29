@@ -244,7 +244,7 @@ public class TableUtils {
 		facts.put("userToken", beUtils.getGennyToken());
 		facts.put("searchBE", searchBE);
 
-		log.info("facts   ::  " +facts);
+		/* log.info("facts   ::  " +facts); */
 		RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
 		
 		log.info("serviceToken " +beUtils.getServiceToken());
@@ -252,7 +252,7 @@ public class TableUtils {
 				"TableUtils:GetFilters");
 
 		Object obj = results.get("payload");
-		log.info("obj   ::   " +obj);
+		/* log.info("obj   ::   " +obj); */
 
 		if (obj instanceof QBulkMessage) {
 			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
