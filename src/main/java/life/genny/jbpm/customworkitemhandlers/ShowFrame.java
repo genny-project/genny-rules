@@ -394,7 +394,9 @@ public class ShowFrame implements WorkItemHandler {
 
 				String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
 				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
-					for (String dropdownCode : dropdownCodes) {
+					Set<String> dropdownCodeSet = new HashSet<>(Arrays.asList(dropdownCodes));
+
+					for (String dropdownCode : dropdownCodeSet) {
 						dropdownCode = dropdownCode.replaceAll("\"", "");
 						log.info("Dropdown code :: " + dropdownCode);
 						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken,cache);
