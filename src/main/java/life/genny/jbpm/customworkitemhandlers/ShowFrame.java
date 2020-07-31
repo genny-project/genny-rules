@@ -574,7 +574,7 @@ public class ShowFrame implements WorkItemHandler {
 				askMsgs2Str = null;
 			}
 			
-			askMsgs2Str = null; //TODO FORCE HACK
+			//askMsgs2Str = null; //TODO FORCE HACK
 			if (askMsgs2Str == null) {
 				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl + " with rootFrameCode = " + rootFrameCode);
 				log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode + "_ASKS");
