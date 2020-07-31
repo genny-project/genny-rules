@@ -404,6 +404,7 @@ public class ShowFrame implements WorkItemHandler {
 					}
 				}
 
+				
 				qBulkMessage.add(updated);
 				if (!cache) {
 					VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
@@ -566,13 +567,14 @@ public class ShowFrame implements WorkItemHandler {
 			JsonObject askMsgJson = VertxUtils.readCachedJson(userToken.getRealm(), rootFrameCode + "_ASKS",userToken.getToken());
 			if ("OK".equalsIgnoreCase(askMsgJson.getString("status"))) {
 				askMsgs2Str = askMsgJson.getString("value");
-				if (askMsgs2Str.contains("\\\"items\\\": [],")) {
+				if (askMsgs2Str.contains("\"items\": [],")) {
 					askMsgs2Str = null;
 				}
 			} else {
 				askMsgs2Str = null;
 			}
 			
+			askMsgs2Str = null; //TODO FORCE HACK
 			if (askMsgs2Str == null) {
 				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl + " with rootFrameCode = " + rootFrameCode);
 				log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode + "_ASKS");
