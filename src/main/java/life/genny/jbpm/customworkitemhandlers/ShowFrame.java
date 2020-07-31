@@ -566,6 +566,9 @@ public class ShowFrame implements WorkItemHandler {
 			JsonObject askMsgJson = VertxUtils.readCachedJson(userToken.getRealm(), rootFrameCode + "_ASKS",userToken.getToken());
 			if ("OK".equalsIgnoreCase(askMsgJson.getString("status"))) {
 				askMsgs2Str = askMsgJson.getString("value");
+				if (askMsgs2Str.contains("\\\"items\\\": [],")) {
+					askMsgs2Str = null;
+				}
 			} else {
 				askMsgs2Str = null;
 			}
