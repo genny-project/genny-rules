@@ -977,7 +977,7 @@ public class RulesLoader {
 		String bridgeSourceAddress = "";
 		GennyToken serviceToken = facts.getServiceToken();
 
-		BaseEntityUtils beUtils = new BaseEntityUtils(facts.getUserToken());
+		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,facts.getUserToken());
 		beUtils.setServiceToken(facts.getServiceToken());
 		log.info("BaseEntity created");
 
@@ -1290,6 +1290,11 @@ public class RulesLoader {
 			kieSession.addEventListener(new GennyAgendaEventListener());
 			kieSession.addEventListener(new JbpmInitListener(serviceToken));
 
+			BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,userToken);
+			CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
+
+			facts.add(capabilityUtils);
+			
 			for (final Object fact : facts) {
 				kieSession.insert(fact);
 				if (fact instanceof QEventMessage) {
@@ -1313,8 +1318,6 @@ public class RulesLoader {
 
 			}
 
-			BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-			CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
 
 			rulesFired = kieSession.fireAllRules();
 
@@ -1412,6 +1415,7 @@ public class RulesLoader {
 					facts.add(msg);
 					facts.add(userToken);
 					facts.add(serviceToken);
+					facts.add(new BaseEntityUtils(serviceToken,userToken));
 					// SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
 					// RulesLoader.executeStateful(globals, facts);
 					RulesLoader.executeStateless(globals, facts, serviceToken, userToken);

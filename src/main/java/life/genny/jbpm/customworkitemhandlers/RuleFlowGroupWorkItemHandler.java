@@ -98,7 +98,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 			//log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #1");
 
-			BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+			BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,userToken);
 			CapabilityUtils capabilityUtils = null;
 			if (items.containsKey("capabilityUtils")) {
 				capabilityUtils = (CapabilityUtils) items.get("capabilityUtils");
