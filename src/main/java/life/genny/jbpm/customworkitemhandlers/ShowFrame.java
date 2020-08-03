@@ -402,7 +402,7 @@ public class ShowFrame implements WorkItemHandler {
 						dropdownCode = dropdownCode.replaceAll("\"", "");
 						log.info("Dropdown code :: " + dropdownCode);
 						
-						if(dropdownCode.equals("LNK_OCCUPATION")){
+						if(dropdownCode.equals("LNK_OCCUPATION") || dropdownCode.equals("LNK_HOST_COMPANY_REP")){
 							continue;
 						}
 
