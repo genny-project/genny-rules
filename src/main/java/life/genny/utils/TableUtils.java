@@ -152,13 +152,14 @@ public class TableUtils {
 				searchBE.getBaseEntityAttributes().add(filter);// ????
 			}
 			/* log.info("searchBE after adding filters"); */
-			log.info(searchBE);
+			/* log.info(searchBE); */
 		}else{
 			log.info("User Filters are empty");
 		}
 
 		if (searchAlt && (GennySettings.searchAlt)) {
 			log.info("Search Alt!");
+			log.info("searchCode   ::   " + searchBE.getCode());
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 
 		} else {
