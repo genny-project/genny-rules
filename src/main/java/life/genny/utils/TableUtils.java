@@ -152,7 +152,7 @@ public class TableUtils {
 				searchBE.getBaseEntityAttributes().add(filter);// ????
 			}
 			/* log.info("searchBE after adding filters"); */
-			/* log.info(searchBE); */
+			//log.info(searchBE);
 		}else{
 			log.info("User Filters are empty");
 		}
