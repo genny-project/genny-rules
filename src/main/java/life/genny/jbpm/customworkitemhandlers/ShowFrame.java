@@ -393,14 +393,22 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
+
 				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
 					Set<String> dropdownCodeSet = new HashSet<>(Arrays.asList(dropdownCodes));
 
 					for (String dropdownCode : dropdownCodeSet) {
+						
 						dropdownCode = dropdownCode.replaceAll("\"", "");
 						log.info("Dropdown code :: " + dropdownCode);
+						
+						if(dropdownCode.equals("LNK_OCCUPATION") || dropdownCode.equals("LNK_HOST_COMPANY_REP")){
+							continue;
+						}
+
 						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken,cache);
 						qBulkMessage.add(qb);
+					
 					}
 				}
 

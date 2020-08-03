@@ -159,6 +159,7 @@ public class TableUtils {
 
 		if (searchAlt && (GennySettings.searchAlt)) {
 			log.info("Search Alt!");
+			log.info("searchCode   ::   " + searchBE.getCode());
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 
 		} else {
