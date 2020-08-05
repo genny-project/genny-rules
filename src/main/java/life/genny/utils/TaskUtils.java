@@ -20,6 +20,8 @@ import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
+import org.kie.internal.task.api.TaskModelProvider;
+import org.kie.internal.task.api.model.InternalTask;
 
 import io.vertx.core.json.JsonObject;
 import life.genny.model.OutputParam2;
@@ -397,6 +399,61 @@ public class TaskUtils {
 		} else {
 			return q;
 		}
+	}
+	
+	
+	static public InternalTask createTask(final GennyToken userToken, final String questionCode)
+	{
+		Task task = null;
+		// Look for any existing empty tasks for this user that match the QUESTION_GROUP CODE
+//		List<TaskSummary> taskSummarys = TaskUtils.getUserTaskSummarys(userToken);
+//		if ((taskSummarys != null) && (!taskSummarys.isEmpty())) {
+//
+//		for (TaskSummary taskSummary : taskSummarys) {
+//			if (taskSummary.getName().equals(questionCode)) {
+//				// Now check if empty!
+//				Task existingTask = RulesLoader.taskServiceMap.get(userToken.getSessionCode()).getTaskById(taskSummary.getId());
+//				Long docId = existingTask.getTaskData().getDocumentContentId();
+//				Content c = RulesLoader.taskServiceMap.get(userToken.getSessionCode()).getContentById(docId);
+//				if (c == null) {
+//					log.error("*************** Task content is NULL *********** ABORTING");
+//					continue;
+//				}
+//				HashMap<String, Object> taskAsks2 = null;
+//				ConcurrentHashMap<String, Object> taskAsks = null;
+//			//	synchronized (this) {
+//					taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
+//
+//					taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+//			//	}
+//				// Now check if all the answers are unanswered
+//				Boolean anyAnswered = false;
+//				for (String key : taskAsks.keySet()) {
+//					if (taskAsks.get(key) instanceof String) {
+//						continue;
+//					}
+//					TaskAsk ask = (TaskAsk) taskAsks.get(key);
+//					if (ask != null) {
+//						if (ask.getAnswered()) {
+//							anyAnswered = true;
+//							break;
+//						}
+//					}
+//				}
+//				if (!anyAnswered ) {
+//					// Assign this one to the task
+//					log.info("Reusing existing empty Task -> "+existingTask.getId());
+//					task = (InternalTask) existingTask;
+//					// And set the 
+//				}
+//				
+//			}
+//		}
+//		}
+		if (task == null) {
+			task = (InternalTask) TaskModelProvider.getFactory().newTask();
+		}
+		return (InternalTask)task;
 	}
 	
 }

@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,10 +33,12 @@ import org.kie.api.runtime.process.CaseData;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemManager;
 import org.kie.api.task.TaskService;
+import org.kie.api.task.model.Content;
 import org.kie.api.task.model.I18NText;
 import org.kie.api.task.model.OrganizationalEntity;
 import org.kie.api.task.model.PeopleAssignments;
 import org.kie.api.task.model.Task;
+import org.kie.api.task.model.TaskSummary;
 import org.kie.api.task.model.User;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.runtime.manager.context.EmptyContext;
@@ -373,7 +376,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 	@Override
 	protected Task createTaskBasedOnWorkItemParams(KieSession session, WorkItem workItem) {
-		InternalTask task = (InternalTask) TaskModelProvider.getFactory().newTask();
+		
 
 		CaseData caseFile = null;
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
@@ -399,6 +402,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (locale == null) {
 			locale = "en-AU";
 		}
+		
+		
+		InternalTask task = TaskUtils.createTask(userToken, questionCode);
+		
+
+		
 
 		if (questionCode != null) {
 			List<I18NText> names = new CopyOnWriteArrayList<I18NText>();
