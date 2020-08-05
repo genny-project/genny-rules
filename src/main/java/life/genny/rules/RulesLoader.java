@@ -1009,7 +1009,7 @@ public class RulesLoader {
 				allowables.add(kieSession.insert(allow));
 			}
 		}else{
-			log.info("user was null !!!")
+			log.info("user was null !!!");
 		}
 
 		Long processId = null;
