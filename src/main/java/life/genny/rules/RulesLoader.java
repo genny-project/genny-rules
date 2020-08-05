@@ -974,6 +974,8 @@ public class RulesLoader {
 
 	private void sendEventThroughUserSession(SessionFacts facts, KieSession kieSession) throws InterruptedException {
 		log.info("Setting up Capabilities and Alloweds");
+		log.info("facts   ::  " + facts);
+		log.info("facts userCode  ::  " + facts.getUserToken().getUserCode());
 		String bridgeSourceAddress = "";
 		GennyToken serviceToken = facts.getServiceToken();
 
@@ -1006,6 +1008,8 @@ public class RulesLoader {
 			for (Allowed allow : allowable) {
 				allowables.add(kieSession.insert(allow));
 			}
+		}else{
+			log.info("user was null !!!");
 		}
 
 		Long processId = null;
