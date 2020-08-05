@@ -978,7 +978,6 @@ public class RulesLoader {
 		GennyToken serviceToken = facts.getServiceToken();
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,facts.getUserToken());
-		beUtils.setServiceToken(facts.getServiceToken());
 		log.info("BaseEntity created");
 
 		FactHandle beUtilsHandle = kieSession.insert(beUtils);

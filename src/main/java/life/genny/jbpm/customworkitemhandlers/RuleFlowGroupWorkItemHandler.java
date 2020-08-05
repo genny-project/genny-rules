@@ -115,9 +115,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				}
 
 			}
-			String userCode = userToken.getUserCode();
+		
 			BaseEntity user = null;
-			if ((VertxUtils.cachedEnabled) && ("PER_SERVICE".equals(userCode))) {
+			if ((VertxUtils.cachedEnabled) && ("service".equals(userToken.getUsername()))) {
 				// need to create the server user in cache if not there
 				user = VertxUtils.readFromDDT(userToken.getRealm(), "PER_SERVICE", userToken.getToken());
 				if (user == null) {
@@ -131,7 +131,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 			}
 			//log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2");
-			user = beUtils.getBaseEntityByCode(userCode);
+			user = beUtils.getBaseEntityByCode(userToken.getUserCode());
 			List<Allowed> allowable = CapabilityUtils.generateAlloweds(userToken, user);
 
 			if (StringUtils.isBlank(callingWorkflow)) {

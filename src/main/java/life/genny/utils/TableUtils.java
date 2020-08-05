@@ -1022,7 +1022,7 @@ public class TableUtils {
 	}
 
 	public BaseEntity createTestPerson(String name, String email) {
-		String usercode = "PER_" + QwandaUtils.getNormalisedUsername(email);
+		String usercode = "PER_" +  UUID.randomUUID().toString().substring(0, 15).toUpperCase().replaceAll("-", "");
 		BaseEntity result1 = new BaseEntity(usercode, name);
 		result1.setRealm(beUtils.getGennyToken().getRealm());
 
