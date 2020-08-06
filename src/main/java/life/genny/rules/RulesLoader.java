@@ -248,6 +248,11 @@ public class RulesLoader {
 		List<String> uninitialisedThemes = new ArrayList<String>();
 		List<String> uninitialisedFrames = new ArrayList<String>();
 
+		if (activeRealms == null) {
+			log.error(" ******** NO ACTIVE REALMS ******");
+			return false;
+		}
+		
 		for (String realm : activeRealms) {
 			log.info("LOADING " + realm + " RULES");
 			Integer rulesCount = setupKieRules(realm, rules);
