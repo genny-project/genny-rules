@@ -1000,7 +1000,10 @@ public class RulesLoader {
 			if (user == null) {
 				log.error("DEBUG, Can not find user by neither UUID:" + userUUID + "or UserCode:" + userCode);
 			}
+		} else {
+			facts.getUserToken().setUserCode(userUUID);
 		}
+
 
 		if (user != null) {
 			log.info("User:" + user.getCode() + " fetched.");
