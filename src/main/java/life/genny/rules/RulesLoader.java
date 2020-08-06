@@ -991,7 +991,17 @@ public class RulesLoader {
 		 * capabilityUtils.process(); log.info("CapabilitysUtils processed ");
 		 */
 
-		BaseEntity user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
+		String userUUID = facts.getUserToken().getUserUUID();
+		String userCode = facts.getUserToken().getUserCode();
+		BaseEntity user = beUtils.getBaseEntityByCode(userUUID);
+		if (user == null) {
+		    log.info("DEBUG, Can not find user by UUID:" + userUUID +  ", Search by UserCode:" + userCode);
+			user = beUtils.getBaseEntityByCode(facts.getUserToken().getUserCode());
+			if (user == null) {
+				log.error("DEBUG, Can not find user by neither UUID:" + userUUID + "or UserCode:" + userCode);
+			}
+		}
+
 		if (user != null) {
 			log.info("User:" + user.getCode() + " fetched.");
 
