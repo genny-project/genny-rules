@@ -3,10 +3,7 @@ package life.genny.utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandles;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Logger;
@@ -193,7 +190,7 @@ public class DropdownUtils implements Serializable {
 					List<EntityEntity> sortedChildLinks = childLinks.stream()
 							.sorted(Comparator.comparing(EntityEntity::getWeight))
 							.collect(Collectors.toList());
-					parentBe.setLinks(new HashSet<>(sortedChildLinks));
+					parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
 					beMsg.add(parentBe);
 					return beMsg;
 				} else {
