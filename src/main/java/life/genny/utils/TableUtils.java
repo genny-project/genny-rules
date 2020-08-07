@@ -457,7 +457,7 @@ public class TableUtils {
 					}
 				}
 
-			} else if (ea.getAttributeCode().startsWith("PRI_") && (!ea.getAttributeCode().equals("PRI_CODE"))
+			} else if ((ea.getAttributeCode().startsWith("PRI_") || ea.getAttributeCode().startsWith("LNK_")) && (!ea.getAttributeCode().equals("PRI_CODE"))
 					&& (!ea.getAttributeCode().equals("PRI_TOTAL_RESULTS"))
 					&& (!ea.getAttributeCode().equals("PRI_INDEX"))) {
 				String condition = SearchEntity.convertFromSaveable(ea.getAttributeName());
@@ -490,10 +490,10 @@ public class TableUtils {
 					} else {
 						if (attributeFilterCode3 == null) {
 							if (ea.getValueString() != null) {
-								attributeFilterValue3 = " ec.valueString " + condition + " '"
+								attributeFilterValue3 = " ed.valueString " + condition + " '"
 										+ ea.getValueString() + "'";
 							} else if (ea.getValueBoolean() != null) {
-								attributeFilterValue3 = " ec.valueBoolean = "
+								attributeFilterValue3 = " ed.valueBoolean = "
 										+ (ea.getValueBoolean() ? "true" : "false");
 							}
 							attributeFilterCode3 = ea.getAttributeCode();
@@ -1022,7 +1022,7 @@ public class TableUtils {
 	}
 
 	public BaseEntity createTestPerson(String name, String email) {
-		String usercode = "PER_" +  UUID.randomUUID().toString().substring(0, 15).toUpperCase().replaceAll("-", "");
+		String usercode = "PER_" + QwandaUtils.getNormalisedUsername(email);
 		BaseEntity result1 = new BaseEntity(usercode, name);
 		result1.setRealm(beUtils.getGennyToken().getRealm());
 
