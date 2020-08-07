@@ -172,54 +172,38 @@ public class DropdownUtils implements Serializable {
 	 */
 	QDataBaseEntityMessage setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
 			String linkValue, GennyToken gennyToken, Boolean sortByWeight) {
-
 		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);
-
 		if (parentBe != null) {
-
-			Set<EntityEntity> childLinks = new HashSet<>();
-			double index = -1.0;
-
-			/* creating a dumb attribute for linking the search results to the parent */
-			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
-
-			for (BaseEntity be : beMsg.getItems()) {
-
-				if (sortByWeight) {
-					childLinks = parentBe.getLinks();
-					List<EntityEntity> sortedChildLinks = childLinks.stream()
-							.sorted(Comparator.comparing(EntityEntity::getWeight))
-							.collect(Collectors.toList());
-					parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
-					beMsg.add(parentBe);
-					return beMsg;
-				} else {
+			Set<EntityEntity> childLinks;
+			if (sortByWeight) {
+				childLinks = parentBe.getLinks();
+				List<EntityEntity> sortedChildLinks = childLinks.stream()
+						.sorted(Comparator.comparing(EntityEntity::getWeight))
+						.collect(Collectors.toList());
+				parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
+			} else {
+				childLinks = new HashSet<>();
+				double index = -1.0;
+				/* creating a dumb attribute for linking the search results to the parent */
+				Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
+				for (BaseEntity be : beMsg.getItems()) {
 					index++;
+					EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
+					/* creating link for child */
+					Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
+					/* adding link */
+					ee.setLink(link);
+					/* adding child link to set of links */
+					childLinks.add(ee);
 				}
-
-				EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
-
-				/* creating link for child */
-				Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
-
-				/* adding link */
-				ee.setLink(link);
-
-				/* adding child link to set of links */
-				childLinks.add(ee);
-
+				parentBe.setLinks(childLinks);
 			}
-
-			parentBe.setLinks(childLinks);
 			beMsg.add(parentBe);
 			return beMsg;
-
 		} else {
-
 			log.error("Unable to fetch Parent BaseEntity : parentCode");
 			return null;
 		}
-
 	}
 
 	private void writeToVertx(String channel, QDataBaseEntityMessage msg) {
