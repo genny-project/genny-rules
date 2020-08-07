@@ -3,8 +3,8 @@ package life.genny.utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandles;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.Logger;
 
@@ -166,57 +166,85 @@ public class DropdownUtils implements Serializable {
 		return weight;
 	}
 
+	private List<EntityEntity>  sortChildLinksByWeight(BaseEntity parentBe) {
+		Set<EntityEntity> childLinks = parentBe.getLinks();
+		List<EntityEntity> sortedChildLinks = childLinks.stream()
+				.sorted(Comparator.comparing(EntityEntity::getWeight))
+				.collect(Collectors.toList());
+		return sortedChildLinks;
+	}
+
+	private  BaseEntity[] sortBaseEntityByWeight(BaseEntity[] items, String parentCode,
+												 List<EntityEntity> sortedChildLinks) {
+		// Set sorted links
+		BaseEntity[] newItems = new BaseEntity[items.length];
+
+		HashMap<String, BaseEntity> beMapping = new HashMap<>();
+		for (BaseEntity be : items)	 {
+			String beCode = be.getCode();
+			beMapping.put(beCode, be);
+		}
+
+		int index = 0;
+		for(EntityEntity ee :sortedChildLinks ) {
+			String targetCode = ee.getLink().getTargetCode();
+			if (beMapping.containsKey(targetCode)) {
+				beMapping.get(targetCode).setIndex(index);
+				newItems[index] = beMapping.get(targetCode);
+				index++;
+			} else {
+				log.error(String.format("Parent Code %s doesn't have Link code %s", parentCode, targetCode));
+			}
+		}
+		return newItems;
+	}
+
 	/*
 	 * Setting dynamic links between parents and child. ie. linking DropDown items
 	 * to the DropDown field.
 	 */
 	QDataBaseEntityMessage setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
 			String linkValue, GennyToken gennyToken, Boolean sortByWeight) {
-
 		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);
-
 		if (parentBe != null) {
-
-			Set<EntityEntity> childLinks = new HashSet<>();
+			Set<EntityEntity> childLinks = new LinkedHashSet<>();
 			double index = -1.0;
-
 			/* creating a dumb attribute for linking the search results to the parent */
 			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
 
 			for (BaseEntity be : beMsg.getItems()) {
-
+				//Sort items based on weight
 				if (sortByWeight) {
+				    if (parentBe.getLinks().size() > 0) {
+						List<EntityEntity> sortedChildLinks = sortChildLinksByWeight(parentBe);
+						// update links
+						parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
 
-					childLinks = parentBe.getLinks();
-					break;
+						BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentBe.getCode(), sortedChildLinks);
+						beMsg.setItems(sortedItems);
+					}
+					beMsg.add(parentBe);
+					return beMsg;
 				} else {
-
 					index++;
+					childLinks = new HashSet<>();
+					parentBe.setLinks(childLinks);
+					EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
+					/* creating link for child */
+					Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
+					/* adding link */
+					ee.setLink(link);
+					/* adding child link to set of links */
+					childLinks.add(ee);
 				}
-
-				EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
-
-				/* creating link for child */
-				Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
-
-				/* adding link */
-				ee.setLink(link);
-
-				/* adding child link to set of links */
-				childLinks.add(ee);
-
 			}
-
 			parentBe.setLinks(childLinks);
 			beMsg.add(parentBe);
 			return beMsg;
-
 		} else {
-
 			log.error("Unable to fetch Parent BaseEntity : parentCode");
 			return null;
 		}
-
 	}
 
 	private void writeToVertx(String channel, QDataBaseEntityMessage msg) {
