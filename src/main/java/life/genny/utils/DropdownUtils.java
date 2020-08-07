@@ -214,12 +214,14 @@ public class DropdownUtils implements Serializable {
 			for (BaseEntity be : beMsg.getItems()) {
 				//Sort items based on weight
 				if (sortByWeight) {
-					List<EntityEntity> sortedChildLinks = sortChildLinksByWeight(parentBe);
-					// update links
-					parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
+				    if (parentBe.getLinks().size() > 0) {
+						List<EntityEntity> sortedChildLinks = sortChildLinksByWeight(parentBe);
+						// update links
+						parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
 
-					BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentBe.getCode(), sortedChildLinks);
-					beMsg.setItems(sortedItems);
+						BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentBe.getCode(), sortedChildLinks);
+						beMsg.setItems(sortedItems);
+					}
 					beMsg.add(parentBe);
 					return beMsg;
 				} else {
