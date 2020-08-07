@@ -189,6 +189,7 @@ public class DropdownUtils implements Serializable {
 		for(EntityEntity ee :sortedChildLinks ) {
 			String targetCode = ee.getLink().getTargetCode();
 			if (beMapping.containsKey(targetCode)) {
+				beMapping.get(targetCode).setIndex(index);
 				newItems[index] = beMapping.get(targetCode);
 				index++;
 			} else {
