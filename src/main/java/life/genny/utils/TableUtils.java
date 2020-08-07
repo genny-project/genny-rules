@@ -565,7 +565,7 @@ public class TableUtils {
 					+ ((!StringUtils.isBlank(attributeFilterValue2)) ? (" and " + attributeFilterValue2) : "");
 		}
 		if (attributeFilterCode3 != null) {
-			hql += " and ea.baseEntityCode=ec.baseEntityCode ";
+			hql += " and ea.baseEntityCode=ed.baseEntityCode ";
 			hql += " and ed.attributeCode = '" + attributeFilterCode3 + "'"
 					+ ((!StringUtils.isBlank(attributeFilterValue3)) ? (" and " + attributeFilterValue3) : "");
 		}
