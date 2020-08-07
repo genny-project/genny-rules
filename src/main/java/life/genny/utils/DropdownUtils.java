@@ -166,13 +166,17 @@ public class DropdownUtils implements Serializable {
 		return weight;
 	}
 
-	private  BaseEntity[] sortBaseEntityByWeight(BaseEntity[] items, BaseEntity parentBe) {
-		String parentCode = parentBe.getCode();
+	private List<EntityEntity>  sortChildLinksByWeight(BaseEntity parentBe) {
 		Set<EntityEntity> childLinks = parentBe.getLinks();
 		List<EntityEntity> sortedChildLinks = childLinks.stream()
 				.sorted(Comparator.comparing(EntityEntity::getWeight))
 				.collect(Collectors.toList());
+		return sortedChildLinks;
+	}
 
+	private  BaseEntity[] sortBaseEntityByWeight(BaseEntity[] items, String parentCode,
+												 List<EntityEntity> sortedChildLinks) {
+		// Set sorted links
 		BaseEntity[] newItems = new BaseEntity[items.length];
 
 		HashMap<String, BaseEntity> beMapping = new HashMap<>();
@@ -208,11 +212,16 @@ public class DropdownUtils implements Serializable {
 			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
 
 			for (BaseEntity be : beMsg.getItems()) {
+				//Sort items based on weight
 				if (sortByWeight) {
-					//Sort items based on weight
-					BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentBe);
+					List<EntityEntity> sortedChildLinks = sortChildLinksByWeight(parentBe);
+					// update links
+					parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
+
+					BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentBe.getCode(), sortedChildLinks);
 					beMsg.setItems(sortedItems);
-					break;
+					beMsg.add(parentBe);
+					return beMsg;
 				} else {
 					index++;
 					childLinks = new HashSet<>();
