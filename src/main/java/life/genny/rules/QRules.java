@@ -489,7 +489,8 @@ public class QRules implements Serializable {
 
 		BaseEntity be = null;
 		String username = (String) getDecodedTokenMap().get("preferred_username");
-		String code = "PER_" + QwandaUtils.getNormalisedUsername(username).toUpperCase();
+		String uuid = (String) getDecodedTokenMap().get("sub");
+		String code = "PER_" + QwandaUtils.getNormalisedUsername(uuid).toUpperCase();
 		try {
 			be = this.baseEntity.getBaseEntityByCode(code);
 		} catch (Exception e) {
