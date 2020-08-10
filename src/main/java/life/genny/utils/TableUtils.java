@@ -1549,6 +1549,12 @@ public class TableUtils {
 				countAttr.setValue(total);
 				countBE.getBaseEntityAttributes().add(countAttr);
 
+				Attribute priName = RulesUtils.getAttribute("PRI_NAME", this.beUtils.getGennyToken().getToken());
+				EntityAttribute nameAttr = new EntityAttribute();
+				nameAttr.setAttribute(priName);
+				nameAttr.setValue(searchBE.getName());
+				countBE.getBaseEntityAttributes().add(nameAttr);
+
 				/* Create and Send a BE MSG using the count value BE */
 				QDataBaseEntityMessage countMsg = new QDataBaseEntityMessage(countBE);
 
