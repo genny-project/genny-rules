@@ -291,7 +291,7 @@ public class TableUtils {
 		long starttime = System.currentTimeMillis();
 		long endtime2 = starttime;
 		
-		Tuple2<String, List<String>> data = this.getHql(beUtils.getGennyToken(), searchBE);
+		Tuple2<String, List<String>> data = beUtils.getHql(searchBE);
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE =" + (endtime1 - starttime) + " ms");
 
@@ -349,24 +349,6 @@ public class TableUtils {
 
 			}
 
-//			JsonArray result = resultJson.getJsonArray("codes");
-//			List<String> resultCodes = new ArrayList<String>();
-//			for (int i = 0; i < result.size(); i++) {
-//				String code = result.getString(i);
-//				resultCodes.add(code);
-//			}
-//			String[] filterArray = data._2.toArray(new String[0]);
-//			List<BaseEntity> beList = resultCodes.stream().map(e -> {
-//				BaseEntity be = beUtils.getBaseEntityByCode(e);
-//				be = VertxUtils.privacyFilter(be, filterArray);
-//				return be;
-//			}).collect(Collectors.toList());
-//			msg = new QDataBaseEntityMessage(beList.toArray(new BaseEntity[0]));
-//			Long total = resultJson.getLong("total");
-//			msg.setReplace(true);
-//			msg.setParentCode(searchBE.getCode());
-//
-//			msg.setTotal(total);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
@@ -376,214 +358,6 @@ public class TableUtils {
 		return msg;
 	}
 
-	static public Tuple2<String, List<String>> getHql(GennyToken userToken, SearchEntity searchBE)
-
-	{
-		List<String> attributeFilter = new ArrayList<String>();
-
-		String beFilter1 = null;
-		String beFilter2 = null;
-		String beFilter3 = null;
-		String beSorted = null;
-		String attributeFilterValue1 = "";
-		String attributeFilterCode1 = null;
-		String attributeFilterValue2 = "";
-		String attributeFilterCode2 = null;
-		String attributeFilterValue3 = "";
-		String attributeFilterCode3 = null;
-		String sortCode = null;
-		String sortValue = null;
-		String sortType = null;
-		String wildcardValue = null;
-		Integer pageStart = searchBE.getPageStart(0);
-		Integer pageSize = searchBE.getPageSize(GennySettings.defaultPageSize);
-
-		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
-
-			if (ea.getAttributeCode().startsWith("PRI_CODE")) {
-				if (beFilter1 == null) {
-					beFilter1 = ea.getAsString();
-				} else if (beFilter2 == null) {
-					beFilter2 = ea.getAsString();
-				}
-			
-			} else if ((ea.getAttributeCode().startsWith("SRT_"))) {
-				if (ea.getAttributeCode().startsWith("SRT_PRI_CREATED")) {
-					beSorted = " order by ea.created";
-					sortValue = ea.getValueString();
-				} 
-				else if (ea.getAttributeCode().startsWith("SRT_PRI_UPDATED")) {
-					beSorted = " order by ea.updated";
-					sortValue = ea.getValueString();
-				}
-				else if (ea.getAttributeCode().startsWith("SRT_PRI_CODE")) {
-					beSorted = " order by ea.baseEntityCode";
-					sortValue = ea.getValueString();
-				}
-				else if (ea.getAttributeCode().startsWith("SRT_PRI_NAME")) {
-					beSorted = " order by ea.pk.baseEntity.name";
-					sortValue = ea.getValueString();
-				}
-
-				else {
-				sortCode = (ea.getAttributeCode().substring("SRT_".length()));
-				sortValue = ea.getValueString();
-				if (ea.getValueString() != null) {
-					sortType = "ez.valueString";
-				} else if (ea.getValueBoolean() != null) {
-					sortType = "ez.valueBoolean";
-				} else if (ea.getValueDouble() != null) {
-					sortType = "ez.valueDouble";
-				} else if (ea.getValueInteger() != null) {
-					sortType = "ez.valueInteger";
-				} else if (ea.getValueLong() != null) {
-					sortType = "ez.valueLong";
-				} else if (ea.getValueDateTime() != null) {
-					sortType = "ez.valueDateTime";
-				} else if (ea.getValueDate() != null) {
-					sortType = "ez.valueDate";
-				} else if (ea.getValueTime() != null) {
-					sortType = "ez.valueTime";
-				}
-				}
-
-			} else if ((ea.getAttributeCode().startsWith("COL_")) || (ea.getAttributeCode().startsWith("CAL_"))) {
-				attributeFilter.add(ea.getAttributeCode().substring("COL_".length()));
-			} else if (ea.getAttributeCode().startsWith("SCH_WILDCARD")) {
-				if (ea.getValueString() != null) {
-					if (!StringUtils.isBlank(ea.getValueString())) {
-						wildcardValue = ea.getValueString();
-						wildcardValue = wildcardValue.replaceAll(("[^A-Za-z0-9 ]"), "");
-					}
-				}
-
-			} else if (ea.getAttributeCode().startsWith("PRI_") && (!ea.getAttributeCode().equals("PRI_CODE"))
-					&& (!ea.getAttributeCode().equals("PRI_TOTAL_RESULTS"))
-					&& (!ea.getAttributeCode().equals("PRI_INDEX"))) {
-				String condition = SearchEntity.convertFromSaveable(ea.getAttributeName());
-				if (attributeFilterCode1 == null) {
-					if (ea.getValueString() != null) {
-						attributeFilterValue1 = " eb.valueString " + condition + " '" + ea.getValueString()
-								+ "'";
-					} else if (ea.getValueBoolean() != null) {
-						attributeFilterValue1 = " eb.valueBoolean = " + (ea.getValueBoolean() ? "true" : "false");
-					} else if (ea.getValueDouble() != null) {
-						attributeFilterValue1 = " eb.valueDouble =ls" + ":q" + " " + ea.getValueDouble() + "";
-					} else if (ea.getValueInteger() != null) {
-						attributeFilterValue1 = " eb.valueInteger = " + ea.getValueInteger() + "";
-						attributeFilterCode1 = ea.getAttributeCode();
-					} else if (ea.getValueDate() != null) {
-						attributeFilterValue1 = " eb.valueDate = " + ea.getValueDate() + "";
-					} else if (ea.getValueDateTime() != null) {
-						attributeFilterValue1 = " eb.valueDateTime = " + ea.getValueDateTime() + "";
-					}
-					attributeFilterCode1 = ea.getAttributeCode();
-				} else {
-					if (attributeFilterCode2 == null) {
-						if (ea.getValueString() != null) {
-							attributeFilterValue2 = " ec.valueString " + condition + " '"
-									+ ea.getValueString() + "'";
-						} else if (ea.getValueBoolean() != null) {
-							attributeFilterValue2 = " ec.valueBoolean = " + (ea.getValueBoolean() ? "true" : "false");
-						}
-						attributeFilterCode2 = ea.getAttributeCode();
-					} else {
-						if (attributeFilterCode3 == null) {
-							if (ea.getValueString() != null) {
-								attributeFilterValue3 = " ec.valueString " + condition + " '"
-										+ ea.getValueString() + "'";
-							} else if (ea.getValueBoolean() != null) {
-								attributeFilterValue3 = " ec.valueBoolean = "
-										+ (ea.getValueBoolean() ? "true" : "false");
-							}
-							attributeFilterCode3 = ea.getAttributeCode();
-						}
-					}
-				}
-			}
-		}
-		String sortBit = "";
-//		if (sortCode != null) {
-//			sortBit = ","+sortType +" ";
-//		}
-		String hql = "select distinct ea.baseEntityCode " + sortBit + " from EntityAttribute ea ";
-
-		if (attributeFilterCode1 != null) {
-			hql += ", EntityAttribute eb ";
-		}
-		if (attributeFilterCode2 != null) {
-			hql += ", EntityAttribute ec ";
-		}
-		if (attributeFilterCode3 != null) {
-			hql += ", EntityAttribute ed ";
-		}
-		if (wildcardValue != null) {
-			hql += ", EntityAttribute ew ";
-		}
-
-		if (sortCode != null) {
-			hql += ", EntityAttribute ez ";
-		}
-		hql += " where ";
-
-		if (attributeFilterCode1 != null) {
-			hql += " ea.baseEntityCode=eb.baseEntityCode ";
-			if (beFilter1!=null) {
-				hql += " and (ea.baseEntityCode like '" + beFilter1 + "'  ";
-			}
-		} else {
-			if (beFilter1 != null) {
-				hql += " (ea.baseEntityCode like '" + beFilter1 + "'  ";
-			}
-		}
-
-		
-		
-		if (searchBE.getCode().startsWith("SBE_SEARCHBAR")) {
-			// search across people and companies
-			hql += " and (ea.baseEntityCode like 'PER_%' or ea.baseEntityCode like 'CPY_%') ";
-		}
-
-		if (beFilter2 != null) {
-			hql += " or ea.baseEntityCode like '" + beFilter2 + "'";
-		}
-		if (beFilter3 != null) {
-			hql += " or ea.baseEntityCode like '" + beFilter3 + "'";
-		}
-		if (beFilter1 != null) {
-			hql += ")  ";
-		}
-		
-		
-		if (attributeFilterCode1 != null) {
-			hql += " and eb.attributeCode = '" + attributeFilterCode1 + "'"
-					+ ((!StringUtils.isBlank(attributeFilterValue1)) ? (" and " + attributeFilterValue1) : "");
-		}
-		if (attributeFilterCode2 != null) {
-			hql += " and ea.baseEntityCode=ec.baseEntityCode ";
-			hql += " and ec.attributeCode = '" + attributeFilterCode2 + "'"
-					+ ((!StringUtils.isBlank(attributeFilterValue2)) ? (" and " + attributeFilterValue2) : "");
-		}
-		if (attributeFilterCode3 != null) {
-			hql += " and ea.baseEntityCode=ec.baseEntityCode ";
-			hql += " and ed.attributeCode = '" + attributeFilterCode3 + "'"
-					+ ((!StringUtils.isBlank(attributeFilterValue3)) ? (" and " + attributeFilterValue3) : "");
-		}
-
-		if (wildcardValue != null) {
-			hql += " and ea.baseEntityCode=ew.baseEntityCode and ew.valueString like '%" + wildcardValue + "%' ";
-		}
-
-		if (beSorted != null) {
-			hql += " "+beSorted + " " + sortValue;
-
-		} else 
-		if (sortCode != null) {
-			hql += " and ea.baseEntityCode=ez.baseEntityCode and ez.attributeCode='" + sortCode + "' ";
-			hql += " order by " + sortType + " " + sortValue;
-		}
-		return Tuple.of(hql, attributeFilter);
-	}
 
 	public SearchEntity getSessionSearch(final String searchCode) {
 		return getSessionSearch(searchCode, null, null);
@@ -1730,6 +1504,14 @@ public class TableUtils {
 		return (endtime - starttime);
 	}
 
+	
+	static public Tuple2<String, List<String>> getHql(GennyToken serviceToken,SearchEntity searchBE) {
+		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
+		return beUtils.getHql(searchBE);
+	}
+
+
+	
 	public void performAndSendCount(GennyToken serviceToken, SearchEntity searchBE) {
 
 		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
@@ -1745,7 +1527,7 @@ public class TableUtils {
 			log.info("User Filters are empty");
 		}
 
-		Tuple2<String, List<String>> data = TableUtils.getHql(this.beUtils.getGennyToken(), searchBE);
+		Tuple2<String, List<String>> data = beUtils.getHql(searchBE);
 	        String hql = data._1;
 			String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
 			try {
@@ -1778,4 +1560,6 @@ public class TableUtils {
 	        	System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
 	        }
 	}
+	
+	
 }
