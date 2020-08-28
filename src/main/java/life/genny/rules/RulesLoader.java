@@ -897,10 +897,18 @@ public class RulesLoader {
 				+ ": " + facts.getUserToken().getSessionCode() + ": " + facts.getUserToken().getUserCode() + "   "
 				+ msg_code + " to pid " + processId);
 
-		// kieSession.signalEvent("EV_"+session_state, facts);
+		
+		log.info("SignalEvent -> 'event' for " + facts.getUserToken().getUserCode() + ":" + processId);
+		try {
+			kieSession.signalEvent("event", facts, processId);
+		} catch (Exception e) {
+			log.error("Bad Session Error for process Id " + processId + " and userCode "
+					+ facts.getUserToken().getUserCode());
+		}
 
 		// HACK!!
 		if (msg_code.equals("QUE_SUBMIT")) {
+
 			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), facts.getUserToken().getUserCode(),
 					"PRI_SUBMIT", "QUE_SUBMIT");
 //									String ad = "{\"street_number\":\"63\",\"street_name\":\"Fakenham Road\",\"suburb\":\"Ashburton\",\"state\":\"Victoria\",\"country\":\"AU\",\"postal_code\":\"3147\",\"full_address\":\"64 Fakenham Rd, Ashburton VIC 3147, Australia\",\"latitude\":-37.863208,\"longitude\":145.092359,\"street_address\":\"64 Fakenham Road\"}";
@@ -912,7 +920,11 @@ public class RulesLoader {
 			log.info("SignalEvent -> QUE_SUBMIT event to 'data' for " + facts.getUserToken().getUserCode() + ":"
 					+ processId);
 			kieSession.signalEvent("data", sessionFactsData, processId);
-		} else if (msg_code.equals("QUE_CANCEL")) {
+		} 
+		if (msg_code.equals("QUE_CANCEL")) {
+
+			kieSession.signalEvent("event", facts, processId);
+
 			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), facts.getUserToken().getUserCode(),
 					"PRI_SUBMIT", "QUE_CANCEL");
 			dataAnswer.setChangeEvent(false);
@@ -921,16 +933,8 @@ public class RulesLoader {
 			log.info("SignalEvent -> QUE_CANCEL event to 'data' for " + facts.getUserToken().getUserCode() + ":"
 					+ processId);
 			kieSession.signalEvent("data", sessionFactsData, processId);
-		} else {
-			log.info("SignalEvent -> 'event' for " + facts.getUserToken().getUserCode() + ":" + processId);
-			try {
-				kieSession.signalEvent("event", facts, processId);
-			} catch (Exception e) {
-				log.error("Bad Session Error for process Id " + processId + " and userCode "
-						+ facts.getUserToken().getUserCode());
-
-			}
-		}
+		} 
+		
 	}
 
 	private void processQDataMessageEvent(SessionFacts facts, long processId, KieSession kieSession) {
