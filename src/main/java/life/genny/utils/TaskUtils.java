@@ -159,6 +159,7 @@ public class TaskUtils {
 		}
 
 	}
+	// method
 
 	public static void sendTaskAskItems(GennyToken userToken) {
 
@@ -275,6 +276,12 @@ public class TaskUtils {
 		String sendingMsg = JsonUtils.toJson(askMsg);
 		Integer length = sendingMsg.length();
 		VertxUtils.writeMsg("webcmds", sendingMsg);
+
+		// Now send the end_process msg
+		QCmdMessage endMsg = new QCmdMessage("END_PROCESS", "END_PROCESS");
+		endMsg.setToken(userToken.getToken());
+		endMsg.setSend(true);  		
+		VertxUtils.writeMsg("webcmds",endMsg);
 
 	}
 
