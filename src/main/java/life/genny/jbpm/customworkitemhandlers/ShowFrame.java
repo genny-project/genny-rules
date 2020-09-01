@@ -405,7 +405,7 @@ public class ShowFrame implements WorkItemHandler {
 						if( dropdownCode.equals("LNK_OCCUPATION") || 
 								dropdownCode.equals("LNK_HOST_COMPANY_REP") ||
 								dropdownCode.equals("LNK_INTERN_SUPERVISOR") ||
-								dropdownCode.equals("LNK_INTERNSHIP") ){
+								dropdownCode.equals("LNK_INTERNSHIP")){
 									
 									continue;
 						}
