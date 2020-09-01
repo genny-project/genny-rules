@@ -8,12 +8,15 @@ public class RulesLoaderFactory {
     public RulesLoaderFactory() {
     }
 
-    public static RulesLoader getRulesLoader(String sessionState) {
-        RulesLoader rulesLoader = tokeRulesLoaderMapping.get(sessionState);
+    public static synchronized RulesLoader getRulesLoader(String sessionState) {
+        RulesLoader rulesLoader = null;
+        rulesLoader = tokeRulesLoaderMapping.get(sessionState);
+
         if (rulesLoader == null) {
             rulesLoader = new RulesLoader(sessionState);
             tokeRulesLoaderMapping.put(sessionState, rulesLoader);
         }
+
         return rulesLoader;
     }
 }
