@@ -1242,11 +1242,13 @@ public class TableUtils {
 		return searchTable(beUtils, code, cache, null, null, replace);
 	}
 
-	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, String filterCode, String filterValue) {
-		return searchTable(beUtils, code, cache, filterCode, filterValue, replace);
+	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, String filterCode,
+			String filterValue) {
+		return searchTable(beUtils, code, cache, filterCode, filterValue, true);
 	}
 
-	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, String filterCode, String filterValue, Boolean replace) {
+	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, String filterCode,
+			String filterValue, Boolean replace) {
 		long starttime = System.currentTimeMillis();
 
 		System.out.println("Cache enabled ? ::" + cache);
@@ -1367,8 +1369,8 @@ public class TableUtils {
 		return searchTable(beUtils, searchBE, cache, null, null, replace);
 	}
 
-	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache,
-			String filterCode, String filterValue, Boolean replace) {
+	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, String filterCode,
+			String filterValue, Boolean replace) {
 		long starttime = System.currentTimeMillis();
 		try {
 			log.info("Starting searchTable for searchBE : " + searchBE.getCode() + " and cache=" + (cache ? "ON" : "OFF"));
@@ -1379,7 +1381,7 @@ public class TableUtils {
 			CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 
 			// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-			SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue);
+			SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
 
 			List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
 
