@@ -1242,6 +1242,10 @@ public class TableUtils {
 		return searchTable(beUtils, code, cache, null, null, replace);
 	}
 
+	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, String filterCode, String filterValue) {
+		return searchTable(beUtils, code, cache, filterCode, filterValue, replace);
+	}
+
 	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, String filterCode, String filterValue, Boolean replace) {
 		long starttime = System.currentTimeMillis();
 
