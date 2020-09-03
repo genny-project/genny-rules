@@ -1283,7 +1283,7 @@ public class TableUtils {
 		CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 
 		// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-		SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue);
+		SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
 
 		List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
 
