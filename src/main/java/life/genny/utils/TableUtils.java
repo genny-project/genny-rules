@@ -85,65 +85,6 @@ public class TableUtils {
 		this.beUtils = beUtils;
 	}
 
-	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, String searchBeCode, Answer answer) {
-		SearchEntity searchBE = getSessionSearch(searchBeCode);
-		return performSearch(userToken, serviceToken, searchBE, answer);
-	}
-
-	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, SearchEntity searchBE,
-			Answer answer) {
-		QBulkMessage ret = new QBulkMessage();
-		beUtils.setGennyToken(userToken);
-		ret = this.performSearch(serviceToken, searchBE, answer, null, null);
-		return ret;
-	}
-
-	public QBulkMessage performSearch(GennyToken userToken, GennyToken serviceToken, SearchEntity searchBE, Answer answer,
-			Boolean cache) {
-		QBulkMessage ret = new QBulkMessage();
-		beUtils.setGennyToken(userToken);
-		ret = this.performSearch(serviceToken, searchBE, answer, null, null, cache, true);
-		return ret;
-	}
-
-	public void performSearch(GennyToken userToken, GennyToken serviceToken, String searchBeCode, Answer answer,
-			final String filterCode, final String filterValue) {
-		SearchEntity searchBE = getSessionSearch(searchBeCode);
-
-		performSearch(userToken, serviceToken, searchBE, answer, filterCode, filterValue);
-	}
-
-	public void performSearch(GennyToken userToken, GennyToken serviceToken, String searchBeCode, Answer answer,
-			final String filterCode, final String filterValue, Boolean replace) {
-		SearchEntity searchBE = getSessionSearch(searchBeCode);
-
-		performSearch(userToken, serviceToken, searchBE, answer, filterCode, filterValue, replace);
-	}
-
-	public void performSearch(GennyToken userToken, GennyToken serviceToken, SearchEntity searchBE, Answer answer,
-			final String filterCode, final String filterValue) {
-		beUtils.setGennyToken(userToken);
-		this.performSearch(serviceToken, searchBE, answer, filterCode, filterValue, false, true);
-	}
-
-	public void performSearch(GennyToken userToken, GennyToken serviceToken, SearchEntity searchBE, Answer answer,
-			final String filterCode, final String filterValue, Boolean replace) {
-		beUtils.setGennyToken(userToken);
-		this.performSearch(serviceToken, searchBE, answer, filterCode, filterValue, false, replace);
-	}
-
-	public QBulkMessage performSearch(GennyToken serviceToken, String searchBeCode, Answer answer,
-			final String filterCode, final String filterValue) {
-		SearchEntity searchBE = getSessionSearch(searchBeCode);
-
-		return performSearch(serviceToken, searchBE, answer, filterCode, filterValue, false, true);
-	}
-
-	public QBulkMessage performSearch(GennyToken serviceToken, SearchEntity searchBE, Answer answer,
-			final String filterCode, final String filterValue) {
-		return performSearch(serviceToken, searchBE, answer, filterCode, filterValue, false, true);
-	}
-
 	public QBulkMessage performSearch(GennyToken serviceToken, final SearchEntity searchBE, Answer answer,
 			final String filterCode, final String filterValue, Boolean cache, Boolean replace) {
 		QBulkMessage ret = new QBulkMessage();
@@ -1294,15 +1235,14 @@ public class TableUtils {
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache) {
-		return searchTable(beUtils, code, cache, true, null, null);
+		return searchTable(beUtils, code, cache, null, null, true);
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, Boolean replace) {
-		return searchTable(beUtils, code, cache, replace, null, null);
+		return searchTable(beUtils, code, cache, null, null, replace);
 	}
 
-	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, Boolean replace,
-			String filterCode, String filterValue) {
+	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, String filterCode, String filterValue, Boolean replace) {
 		long starttime = System.currentTimeMillis();
 
 		System.out.println("Cache enabled ? ::" + cache);
@@ -1420,11 +1360,11 @@ public class TableUtils {
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, Boolean replace) {
-		return searchTable(beUtils, searchBE, cache, replace, null, null);
+		return searchTable(beUtils, searchBE, cache, null, null, replace);
 	}
 
-	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, Boolean replace,
-			String filterCode, String filterValue) {
+	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache,
+			String filterCode, String filterValue, Boolean replace) {
 		long starttime = System.currentTimeMillis();
 		try {
 			log.info("Starting searchTable for searchBE : " + searchBE.getCode() + " and cache=" + (cache ? "ON" : "OFF"));
