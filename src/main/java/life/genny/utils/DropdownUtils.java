@@ -53,36 +53,36 @@ public class DropdownUtils implements Serializable {
 		return this.sendSearchResults(parentCode, linkCode, linkValue, userToken, false);
 	}
 
-
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
 			GennyToken userToken, Boolean sortByWeight) throws IOException {
 
-		return this.sendSearchResults(parentCode, linkCode, linkValue, false, false, userToken, sortByWeight,false);
-	}
-	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
-			GennyToken userToken, Boolean sortByWeight,Boolean cache) throws IOException {
-
-		return this.sendSearchResults(parentCode, linkCode, linkValue, false, false, userToken, sortByWeight,cache);
+		return this.sendSearchResults(parentCode, linkCode, linkValue, true, false, userToken, sortByWeight, false);
 	}
 
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
-			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight)
-			throws IOException {
-		return sendSearchResults(parentCode,linkCode,linkValue,replace,shouldDeleteLinkedBaseEntities,userToken,sortByWeight,false);
+			GennyToken userToken, Boolean sortByWeight, Boolean cache) throws IOException {
+
+		return this.sendSearchResults(parentCode, linkCode, linkValue, true, false, userToken, sortByWeight, cache);
 	}
 
-	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
-			Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight,Boolean cache)
+	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue, Boolean replace,
+			Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight) throws IOException {
+		return sendSearchResults(parentCode, linkCode, linkValue, replace, shouldDeleteLinkedBaseEntities, userToken,
+				sortByWeight, false);
+	}
+
+	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue, Boolean replace,
+			Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight, Boolean cache)
 			throws IOException {
 
 		QDataBaseEntityMessage beMessage = getSearchResults(this.searchEntity, parentCode, linkCode, linkValue, replace,
 				shouldDeleteLinkedBaseEntities, userToken, this.serviceToken, sortByWeight);
 
 		if (beMessage != null) {
-			
+
 			/* Writing to Vert.x EventBus */
 			if (cache) {
-				
+
 			} else {
 				beMessage.setToken(userToken.getToken());
 				writeToVertx("webcmds", beMessage);
@@ -105,15 +105,15 @@ public class DropdownUtils implements Serializable {
 
 		// Check if present in cache
 		// TODO THESE CACHES NEED TO BE CLEARED UPON ANY ADDITIONS
-		QDataBaseEntityMessage DROPDOWN_MSG = VertxUtils.getObject(serviceToken.getRealm(), "",
-				searchBE.getCode() + "_MSG", QDataBaseEntityMessage.class, serviceToken.getToken());
+		QDataBaseEntityMessage DROPDOWN_MSG = VertxUtils.getObject(serviceToken.getRealm(), "", searchBE.getCode() + "_MSG",
+				QDataBaseEntityMessage.class, serviceToken.getToken());
 
-		if (DROPDOWN_MSG == null || true ) {  // TODO, update search caches upon item add/delete
+		if (DROPDOWN_MSG == null || true) { // TODO, update search caches upon item add/delete
 
 			String jsonSearchBE = JsonUtils.toJson(searchBE);
 			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 					jsonSearchBE, serviceToken.getToken());
-			
+
 			QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
 
 			if (msg != null) {
@@ -126,8 +126,8 @@ public class DropdownUtils implements Serializable {
 				msg.setShouldDeleteLinkedBaseEntities(shouldDeleteLinkedBaseEntities);
 
 				/* Linking child baseEntity to the parent baseEntity */
-				QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue,
-						userToken, sortByWeight);
+				QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue, userToken,
+						sortByWeight);
 				VertxUtils.putObject(serviceToken.getRealm(), "", searchBE.getCode() + "_MSG", beMessage,
 						serviceToken.getToken());
 				return beMessage;
@@ -166,27 +166,26 @@ public class DropdownUtils implements Serializable {
 		return weight;
 	}
 
-	private List<EntityEntity>  sortChildLinksByWeight(BaseEntity parentBe) {
+	private List<EntityEntity> sortChildLinksByWeight(BaseEntity parentBe) {
 		Set<EntityEntity> childLinks = parentBe.getLinks();
-		List<EntityEntity> sortedChildLinks = childLinks.stream()
-				.sorted(Comparator.comparing(EntityEntity::getWeight))
+		List<EntityEntity> sortedChildLinks = childLinks.stream().sorted(Comparator.comparing(EntityEntity::getWeight))
 				.collect(Collectors.toList());
 		return sortedChildLinks;
 	}
 
-	private  BaseEntity[] sortBaseEntityByWeight(BaseEntity[] items, String parentCode,
-												 List<EntityEntity> sortedChildLinks) {
+	private BaseEntity[] sortBaseEntityByWeight(BaseEntity[] items, String parentCode,
+			List<EntityEntity> sortedChildLinks) {
 		// Set sorted links
 		BaseEntity[] newItems = new BaseEntity[items.length];
 
 		HashMap<String, BaseEntity> beMapping = new HashMap<>();
-		for (BaseEntity be : items)	 {
+		for (BaseEntity be : items) {
 			String beCode = be.getCode();
 			beMapping.put(beCode, be);
 		}
 
 		int index = 0;
-		for(EntityEntity ee :sortedChildLinks ) {
+		for (EntityEntity ee : sortedChildLinks) {
 			String targetCode = ee.getLink().getTargetCode();
 			if (beMapping.containsKey(targetCode)) {
 				beMapping.get(targetCode).setIndex(index);
@@ -213,9 +212,9 @@ public class DropdownUtils implements Serializable {
 			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
 
 			for (BaseEntity be : beMsg.getItems()) {
-				//Sort items based on weight
+				// Sort items based on weight
 				if (sortByWeight) {
-				    if (parentBe.getLinks().size() > 0) {
+					if (parentBe.getLinks().size() > 0) {
 						List<EntityEntity> sortedChildLinks = sortChildLinksByWeight(parentBe);
 						// update links
 						parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
