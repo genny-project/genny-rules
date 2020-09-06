@@ -117,7 +117,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			}
 		
 			BaseEntity user = null;
-			if ((VertxUtils.cachedEnabled) && ("service".equals(userToken.getUsername()))) {
+			if ((VertxUtils.cachedEnabled) && ("PER_SERVICE".equals(userToken.getUserCode()))) {
 				// need to create the server user in cache if not there
 				user = VertxUtils.readFromDDT(userToken.getRealm(), userToken.getUserCode(), userToken.getToken());
 				if (user == null) {
@@ -143,7 +143,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 			if (serviceToken == null) {
 				log.error("Must supply serviceToken!");
-			} else if ((!"service".equals(userToken.getUsername()))) {
+			} else if ((!"PER_SERVICE".equals(userToken.getUserCode()))) {
 				log.error(
 						"Must supply an actual serviceToken not a normal token! check PER_SERVICE is the code (and not serviceToken");
 			} else {
