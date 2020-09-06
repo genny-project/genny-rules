@@ -119,10 +119,10 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			BaseEntity user = null;
 			if ((VertxUtils.cachedEnabled) && ("service".equals(userToken.getUsername()))) {
 				// need to create the server user in cache if not there
-				user = VertxUtils.readFromDDT(userToken.getRealm(), "PER_SERVICE", userToken.getToken());
+				user = VertxUtils.readFromDDT(userToken.getRealm(), userToken.getUserCode(), userToken.getToken());
 				if (user == null) {
 					beUtils.setServiceToken(serviceToken);
-					BaseEntity serviceUser = beUtils.create("PER_SERVICE", "Service User");
+					BaseEntity serviceUser = beUtils.create(userToken.getUserCode(), "Service User");
 					Attribute roleAttribute = RulesUtils.getAttribute("PRI_IS_ADMIN", serviceToken);
 
 					beUtils.saveAnswer(new Answer(serviceUser, serviceUser, roleAttribute, "TRUE"));
@@ -143,7 +143,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 			if (serviceToken == null) {
 				log.error("Must supply serviceToken!");
-			} else if ((!"PER_SERVICE".equals(serviceToken.getCode()))) {
+			} else if ((!"service".equals(userToken.getUsername()))) {
 				log.error(
 						"Must supply an actual serviceToken not a normal token! check PER_SERVICE is the code (and not serviceToken");
 			} else {
@@ -177,7 +177,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 							if (code == null) {
 								code = gToken.getUserCode();
 							}
-							if (!code.equals("PER_SERVICE")) {
+							if (!"service".equals(gToken.getUsername())) {
 								/* Generate a QRules */
 								// log.info("Adding rules to facts");
 								QRules rules = new QRules(serviceToken, gToken);
