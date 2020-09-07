@@ -1514,4 +1514,12 @@ public class TableUtils {
 		}
 	}
 
+	public void moveEntity(String code, String sourceCode, String targetCode, String token){
+			QCmdMessage msg = new QCmdMessage("MOVE_ENTITY", code);
+			msg.setSourceCode(sourceCode);
+			msg.setTargetCode(targetCode);
+			msg.setToken(token);
+			msg.setSend(true);  		
+			VertxUtils.writeMsg("webcmds",msg);
+	}
 }
