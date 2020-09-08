@@ -13,6 +13,7 @@ import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.message.QBulkMessage;
+import life.genny.qwanda.message.QCmdMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
@@ -419,11 +420,17 @@ public class ShowFrame implements WorkItemHandler {
 				
 				qBulkMessage.add(updated);
 				if (!cache) {
+				    BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 					VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
+					// Now send the end_process msg
+					QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
+					msgend.setToken(beUtils.getGennyToken().getToken());
+					msgend.setSend(true);
+					VertxUtils.writeMsg("webcmds", msgend);
 				}
 			}
 		}
-		
+
 		return qBulkMessage;
 	}
 
