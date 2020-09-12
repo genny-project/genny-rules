@@ -3,9 +3,11 @@ package life.genny.jbpm.customworkitemhandlers;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -195,6 +197,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 					QBulkMessage payload = new QBulkMessage();
 					newKieSession.setGlobal("payload", payload);
+					
+					Set<String> stringSet = new HashSet<String>();
+					newKieSession.setGlobal("stringSet", stringSet);
 					/* FactHandle payloadHandle = newKieSession.insert(payload); */
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #6");
 					List<FactHandle> allowables = new ArrayList<FactHandle>();
@@ -223,8 +228,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
 					/* payload = (QBulkMessage) newKieSession.getObject(payloadHandle); */
 					payload = (QBulkMessage) newKieSession.getGlobal("payload");
+					stringSet = (Set<String>) newKieSession.getGlobal("stringSet");
 					resultMap.put("payload", payload);
-
+					resultMap.put("stringSet", stringSet);
 					resultMap.put("output", output);
 					resultMap.put("answersToSave", answersToSave);
 					newKieSession.retract(ruleDetailsHandle);
@@ -277,6 +283,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					QBulkMessage payload = new QBulkMessage();
 //				FactHandle payloadHandle = newKieSession.insert(payload);
 					newKieSession.setGlobal("payload", payload);
+					Set<String> stringSet = new HashSet<String>();
+					newKieSession.setGlobal("stringSet", stringSet);
+
 
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #12a");
 					List<FactHandle> allowables = new ArrayList<FactHandle>();
@@ -318,9 +327,10 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					resultMap.put("output", output);
 					resultMap.put("answersToSave", answersToSave);
 					payload = (QBulkMessage) newKieSession.getGlobal("payload");
+					stringSet = (Set<String>) newKieSession.getGlobal("stringSet");
 					resultMap.put("payload", payload);
 					resultMap.put("capabilityUtils", capabilityUtils);
-
+					resultMap.put("stringSet", stringSet);
 					newKieSession.retract(ruleDetailsHandle);
 					newKieSession.retract(factHandle);
 					newKieSession.retract(answersToSaveHandle);
