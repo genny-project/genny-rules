@@ -1426,14 +1426,26 @@ public class RulesLoader {
 				if ((msg instanceof QEventAttributeValueChangeMessage) || (msg instanceof QEventLinkChangeMessage)) {
 					log.info("Executing Stateless for " + msg);
 
-					List<Object> facts = new ArrayList<Object>();
-					facts.add(msg);
-					facts.add(userToken);
-					facts.add(serviceToken);
-					facts.add(new BaseEntityUtils(serviceToken,userToken));
-					// SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
-					// RulesLoader.executeStateful(globals, facts);
-					RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
+					
+					Map<String, Object> facts = new ConcurrentHashMap<String, Object>();
+					facts.put("serviceToken", serviceToken);
+					facts.put("userToken", userToken);
+					facts.put("msg", msg);
+					RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
+
+					log.info("Executing Change Event Rules ");
+					Map<String,Object> 	results = ruleFlowGroupHandler.executeRules(serviceToken, userToken, facts, "ChangeProcessing",
+								"ChangeEvent:ChangeEvents");
+//					
+//					
+//					List<Object> facts = new ArrayList<Object>();
+//					facts.add(msg);
+//					facts.add(userToken);
+//					facts.add(serviceToken);
+//					facts.add(new BaseEntityUtils(serviceToken,userToken));
+//					// SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
+//					// RulesLoader.executeStateful(globals, facts);
+//					RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
 				} else {
 					SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
 					executeStateful(globals, facts);
