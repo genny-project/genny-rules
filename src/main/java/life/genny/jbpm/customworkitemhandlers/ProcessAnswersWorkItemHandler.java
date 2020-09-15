@@ -205,7 +205,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		List<Answer> answersToSave2 = new CopyOnWriteArrayList<>(answersToSave.getAnswers());
 
 		BaseEntity originalBe = beUtils.getBaseEntityByCode(answersToSave2.get(0).getTargetCode());
-		BaseEntity be = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
+		BaseEntity newBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
 
 		for (Answer answer : answersToSave2) {
 			Boolean validAnswer = validate(answer, userToken);
@@ -221,7 +221,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				try {
 					Attribute attribute = RulesUtils.getAttribute(answer.getAttributeCode(), userToken.getToken());
 					answer.setAttribute(attribute);
-					be.addAnswer(answer);
+					newBe.addAnswer(answer);
 
 				} catch (BadDataException e) {
 					// TODO Auto-generated catch block
@@ -230,7 +230,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 		}
 
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(newBe);
 		msg.setToken(userToken.getToken());
 		msg.setReplace(true);
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
