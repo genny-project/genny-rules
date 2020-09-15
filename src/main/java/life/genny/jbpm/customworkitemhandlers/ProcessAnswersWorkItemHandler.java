@@ -205,7 +205,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		List<Answer> answersToSave2 = new CopyOnWriteArrayList<>(answersToSave.getAnswers());
 
 		BaseEntity originalBe = beUtils.getBaseEntityByCode(answersToSave2.get(0).getTargetCode());
-		BaseEntity be = new BaseEntity(answer.getTargetCode(), originalBe.getName());
+		BaseEntity be = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
 
 		for (Answer answer : answersToSave2) {
 			Boolean validAnswer = validate(answer, userToken);
