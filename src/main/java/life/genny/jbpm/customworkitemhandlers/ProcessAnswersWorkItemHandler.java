@@ -402,6 +402,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							if (!ask.getAnswered()) {
 								// check if already in Be, shouldn't happen but has! wheree value in be but not picked up in form
 								BaseEntity be = beUtils.getBaseEntityByCode(ask.getAsk().getTargetCode());
+								if (be != null) {
 								String attributeCode = ask.getAsk().getAttributeCode();
 								Optional<EntityAttribute> optEa = be.findEntityAttribute(attributeCode);
 								if (optEa.isPresent()) {
@@ -416,6 +417,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 								} else {
 									allMandatoryTicked = false;
 									mandatoryDoneMap.put(taskSummary.getId(), false);
+								}
+								} else {
+									log.error("BaseEntity not found "+ask.getAsk().getTargetCode());
 								}
 							}
 						}
