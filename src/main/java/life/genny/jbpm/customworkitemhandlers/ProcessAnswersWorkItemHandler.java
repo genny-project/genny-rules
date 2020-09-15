@@ -217,24 +217,20 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				if (answer.getAttributeCode().equals("PRI_SUBMIT")) {
 					submitDetected = true;
 				}
-				if (answer.getAttributeCode().equals("PRI_ADDRESS_FULL")) {
-					/* send full address back to frontend */
-
-					BaseEntity be = beUtils.getBaseEntityByCode(answer.getTargetCode());
-					try {
-						Attribute attribute = RulesUtils.getAttribute("PRI_ADDRESS_FULL", userToken.getToken());
-						answer.setAttribute(attribute);
-						be.addAnswer(answer);
-						QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be);
-						msg.setToken(userToken.getToken());
-						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-					} catch (BadDataException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-
+				
+				/* send baseentity back to frontend */
+				BaseEntity be = beUtils.getBaseEntityByCode(answer.getTargetCode());
+				try {
+					Attribute attribute = RulesUtils.getAttribute(answer.getAttributeCode(), userToken.getToken());
+					answer.setAttribute(attribute);
+					be.addAnswer(answer);
+					QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be);
+					msg.setToken(userToken.getToken());
+					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+				} catch (BadDataException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-
 			}
 
 		}
