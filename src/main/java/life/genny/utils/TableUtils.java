@@ -96,7 +96,6 @@ public class TableUtils {
 		QDataBaseEntityMessage msg = null;
 
 		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
-		log.info("User Filters length  :: " + filters.size());
 
 		if (!filters.isEmpty()) {
 			log.info("User Filters are NOT empty");
@@ -111,14 +110,12 @@ public class TableUtils {
 		}
 
 		if (searchAlt && (GennySettings.searchAlt)) {
-			log.info("Search Alt!");
 			log.info("searchCode   ::   " + searchBE.getCode());
 			msg = searchUsingHql(serviceToken, searchBE, msg);
 		} else {
 			log.info("Old Search");
 			msg = fetchSearchResults(searchBE);
 		}
-		log.info("MSG ParentCode = " + msg.getParentCode());
 		long endtime1 = System.currentTimeMillis();
 		log.info(
 				"Time taken to search Results from SearchBE =" + (endtime1 - starttime) + " ms with total=" + msg.getTotal());
@@ -213,14 +210,12 @@ public class TableUtils {
 			// Check if bulkMsg not empty
 			if (bulkMsg.getMessages().length > 0) {
 
-				log.info("QDataBaseEntityMessage exists inside QBulkMessage   ::    " + bulkMsg.getMessages().length);
 				// Get the first QDataBaseEntityMessage from bulkMsg
 				QDataBaseEntityMessage msg = bulkMsg.getMessages()[0];
 
 				// Check if msg is not empty
 				if (msg.getItems().length > 0) {
 
-					log.info("BaseEntity exists inside QDataBaseEntityMessage   ::    " + msg.getItems().length);
 					// Extract the baseEntityAttributes from the first BaseEntity
 					Set<EntityAttribute> filtersSet = msg.getItems()[0].getBaseEntityAttributes();
 					filters.addAll(filtersSet);
@@ -1332,7 +1327,6 @@ public class TableUtils {
 			}
 		} else {
 			// aggregatedMessages.add(tfc.call());
-			System.out.println("useConcurrencyMsgs is NOT enabled");
 			aggregatedMessages.add(sc.call());
 
 		}
@@ -1341,8 +1335,6 @@ public class TableUtils {
 		aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 
 		if (cache) {
-			System.out
-					.println("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 			String json = JsonUtils.toJson(aggregatedMessages);
 			VertxUtils.writeMsg("webcmds", json);
 			// Now send the end_process msg
@@ -1464,7 +1456,6 @@ public class TableUtils {
 	public void performAndSendCount(GennyToken serviceToken, SearchEntity searchBE) {
 
 		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
-		log.info("User Filters length  :: " + filters.size());
 
 		if (!filters.isEmpty()) {
 			log.info("User Filters are NOT empty");
