@@ -338,9 +338,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 																	// mandatory ask
 									ask.setAnswered(false); // revert to unanswered
 									// do not save this invalid answer so we save an empty value
-									ask.setValue("");
+									ask.setValue(null);
 									taskAsksProcessed.add(ask); // save for later updating
-									answer.setValue("");
+									answer.setValue(null);
 									validAnswers.add(answer);
 									//if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
 									//	validAnswers.add(answer);
