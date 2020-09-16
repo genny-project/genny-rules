@@ -339,9 +339,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 									// mandatory ask
 									ask.setAnswered(false); // revert to unanswered
 									// do not save this invalid answer so we save an empty value
-									ask.setValue("");
+									ask.setValue(null);
 									taskAsksProcessed.add(ask); // save for later updating
-									answer.setValue("");
+									answer.setValue(null);
 									validAnswers.add(answer);
 									// if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
 									// validAnswers.add(answer);
@@ -399,6 +399,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 								// check if already in Be, shouldn't happen but has! wheree value in be but not
 								// picked up in form
 								BaseEntity be = beUtils.getBaseEntityByCode(ask.getAsk().getTargetCode());
+								if (be != null) {
 								String attributeCode = ask.getAsk().getAttributeCode();
 								Optional<EntityAttribute> optEa = be.findEntityAttribute(attributeCode);
 								if (optEa.isPresent()) {
@@ -413,6 +414,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 								} else {
 									allMandatoryTicked = false;
 									mandatoryDoneMap.put(taskSummary.getId(), false);
+								}
+								} else {
+									log.error("BaseEntity not found "+ask.getAsk().getTargetCode());
 								}
 							}
 						}
