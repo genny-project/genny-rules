@@ -1505,10 +1505,16 @@ public class TableUtils {
 		}
 	}
 
+	static public void moveEntity(String code, String sourceCode, BaseEntityUtils beUtils){
+		this.moveEntity(code, sourceCode, null, beUtils);
+	}
+
 	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils){
 			QCmdMessage msg = new QCmdMessage("MOVE_ENTITY", code);
 			msg.setSourceCode(sourceCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
-			msg.setTargetCode(targetCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
+			if(targetCode != null){
+				msg.setTargetCode(targetCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
+			}
 			msg.setToken(beUtils.getGennyToken().getToken());
 			msg.setSend(true);  		
 			VertxUtils.writeMsg("webcmds",msg);
