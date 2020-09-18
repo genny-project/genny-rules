@@ -1506,7 +1506,7 @@ public class TableUtils {
 	}
 
 	static public void moveEntity(String code, String sourceCode, BaseEntityUtils beUtils){
-		this.moveEntity(code, sourceCode, null, beUtils);
+		moveEntity(code, sourceCode, null, beUtils);
 	}
 
 	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils){
