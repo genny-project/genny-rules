@@ -573,7 +573,7 @@ public class TaskUtils {
 		askMsg.setToken(userToken.getToken());
 		askMsg.setReplace(true);
 		String sendingMsg = JsonUtils.toJson(askMsg);
-	//	VertxUtils.writeMsg("webcmds", sendingMsg);
+		VertxUtils.writeMsg("webcmds", sendingMsg);
 	}
 	
 }
