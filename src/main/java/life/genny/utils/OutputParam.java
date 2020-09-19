@@ -330,6 +330,13 @@ public class OutputParam implements Serializable,Comparable<Object> {
 		}
 	}
 
+	public static OutputParam getNone()
+	{
+		OutputParam output = new OutputParam();
+		output.setTypeOfResult("NO_PROCESSING");
+		output.setFormCode("NONE", "NONE");
+		return output;
+	}
 
 	 
 	

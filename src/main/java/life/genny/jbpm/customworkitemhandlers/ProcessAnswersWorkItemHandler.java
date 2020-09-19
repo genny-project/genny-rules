@@ -54,6 +54,8 @@ import org.kie.internal.task.api.model.InternalTaskData;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
+import life.genny.qwanda.Ask;
+import life.genny.qwanda.Question;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
@@ -92,15 +94,22 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface) {
 		this.wClass = workflowQueryInterface.getCanonicalName();
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		if (kieSession != null) {
+			env = kieSession.getEnvironment();
+		}
 		validator = factory.getValidator();
 
 	}
 
-	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, Environment env, TaskService taskService) {
+	public <R> ProcessAnswersWorkItemHandler(Class<R> workflowQueryInterface, Environment env,
+			TaskService taskService) {
 		this.taskService = taskService;
 		this.env = env;
 		this.wClass = workflowQueryInterface.getCanonicalName();
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		if (kieSession != null) {
+			env = kieSession.getEnvironment();
+		}
 		validator = factory.getValidator();
 
 	}
@@ -112,460 +121,386 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		this.taskService = rteng.getTaskService();
 		this.kieSession = kieSession;
 		ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+		if (kieSession != null) {
+			env = kieSession.getEnvironment();
+		}
 		validator = factory.getValidator();
 
 	}
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
-
+		/* items used to save the extracted input parameters from the custom task */
+		Map<String, Object> items = workItem.getParameters();
+		OutputParam output = (OutputParam) items.get("output");
+		Answers answersToSave = (Answers) items.get("answersToSave");
+		GennyToken userToken = (GennyToken) items.get("userToken");
+		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
 		String callingWorkflow = (String) workItem.getParameter("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
 
-		log.info(callingWorkflow + " PROCESS ANSWERS WorkItem Handler *************************");
-		/* resultMap is used to map the result Value to the output parameters */
-		final Map<String, Object> resultMap = new ConcurrentHashMap<String, Object>();
-		Map<TaskSummary, ConcurrentHashMap<String, Object>> taskAskMap = new ConcurrentHashMap<TaskSummary, ConcurrentHashMap<String, Object>>();
-
-		/* items used to save the extracted input parameters from the custom task */
-		Map<String, Object> items = workItem.getParameters();
-		Map<Long, KieSession> kieSessionMap = new HashMap<Long, KieSession>();
-		Map<Long, Boolean> mandatoryDoneMap = new ConcurrentHashMap<Long, Boolean>();
-
-		OutputParam output = (OutputParam) items.get("output");
-
-		if ((output == null) || (output.getTypeOfResult().equalsIgnoreCase("NO_PROCESSING"))) {
-			output = new OutputParam();
-			output.setFormCode("NONE", "NONE");
-			output.setResultCode("NONE");
-			output.setTypeOfResult("NO_PROCESSING");
-			resultMap.put("output", output);
-
-			if (kieSession != null) {
-				kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
-			} else {
-				manager.completeWorkItem(workItem.getId(), resultMap);
-			}
-
+		// If no need to process anything then exit
+		if ((output == null) || ("NO_PROCESSING".equalsIgnoreCase(output.getTypeOfResult())) || ((answersToSave == null)
+				|| (answersToSave.getAnswers() == null) || (answersToSave.getAnswers().isEmpty()))) {
+			exitOut(workItem, manager, OutputParam.getNone());
 			return;
 		}
 
-		GennyToken userToken = (GennyToken) items.get("userToken");
-		GennyToken serviceToken = (GennyToken) items.get("serviceToken");
-		String formCode = "NONE";
-		String targetCode = "NONE";
+		// If the answers do not come from the specified source or an admin then ignore.
+		// This is just to be quick
+		if (!TaskUtils.doValidAnswersExist(answersToSave, userToken)) {
+			exitOut(workItem, manager, OutputParam.getNone());
+			return;
+		}
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
 
-		Answers answersToSave = (Answers) items.get("answersToSave");
-
-		// Extract all the current questions from all the users Tasks
-		List<Status> statuses = new CopyOnWriteArrayList<Status>();
-		statuses.add(Status.Ready);
-		// statuses.add(Status.Completed);
-		// statuses.add(Status.Created);
-		// statuses.add(Status.Error);
-		// statuses.add(Status.Exited);
-		statuses.add(Status.InProgress);
-		// statuses.add(Status.Obsolete);
-		statuses.add(Status.Reserved);
-		// statuses.add(Status.Suspended);
-
-		String realm = userToken.getRealm();
-		String userCode = userToken.getUserCode();
-
-		KieServices ks = KieServices.Factory.get();
-		KieBase kieBase = RulesLoader.getKieBaseCache().get(realm); // kieContainer.getKieBase("defaultKieBase"); //
-		// this name is supposedly found in the kmodule.xml
-		// in META-INF in widlfy-rulesservice
-
-		List<TaskSummary> tasks = taskService.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
-		log.info("Tasks=" + tasks);
-		// Quick answer validation
-		Boolean validAnswersExist = false;
-		Map<String, Answer> answerMap = new ConcurrentHashMap<String, Answer>();
-		Map<String, Answer> answerMap2 = new ConcurrentHashMap<String, Answer>();
-		Boolean exitOut = false;
-		Boolean submitDetected = false;
-
-		if ((answersToSave == null) || (answersToSave.getAnswers() == null) || (answersToSave.getAnswers().isEmpty())) {
-			output = new OutputParam();
-			output.setTypeOfResult("NO_PROCESSING");
-			output.setFormCode("NONE", "NONE");
-			resultMap.put("output", output);
-			if (kieSession != null) {
-				kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
-			} else {
-				manager.completeWorkItem(workItem.getId(), resultMap);
-			}
+		// Send back the 'validated' answers
+		BaseEntity originalTarget = beUtils.getBaseEntityByCode(answersToSave.getAnswers().get(0).getTargetCode());
+		if (originalTarget == null) {
+			log.error("Target BaseEntity does not exist ! %s", answersToSave.getAnswers().get(0).getTargetCode());
+			exitOut(workItem, manager, OutputParam.getNone());
 			return;
+
 		}
 
-		List<Answer> answersToSave2 = new CopyOnWriteArrayList<>(answersToSave.getAnswers());
+		BaseEntity validBe = TaskUtils.gatherValidAnswers(beUtils, answersToSave, userToken); // TODO, use an exception
+																								// to flushout invalids
+		beUtils.writeMsg(validBe);
 
-		BaseEntity originalBe = beUtils.getBaseEntityByCode(answersToSave2.get(0).getTargetCode());
-		BaseEntity newBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
+		log.info(callingWorkflow+" PROCESS VALID ANSWERS WorkItem Handler *************************");
 
-		for (Answer answer : answersToSave2) {
-			Boolean validAnswer = validate(answer, userToken);
-			// Quick and dirty ...
-			if (validAnswer) {
-				validAnswersExist = true;
-				String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
-				answerMap2.put(key, answer);
-				if (answer.getAttributeCode().equals("PRI_SUBMIT")) {
-					submitDetected = true;
-				}
+		// Construct a set of unique AnswerCodes for the incoming Answers
+		Map<String, Answer> answerMap2 = constructAnswerMap(answersToSave, userToken); // original
+		Map<String, Answer> answerMap = new ConcurrentHashMap<>();
+		answerMap.putAll(answerMap2); // working
+		Boolean submitDetected = submitDetected(answerMap2); // check if the submit button detected
 
-				try {
-					Attribute attribute = RulesUtils.getAttribute(answer.getAttributeCode(), userToken.getToken());
-					answer.setAttribute(attribute);
-					newBe.addAnswer(answer);
+		/* resultMap is used to map the result Value to the output parameters */
+		Map<TaskSummary, ConcurrentHashMap<String, Object>> taskAskMap = new ConcurrentHashMap<>();
 
-				} catch (BadDataException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
+		Map<Long, KieSession> kieSessionMap = new HashMap<>();
+		Map<Long, Boolean> mandatoryDoneMap = new ConcurrentHashMap<>();
 
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(newBe);
-		msg.setToken(userToken.getToken());
-		msg.setReplace(true);
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+		List<TaskSummary> tasks = taskService.getTasksOwnedByStatus(userToken.getRealmUserCode(),
+				TaskUtils.getTaskStatusList(), null);
+		log.info("Tasks=%s", tasks);
 
-		if ((!validAnswersExist) || exitOut || (answerMap2.isEmpty())) {
-			log.error(callingWorkflow + " exiting out early due to no valid answers nor pri_submit");
-			output.setResultCode("NONE");
-			output.setTypeOfResult("NONE");
-			resultMap.put("output", output);
-			manager.completeWorkItem(workItem.getId(), resultMap);
-			return;
-		}
+		KieSession kSession = getKieSession(workItem, manager, userToken, callingWorkflow);
+		List<Answer> validAnswers = new CopyOnWriteArrayList<>();
+		List<TaskAsk> taskAsksProcessed = new CopyOnWriteArrayList<>();
 
 		for (TaskSummary taskSummary : tasks) {
+			// If the taskSummary is not related to the incoming targetCode then ignore
+			if (!originalTarget.getCode().equals(taskSummary.getSubject())) {
+				continue; // don't process tasks that are not related to the targetCode
+			}
 			Boolean hackTrigger = false; // used for debugging and testing trigger
 			mandatoryDoneMap.put(taskSummary.getId(), false);
+
 			Task task = taskService.getTaskById(taskSummary.getId());
 			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
-				taskService.start(taskSummary.getId(), realm + "+" + userCode); // start!
+				taskService.start(taskSummary.getId(), userToken.getRealmUserCode()); // start!
 			}
-			if (kieSession != null) {
-				env = kieSession.getEnvironment();
-			}
-			// Save the kieSession for this task
-			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
-			KieSession kSession = null;
-			if (VertxUtils.cachedEnabled) {
-				kSession = kieSession;
-			} else {
-				long sessionId = task.getTaskData().getProcessSessionId();
-				try {
-					if (GennySettings.useSingleton) {
-						kSession = RulesLoader.kieSessionMap.get(userToken.getRealm());
-					} else {
-						kSession = RulesLoader.kieSessionMap.get(userToken.getSessionCode());
-					}
-					// KieSession kSession = ks.getStoreServices().loadKieSession(sessionId,
-					// kieBase,
-					// ksconf, env);
-				} catch (Exception ke) {
-					log.error("kieSession could not be loaded " + sessionId);
-				}
-			}
-			if (kSession == null) {
-				log.error("Cannot find session to restore for ksid=" + task.getTaskData().getProcessSessionId());
-				log.error(callingWorkflow + " exiting out early due to nokSession");
-				output.setResultCode("NONE");
-				resultMap.put("output", output);
-				manager.completeWorkItem(workItem.getId(), resultMap);
-				return;
-			} else {
-				log.info("Found session to restore for ksid=" + task.getTaskData().getProcessSessionId());
-			}
+
 			kieSessionMap.put(task.getId(), kSession);
 
-			Long docId = task.getTaskData().getDocumentContentId();
-			Content c = taskService.getContentById(docId);
-			if (c == null) {
-				log.error("*************** Task content is NULL *********** ABORTING");
-				return;
-			}
-			HashMap<String, Object> taskAsks2 = null;
 			ConcurrentHashMap<String, Object> taskAsks = null;
-			synchronized (this) {
-				taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
 
-				taskAsks = new ConcurrentHashMap<String, Object>(taskAsks2);
+			try {
+				taskAsks = TaskUtils.getTaskAsks(taskService, task);
+			} catch (Exception e) {
+				log.error("Bad TaskAsk issue");
+				exitOut(workItem, manager, OutputParam.getNone());
 			}
 
-			formCode = (String) taskAsks.get("FORM_CODE");
-			targetCode = (String) taskAsks.get("TARGET_CODE");
 			// Loop through all the answers check their validity and save them.
-			List<Answer> validAnswers = new CopyOnWriteArrayList<Answer>();
-			List<TaskAsk> taskAsksProcessed = new CopyOnWriteArrayList<TaskAsk>();
 
-			if (!answerMap2.isEmpty()) {
-				answerMap.putAll(answerMap2);
-				for (Answer answer : answerMap2.values()) {
-					// check answer
-					if (answer.getSourceCode().equals(userToken.getUserCode())) {
-						// HACK! TODO
-						// if (answer.getAttributeCode().equals("PRI_EVENT")) {
-						// answer.setAttributeCode("PRI_SUBMIT");
-						// finishUp = true;
-						// hackTrigger = true;
-						// }
-						String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
-						TaskAsk ask = (TaskAsk) taskAsks.get(key);
-						if (ask != null) {
-
-							// Now confirm the validity of the value
-							Boolean validated = validate(answer, userToken);
-
-							if (validated) {
-								ask.setValue(answer.getValue());
-								// check
-								taskAsksProcessed.add(ask); // save for later updating
-								validAnswers.add(answer);
-								// if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
-								// validAnswers.add(answer);
-								// }
-								answerMap.remove(key);
-
-							} else {
-								if (ask.getAsk().getMandatory()) { // if an invalid result sent, then clear this
-									// mandatory ask
-									ask.setAnswered(false); // revert to unanswered
-									// do not save this invalid answer so we save an empty value
-									ask.setValue(null);
-									taskAsksProcessed.add(ask); // save for later updating
-									answer.setValue(null);
-									validAnswers.add(answer);
-									// if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
-									// validAnswers.add(answer);
-									// }
-									answerMap.remove(key);
-								}
-							}
-						} else {
-							if (answer.getInferred()) {
-								// This is a valid answer but has not come from the frondend and is not going to
-								// be expected in the task list */
-								validAnswers.add(answer);
-								// if (!answer.getAttributeCode().equals("PRI_SUBMIT")) {
-								// validAnswers.add(answer);
-								// }
-								answerMap.remove(key);
-							} else {
-								log.error("Not a valid ASK! " + key);
-							}
-						}
+			answerMap.putAll(answerMap2);
+			for (Answer answer : answerMap2.values()) {
+				// check answer
+				String key = answer.getUniqueCode();
+				TaskAsk ask = (TaskAsk) taskAsks.get(key);
+				if (ask != null) {
+					ask.setValue(answer.getValue());
+					ask.setAnswered(true);
+					taskAsksProcessed.add(ask); // save for later updating
+					validAnswers.add(answer);
+					if (Boolean.TRUE.equals(answer.getInferred())) {
+						// This is a valid answer but has not come from the frondend and is not going to
+						// be expected in the task list */
+						validAnswers.add(answer);
 					}
-				}
-
-				log.info(callingWorkflow + " Saving " + validAnswers.size() + " Valid Answers ...");
-
-				if (validAnswers.size() > 0) {
-					if (!submitDetected) { // dont save if submit
-						beUtils.saveAnswers(validAnswers); // save answers in one big thing
-					}
-
-					// tick off the valid answers
-					for (TaskAsk ta : taskAsksProcessed) {
-						ta.setAnswered(true);
-					}
-
-					// check if all mandatory answers done
-					Boolean allMandatoryTicked = true;
-					Boolean isCreateOnTrigger = false;
-					Boolean isNowTriggered = false;
-					mandatoryDoneMap.put(taskSummary.getId(), true); // set as default true to be falsified if a mandatory field
-																														// not answered
-					for (String key : taskAsks.keySet()) {
-
-						if (taskAsks.get(key) instanceof String) {
-							continue;
-						}
-						TaskAsk ask = (TaskAsk) taskAsks.get(key);
-						if (((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":FORM_CODE").equals(key))
-								|| ((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":TARGET_CODE").equals(key))) {
-							continue;
-						}
-						if (ask.getAsk().getMandatory()) {
-
-							if (!ask.getAnswered()) {
-								// check if already in Be, shouldn't happen but has! wheree value in be but not
-								// picked up in form
-								BaseEntity be = beUtils.getBaseEntityByCode(ask.getAsk().getTargetCode());
-								if (be != null) {
-								String attributeCode = ask.getAsk().getAttributeCode();
-								Optional<EntityAttribute> optEa = be.findEntityAttribute(attributeCode);
-								if (optEa.isPresent()) {
-									EntityAttribute ea = optEa.get();
-									if (StringUtils.isBlank(ea.getAsString())) {
-										allMandatoryTicked = false;
-										mandatoryDoneMap.put(taskSummary.getId(), false);
-									} else {
-										ask.setAnswered(true);
-										ask.setValue(ea.getAsString());
-									}
-								} else {
-									allMandatoryTicked = false;
-									mandatoryDoneMap.put(taskSummary.getId(), false);
-								}
-								} else {
-									log.error("BaseEntity not found "+ask.getAsk().getTargetCode());
-								}
-							}
-						}
-						if (ask.getCreateOnTrigger()) {
-							isCreateOnTrigger = true; // ok, so if any trigger questions are answered and all mandatory
-							// questions are answered then create!
-						}
-						if (ask.getFormTrigger() && ask.getAnswered()) {
-							isNowTriggered = true;
-						}
-						// HACK TODO TODO TODO
-						if (ask.getAsk().getAttributeCode().startsWith("QQQ_QUESTION_GROUP_BUT")) {
-							isNowTriggered = true;
-						}
-						if ((ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")
-								&& (ask.getAnswered())/* ||ask.getAsk().getAttributeCode().equals("PRI_SUBMIT") */)) {
-							log.info(callingWorkflow + " PRI_SUBMIT detected ");
-							hackTrigger = true;
-							isNowTriggered = true;
-						}
-						// if ((ask.getAsk().getAttributeCode().equals("PRI_ADDRESS_FULL")) &&
-						// (ask.getAnswered())) {
-						// log.info(callingWorkflow+" PRI_FULL_ADDRESS detected and is answered");
-						// hackTrigger = true;
-						// }
-
-						log.info(callingWorkflow + " TASK-ASK:" + ask);
-					}
-					// check all the tasks to see if any are completed and if so then complete them!
-					if ((mandatoryDoneMap.get(taskSummary.getId()) && isNowTriggered) && hackTrigger) {
-						if (isCreateOnTrigger) {
-							// Okay, so grab the temporary target BE and make it the final target BE!
-							log.info(callingWorkflow + " Creating actual Target BE from Temporary BE for " + task.getFormName());
-						}
-						// Now complete the Task!!
-						log.info(callingWorkflow + " Completed TASK " + task.getFormName() + "  hackTrigger = "
-								+ (hackTrigger ? "TRUE" : "FALSE"));
-						taskAskMap.put(taskSummary, taskAsks);
-					}
-					Map<String, Object> results = taskAskMap.get(taskSummary);
-					if ((results == null) && (!hackTrigger)) {
-						// Now save back to Task
-						// EntityManager em = (EntityManager) kSession.getEnvironment()
-						// .get(EnvironmentName.APP_SCOPED_ENTITY_MANAGER);
-						// taskAsks);
-						Object contentObject = null;
-						contentObject = new ConcurrentHashMap<String, Object>(taskAsks);
-						Environment env2 = null;
-						if (kSession != null) {
-							env2 = kSession.getEnvironment();
-						}
-						// synchronized (this) {
-						ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env2);
-
-						Content content = TaskModelProvider.getFactory().newContent();
-						((InternalContent) content).setContent(contentData.getContent());
-						Set<ConstraintViolation<Content>> constraintViolations = validator.validate(content);
-						if (constraintViolations.size() == 0) {
-							log.info("ProcessAnswers: Persisting taskContent");
-							persist(content, env2);
-							// Object tx = joinTransaction(em);
-							// em.persist(content);
-							// leaveTransaction(em, tx);
-							InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
-							InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
-							iTaskData.setDocument(content.getId(), contentData);
-							// iTask.setDescription(q.getName()); TODO Add custom task name here
-							iTask.setTaskData(iTaskData);
-						} else {
-							// Hibernate validation error!
-							for (ConstraintViolation<Content> constraintViolation : constraintViolations) {
-								log.error(constraintViolation.getMessage());
-							}
-						}
-						// }
-					}
+				} else {
+					log.error("Not a valid ASK! %s", key);
 				}
 			}
-			if (mandatoryDoneMap.get(taskSummary.getId())) {
-				log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for " + task.getName());
+
+			log.info("%s Saving %d Valid Answers ...", callingWorkflow, validAnswers.size());
+
+			if (Boolean.FALSE.equals(submitDetected)) { // dont save if submit
+				beUtils.saveAnswers(validAnswers); // save answers in one big thing
+			}
+
+			// check if all mandatory answers done
+			Boolean isNowTriggered = false;
+			mandatoryDoneMap.put(taskSummary.getId(), true); // set as default true to be falsified if a mandatory field
+
+			
+			TaskAsk submitTaskAsk = null;
+			
+			// not answered
+			for (Map.Entry<String, Object> entry : taskAsks.entrySet()) {
+				String key = entry.getKey();
+				Object value = entry.getValue();
+				if (value instanceof String) {
+					continue;
+				}
+				TaskAsk ask = (TaskAsk) value;
+				if (((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":FORM_CODE").equals(key))
+						|| ((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":TARGET_CODE")
+								.equals(key))) {
+					continue;
+				}
+
+				if (Boolean.TRUE.equals(ask.getAsk().getMandatory()) && Boolean.FALSE.equals(ask.getAnswered()) && (!ask.getAsk().getAttributeCode().equals("PRI_SUBMIT"))) {
+					// check if already in Be, shouldn't happen but has! where value in be but not
+					// picked up in form
+					String attributeCode = ask.getAsk().getAttributeCode();
+					Optional<EntityAttribute> optEa = originalTarget.findEntityAttribute(attributeCode);
+					if (optEa.isPresent()) {
+						EntityAttribute ea = optEa.get();
+						if (StringUtils.isBlank(ea.getAsString())) {
+							mandatoryDoneMap.put(taskSummary.getId(), false);
+						} else {
+							ask.setAnswered(true);
+							ask.setValue(ea.getAsString());
+						}
+					} else {
+						mandatoryDoneMap.put(taskSummary.getId(), false);
+					}
+				}
+				
+
+				if (ask.getFormTrigger() && ask.getAnswered()) {
+					isNowTriggered = true;
+				}
+				
+				
+				if (ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")) {
+					submitTaskAsk = ask;
+				}
+				
+				log.info("TASK-ASK: "+ask);
+				
+			}
+			
+			if (submitDetected) {
+				isNowTriggered = true;
+			}
+
+			// check all the tasks to see if any are completed and if so then complete them!
+			if ((mandatoryDoneMap.get(taskSummary.getId()) && isNowTriggered)) {
+				// Now complete the Task!!
+				log.info(callingWorkflow+" Completed TASK "+task.getFormName()+"  hackTrigger = "+(Boolean.TRUE.equals(hackTrigger) ? "TRUE" : "FALSE") 
+						);
+				taskAskMap.put(taskSummary, taskAsks);
+			}
+			
+			
+			
+			Map<String, Object> results = saveTaskData(taskAskMap, kSession, taskSummary, hackTrigger, task, taskAsks);
+
+			if (Boolean.TRUE.equals(mandatoryDoneMap.get(taskSummary.getId()))) {
+				log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for "+ task.getName());
+				// if there is a submit button then enable it
+				if (submitTaskAsk != null) {
+					Ask submitAsk = submitTaskAsk.getAsk();
+					TaskUtils.enableTaskQuestion(submitAsk,true, userToken);
+				}
+				
+				if (submitDetected) {
+					log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED AND SUBMIT DETECTED!");
+				}
+				//TaskUtils.enableTaskQuestion(Question question,true, originalTarget.getCode(), userToken);
+			} else {
+				Ask submitAsk = submitTaskAsk.getAsk();
+				TaskUtils.enableTaskQuestion(submitAsk,false, userToken);
+
 			}
 		}
 
-		answerMap2.keySet().removeAll(answerMap.keySet());
+	
 
-		if (validAnswersExist) {
-			// Check that the form answer is allowed
-			// ugly hack
-			Boolean uglySkip = false;
-			if (answerMap2.values().size() == 1) {
-				String key = answerMap2.keySet().toArray(new String[0])[0];
-				String[] keySplit = key.split(":");
-				if ("PRI_SUBMIT".equals(keySplit[2])) {
-					uglySkip = true;
-				}
-			}
-			if ((!uglySkip) && (!answerMap2.values().isEmpty())) { // don't save submit button
-				synchronized (this) {
-					log.info("processAnswers: Saving Answers :" + answerMap2.values());
-					List<Answer> saveAnswers = new CopyOnWriteArrayList<>(answerMap2.values());
-					saveAnswers.parallelStream().forEach((i) -> {
-						i.setChangeEvent(false);
-					}); // do not feed back into rules with attribbute change
-					beUtils.saveAnswers(saveAnswers);
-				}
-			}
-		}
-
-		// synchronized (this) {
 		// Now complete the tasks if done
 
 		for (TaskSummary taskSummary : tasks) {
 			Map<String, Object> results = taskAskMap.get(taskSummary);
 			if (results != null) {
 				InternalTask iTask = (InternalTask) taskService.getTaskById(taskSummary.getId());
-				log.info(callingWorkflow + " CLOSING task with status " + iTask.getTaskData().getStatus());
-				// log.info("####### processAnswers! sessionId=" +
-				// iTask.getTaskData().getProcessSessionId()
-				// + " with status " + iTask.getTaskData().getStatus());
+				log.info("%s CLOSING task with status  %s", callingWorkflow, iTask.getTaskData().getStatus());
 
-				KieSession kSession = kieSessionMap.get(iTask.getId());
-				if (kSession == null) {
-					log.error("NULL kSession when trying to retrieve kSession for kieSesswionId="
-							+ iTask.getTaskData().getProcessSessionId());
+				KieSession taskSession = kieSessionMap.get(iTask.getId());
+				if (taskSession == null) {
+					log.error("NULL kSession when trying to retrieve kSession for kieSesswionId=%s",
+							iTask.getTaskData().getProcessSessionId());
 				}
 				results.put("taskid", iTask.getId());
 				results.put("userToken", userToken); /* save the latest userToken that actually completes the form */
-				results.put("serviceToken", serviceToken); /* save the latest userToken that actually completes the form */
+				results.put("serviceToken",
+						serviceToken); /* save the latest userToken that actually completes the form */
 
-				if (mandatoryDoneMap.get(taskSummary.getId())) {
-					taskService.complete(iTask.getId(), realm + "+" + userCode, results);
+				Boolean mandatorysAllDone = mandatoryDoneMap.get(taskSummary.getId());
+				if (Boolean.TRUE.equals(mandatorysAllDone)) {
+					log.info("processAnswers: SAVING FORM ANSWERS! "+iTask.getFormName()+":"+iTask.getSubject()+":"+userToken.getRealmUserCode());
+
+					saveAnswers(beUtils, answerMap2);
+					taskService.complete(iTask.getId(), userToken.getRealmUserCode(), results);
 					TaskUtils.sendTaskAskItems(userToken);
-					// kSession.signalEvent("closeTask", facts);
-					output = new OutputParam();
-					// if ("NONE".equals(formCode)) {
-					output.setTypeOfResult("NONE");
-					// } else {
-					// output.setTypeOfResult("FORMCODE");
-					// }
-					// output.setFormCode(formCode, targetCode);
-
-				} else {
-					// kSession.signalEvent("closeTask", facts);
-					output = new OutputParam();
-					output.setTypeOfResult("NONE");
-					output.setFormCode("NONE", "NONE");
 				}
 			}
 		}
+
+		finishUp(workItem, manager, output);
+	}
+
+	/**
+	 * @param taskAskMap
+	 * @param kSession
+	 * @param taskSummary
+	 * @param hackTrigger
+	 * @param task
+	 * @param taskAsks
+	 * @return
+	 */
+	private Map<String, Object> saveTaskData(Map<TaskSummary, ConcurrentHashMap<String, Object>> taskAskMap,
+			KieSession kSession, TaskSummary taskSummary, Boolean hackTrigger, Task task,
+			ConcurrentHashMap<String, Object> taskAsks) {
+		Map<String, Object> results = taskAskMap.get(taskSummary);
+		if ((results == null) && (!hackTrigger)) {
+			// Now save back to Task
+			Object contentObject = null;
+			contentObject = new ConcurrentHashMap<String, Object>(taskAsks);
+			Environment env2 = null;
+			if (kSession != null) {
+				env2 = kSession.getEnvironment();
+			}
+			ContentData contentData = ContentMarshallerHelper.marshal(task, contentObject, env2);
+
+			Content content = TaskModelProvider.getFactory().newContent();
+			((InternalContent) content).setContent(contentData.getContent());
+			Set<ConstraintViolation<Content>> constraintViolations = validator.validate(content);
+			if (constraintViolations.size() == 0) {
+				log.info("ProcessAnswers: Persisting taskContent");
+				persist(content, env2);
+				InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());
+				InternalTaskData iTaskData = (InternalTaskData) iTask.getTaskData();
+				iTaskData.setDocument(content.getId(), contentData);
+				// iTask.setDescription(q.getName()); TODO Add custom task name here
+				iTask.setTaskData(iTaskData);
+			} else {
+				// Hibernate validation error!
+				for (ConstraintViolation<Content> constraintViolation : constraintViolations) {
+					log.error(constraintViolation.getMessage());
+				}
+			}
+
+		}
+		return results;
+	}
+
+	/**
+	 * @param beUtils
+	 * @param answerMap2
+	 */
+	private void saveAnswers(BaseEntityUtils beUtils, Map<String, Answer> answerMap2) {
+		synchronized (this) {
+			log.info("processAnswers: Saving Answers :"+ answerMap2.values());
+			List<Answer> saveAnswers = new CopyOnWriteArrayList<>(answerMap2.values());
+			saveAnswers.parallelStream().forEach((i) -> {
+				i.setChangeEvent(false);
+			}); // do not feed back into rules with attribbute change
+			beUtils.saveAnswers(saveAnswers);
+		}
+	}
+
+	/**
+	 * @param workItem
+	 * @param manager
+	 * @param userToken
+	 * @param callingWorkflow
+	 * @param task
+	 * @return
+	 */
+	private KieSession getKieSession(WorkItem workItem, WorkItemManager manager, GennyToken userToken,
+			String callingWorkflow) {
+		// Save the kieSession for this task
+		KieSession kSession = null;
+		if (VertxUtils.cachedEnabled) {
+			kSession = kieSession;
+		} else {
+			try {
+				if (Boolean.TRUE.equals(GennySettings.useSingleton)) {
+					kSession = RulesLoader.kieSessionMap.get(userToken.getRealm());
+				} else {
+					kSession = RulesLoader.kieSessionMap.get(userToken.getSessionCode());
+				}
+			} catch (Exception ke) {
+				log.error("kieSession could not be loaded ");
+			}
+		}
+		if (kSession == null) {
+			log.error("%s exiting out early due to nokSession", callingWorkflow);
+			this.exitOut(workItem, manager, OutputParam.getNone());
+			return null;
+		} else {
+			log.info("Found session to restore for ksid=");
+		}
+		return kSession;
+	}
+
+	private Map<String, Answer> constructAnswerMap(Answers answersToSave, GennyToken userToken) {
+		Map<String, Answer> answerMap = new ConcurrentHashMap<>();
+
+		for (Answer answer : answersToSave.getAnswers()) {
+			Boolean validAnswer = TaskUtils.validate(answer, userToken);
+			if (Boolean.TRUE.equals(validAnswer)) {
+				String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
+				answerMap.put(key, answer);
+			}
+		}
+		return answerMap;
+
+	}
+
+	private Boolean submitDetected(Map<String, Answer> answerMap) {
+		for (Answer answer : answerMap.values()) {
+			if ("PRI_SUBMIT".equals(answer.getAttributeCode())) {
+				return true;
+			}
+		}
+		return false;
+
+	}
+
+	private void exitOut(WorkItem workItem, WorkItemManager manager, OutputParam output) {
+		final Map<String, Object> resultMap = new ConcurrentHashMap<>();
+		resultMap.put("output", output);
+
+		if (kieSession != null) {
+			kieSession.getWorkItemManager().completeWorkItem(workItem.getId(), resultMap);
+		} else {
+			manager.completeWorkItem(workItem.getId(), resultMap);
+		}
+	}
+
+	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
+		// Do nothing, notifications cannot be aborted
+	}
+
+	public void finishUp(WorkItem workItem, WorkItemManager manager, OutputParam output) {
+		final Map<String, Object> resultMap = new ConcurrentHashMap<>();
 
 		resultMap.put("output", output);
 		// check if result has nulls in it
@@ -573,7 +508,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (key == null) {
 				log.error("processAnswers: BAD NULL KEY IN RESULT SET");
 			} else if (resultMap.get(key) == null) {
-				log.error("processAnswers: BAD NULL MAP ENTRY IN RESULT SET for KEY = " + key);
+				log.error("processAnswers: BAD NULL MAP ENTRY IN RESULT SET for KEY = %s", key);
 			} else if (resultMap.get(key) instanceof OutputParam) {
 				OutputParam o = (OutputParam) resultMap.get(key);
 				Map<String, String> map = o.getAttributeTargetCodeMap();
@@ -587,7 +522,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							ok = false;
 							log.error("processAnswers : BAD NULL KEY IN RESULT SET - OutputParam map ");
 						} else if (map.get(key) == null) {
-							log.error("processAnswers : BAD NULL KEY IN RESULT SET VALUE - OutputParam map - key= " + okey);
+							log.error("processAnswers : BAD NULL KEY IN RESULT SET VALUE - OutputParam map - key= "
+									+ okey);
 							ok = false;
 						}
 					}
@@ -606,43 +542,6 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		} else {
 			manager.completeWorkItem(workItem.getId(), resultMap);
 		}
-
-		return;
-
-		// notify manager that work item has been completed
-		// manager.completeWorkItem(workItem.getId(), resultMap);
-
-	}
-
-	private Boolean validate(Answer answer, GennyToken userToken) {
-		// TODO - check value using regexs
-		if (!answer.getSourceCode().equals(userToken.getUserCode())) {
-			if (userToken.hasRole("admin")) {
-				return true;
-			}
-			return false;
-		}
-		return true;
-	}
-
-	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
-		// Do nothing, notifications cannot be aborted
-	}
-
-	protected ContentData createTaskContentBasedOnWorkItemParams(KieSession session,
-			HashMap<String, Object> taskAsksMap) {
-		ContentData content = null;
-		Object contentObject = null;
-		contentObject = new HashMap<String, Object>(taskAsksMap);
-		if (contentObject != null) {
-			Environment env = null;
-			if (session != null) {
-				env = session.getEnvironment();
-			}
-
-			content = ContentMarshallerHelper.marshal(null, contentObject, env);
-		}
-		return content;
 	}
 
 	/**
