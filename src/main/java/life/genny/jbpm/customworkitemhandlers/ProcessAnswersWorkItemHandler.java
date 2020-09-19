@@ -154,7 +154,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			return;
 		}
 
-		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken);
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		beUtils.setServiceToken(serviceToken);
 
 		// Send back the 'validated' answers
 		BaseEntity originalTarget = beUtils.getBaseEntityByCode(answersToSave.getAnswers().get(0).getTargetCode());
