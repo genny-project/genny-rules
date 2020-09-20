@@ -270,8 +270,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		// Optional<String> value =
 		// target.getValue(taskAsk.getAsk().getAttributeCode());
 		if (attributeValue.isPresent()) {
-			taskAsk.setAnswered(true);
 			EntityAttribute ea = attributeValue.get();
+			if (StringUtils.isBlank(ea.getAsString())) {
+				taskAsk.setAnswered(false);
+			} else {
+				taskAsk.setAnswered(true);
+			}
 			taskAsk.setValue(ea.getAsString());
 		} else {
 			// add the attribute with default value

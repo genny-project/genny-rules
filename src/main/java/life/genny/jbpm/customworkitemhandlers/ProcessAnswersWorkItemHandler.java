@@ -225,7 +225,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				TaskAsk ask = (TaskAsk) taskAsks.get(key);
 				if (ask != null) {
 					ask.setValue(answer.getValue());
-					ask.setAnswered(true);
+					if (StringUtils.isBlank(ask.getValue())) {
+						ask.setAnswered(false);
+					} else {
+						ask.setAnswered(true);
+					}
 					taskAsksProcessed.add(ask); // save for later updating
 					validAnswers.add(answer);
 					if (Boolean.TRUE.equals(answer.getInferred())) {

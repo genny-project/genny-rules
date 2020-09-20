@@ -8,8 +8,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.lang3.StringUtils;
@@ -41,6 +43,7 @@ import life.genny.qwanda.Question;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
@@ -575,5 +578,61 @@ public class TaskUtils {
 		String sendingMsg = JsonUtils.toJson(askMsg);
 		VertxUtils.writeMsg("webcmds", sendingMsg);
 	}
+
+	public static Boolean areAllMandatoryQuestionsAnswered(BaseEntity target,Map<String, Object> taskAsks) {
+		
+
+		Boolean allMandatoryAnswered = true;
+		
+		for (Map.Entry<String, Object> entry : taskAsks.entrySet()) {
+			String key = entry.getKey();
+			Object value = entry.getValue();
+			if (value instanceof String) {
+				continue;
+			}
+			TaskAsk ask = (TaskAsk) value;
+			if (((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":FORM_CODE").equals(key))
+					|| ((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":TARGET_CODE")
+							.equals(key))) {
+				continue;
+			}
+
+			if (Boolean.TRUE.equals(ask.getAsk().getMandatory()) && Boolean.FALSE.equals(ask.getAnswered()) && (!ask.getAsk().getAttributeCode().equals("PRI_SUBMIT"))) {
+				// check if already in Be, shouldn't happen but has! where value in be but not
+				// picked up in form
+				String attributeCode = ask.getAsk().getAttributeCode();
+				Optional<EntityAttribute> optEa = target.findEntityAttribute(attributeCode);
+				if (optEa.isPresent()) {
+					EntityAttribute ea = optEa.get();
+					if (StringUtils.isBlank(ea.getAsString())) {
+						allMandatoryAnswered = false;
+						break;
+					} 
+				} else {
+					allMandatoryAnswered = false;
+					break;
+				}
+			}
+			
+			
+		}
+		return allMandatoryAnswered;
+	}
 	
+	/**
+	 * @param aask 
+	 * @param callingWorkflow
+	 */
+	public static void enableAttribute(String attributeCode,Ask aask, String callingWorkflow,Boolean enabled) {
+		if (aask.getAttributeCode().equals("QQQ_QUESTION_GROUP")) {
+			for (Ask childAsk : aask.getChildAsks()) {
+				enableAttribute(attributeCode,childAsk, callingWorkflow,enabled);
+			}
+		} else {
+			if (attributeCode.toUpperCase().equals(aask.getAttributeCode())) {
+				aask.setDisabled(!enabled);
+			
+			}
+		}
+	}
 }
