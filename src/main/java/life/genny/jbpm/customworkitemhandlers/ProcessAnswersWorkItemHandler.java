@@ -51,6 +51,7 @@ import org.kie.internal.task.api.model.InternalContent;
 import org.kie.internal.task.api.model.InternalTask;
 import org.kie.internal.task.api.model.InternalTaskData;
 
+import io.vavr.Tuple2;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
@@ -166,10 +167,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		}
 
-		BaseEntity validBe = TaskUtils.gatherValidAnswers(beUtils, answersToSave, userToken); // TODO, use an exception
+		Tuple2<List<Answer>,BaseEntity> answerBes = TaskUtils.gatherValidAnswers(beUtils, answersToSave, userToken); // TODO, use an exception
 																								// to flushout invalids
-		beUtils.writeMsg(validBe);
-
+		beUtils.writeMsg(answerBes._2); // send back all the non inferred answers to frontend
+		List<Answer> validAnswers = answerBes._1;
+		
 		log.info(callingWorkflow+" PROCESS VALID ANSWERS WorkItem Handler *************************");
 
 		// Construct a set of unique AnswerCodes for the incoming Answers
@@ -189,8 +191,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		log.info("Tasks=%s", tasks);
 
 		KieSession kSession = getKieSession(workItem, manager, userToken, callingWorkflow);
-		List<Answer> validAnswers = new CopyOnWriteArrayList<>();
+		
+		
 		List<TaskAsk> taskAsksProcessed = new CopyOnWriteArrayList<>();
+		
+		// Save all inferred Answers
+		
 
 		for (TaskSummary taskSummary : tasks) {
 			// If the taskSummary is not related to the incoming targetCode then ignore

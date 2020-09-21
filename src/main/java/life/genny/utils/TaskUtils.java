@@ -29,6 +29,8 @@ import org.kie.internal.task.api.TaskModelProvider;
 import org.kie.internal.task.api.model.ContentData;
 import org.kie.internal.task.api.model.InternalTask;
 
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vertx.core.json.JsonObject;
 import life.genny.model.OutputParam2;
 import life.genny.models.GennyToken;
@@ -520,13 +522,14 @@ public class TaskUtils {
 
 	}
 
-	public static BaseEntity gatherValidAnswers(BaseEntityUtils beUtils,Answers answersToSave, GennyToken userToken) {
+	public static Tuple2<List<Answer>,BaseEntity> gatherValidAnswers(BaseEntityUtils beUtils,Answers answersToSave, GennyToken userToken) {
 		// Quick answer validation
-
 		List<Answer> answersToSave2 = new CopyOnWriteArrayList<>(answersToSave.getAnswers());
-
+		List<Answer> validInferredAnswers = new CopyOnWriteArrayList<>();
+		
 		BaseEntity originalBe = beUtils.getBaseEntityByCode(answersToSave.getAnswers().get(0).getTargetCode());
 		BaseEntity newBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
+		BaseEntity inferredBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
 
 		for (Answer answer : answersToSave2) {
 			Boolean validAnswer = TaskUtils.validate(answer, userToken);
@@ -535,14 +538,18 @@ public class TaskUtils {
 				try {
 					Attribute attribute = RulesUtils.getAttribute(answer.getAttributeCode(), userToken.getToken());
 					answer.setAttribute(attribute);
-					newBe.addAnswer(answer);
+					if (answer.getInferred()) {
+						validInferredAnswers.add(answer);
+					} else {
+						newBe.addAnswer(answer);
+					}
 
 				} catch (BadDataException e) {
 					e.printStackTrace();
 				}
 			}
 		}
-		return newBe;
+		return Tuple.of(validInferredAnswers, newBe);
 	}
 	
 	
