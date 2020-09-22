@@ -170,15 +170,15 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
 			target.setRealm(userToken.getToken());
 
-			for (Answer ans : newFields) {
-				String attributeCode = ans.getAttributeCode();
-				Boolean hasAttribute = target.containsEntityAttribute(attributeCode);
-				if (!hasAttribute) {
-					// create a dummy
-
-				}
-
-			}
+//			for (Answer ans : newFields) {
+//				String attributeCode = ans.getAttributeCode();
+//				Boolean hasAttribute = target.containsEntityAttribute(attributeCode);
+//				if (!hasAttribute) {
+//					// create a dummy
+//
+//				}
+//
+//			}
 
 			QDataBaseEntityMessage msg = new QDataBaseEntityMessage(target);
 			msg.setToken(userToken.getToken());
