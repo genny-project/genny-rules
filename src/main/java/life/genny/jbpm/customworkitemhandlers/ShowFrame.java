@@ -40,6 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.mentaregex.Regex.match;
+import life.genny.qwanda.message.QCmdMessage;
 
 public class ShowFrame implements WorkItemHandler {
 
@@ -69,7 +70,20 @@ public class ShowFrame implements WorkItemHandler {
 		}
 		callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
-		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output);
+		Boolean cache = true;
+		QBulkMessage msg = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
+		if(cache){
+
+			msg.setToken(userToken.getToken());
+			VertxUtils.writeMsg("webcmds", msg);
+	
+			// Now send the end_process msg
+			log.info("sending end process now");
+			QCmdMessage endMsg = new QCmdMessage("END_PROCESS", "END_PROCESS");
+			endMsg.setToken(userToken.getToken());
+			endMsg.setSend(true);
+			VertxUtils.writeMsg("webcmds", endMsg);
+		}
 
 		// notify manager that work item has been completed
 		if (workItem == null) {
@@ -253,6 +267,7 @@ public class ShowFrame implements WorkItemHandler {
 
 					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output,cache);
 					qBulkMessage.add(asks);
+
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
 							+ " DOES NOT EXIST IN CACHE - cannot display frame");
