@@ -69,6 +69,7 @@ import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.TaskUtils;
 import life.genny.utils.VertxUtils;
+import life.genny.qwanda.message.QCmdMessage;
 
 public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHandler {
 
@@ -219,9 +220,15 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 			sendTaskSignal(userToken, task, callingWorkflow); // TODO, watch the timing as the workitem may not be ready
 																// if the target tries to do stuff.
-
 			// TaskUtils.sendTaskMenuItems(userToken);
 			TaskUtils.sendTaskAskItems(userToken);
+
+			// Now send the end_process msg
+			log.info("sending end process now");
+			QCmdMessage endMsg = new QCmdMessage("END_PROCESS", "END_PROCESS");
+			endMsg.setToken(userToken.getToken());
+			endMsg.setSend(true);
+			VertxUtils.writeMsg("webcmds", endMsg);
 
 		} catch (Exception e) {
 			if (action.equals(OnErrorAction.ABORT)) {
