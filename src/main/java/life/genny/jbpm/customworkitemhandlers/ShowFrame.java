@@ -35,6 +35,7 @@ import org.kie.api.task.model.Task;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -295,6 +296,8 @@ public class ShowFrame implements WorkItemHandler {
 	private static QBulkMessage sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow,
 			OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+
 		
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
@@ -307,7 +310,10 @@ public class ShowFrame implements WorkItemHandler {
 		Map<String, TaskAsk> attributeTaskAskMap = null;
 		String sourceCode = null;
 		String targetCode = null;
+		Boolean enabledSubmit = false ; 
+		
 
+		
 		if ((output != null)) {
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
@@ -331,6 +337,9 @@ public class ShowFrame implements WorkItemHandler {
 						targetCode = taskAsk.getAsk().getTargetCode();
 					}
 				}
+				BaseEntity target = beUtils.getBaseEntityByCode(targetCode);
+				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target,taskAsks);
+
 			} else {
 				sourceCode = output.getAskSourceCode();
 				targetCode = output.getAskTargetCode();
@@ -347,7 +356,7 @@ public class ShowFrame implements WorkItemHandler {
 					
 					/* recursively check validations */
 					checkAskValidation(aask, callingWorkflow);
-					
+					TaskUtils.enableAttribute("PRI_SUBMIT",aask, callingWorkflow,enabledSubmit);
 				}
 				askMsg.setToken(userToken.getToken());
 
@@ -365,7 +374,6 @@ public class ShowFrame implements WorkItemHandler {
 				beCodes.remove(userToken.getUserCode()); // no need to send the user
 				if (!beCodes.isEmpty()) {
 					List<BaseEntity> besToSend = new ArrayList<BaseEntity>();
-					BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 					for (String tCode : beCodes) {
 						BaseEntity be = beUtils.getBaseEntityByCode(tCode);
 						besToSend.add(be);

@@ -8,12 +8,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jbpm.services.task.utils.ContentMarshallerHelper;
+import org.kie.api.runtime.Environment;
+import org.kie.api.runtime.KieSession;
 import org.kie.api.task.TaskService;
 import org.kie.api.task.model.Content;
 import org.kie.api.task.model.Status;
@@ -21,11 +26,16 @@ import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskSummary;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.task.api.TaskModelProvider;
+import org.kie.internal.task.api.model.ContentData;
 import org.kie.internal.task.api.model.InternalTask;
 
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import io.vertx.core.json.JsonObject;
 import life.genny.model.OutputParam2;
 import life.genny.models.GennyToken;
+import life.genny.qwanda.Answer;
+import life.genny.qwanda.Answers;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
 import life.genny.qwanda.ContextList;
@@ -35,9 +45,11 @@ import life.genny.qwanda.Question;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
+import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
@@ -273,7 +285,6 @@ public class TaskUtils {
 		askMsg.setToken(userToken.getToken());
 		askMsg.setReplace(true);
 		String sendingMsg = JsonUtils.toJson(askMsg);
-		Integer length = sendingMsg.length();
 		VertxUtils.writeMsg("webcmds", sendingMsg);
 
 	}
@@ -456,4 +467,179 @@ public class TaskUtils {
 		return (InternalTask)task;
 	}
 	
+	public ContentData createTaskContentBasedOnWorkItemParams(KieSession session,
+			HashMap<String, Object> taskAsksMap) {
+		ContentData content = null;
+		Object contentObject = null;
+		contentObject = new HashMap<String, Object>(taskAsksMap);
+		if (contentObject != null) {
+			Environment env = null;
+			if (session != null) {
+				env = session.getEnvironment();
+			}
+
+			content = ContentMarshallerHelper.marshal(null, contentObject, env);
+		}
+		return content;
+	}
+	
+	public static List<Status> getTaskStatusList()
+	{
+		// Extract all the current questions from all the users Tasks
+		List<Status> statuses = new CopyOnWriteArrayList<Status>();
+		statuses.add(Status.Ready);
+		// statuses.add(Status.Completed);
+		// statuses.add(Status.Created);
+		// statuses.add(Status.Error);
+		// statuses.add(Status.Exited);
+		statuses.add(Status.InProgress);
+		// statuses.add(Status.Obsolete);
+		statuses.add(Status.Reserved);
+		// statuses.add(Status.Suspended);
+		return statuses;
+		
+	}
+	
+	public static Boolean validate(Answer answer, GennyToken userToken) {
+		// TODO - check value using regexs
+		if (!answer.getSourceCode().equals(userToken.getUserCode())) {
+			if (userToken.hasRole("admin")) {
+				return true;
+			}
+			return false;
+		}
+		return true;
+	}
+	
+	public static Boolean doValidAnswersExist(Answers answersToSave, GennyToken userToken)
+	{
+		for (Answer answer : answersToSave.getAnswers()) {
+			if (TaskUtils.validate(answer, userToken)) {
+				return true;
+			}
+		}
+		return false;
+
+	}
+
+	public static Tuple2<List<Answer>,BaseEntity> gatherValidAnswers(BaseEntityUtils beUtils,Answers answersToSave, GennyToken userToken) {
+		// Quick answer validation
+		List<Answer> answersToSave2 = new CopyOnWriteArrayList<>(answersToSave.getAnswers());
+		List<Answer> validInferredAnswers = new CopyOnWriteArrayList<>();
+		
+		BaseEntity originalBe = beUtils.getBaseEntityByCode(answersToSave.getAnswers().get(0).getTargetCode());
+		BaseEntity newBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
+		BaseEntity inferredBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
+
+		for (Answer answer : answersToSave2) {
+			Boolean validAnswer = TaskUtils.validate(answer, userToken);
+			// Quick and dirty ...
+			if (validAnswer) {
+				try {
+					Attribute attribute = RulesUtils.getAttribute(answer.getAttributeCode(), userToken.getToken());
+					answer.setAttribute(attribute);
+					if (answer.getInferred()) {
+						validInferredAnswers.add(answer);
+					} else {
+						newBe.addAnswer(answer);
+					}
+
+				} catch (BadDataException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return Tuple.of(validInferredAnswers, newBe);
+	}
+	
+	
+	 private static final Object LOCK_1 = new Object() {};
+	 
+	public  static ConcurrentHashMap<String, Object> getTaskAsks(TaskService taskService,Task task) throws Exception
+	{
+		HashMap<String, Object> taskAsks2 = null;
+		ConcurrentHashMap<String, Object> taskAsks = null;
+		
+		Long docId = task.getTaskData().getDocumentContentId();
+		Content c = taskService.getContentById(docId);
+		if (c == null) {
+			throw new Exception("*************** Task content is NULL *********** ABORTING");
+		}
+
+		synchronized (LOCK_1) {
+			taskAsks2 = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
+			taskAsks = new ConcurrentHashMap<>(taskAsks2);
+		}
+		return taskAsks;
+	}
+	
+	
+	public static void enableTaskQuestion(Ask ask,Boolean enabled, GennyToken userToken)
+	{
+		
+		ask.setDisabled(!enabled);
+		
+		QDataAskMessage askMsg = new QDataAskMessage(ask);
+		askMsg.setToken(userToken.getToken());
+		askMsg.setReplace(true);
+		String sendingMsg = JsonUtils.toJson(askMsg);
+		VertxUtils.writeMsg("webcmds", sendingMsg);
+	}
+
+	public static Boolean areAllMandatoryQuestionsAnswered(BaseEntity target,Map<String, Object> taskAsks) {
+		
+
+		Boolean allMandatoryAnswered = true;
+		
+		for (Map.Entry<String, Object> entry : taskAsks.entrySet()) {
+			String key = entry.getKey();
+			Object value = entry.getValue();
+			if (value instanceof String) {
+				continue;
+			}
+			TaskAsk ask = (TaskAsk) value;
+			if (((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":FORM_CODE").equals(key))
+					|| ((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":TARGET_CODE")
+							.equals(key))) {
+				continue;
+			}
+
+			if (Boolean.TRUE.equals(ask.getAsk().getMandatory()) && Boolean.FALSE.equals(ask.getAnswered()) && (!ask.getAsk().getAttributeCode().equals("PRI_SUBMIT"))) {
+				// check if already in Be, shouldn't happen but has! where value in be but not
+				// picked up in form
+				String attributeCode = ask.getAsk().getAttributeCode();
+				Optional<EntityAttribute> optEa = target.findEntityAttribute(attributeCode);
+				if (optEa.isPresent()) {
+					EntityAttribute ea = optEa.get();
+					if (StringUtils.isBlank(ea.getAsString())) {
+						allMandatoryAnswered = false;
+						break;
+					} 
+				} else {
+					allMandatoryAnswered = false;
+					break;
+				}
+			}
+			
+			
+		}
+		return allMandatoryAnswered;
+	}
+	
+	/**
+	 * @param aask 
+	 * @param callingWorkflow
+	 */
+	public static void enableAttribute(String attributeCode,Ask aask, String callingWorkflow,Boolean enabled) {
+		if (aask.getAttributeCode().equals("QQQ_QUESTION_GROUP")) {
+			for (Ask childAsk : aask.getChildAsks()) {
+				enableAttribute(attributeCode,childAsk, callingWorkflow,enabled);
+			}
+		} else {
+			if (attributeCode.toUpperCase().equals(aask.getAttributeCode())) {
+				aask.setDisabled(!enabled);
+			
+			}
+		}
+	}
 }

@@ -132,7 +132,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (baseEntityTarget != null) {
 			baseEntityTargetCode = baseEntityTarget.getCode();
 		}
-
+		
 		String formCode = (String) workItem.getParameter("formCode");
 		String targetCode = (String) workItem.getParameter("targetCode");
 
@@ -171,15 +171,15 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
 			target.setRealm(userToken.getToken());
 
-			for (Answer ans : newFields) {
-				String attributeCode = ans.getAttributeCode();
-				Boolean hasAttribute = target.containsEntityAttribute(attributeCode);
-				if (!hasAttribute) {
-					// create a dummy
-
-				}
-
-			}
+//			for (Answer ans : newFields) {
+//				String attributeCode = ans.getAttributeCode();
+//				Boolean hasAttribute = target.containsEntityAttribute(attributeCode);
+//				if (!hasAttribute) {
+//					// create a dummy
+//
+//				}
+//
+//			}
 
 			QDataBaseEntityMessage msg = new QDataBaseEntityMessage(target);
 			msg.setToken(userToken.getToken());
@@ -220,7 +220,8 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 			sendTaskSignal(userToken, task, callingWorkflow); // TODO, watch the timing as the workitem may not be ready
 																// if the target tries to do stuff.
-			// TaskUtils.sendTaskMenuItems(userToken);
+
+			// Now update the frontend Drafts Menu with the new Task
 			TaskUtils.sendTaskAskItems(userToken);
 
 			// Now send the end_process msg
@@ -261,6 +262,9 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		String key = baseEntitySourceCode + ":" + baseEntityTargetCode + ":" + newMsg.getAttributeCode();
 		// work out whether an Ask has already got a value for that attribute
 		Boolean answered = false;
+		if ("PRI_SUBMIT".equals(newMsg.getAttributeCode())) {
+			newMsg.setDisabled(true); // default disabled
+		}
 
 		Boolean isTableRow = false;
 		// TODO, if the question is a submit then
@@ -274,8 +278,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		// Optional<String> value =
 		// target.getValue(taskAsk.getAsk().getAttributeCode());
 		if (attributeValue.isPresent()) {
-			taskAsk.setAnswered(true);
 			EntityAttribute ea = attributeValue.get();
+			if (StringUtils.isBlank(ea.getAsString())) {
+				taskAsk.setAnswered(false);
+			} else {
+				taskAsk.setAnswered(true);
+			}
 			taskAsk.setValue(ea.getAsString());
 		} else {
 			// add the attribute with default value
@@ -397,11 +405,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		Question q = null;
 		q = TaskUtils.getQuestion(questionCode,userToken);
 
-//		JsonObject questionObj = VertxUtils.readCachedJson(userToken.getRealm(),
-//				questionCode,userToken.getToken());
-//		String questionStr = questionObj.getString("value");
-//		Question question = JsonUtils.fromJson(questionStr, Question.class);
-
 		workItem.getParameters().put("SwimlaneActorId", userCode);
 		workItem.getParameters().put("ActorId", userCode);
 
@@ -462,8 +465,14 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		((InternalI18NText) subjectText).setText(comment);
 		subjects.add(subjectText);
 		task.setSubjects(subjects);
+		BaseEntity baseEntityTarget = (BaseEntity) workItem.getParameter("baseEntityTarget");
+		if (baseEntityTarget != null) {
+			baseEntityTargetCode = baseEntityTarget.getCode();
+		} else {
+			log.error("No BaseEntityTarget supplied to Ask in AskQuestionWIH");
+		}
 
-		task.setSubject(comment);
+		task.setSubject(baseEntityTargetCode);
 
 		String priorityString = (String) workItem.getParameter("Priority");
 		int priority = 0;
