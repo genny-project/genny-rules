@@ -224,13 +224,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			// Now update the frontend Drafts Menu with the new Task
 			TaskUtils.sendTaskAskItems(userToken);
 
-			// Now send the end_process msg
-			log.info("sending end process now");
-			QCmdMessage endMsg = new QCmdMessage("END_PROCESS", "END_PROCESS");
-			endMsg.setToken(userToken.getToken());
-			endMsg.setSend(true);
-			VertxUtils.writeMsg("webcmds", endMsg);
-
 		} catch (Exception e) {
 			if (action.equals(OnErrorAction.ABORT)) {
 				manager.abortWorkItem(workItem.getId());
