@@ -149,7 +149,8 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		Question q = null;
 		String questionCode = (String) workItem.getParameter("questionCode");
 		q = TaskUtils.getQuestion(questionCode,userToken);
-		TaskUtils.clearTaskType(userToken, q);
+		if (q != null)
+			TaskUtils.clearTaskType(userToken, q);
 		
 		Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
 
@@ -307,8 +308,8 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 	/**
 	 * @param userToken
-	 * @param processId
-	 * @param taskId
+	 * @param task
+	 * @param callingWorkflow
 	 */
 	private void sendTaskSignal(GennyToken userToken, Task task, String callingWorkflow) {
 		Long targetProcessId = null;

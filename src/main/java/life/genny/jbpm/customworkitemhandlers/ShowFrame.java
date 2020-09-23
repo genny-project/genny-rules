@@ -521,7 +521,6 @@ public class ShowFrame implements WorkItemHandler {
 	/**
 	 * @param rootFrameCode
 	 * @param userToken
-	 * @param setType
 	 * @return
 	 */
 	public static Set<QDataAskMessage> fetchAskMessages(String rootFrameCode, GennyToken userToken) {
@@ -529,6 +528,7 @@ public class ShowFrame implements WorkItemHandler {
 		}.getType();
 
 		String askMsgs2Str = null;
+		Set<QDataAskMessage> askMsgs2 = Collections.emptySet();
 		if (GennySettings.forceCacheApi) { // if in junit then use the bridge to fetch
 											// cache data
 			log.info("Forcing ASKS to be read from api call to cache");
@@ -574,11 +574,10 @@ public class ShowFrame implements WorkItemHandler {
 						return new HashSet<QDataAskMessage>();
 					}
 				} else {
-					log.error(rootFrame + " is not in cache");
+					log.error(rootFrameCode + " is not in cache");
+					return askMsgs2;
 				}
-
 			}
-
 		} else {
 
 //			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS",
@@ -618,11 +617,10 @@ public class ShowFrame implements WorkItemHandler {
 						return new HashSet<QDataAskMessage>();
 					}
 				} else {
-					log.error(rootFrame + " is not in cache");
+					log.error(rootFrameCode + " is not in cache");
+					return askMsgs2;
 				}
-
 			}
-
 		}
 
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
@@ -631,7 +629,6 @@ public class ShowFrame implements WorkItemHandler {
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
 
-		Set<QDataAskMessage> askMsgs2 = null;
 
 		log.debug("About to do deserialization!");
 		askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
