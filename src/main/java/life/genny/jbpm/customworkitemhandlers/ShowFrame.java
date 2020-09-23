@@ -72,10 +72,14 @@ public class ShowFrame implements WorkItemHandler {
 
 		Boolean cache = true;
 		QBulkMessage msg = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
-		if(cache){
+		msg.setToken(userToken.getToken());
 
-			msg.setToken(userToken.getToken());
-			VertxUtils.writeMsg("webcmds", msg);
+		if(cache){
+			
+			log.info("ShowFrame: cache TRUE");
+			log.info("sending bulkMsg now");
+			String json = JsonUtils.toJson(msg);
+			VertxUtils.writeMsg("webcmds", json);
 	
 			// Now send the end_process msg
 			log.info("sending end process now");
