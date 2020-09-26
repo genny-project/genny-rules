@@ -195,6 +195,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		
 		List<TaskAsk> taskAsksProcessed = new CopyOnWriteArrayList<>();
 		
+		Boolean primaryFieldDetected = false; // This is set if a PRI_NAME or or PRI_ABN set
 		// Save all inferred Answers
 		
 
@@ -303,6 +304,40 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					submitTaskAsk = ask;
 				}
 				
+				// These fields are like the Justice League member of all the fields, if they change then we need to change the Drafts menu item names
+				InternalTask iTask = (InternalTask)task;
+				String description = task.getDescription();
+				switch (ask.getAsk().getAttributeCode()) {
+				case "PRI_NAME": 
+				case "PRI_ABN" :
+				case "PRI_FIRSTNAME":
+				case "PRI_TRADING_NAME":
+					primaryFieldDetected= true;
+					String prefix = originalTarget.getCode().substring(0,3); // identify what this be is
+					if (prefix.equals("CPY")) {
+						description = setDescription("Company",originalTarget, ask);
+						
+					} else if(prefix.equals("PER")){
+						description = setDescription("Person",originalTarget, ask);
+					} else if(prefix.equals("BEG")){
+						description = setDescription("Internship",originalTarget, ask);
+					}
+					Optional<EntityAttribute> isA = originalTarget.getHighestEA("PRI_IS_"); // TODO need to set the type of BE upon creation
+					if (isA.isPresent()) {
+						
+						Attribute att = isA.get().getAttribute();
+						description = att.getName()+" - "+ask.getValue();
+				
+					}
+					if (!StringUtils.isBlank(description)) {
+						iTask.setDescription(description);
+					}
+					break;
+					default:
+					 
+				}
+				
+				
 				log.info("TASK-ASK: "+ask);
 				
 			}
@@ -340,6 +375,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				TaskUtils.enableTaskQuestion(submitAsk,false, userToken);
 
 			}
+			
+			if (primaryFieldDetected) {
+				TaskUtils.sendTaskAskItems(userToken);
+			}
+			
 		}
 
 	
@@ -377,6 +417,37 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	}
 
 	/**
+	 * @param originalTarget
+	 * @param ask
+	 * @param description
+	 * @return
+	 */
+	private String setDescription(String beCategory,BaseEntity originalTarget, TaskAsk ask) {
+		String description = null;
+		String name = originalTarget.getValue("PRI_NAME",null);
+		if (StringUtils.isBlank(name)&&!ask.getAsk().getAttributeCode().equals("PRI_NAME")) {
+			if (!StringUtils.isBlank(ask.getValue())) {
+				description = beCategory+" - "+ask.getValue();
+			}
+		} else {
+			if (ask.getAsk().getAttributeCode().equals("PRI_NAME")) {
+				if (!StringUtils.isBlank(ask.getValue())) {
+					description = beCategory+" - "+ask.getValue();
+					return description;
+				}
+			} else {
+				if (StringUtils.isBlank(name)) {
+					description = beCategory+" - "+ask.getValue();
+				}
+			}
+		}
+		if (!StringUtils.isBlank(name)) {
+			description = beCategory+" - "+name;
+		}
+		return description;
+	}
+
+	/**
 	 * @param taskAskMap
 	 * @param kSession
 	 * @param taskSummary
@@ -402,7 +473,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			Content content = TaskModelProvider.getFactory().newContent();
 			((InternalContent) content).setContent(contentData.getContent());
 			Set<ConstraintViolation<Content>> constraintViolations = validator.validate(content);
-			if (constraintViolations.size() == 0) {
+			if (constraintViolations.isEmpty()) {
 				log.info("ProcessAnswers: Persisting taskContent");
 				persist(content, env2);
 				InternalTask iTask = (InternalTask) taskService.getTaskById(task.getId());

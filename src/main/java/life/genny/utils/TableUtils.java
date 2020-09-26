@@ -1516,6 +1516,11 @@ public class TableUtils {
 				msg.setTargetCode(targetCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
 			}
 			msg.setToken(beUtils.getGennyToken().getToken());
+			// Push won't work for this type of design
+//			String[] recipients = new String[2];
+//			recipients[0] = beUtils.getGennyToken().getUserCode();
+//	        recipients[1] = "SUPERUSER"; // sends to Gerard, Steph
+//			msg.setRecipientCodeArray(recipients); // Send to all clients that this user is attached to
 			msg.setSend(true);  		
 			VertxUtils.writeMsg("webcmds",msg);
 	}

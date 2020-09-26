@@ -23,6 +23,7 @@ import org.kie.api.task.TaskService;
 import org.kie.api.task.model.Content;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
+import org.kie.api.task.model.TaskData;
 import org.kie.api.task.model.TaskSummary;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 import org.kie.internal.task.api.TaskModelProvider;
@@ -96,10 +97,12 @@ public class TaskUtils {
 			for (TaskSummary ts : taskSummarys) {
 				// We send an Ask to the frontend that contains the task items
 				Task task = taskService.getTaskById(ts.getId());
-				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(),  task.getDescription());
-				item.setRealm(userToken.getRealm());
-				item.setIndex(index++);
-				taskItems.add(item);
+				if (!IsTaskEmpty(task, userToken)) {
+					BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
+					item.setRealm(userToken.getRealm());
+					item.setIndex(index++);
+					taskItems.add(item);
+				}
 			}
 
 			QDataBaseEntityMessage msg = new QDataBaseEntityMessage(taskItems);
@@ -184,47 +187,47 @@ public class TaskUtils {
 			for (TaskSummary ts : taskSummarys) {
 				// We send an Ask to the frontend that contains the task items
 				Task task = RulesLoader.taskServiceMap.get(userToken.getSessionCode()).getTaskById(ts.getId());
-				BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
-				item.setRealm(userToken.getRealm());
-				item.setIndex(index++);
-				// Attribute questionDraftItemAttribute = new Attribute("QQQ_DRAFT_ITEM",
-				// "link",
-				// new DataType(String.class));
-				Attribute questionDraftItemAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
-						new DataType(String.class));
+				if (!TaskUtils.IsTaskEmpty(task, userToken)) {
+					BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
+					item.setRealm(userToken.getRealm());
+					item.setIndex(index++);
+					// Attribute questionDraftItemAttribute = new Attribute("QQQ_DRAFT_ITEM",
+					// "link",
+					// new DataType(String.class));
+					Attribute questionDraftItemAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
+							new DataType(String.class));
 
-				Question question = new Question("QUE_TASK-" + task.getId(), task.getDescription(), questionDraftItemAttribute,
-						true);
-				Ask childAsk = new Ask(question, userToken.getUserCode(), userToken.getUserCode());
+					Question question = new Question("QUE_TASK-" + task.getId(), task.getDescription(),
+							questionDraftItemAttribute, true);
+					Ask childAsk = new Ask(question, userToken.getUserCode(), userToken.getUserCode());
 
-				/* add the entityAttribute ask to list */
-				taskAskItemList.add(childAsk);
+					/* add the entityAttribute ask to list */
+					taskAskItemList.add(childAsk);
+				}
 			}
-			
-			// Now send a Clear Tasks  menu item
-			BaseEntity clearItems = new BaseEntity("MEN_CLEAR_ITEMS","Clear All Tasks");
+
+			// Now send a Clear Tasks menu item
+			BaseEntity clearItems = new BaseEntity("MEN_CLEAR_ITEMS", "Clear All Tasks");
 			clearItems.setRealm(userToken.getRealm());
 			clearItems.setIndex(index++);
 			Attribute questionDraftItemAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
 					new DataType(String.class));
 
-			Question question = new Question("QUE_CLEAR_TASKS", "Clear All Tasks", questionDraftItemAttribute,
-					true);
+			Question question = new Question("QUE_CLEAR_TASKS", "Clear All Tasks", questionDraftItemAttribute, true);
 			Ask childAsk = new Ask(question, userToken.getUserCode(), userToken.getUserCode());
 
 			/* add the entityAttribute ask to list */
 			taskAskItemList.add(childAsk);
 		} else {
 			// send a blank drafts menu
-			// Now send a Clear Tasks  menu item
-			BaseEntity clearItems = new BaseEntity("MEN_CLEAR_ITEMS","No Tasks!");
+			// Now send a Clear Tasks menu item
+			BaseEntity clearItems = new BaseEntity("MEN_CLEAR_ITEMS", "No Tasks!");
 			clearItems.setRealm(userToken.getRealm());
 			clearItems.setIndex(0);
 			Attribute questionDraftItemAttribute = new Attribute("QQQ_QUESTION_GROUP", "link",
 					new DataType(String.class));
 
-			Question question = new Question("QUE_CLEAR_TASKS", "No Tasks!", questionDraftItemAttribute,
-					true);
+			Question question = new Question("QUE_CLEAR_TASKS", "No Tasks!", questionDraftItemAttribute, true);
 			Ask childAsk = new Ask(question, userToken.getUserCode(), userToken.getUserCode());
 
 			/* add the entityAttribute ask to list */
@@ -284,6 +287,10 @@ public class TaskUtils {
 		QDataAskMessage askMsg = new QDataAskMessage(parentAsk);
 		askMsg.setToken(userToken.getToken());
 		askMsg.setReplace(true);
+		// Send to the user!
+		String[] recipients = new String[1];
+		recipients[0] = userToken.getUserCode();
+		askMsg.setRecipientCodeArray(recipients); // Send to all clients that this user is attached to
 		String sendingMsg = JsonUtils.toJson(askMsg);
 		VertxUtils.writeMsg("webcmds", sendingMsg);
 
@@ -334,60 +341,87 @@ public class TaskUtils {
 		}
 		return output;
 	}
-	
-	public static void clearAllTasks(GennyToken userToken)
-	{
+
+	public static void clearAllTasks(GennyToken userToken) {
 		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 
 		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
 		for (TaskSummary ts : taskSummarys) {
 			Long tsId = ts.getId();
 			Task task = taskService.getTaskById(tsId);
-			Map<String,Object> results = new HashMap<String,Object>();
+			Map<String, Object> results = new HashMap<String, Object>();
 			results.put("taskid", tsId);
 			results.put("status", "aborted");
 
-		
-			
 			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
 				taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
-			//	taskService.fail(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+				// taskService.fail(tsId, userToken.getRealm() + "+" + userToken.getUserCode(),
+				// results);
 				taskService.release(tsId, userToken.getRealm() + "+" + userToken.getUserCode());
 			} else {
-				// maybe only abort if there is no data in the tasks? So if a task is not reserved then it has some data in it!
-			//	taskService.complete(tsId, userToken.getRealm() + "+" + userToken.getUserCode(), results);
+				// maybe only abort if there is no data in the tasks? So if a task is not
+				// reserved then it has some data in it!
+				// taskService.complete(tsId, userToken.getRealm() + "+" +
+				// userToken.getUserCode(), results);
 				taskService.release(tsId, userToken.getRealm() + "+" + userToken.getUserCode());
 
 			}
-			log.info("Aborted Task "+tsId);
+			log.info("Aborted Task " + tsId);
 		}
-		sendTaskAskItems(userToken) ;
+		sendTaskAskItems(userToken);
 	}
-	
-	public static void clearTaskType(GennyToken userToken, Question q)
-	{
+
+	private static boolean IsTaskEmpty(Task task, GennyToken userToken) {
+		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
+		try {
+			Map<String, Object> taskAskMap = getTaskAsks(taskService, task);
+
+			for (Map.Entry<String, Object> entry : taskAskMap.entrySet()) {
+				String key = entry.getKey();
+				Object value = entry.getValue();
+				if (value instanceof String) {
+					continue;
+				}
+				TaskAsk ask = (TaskAsk) value;
+				if (((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":FORM_CODE").equals(key))
+						|| ((ask.getAsk().getSourceCode() + ":" + ask.getAsk().getTargetCode() + ":TARGET_CODE")
+								.equals(key))) {
+					continue;
+				}
+
+				if (Boolean.TRUE.equals(ask.getAnswered()) && (!ask.getAsk().getAttributeCode().equals("PRI_SUBMIT"))) {
+					return false;
+				}
+			}
+		} catch (Exception e) {
+
+		}
+
+		return true;
+	}
+
+	public static void clearTaskType(GennyToken userToken, Question q) {
 		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 
 		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
 		for (TaskSummary ts : taskSummarys) {
 			Long tsId = ts.getId();
 			Task task = taskService.getTaskById(tsId);
-			
+
 			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
 				if (task.getDescription().equalsIgnoreCase(q.getName())) {
 					taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
 					taskService.release(tsId, userToken.getRealm() + "+" + userToken.getUserCode());
-				//	sendTaskAskItems(userToken) ;
+					// sendTaskAskItems(userToken) ;
 					break;
 				}
-			} 
-			log.info("Aborted Task "+tsId);
+			}
+			log.info("Aborted Task " + tsId);
 		}
-		
+
 	}
-	
-	static public Question getQuestion(String questionCode,GennyToken userToken)
-	{
+
+	static public Question getQuestion(String questionCode, GennyToken userToken) {
 
 		Question q = null;
 		Integer retry = 4;
@@ -396,27 +430,25 @@ public class TaskUtils {
 			q = JsonUtils.fromJson(jsonQ.getString("value"), Question.class);
 			if (q == null) {
 				retry--;
-				
+
 			} else {
 				break;
 			}
 
 		}
-		
-		if (q == null)
-		{
-			log.error("CANNOT READ "+questionCode+" from cache!!! Aborting (after having tried 4 times");
+
+		if (q == null) {
+			log.error("CANNOT READ " + questionCode + " from cache!!! Aborting (after having tried 4 times");
 			return null;
 		} else {
 			return q;
 		}
 	}
-	
-	
-	static public InternalTask createTask(final GennyToken userToken, final String questionCode)
-	{
+
+	static public InternalTask createTask(final GennyToken userToken, final String questionCode) {
 		Task task = null;
-		// Look for any existing empty tasks for this user that match the QUESTION_GROUP CODE
+		// Look for any existing empty tasks for this user that match the QUESTION_GROUP
+		// CODE
 //		List<TaskSummary> taskSummarys = TaskUtils.getUserTaskSummarys(userToken);
 //		if ((taskSummarys != null) && (!taskSummarys.isEmpty())) {
 //
@@ -464,11 +496,10 @@ public class TaskUtils {
 		if (task == null) {
 			task = (InternalTask) TaskModelProvider.getFactory().newTask();
 		}
-		return (InternalTask)task;
+		return (InternalTask) task;
 	}
-	
-	public ContentData createTaskContentBasedOnWorkItemParams(KieSession session,
-			HashMap<String, Object> taskAsksMap) {
+
+	public ContentData createTaskContentBasedOnWorkItemParams(KieSession session, HashMap<String, Object> taskAsksMap) {
 		ContentData content = null;
 		Object contentObject = null;
 		contentObject = new HashMap<String, Object>(taskAsksMap);
@@ -482,9 +513,8 @@ public class TaskUtils {
 		}
 		return content;
 	}
-	
-	public static List<Status> getTaskStatusList()
-	{
+
+	public static List<Status> getTaskStatusList() {
 		// Extract all the current questions from all the users Tasks
 		List<Status> statuses = new CopyOnWriteArrayList<Status>();
 		statuses.add(Status.Ready);
@@ -497,9 +527,9 @@ public class TaskUtils {
 		statuses.add(Status.Reserved);
 		// statuses.add(Status.Suspended);
 		return statuses;
-		
+
 	}
-	
+
 	public static Boolean validate(Answer answer, GennyToken userToken) {
 		// TODO - check value using regexs
 		if (!answer.getSourceCode().equals(userToken.getUserCode())) {
@@ -510,9 +540,8 @@ public class TaskUtils {
 		}
 		return true;
 	}
-	
-	public static Boolean doValidAnswersExist(Answers answersToSave, GennyToken userToken)
-	{
+
+	public static Boolean doValidAnswersExist(Answers answersToSave, GennyToken userToken) {
 		for (Answer answer : answersToSave.getAnswers()) {
 			if (TaskUtils.validate(answer, userToken)) {
 				return true;
@@ -522,11 +551,12 @@ public class TaskUtils {
 
 	}
 
-	public static Tuple2<List<Answer>,BaseEntity> gatherValidAnswers(BaseEntityUtils beUtils,Answers answersToSave, GennyToken userToken) {
+	public static Tuple2<List<Answer>, BaseEntity> gatherValidAnswers(BaseEntityUtils beUtils, Answers answersToSave,
+			GennyToken userToken) {
 		// Quick answer validation
 		List<Answer> answersToSave2 = new CopyOnWriteArrayList<>(answersToSave.getAnswers());
 		List<Answer> validInferredAnswers = new CopyOnWriteArrayList<>();
-		
+
 		BaseEntity originalBe = beUtils.getBaseEntityByCode(answersToSave.getAnswers().get(0).getTargetCode());
 		BaseEntity newBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
 		BaseEntity inferredBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
@@ -551,15 +581,14 @@ public class TaskUtils {
 		}
 		return Tuple.of(validInferredAnswers, newBe);
 	}
-	
-	
-	 private static final Object LOCK_1 = new Object() {};
-	 
-	public  static ConcurrentHashMap<String, Object> getTaskAsks(TaskService taskService,Task task) throws Exception
-	{
+
+	private static final Object LOCK_1 = new Object() {
+	};
+
+	public static ConcurrentHashMap<String, Object> getTaskAsks(TaskService taskService, Task task) throws Exception {
 		HashMap<String, Object> taskAsks2 = null;
 		ConcurrentHashMap<String, Object> taskAsks = null;
-		
+
 		Long docId = task.getTaskData().getDocumentContentId();
 		Content c = taskService.getContentById(docId);
 		if (c == null) {
@@ -572,13 +601,11 @@ public class TaskUtils {
 		}
 		return taskAsks;
 	}
-	
-	
-	public static void enableTaskQuestion(Ask ask,Boolean enabled, GennyToken userToken)
-	{
-		
+
+	public static void enableTaskQuestion(Ask ask, Boolean enabled, GennyToken userToken) {
+
 		ask.setDisabled(!enabled);
-		
+
 		QDataAskMessage askMsg = new QDataAskMessage(ask);
 		askMsg.setToken(userToken.getToken());
 		askMsg.setReplace(true);
@@ -586,11 +613,10 @@ public class TaskUtils {
 		VertxUtils.writeMsg("webcmds", sendingMsg);
 	}
 
-	public static Boolean areAllMandatoryQuestionsAnswered(BaseEntity target,Map<String, Object> taskAsks) {
-		
+	public static Boolean areAllMandatoryQuestionsAnswered(BaseEntity target, Map<String, Object> taskAsks) {
 
 		Boolean allMandatoryAnswered = true;
-		
+
 		for (Map.Entry<String, Object> entry : taskAsks.entrySet()) {
 			String key = entry.getKey();
 			Object value = entry.getValue();
@@ -604,7 +630,8 @@ public class TaskUtils {
 				continue;
 			}
 
-			if (Boolean.TRUE.equals(ask.getAsk().getMandatory()) && Boolean.FALSE.equals(ask.getAnswered()) && (!ask.getAsk().getAttributeCode().equals("PRI_SUBMIT"))) {
+			if (Boolean.TRUE.equals(ask.getAsk().getMandatory()) && Boolean.FALSE.equals(ask.getAnswered())
+					&& (!ask.getAsk().getAttributeCode().equals("PRI_SUBMIT"))) {
 				// check if already in Be, shouldn't happen but has! where value in be but not
 				// picked up in form
 				String attributeCode = ask.getAsk().getAttributeCode();
@@ -614,32 +641,36 @@ public class TaskUtils {
 					if (StringUtils.isBlank(ea.getAsString())) {
 						allMandatoryAnswered = false;
 						break;
-					} 
+					}
 				} else {
 					allMandatoryAnswered = false;
 					break;
 				}
 			}
-			
-			
+
 		}
 		return allMandatoryAnswered;
 	}
-	
+
 	/**
-	 * @param aask 
+	 * @param aask
 	 * @param callingWorkflow
 	 */
-	public static void enableAttribute(String attributeCode,Ask aask, String callingWorkflow,Boolean enabled) {
+	public static void enableAttribute(String attributeCode, Ask aask, String callingWorkflow, Boolean enabled) {
 		if (aask.getAttributeCode().equals("QQQ_QUESTION_GROUP")) {
 			for (Ask childAsk : aask.getChildAsks()) {
-				enableAttribute(attributeCode,childAsk, callingWorkflow,enabled);
+				enableAttribute(attributeCode, childAsk, callingWorkflow, enabled);
 			}
 		} else {
 			if (attributeCode.toUpperCase().equals(aask.getAttributeCode())) {
 				aask.setDisabled(!enabled);
-			
+
 			}
 		}
+	}
+
+	public static void updateTaskMenu(Task task) {
+		// TODO Auto-generated method stub
+
 	}
 }
