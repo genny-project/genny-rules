@@ -74,7 +74,7 @@ public class ShowFrame implements WorkItemHandler {
 		QBulkMessage qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output,cache);
 		if (cache) {
 			qBulkMessage.setToken(userToken.getToken());
-			VertxUtils.writeMsg("webcmds", qBulkMessage);
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
 			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 			msgend.setToken(userToken.getToken());
 			msgend.setSend(true);
