@@ -74,6 +74,7 @@ import org.kie.api.runtime.rule.FactHandle;
 import org.kie.api.task.TaskService;
 import org.kie.api.task.model.Task;
 import org.kie.api.task.model.TaskData;
+import org.kie.internal.conf.ConsequenceExceptionHandlerOption;
 import org.kie.internal.identity.IdentityProvider;
 import org.kie.internal.query.QueryContext;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
@@ -532,6 +533,7 @@ public class RulesLoader {
 			final KieContainer kContainer = ks.newKieContainer(releaseId);
 			final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
 			kbconf.setProperty("name", realm);
+			kbconf.setProperty(ConsequenceExceptionHandlerOption.PROPERTY_NAME, "life.genny.utils.GennyRulesExceptionHandler");
 			final KieBase kbase = kContainer.newKieBase(kbconf);
 
 			if (RUNTIME_MANAGER_ON) {
