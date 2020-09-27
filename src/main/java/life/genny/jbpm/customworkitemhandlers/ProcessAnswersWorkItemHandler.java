@@ -413,7 +413,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 		}
 
-		finishUp(workItem, manager, output);
+		finishUp(workItem, manager, output,userToken);
 	}
 
 	/**
@@ -581,7 +581,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	public void finishUp(WorkItem workItem, WorkItemManager manager, OutputParam output) {
+	public void finishUp(WorkItem workItem, WorkItemManager manager, OutputParam output,GennyToken userToken) {
 		final Map<String, Object> resultMap = new ConcurrentHashMap<>();
 
 		resultMap.put("output", output);
@@ -624,6 +624,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		} else {
 			manager.completeWorkItem(workItem.getId(), resultMap);
 		}
+		TaskUtils.sendTaskAskItems(userToken);
 	}
 
 	/**
