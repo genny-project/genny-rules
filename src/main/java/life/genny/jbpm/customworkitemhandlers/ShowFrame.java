@@ -13,6 +13,7 @@ import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.message.QBulkMessage;
+import life.genny.qwanda.message.QCmdMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
@@ -69,8 +70,19 @@ public class ShowFrame implements WorkItemHandler {
 		}
 		callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
-		display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output);
+		Boolean cache = true;
+		QBulkMessage qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output,cache);
+		if (cache) {
+			qBulkMessage.setToken(userToken.getToken());
+			VertxUtils.writeMsg("webcmds", qBulkMessage);
+			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
+			msgend.setToken(userToken.getToken());
+			msgend.setSend(true);
+			VertxUtils.writeMsg("webcmds", msgend);
 
+		}
+		
+		
 		// notify manager that work item has been completed
 		if (workItem == null) {
 			log.error(callingWorkflow + ": workItem is null");
