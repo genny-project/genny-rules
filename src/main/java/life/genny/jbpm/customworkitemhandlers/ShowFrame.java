@@ -274,6 +274,7 @@ public class ShowFrame implements WorkItemHandler {
 
 		}
 		
+		VertxUtils.writeMsgEnd(userToken);
 		return qBulkMessage;
 	}
 	
