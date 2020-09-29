@@ -1504,23 +1504,16 @@ public class TableUtils {
 		}
 	}
 
-	static public void moveEntity(String code, String sourceCode, BaseEntityUtils beUtils){
-		moveEntity(code, sourceCode, null, beUtils);
-	}
-
 	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils){
-			QCmdMessage msg = new QCmdMessage("MOVE_ENTITY", code);
+		QCmdMessage msg = new QCmdMessage("MOVE_ENTITY", code);
+		if(sourceCode != null){
 			msg.setSourceCode(sourceCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
-			if(targetCode != null){
-				msg.setTargetCode(targetCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
-			}
-			msg.setToken(beUtils.getGennyToken().getToken());
-			// Push won't work for this type of design
-//			String[] recipients = new String[2];
-//			recipients[0] = beUtils.getGennyToken().getUserCode();
-//	        recipients[1] = "SUPERUSER"; // sends to Gerard, Steph
-//			msg.setRecipientCodeArray(recipients); // Send to all clients that this user is attached to
-			msg.setSend(true);  		
-			VertxUtils.writeMsg("webcmds",msg);
-	}
+		}
+		if(targetCode != null){
+			msg.setTargetCode(targetCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
+		}
+		msg.setToken(beUtils.getGennyToken().getToken());
+		msg.setSend(true);  		
+		VertxUtils.writeMsg("webcmds",msg);
+}
 }
