@@ -533,7 +533,7 @@ public class TaskUtils {
 	public static Boolean validate(Answer answer, GennyToken userToken) {
 		// TODO - check value using regexs
 		if (!answer.getSourceCode().equals(userToken.getUserCode())) {
-			if (userToken.hasRole("admin")) {
+			if ((userToken.hasRole("admin")) || (answer.getInferred())){
 				return true;
 			}
 			return false;
