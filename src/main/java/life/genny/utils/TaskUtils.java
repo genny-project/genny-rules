@@ -188,6 +188,9 @@ public class TaskUtils {
 				// We send an Ask to the frontend that contains the task items
 				Task task = RulesLoader.taskServiceMap.get(userToken.getSessionCode()).getTaskById(ts.getId());
 				if (!TaskUtils.IsTaskEmpty(task, userToken)) {
+					
+					
+					
 					BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
 					item.setRealm(userToken.getRealm());
 					item.setIndex(index++);

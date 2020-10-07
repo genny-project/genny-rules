@@ -388,12 +388,20 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 		CaseData caseFile = null;
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
+		GennyToken serviceToken = (GennyToken) workItem.getParameter("serviceToken");
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		beUtils.setServiceToken(serviceToken);
 		String userCode = userToken.getRealm() + "+" + userToken.getUserCode();
 		String questionCode = (String) workItem.getParameter("questionCode");
 		String callingWorkflow = (String) workItem.getParameter("callingWorkflow");
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
+		Boolean liveQuestions = (Boolean) workItem.getParameter("liveQuestions");
+		if (liveQuestions == null) {
+			liveQuestions = false; 
+		}
+		log.info(callingWorkflow+" Live Questions are "+(liveQuestions?"ON":"OFF"));
 
 		Question q = null;
 		q = TaskUtils.getQuestion(questionCode,userToken);
@@ -443,14 +451,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			}
 		}
 
-		List<I18NText> descriptions = new CopyOnWriteArrayList<I18NText>();
-		I18NText descText = TaskModelProvider.getFactory().newI18NText();
-		((InternalI18NText) descText).setLanguage(locale);
-		((InternalI18NText) descText).setText(description);
-		descriptions.add(descText);
-		task.setDescriptions(descriptions);
-
-		task.setDescription(description);
 
 		List<I18NText> subjects = new CopyOnWriteArrayList<I18NText>();
 		I18NText subjectText = TaskModelProvider.getFactory().newI18NText();
@@ -464,6 +464,29 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		} else {
 			log.error("No BaseEntityTarget supplied to Ask in AskQuestionWIH");
 		}
+		baseEntityTarget = beUtils.getBaseEntityByCode(baseEntityTargetCode); // get latest
+
+
+		String beType = baseEntityTarget.getValueAsString("PRI_STATUS");
+		if (!StringUtils.isBlank(beType)) {
+			// will be only one
+			String attributeCode = beType.substring("PENDING_".length());
+			attributeCode = attributeCode.replaceAll("_", " ");
+			beType = StringUtils.capitalize(attributeCode.toLowerCase());
+		}
+
+		List<I18NText> descriptions = new CopyOnWriteArrayList<I18NText>();
+		I18NText descText = TaskModelProvider.getFactory().newI18NText();
+		((InternalI18NText) descText).setLanguage(locale);
+		((InternalI18NText) descText).setText(description);
+		descriptions.add(descText);
+		task.setDescriptions(descriptions);
+
+		if (beType!=null) {
+			description = beType;
+		}
+		
+		task.setDescription(description);
 
 		task.setSubject(baseEntityTargetCode);
 
@@ -477,6 +500,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			}
 		}
 		task.setPriority(priority);
+		
 
 		InternalTaskData taskData = (InternalTaskData) TaskModelProvider.getFactory().newTaskData();
 		taskData.setWorkItemId(workItem.getId());
@@ -499,6 +523,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			}
 		}
 		taskData.setSkipable(!"false".equals(workItem.getParameter("Skippable")));
+		
 		// Sub Task Data
 		Long parentId = (Long) workItem.getParameter("ParentId");
 		if (parentId != null) {
@@ -523,6 +548,19 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		if (date != null) {
 			taskData.setExpirationTime(date);
+		}
+		
+		
+		Map<String,Object> taskInputVariables = new ConcurrentHashMap<String,Object>();
+		taskInputVariables.put("liveQuestions", liveQuestions);
+		taskInputVariables.put("beType", beType);
+		taskData.setTaskInputVariables(taskInputVariables);
+		
+		//// TODO HACK - until we can work out how to persist the setTaskInputVariables
+		if (liveQuestions) {
+			taskData.setFaultType("SEND_INFERRED");
+		} else {
+			taskData.setFaultType("ABSORB_INFERRED");
 		}
 
 		PeopleAssignmentHelper peopleAssignmentHelper = new PeopleAssignmentHelper(caseFile);

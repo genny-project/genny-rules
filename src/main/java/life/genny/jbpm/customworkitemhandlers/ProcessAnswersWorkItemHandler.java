@@ -44,6 +44,7 @@ import org.kie.api.task.TaskService;
 import org.kie.api.task.model.Content;
 import org.kie.api.task.model.Status;
 import org.kie.api.task.model.Task;
+import org.kie.api.task.model.TaskData;
 import org.kie.api.task.model.TaskSummary;
 import org.kie.internal.task.api.TaskModelProvider;
 import org.kie.internal.task.api.model.ContentData;
@@ -167,12 +168,16 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		}
 
-		Tuple2<List<Answer>,BaseEntity> answerBes = TaskUtils.gatherValidAnswers(beUtils, answersToSave, userToken); // TODO, use an exception
-																								// to flushout invalids
+		Tuple2<List<Answer>, BaseEntity> answerBes = TaskUtils.gatherValidAnswers(beUtils, answersToSave, userToken); // TODO,
+																														// use
+																														// an
+																														// exception
+		// to flushout invalids
 		beUtils.writeMsg(answerBes._2); // send back all the non inferred answers to frontend
+
 		List<Answer> validAnswers = answerBes._1;
-		
-		log.info(callingWorkflow+" PROCESS VALID ANSWERS WorkItem Handler *************************");
+
+		log.info(callingWorkflow + " PROCESS VALID ANSWERS WorkItem Handler *************************");
 
 		// Construct a set of unique AnswerCodes for the incoming Answers
 		Map<String, Answer> answerMap2 = constructAnswerMap(answersToSave, userToken); // original
@@ -191,13 +196,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		log.info("Tasks=%s", tasks);
 
 		KieSession kSession = getKieSession(workItem, manager, userToken, callingWorkflow);
-		
-		
+
 		List<TaskAsk> taskAsksProcessed = new CopyOnWriteArrayList<>();
-		
+
 		Boolean primaryFieldDetected = false; // This is set if a PRI_NAME or or PRI_ABN set
 		// Save all inferred Answers
-		
 
 		for (TaskSummary taskSummary : tasks) {
 			// If the taskSummary is not related to the incoming targetCode then ignore
@@ -211,6 +214,26 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
 				taskService.start(taskSummary.getId(), userToken.getRealmUserCode()); // start!
 			}
+
+			TaskData td = task.getTaskData();
+	//		Map<String, Object> inputVarsMap = td.getTaskInputVariables();
+	//		if (inputVarsMap != null) {
+				Boolean liveQuestions = "SEND_INFERRED".equals(td.getFaultName()); //(Boolean) inputVarsMap.get("liveQuestions");
+				if (liveQuestions) {
+					// send inferred
+					BaseEntity inferredBe = new BaseEntity(originalTarget.getCode(), originalTarget.getCode());
+					for (Answer ans : answerBes._1) {
+						try {
+							inferredBe.addAnswer(ans);
+						} catch (BadDataException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					log.info("Sending Inferred BE to frontend");
+					beUtils.writeMsg(inferredBe);
+				}
+	//		}
 
 			kieSessionMap.put(task.getId(), kSession);
 
@@ -259,9 +282,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			Boolean isNowTriggered = false;
 			mandatoryDoneMap.put(taskSummary.getId(), true); // set as default true to be falsified if a mandatory field
 
-			
 			TaskAsk submitTaskAsk = null;
-			
+
 			// not answered
 			for (Map.Entry<String, Object> entry : taskAsks.entrySet()) {
 				String key = entry.getKey();
@@ -276,7 +298,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					continue;
 				}
 
-				if (Boolean.TRUE.equals(ask.getAsk().getMandatory()) && Boolean.FALSE.equals(ask.getAnswered()) && (!ask.getAsk().getAttributeCode().equals("PRI_SUBMIT"))) {
+				if (Boolean.TRUE.equals(ask.getAsk().getMandatory()) && Boolean.FALSE.equals(ask.getAnswered())
+						&& (!ask.getAsk().getAttributeCode().equals("PRI_SUBMIT"))) {
 					// check if already in Be, shouldn't happen but has! where value in be but not
 					// picked up in form
 					String attributeCode = ask.getAsk().getAttributeCode();
@@ -293,55 +316,55 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						mandatoryDoneMap.put(taskSummary.getId(), false);
 					}
 				}
-				
 
 				if (ask.getFormTrigger() && ask.getAnswered()) {
 					isNowTriggered = true;
 				}
-				
-				
+
 				if (ask.getAsk().getAttributeCode().equals("PRI_SUBMIT")) {
 					submitTaskAsk = ask;
 				}
+
+				// These fields are like the Justice League member of all the fields, if they
+				// change then we need to change the Drafts menu item names
+				InternalTask iTask = (InternalTask) task;
+
+				String processId = iTask.getTaskData().getProcessId();
+				processId = processId.replaceAll("_", " ");
+				String beType = StringUtils.capitalize(processId.toLowerCase());
+
 				
-				// These fields are like the Justice League member of all the fields, if they change then we need to change the Drafts menu item names
-				InternalTask iTask = (InternalTask)task;
 				String description = task.getDescription();
 				switch (ask.getAsk().getAttributeCode()) {
-				case "PRI_NAME": 
-				case "PRI_ABN" :
+				case "PRI_NAME":
+				case "PRI_ABN":
 				case "PRI_FIRSTNAME":
 				case "PRI_TRADING_NAME":
-					primaryFieldDetected= true;
-					String prefix = originalTarget.getCode().substring(0,3); // identify what this be is
+					primaryFieldDetected = true;
+					String prefix = originalTarget.getCode().substring(0, 3); // identify what this be is
 					if (prefix.equals("CPY")) {
-						description = setDescription("Company",originalTarget, ask);
-						
-					} else if(prefix.equals("PER")){
-						description = setDescription("Person",originalTarget, ask);
-					} else if(prefix.equals("BEG")){
-						description = setDescription("Internship",originalTarget, ask);
+						description = setDescription(beType, originalTarget, ask);
+
+					} else if (prefix.equals("PER")) {
+						description = setDescription(beType, originalTarget, ask);
+					} else if (prefix.equals("BEG")) {
+						description = setDescription(beType, originalTarget, ask);
+					} else {
+						description = beType + " - " + ask.getValue();
 					}
-					Optional<EntityAttribute> isA = originalTarget.getHighestEA("PRI_IS_"); // TODO need to set the type of BE upon creation
-					if (isA.isPresent()) {
-						
-						Attribute att = isA.get().getAttribute();
-						description = att.getName()+" - "+ask.getValue();
-				
-					}
+
 					if (!StringUtils.isBlank(description)) {
 						iTask.setDescription(description);
 					}
 					break;
-					default:
-					 
+				default:
+
 				}
-				
-				
-				log.info("TASK-ASK: "+ask);
-				
+
+				log.info("TASK-ASK: " + ask);
+
 			}
-			
+
 			if (submitDetected) {
 				isNowTriggered = true;
 			}
@@ -349,40 +372,37 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			// check all the tasks to see if any are completed and if so then complete them!
 			if ((mandatoryDoneMap.get(taskSummary.getId()) && isNowTriggered)) {
 				// Now complete the Task!!
-				log.info(callingWorkflow+" Completed TASK "+task.getFormName()+"  hackTrigger = "+(Boolean.TRUE.equals(hackTrigger) ? "TRUE" : "FALSE") 
-						);
+				log.info(callingWorkflow + " Completed TASK " + task.getFormName() + "  hackTrigger = "
+						+ (Boolean.TRUE.equals(hackTrigger) ? "TRUE" : "FALSE"));
 				taskAskMap.put(taskSummary, taskAsks);
 			}
-			
-			
-			
+
 			Map<String, Object> results = saveTaskData(taskAskMap, kSession, taskSummary, hackTrigger, task, taskAsks);
 
 			if (Boolean.TRUE.equals(mandatoryDoneMap.get(taskSummary.getId()))) {
-				log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for "+ task.getName());
+				log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for " + task.getName());
 				// if there is a submit button then enable it
 				if (submitTaskAsk != null) {
 					Ask submitAsk = submitTaskAsk.getAsk();
-					TaskUtils.enableTaskQuestion(submitAsk,true, userToken);
+					TaskUtils.enableTaskQuestion(submitAsk, true, userToken);
 				}
-				
+
 				if (submitDetected) {
 					log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED AND SUBMIT DETECTED!");
 				}
-				//TaskUtils.enableTaskQuestion(Question question,true, originalTarget.getCode(), userToken);
+				// TaskUtils.enableTaskQuestion(Question question,true,
+				// originalTarget.getCode(), userToken);
 			} else {
 				Ask submitAsk = submitTaskAsk.getAsk();
-				TaskUtils.enableTaskQuestion(submitAsk,false, userToken);
+				TaskUtils.enableTaskQuestion(submitAsk, false, userToken);
 
 			}
-			
+
 			if (primaryFieldDetected) {
 				TaskUtils.sendTaskAskItems(userToken);
 			}
-			
-		}
 
-	
+		}
 
 		// Now complete the tasks if done
 
@@ -404,7 +424,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 				Boolean mandatorysAllDone = mandatoryDoneMap.get(taskSummary.getId());
 				if (Boolean.TRUE.equals(mandatorysAllDone)) {
-					log.info("processAnswers: SAVING FORM ANSWERS! "+iTask.getFormName()+":"+iTask.getSubject()+":"+userToken.getRealmUserCode());
+					log.info("processAnswers: SAVING FORM ANSWERS! " + iTask.getFormName() + ":" + iTask.getSubject()
+							+ ":" + userToken.getRealmUserCode());
 
 					saveAnswers(beUtils, answerMap2);
 					taskService.complete(iTask.getId(), userToken.getRealmUserCode(), results);
@@ -413,7 +434,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 		}
 
-		finishUp(workItem, manager, output,userToken);
+		finishUp(workItem, manager, output, userToken);
 	}
 
 	/**
@@ -422,27 +443,27 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	 * @param description
 	 * @return
 	 */
-	private String setDescription(String beCategory,BaseEntity originalTarget, TaskAsk ask) {
+	private String setDescription(String beCategory, BaseEntity originalTarget, TaskAsk ask) {
 		String description = null;
-		String name = originalTarget.getValue("PRI_NAME",null);
-		if (StringUtils.isBlank(name)&&!ask.getAsk().getAttributeCode().equals("PRI_NAME")) {
+		String name = originalTarget.getValue("PRI_NAME", null);
+		if (StringUtils.isBlank(name) && !ask.getAsk().getAttributeCode().equals("PRI_NAME")) {
 			if (!StringUtils.isBlank(ask.getValue())) {
-				description = beCategory+" - "+ask.getValue();
+				description = beCategory + " - " + ask.getValue();
 			}
 		} else {
 			if (ask.getAsk().getAttributeCode().equals("PRI_NAME")) {
 				if (!StringUtils.isBlank(ask.getValue())) {
-					description = beCategory+" - "+ask.getValue();
+					description = beCategory + " - " + ask.getValue();
 					return description;
 				}
 			} else {
 				if (StringUtils.isBlank(name)) {
-					description = beCategory+" - "+ask.getValue();
+					description = beCategory + " - " + ask.getValue();
 				}
 			}
 		}
 		if (!StringUtils.isBlank(name)) {
-			description = beCategory+" - "+name;
+			description = beCategory + " - " + name;
 		}
 		return description;
 	}
@@ -498,7 +519,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 	 */
 	private void saveAnswers(BaseEntityUtils beUtils, Map<String, Answer> answerMap2) {
 		synchronized (this) {
-			log.info("processAnswers: Saving Answers :"+ answerMap2.values());
+			log.info("processAnswers: Saving Answers :" + answerMap2.values());
 			List<Answer> saveAnswers = new CopyOnWriteArrayList<>(answerMap2.values());
 			saveAnswers.parallelStream().forEach((i) -> {
 				i.setChangeEvent(false);
@@ -581,7 +602,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	public void finishUp(WorkItem workItem, WorkItemManager manager, OutputParam output,GennyToken userToken) {
+	public void finishUp(WorkItem workItem, WorkItemManager manager, OutputParam output, GennyToken userToken) {
 		final Map<String, Object> resultMap = new ConcurrentHashMap<>();
 
 		resultMap.put("output", output);
