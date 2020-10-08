@@ -551,10 +551,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		
 		
-		Map<String,Object> taskInputVariables = new ConcurrentHashMap<String,Object>();
-		taskInputVariables.put("liveQuestions", liveQuestions);
-		taskInputVariables.put("beType", beType);
-		taskData.setTaskInputVariables(taskInputVariables);
+//		Map<String,Object> taskInputVariables = new ConcurrentHashMap<String,Object>();
+//		taskInputVariables.put("liveQuestions", liveQuestions);
+//		taskInputVariables.put("beType", beType);
+//		taskData.setTaskInputVariables(taskInputVariables);
 		
 		//// TODO HACK - until we can work out how to persist the setTaskInputVariables
 		if (liveQuestions) {
