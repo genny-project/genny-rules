@@ -241,6 +241,32 @@ public class TableUtils {
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE =" + (endtime1 - starttime) + " ms");
 
+		String[] filterArray = data._2.toArray(new String[0]);
+
+		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
+			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
+				// This means we are searching for a single entity				
+				BaseEntity be = beUtils.getBaseEntityByCode(attr.getValue());
+
+				if (be != null) {
+					log.info("BE found with code " + be.getCode());
+					be = VertxUtils.privacyFilter(be, filterArray);
+					msg = new QDataBaseEntityMessage(be);
+					msg.setTotal(1L);
+
+				} else {
+					log.error("Could not find BE");
+					msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
+					Long total = 0L;
+					msg.setTotal(total);
+				}
+				msg.setReplace(true);
+				msg.setParentCode(searchBE.getCode());
+
+				return msg;
+			}
+		}
+
 		String hql = data._1;
 		log.info("hql = " + hql);
 
@@ -259,7 +285,6 @@ public class TableUtils {
 				resultJson = new JsonObject(resultJsonStr);
 				JsonArray result = resultJson.getJsonArray("codes");
 				List<String> resultCodes = new ArrayList<String>();
-				String[] filterArray = data._2.toArray(new String[0]);
 				BaseEntity[] beArray = new BaseEntity[result.size()];
 
 				for (int i = 0; i < result.size(); i++) {
