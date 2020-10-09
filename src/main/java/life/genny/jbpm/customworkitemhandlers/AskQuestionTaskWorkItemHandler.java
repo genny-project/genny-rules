@@ -131,7 +131,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (baseEntityTarget != null) {
 			baseEntityTargetCode = baseEntityTarget.getCode();
 		}
-		
+
 		String formCode = (String) workItem.getParameter("formCode");
 		String targetCode = (String) workItem.getParameter("targetCode");
 
@@ -148,10 +148,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		// remove any empty task that matches the type
 		Question q = null;
 		String questionCode = (String) workItem.getParameter("questionCode");
-		q = TaskUtils.getQuestion(questionCode,userToken);
+		q = TaskUtils.getQuestion(questionCode, userToken);
 		if (q != null)
 			TaskUtils.clearTaskType(userToken, q);
-		
+
 		Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
 
 		// Fetch the questions and set in the task for us to tick off as they get done
@@ -327,8 +327,8 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			Class<?> cls = Class.forName(this.wClass); // needs filtering.
 			m = cls.getDeclaredMethod("getProcessIdBysessionId", String.class, String.class);
 			String realm = userToken.getRealm();
-			String param = userToken.getSessionCode(); 
-			processIdBysessionId =  (Optional<Long>) m.invoke(null, (Object)realm,(Object) param);
+			String param = userToken.getSessionCode();
+			processIdBysessionId = (Optional<Long>) m.invoke(null, (Object) realm, (Object) param);
 
 		} catch (NoSuchMethodException | SecurityException e) {
 			// TODO Auto-generated catch block
@@ -355,9 +355,9 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 			long taskId = task.getId();
 
-			log.info(callingWorkflow + " " + task.getDescription() + " Sending Question Code  "
-					+ task.getFormName() + " to processId " + targetProcessId + " for target user "
-					+ userToken.getUserCode() + " using TASK " + taskId);
+			log.info(callingWorkflow + " " + task.getDescription() + " Sending Question Code  " + task.getFormName()
+					+ " to processId " + targetProcessId + " for target user " + userToken.getUserCode()
+					+ " using TASK " + taskId);
 
 			KieSessionConfiguration ksconf = KieServices.Factory.get().newKieSessionConfiguration();
 
@@ -384,7 +384,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 	@Override
 	protected Task createTaskBasedOnWorkItemParams(KieSession session, WorkItem workItem) {
-		
 
 		CaseData caseFile = null;
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
@@ -399,12 +398,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		Boolean liveQuestions = (Boolean) workItem.getParameter("liveQuestions");
 		if (liveQuestions == null) {
-			liveQuestions = false; 
+			liveQuestions = false;
 		}
-		log.info(callingWorkflow+" Live Questions are "+(liveQuestions?"ON":"OFF"));
+		log.info(callingWorkflow + " Live Questions are " + (liveQuestions ? "ON" : "OFF"));
 
 		Question q = null;
-		q = TaskUtils.getQuestion(questionCode,userToken);
+		q = TaskUtils.getQuestion(questionCode, userToken);
 
 		workItem.getParameters().put("SwimlaneActorId", userCode);
 		workItem.getParameters().put("ActorId", userCode);
@@ -413,12 +412,8 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (locale == null) {
 			locale = "en-AU";
 		}
-		
-		
-		InternalTask task = TaskUtils.createTask(userToken, questionCode);
-		
 
-		
+		InternalTask task = TaskUtils.createTask(userToken, questionCode);
 
 		if (questionCode != null) {
 			List<I18NText> names = new CopyOnWriteArrayList<I18NText>();
@@ -444,13 +439,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 
 		String description = (String) workItem.getParameter("Description");
 		if (description == null) {
-			if (q!=null) {
+			if (q != null) {
 				description = q.getName();// question.getName();
 			} else {
 				description = questionCode;
 			}
 		}
-
 
 		List<I18NText> subjects = new CopyOnWriteArrayList<I18NText>();
 		I18NText subjectText = TaskModelProvider.getFactory().newI18NText();
@@ -466,13 +460,31 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		baseEntityTarget = beUtils.getBaseEntityByCode(baseEntityTargetCode); // get latest
 
+		// Work out tyope of BE
+		String beType = "";
+		List<EntityAttribute> eas = baseEntityTarget.findPrefixEntityAttributes("PRI_IS_");
+		if ((eas == null) || (eas.isEmpty())) {
 
-		String beType = baseEntityTarget.getValueAsString("PRI_STATUS");
-		if (!StringUtils.isBlank(beType)) {
-			// will be only one
-			String attributeCode = beType.substring("PENDING_".length());
-			attributeCode = attributeCode.replaceAll("_", " ");
-			beType = StringUtils.capitalize(attributeCode.toLowerCase());
+			beType = baseEntityTarget.getValueAsString("PRI_STATUS");
+			if (!StringUtils.isBlank(beType)) {
+				// will be only one
+				if (beType.contains("PENDING")) {
+					String attributeCode = beType.substring("PENDING_".length());
+					attributeCode = attributeCode.replaceAll("_", " ");
+					beType = StringUtils.capitalize(attributeCode.toLowerCase());
+				} else {
+					beType = "";
+				}
+			}
+		} else {
+			Optional<EntityAttribute> role = baseEntityTarget.getHighestEA("PRI_IS_");
+			if (role.isPresent()) {
+				String roleName = role.get().getAttributeCode();
+				roleName = roleName.substring("PRI_IS_".length());
+				roleName = roleName.replaceAll("_", " ");
+				beType = StringUtils.capitalize(roleName.toLowerCase());
+				
+			}
 		}
 
 		List<I18NText> descriptions = new CopyOnWriteArrayList<I18NText>();
@@ -482,10 +494,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		descriptions.add(descText);
 		task.setDescriptions(descriptions);
 
-		if (beType!=null) {
+		if (beType != null) {
 			description = beType;
 		}
-		
+
 		task.setDescription(description);
 
 		task.setSubject(baseEntityTargetCode);
@@ -500,7 +512,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			}
 		}
 		task.setPriority(priority);
-		
 
 		InternalTaskData taskData = (InternalTaskData) TaskModelProvider.getFactory().newTaskData();
 		taskData.setWorkItemId(workItem.getId());
@@ -523,7 +534,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			}
 		}
 		taskData.setSkipable(!"false".equals(workItem.getParameter("Skippable")));
-		
+
 		// Sub Task Data
 		Long parentId = (Long) workItem.getParameter("ParentId");
 		if (parentId != null) {
@@ -549,13 +560,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (date != null) {
 			taskData.setExpirationTime(date);
 		}
-		
-		
+
 //		Map<String,Object> taskInputVariables = new ConcurrentHashMap<String,Object>();
 //		taskInputVariables.put("liveQuestions", liveQuestions);
 //		taskInputVariables.put("beType", beType);
 //		taskData.setTaskInputVariables(taskInputVariables);
-		
+
 		//// TODO HACK - until we can work out how to persist the setTaskInputVariables
 		if (liveQuestions) {
 			taskData.setFaultType("SEND_INFERRED");

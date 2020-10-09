@@ -173,7 +173,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 																														// an
 																														// exception
 		// to flushout invalids
-		beUtils.writeMsg(answerBes._2); // send back all the non inferred answers to frontend
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(answerBes._2);
+		msg.setToken(userToken.getToken());
+		msg.setReplace(true);
+
+		VertxUtils.writeMsg("webcmds",JsonUtils.toJson(msg)); // send back all the non inferred answers to frontend
 
 		List<Answer> validAnswers = answerBes._1;
 
