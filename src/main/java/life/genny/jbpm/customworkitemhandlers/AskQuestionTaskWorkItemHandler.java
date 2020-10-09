@@ -460,6 +460,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		baseEntityTarget = beUtils.getBaseEntityByCode(baseEntityTargetCode); // get latest
 
+
 		// Work out tyope of BE
 		String beType = "";
 		List<EntityAttribute> eas = baseEntityTarget.findPrefixEntityAttributes("PRI_IS_");
