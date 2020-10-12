@@ -245,7 +245,7 @@ public class TableUtils {
 
 		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
 			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
-				// This means we are searching for a single entity				
+				// This means we are searching for a single entity
 				BaseEntity be = beUtils.getBaseEntityByCode(attr.getValue());
 
 				if (be != null) {
@@ -1080,70 +1080,6 @@ public class TableUtils {
 
 		/* initialize an empty ask list */
 		List<Ask> askList = new ArrayList<>();
-		TableUtils tableUtils = new TableUtils(beUtils);
-
-		if (columns != null) {
-			if (bes != null && bes.isEmpty() == false) {
-
-				/* loop through baseentities to generate ask */
-				for (BaseEntity be : bes) {
-
-					/* we add attributes for each be */
-					beUtils.addAttributes(be);
-
-					/* initialize child ask list */
-					List<Ask> childAskList = new ArrayList<>();
-
-					for (Map.Entry<String, String> column : columns.entrySet()) {
-
-						String attributeCode = column.getKey();
-						String attributeName = column.getValue();
-						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
-
-						if (attr != null) {
-							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
-									true);
-							Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
-							childAsk.setReadonly(true);
-							childAskList.add(childAsk);
-						} else {
-							log.error("Attribute : " + attributeCode + " DOES NOT EXIST IN AttributeMap");
-						}
-					}
-
-					/* converting childAsks list to array */
-					Ask[] childAsArr = childAskList.stream().toArray(Ask[]::new);
-
-					// Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new
-					// DataType(String.class));
-
-					// Attribute questionTableRowAttribute = new
-					// Attribute("QQQ_QUESTION_GROUP_TABLE_ROW", "link",
-					// new DataType(String.class));
-
-					/* Get the attribute */
-					Attribute tableRowAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_ROW");
-
-					/* Generate ask for the baseentity */
-					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(), tableRowAttribute, true);
-					Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
-
-					/* set readOnly to true */
-					parentAsk.setReadonly(true);
-
-					/* setting weight to parent ask */
-					parentAsk.setWeight(be.getIndex().doubleValue());
-
-					/* set all the childAsks to parentAsk */
-					parentAsk.setChildAsks(childAsArr);
-
-					/* add the baseentity asks to a list */
-					askList.add(parentAsk);
-				}
-
-			}
-
-		}
 
 		/* return list of asks */
 		return askList;
@@ -1303,7 +1239,6 @@ public class TableUtils {
 		ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
 		CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 
-		// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
 		SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
 
 		List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
@@ -1325,11 +1260,6 @@ public class TableUtils {
 				aggregatedMessages.add(firstThreadResponse);
 				totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 
-				/*
-				 * assertTrue("First response should be from the fast thread",
-				 * "fast thread".equals(firstThreadResponse.getData_type()));
-				 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
-				 */
 				System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
 
 				future = service.take();
@@ -1350,7 +1280,6 @@ public class TableUtils {
 				Thread.currentThread().interrupt();
 			}
 		} else {
-			// aggregatedMessages.add(tfc.call());
 			aggregatedMessages.add(sc.call());
 
 		}
@@ -1386,13 +1315,17 @@ public class TableUtils {
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, String filterCode,
-	String filterValue) {
+			String filterValue) {
 		return searchTable(beUtils, searchBE, cache, filterCode, filterValue, true);
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, String filterCode,
 			String filterValue, Boolean replace) {
 		long starttime = System.currentTimeMillis();
+		long s1time = System.currentTimeMillis();
+		long s2time = System.currentTimeMillis();
+		long s3time = System.currentTimeMillis();
+
 		try {
 			log.info("Starting searchTable for searchBE : " + searchBE.getCode() + " and cache=" + (cache ? "ON" : "OFF"));
 			/* get current search */
@@ -1401,7 +1334,6 @@ public class TableUtils {
 			ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
 			CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 
-			// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
 			SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
 
 			List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
@@ -1411,30 +1343,24 @@ public class TableUtils {
 			long startProcessingTime = System.currentTimeMillis();
 			long totalProcessingTime;
 
-			if (GennySettings.useConcurrencyMsgs && false) { // TODO
-				log.info("Starting Concurrent Tasks");
+			if (GennySettings.useConcurrencyMsgs) {
+				System.out.println("useConcurrencyMsgs is enabled");
 
 				for (Callable<QBulkMessage> callable : callables) {
 					service.submit(callable);
 				}
-				log.info("Concurrent Tasks Submitted");
 				try {
 					Future<QBulkMessage> future = service.take();
 					QBulkMessage firstThreadResponse = future.get();
 					aggregatedMessages.add(firstThreadResponse);
 					totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 
-					/*
-					 * assertTrue("First response should be from the fast thread",
-					 * "fast thread".equals(firstThreadResponse.getData_type()));
-					 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
-					 */
-					log.info("Thread finished after: " + totalProcessingTime + " milliseconds");
+					System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
 
 					future = service.take();
 					QBulkMessage secondThreadResponse = future.get();
 					aggregatedMessages.add(secondThreadResponse);
-					log.info("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
+					System.out.println("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
 				} catch (InterruptedException | ExecutionException e) {
 					e.printStackTrace();
 				}
@@ -1449,17 +1375,13 @@ public class TableUtils {
 					Thread.currentThread().interrupt();
 				}
 			} else {
-				log.info("Starting Non Concurrent Tasks");
-				// aggregatedMessages.add(tfc.call());
 				aggregatedMessages.add(sc.call());
-
 			}
 			totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
-			log.info("All threads finished after: " + totalProcessingTime + " milliseconds");
+			System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
 			aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 
 			if (cache) {
-				log.info("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
 				String json = JsonUtils.toJson(aggregatedMessages);
 				VertxUtils.writeMsg("webcmds", json);
 				// Now send the end_process msg
@@ -1469,12 +1391,18 @@ public class TableUtils {
 				VertxUtils.writeMsg("webcmds", msgend);
 
 			}
-		} catch (ClassCastException e) {
-			log.error(e.getLocalizedMessage());
+			
+			System.out.println("init setup took " + (s1time - starttime) + " ms");
+			System.out.println("search session setup took " + (s2time - s1time) + " ms");
+			System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
+
+			long endtime = System.currentTimeMillis();
+			return (endtime - starttime);
+			
+		} catch (Exception e) {
+			log.info("EXCEPTION RUNNING SEARCH: " + e.toString());
+			return -1L;
 		}
-		/* update(output); */
-		long endtime = System.currentTimeMillis();
-		return (endtime - starttime);
 	}
 
 	static public Tuple2<String, List<String>> getHql(GennyToken serviceToken, SearchEntity searchBE) {
@@ -1534,16 +1462,16 @@ public class TableUtils {
 		}
 	}
 
-	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils){
+	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils) {
 		QCmdMessage msg = new QCmdMessage("MOVE_ENTITY", code);
-		if(sourceCode != null){
+		if (sourceCode != null) {
 			msg.setSourceCode(sourceCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
 		}
-		if(targetCode != null){
+		if (targetCode != null) {
 			msg.setTargetCode(targetCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
 		}
 		msg.setToken(beUtils.getGennyToken().getToken());
-		msg.setSend(true);  		
-		VertxUtils.writeMsg("webcmds",msg);
-}
+		msg.setSend(true);
+		VertxUtils.writeMsg("webcmds", msg);
+	}
 }
