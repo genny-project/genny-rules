@@ -97,11 +97,16 @@ public class TaskUtils {
 			for (TaskSummary ts : taskSummarys) {
 				// We send an Ask to the frontend that contains the task items
 				Task task = taskService.getTaskById(ts.getId());
-				if (!IsTaskEmpty(task, userToken)) {
-					BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
-					item.setRealm(userToken.getRealm());
-					item.setIndex(index++);
-					taskItems.add(item);
+
+				TaskData td = task.getTaskData();
+				if (!"DO_NOT_SHOW_IN_DRAFTS".equalsIgnoreCase(td.getFaultName())) {
+
+					if (!IsTaskEmpty(task, userToken)) {
+						BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
+						item.setRealm(userToken.getRealm());
+						item.setIndex(index++);
+						taskItems.add(item);
+					}
 				}
 			}
 
@@ -188,9 +193,7 @@ public class TaskUtils {
 				// We send an Ask to the frontend that contains the task items
 				Task task = RulesLoader.taskServiceMap.get(userToken.getSessionCode()).getTaskById(ts.getId());
 				if (!TaskUtils.IsTaskEmpty(task, userToken)) {
-					
-					
-					
+
 					BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
 					item.setRealm(userToken.getRealm());
 					item.setIndex(index++);
@@ -536,7 +539,7 @@ public class TaskUtils {
 	public static Boolean validate(Answer answer, GennyToken userToken) {
 		// TODO - check value using regexs
 		if (!answer.getSourceCode().equals(userToken.getUserCode())) {
-			if ((userToken.hasRole("admin")) || (answer.getInferred())){
+			if ((userToken.hasRole("admin")) || (answer.getInferred())) {
 				return true;
 			}
 			return false;
