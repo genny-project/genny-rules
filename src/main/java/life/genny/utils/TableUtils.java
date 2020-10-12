@@ -244,13 +244,6 @@ public class TableUtils {
 		String[] filterArray = data._2.toArray(new String[0]);
 
 		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
-			// if attribute code starts with sbe, then recursively do the search
-			if (attr.getAttributeCode().startsWith("SBE_")) {
-				log.info("before   :: " + attr.getAttributeCode());
-				attr.getAttribute().setCode(attr.getAttributeCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
-				log.info("after    :: " + attr.getAttributeCode());
-			}
-			
 			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
 				// This means we are searching for a single entity
 				BaseEntity be = beUtils.getBaseEntityByCode(attr.getValue());
@@ -351,6 +344,13 @@ public class TableUtils {
 		searchBE.setCode(sessionSearchCode);
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			ea.setBaseEntityCode(searchBE.getCode());
+			
+			// if attribute code starts with sbe, 
+			if (ea.getAttributeCode().startsWith("SBE_")) {
+				log.info("before   :: " + ea.getAttributeCode());
+				ea.getAttribute().setCode(ea.getAttributeCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
+				log.info("after    :: " + ea.getAttributeCode());
+			}
 		}
 
 		/*
