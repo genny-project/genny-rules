@@ -348,7 +348,7 @@ public class TableUtils {
 			// if attribute code starts with sbe, 
 			if (ea.getAttributeCode().startsWith("SBE_")) {
 				log.info("before   :: " + ea.getAttributeCode());
-				ea.getAttribute().setCode(ea.getAttributeCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
+				ea.setAttributeCode(ea.getAttributeCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
 				log.info("after    :: " + ea.getAttributeCode());
 			}
 		}
