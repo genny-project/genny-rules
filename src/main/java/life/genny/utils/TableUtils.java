@@ -342,6 +342,9 @@ public class TableUtils {
 		searchBE.setCode(sessionSearchCode);
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			ea.setBaseEntityCode(searchBE.getCode());
+			if (ea.getAttributeCode().startsWith("SBE_")) {
+				ea.setAttributeCode(ea.getAttributeCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
+			}
 		}
 
 		/*
