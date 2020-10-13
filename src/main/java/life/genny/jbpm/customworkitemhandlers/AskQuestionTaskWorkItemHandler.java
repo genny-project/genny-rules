@@ -400,7 +400,14 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (liveQuestions == null) {
 			liveQuestions = false;
 		}
+		
+		Boolean showInDrafts = (Boolean) workItem.getParameter("showInDrafts");
+		if (showInDrafts == null) {
+			showInDrafts = true;
+		}
+
 		log.info(callingWorkflow + " Live Questions are " + (liveQuestions ? "ON" : "OFF"));
+		log.info(callingWorkflow + " SHow In Drafts is " + (showInDrafts ? "ON" : "OFF"));
 
 		Question q = null;
 		q = TaskUtils.getQuestion(questionCode, userToken);
@@ -573,7 +580,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		} else {
 			taskData.setFaultType("ABSORB_INFERRED");
 		}
-
+		
+		if (showInDrafts) {
+			taskData.setFaultName("SHOW_IN_DRAFTS");
+		} else {
+			taskData.setFaultName("DO_NO_SHOW_IN_DRAFTS");
+		}
 		PeopleAssignmentHelper peopleAssignmentHelper = new PeopleAssignmentHelper(caseFile);
 		peopleAssignmentHelper.handlePeopleAssignments(workItem, task, taskData);
 
