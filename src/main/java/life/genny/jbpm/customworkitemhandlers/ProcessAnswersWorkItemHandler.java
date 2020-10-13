@@ -432,6 +432,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							+ ":" + userToken.getRealmUserCode());
 
 					saveAnswers(beUtils, answerMap2);
+					// delete submit button
+					if (submitDetected) {
+						beUtils.removeEntityAttribute(originalTarget,"PRI_SUBMIT");
+					}
 					taskService.complete(iTask.getId(), userToken.getRealmUserCode(), results);
 					TaskUtils.sendTaskAskItems(userToken);
 				}

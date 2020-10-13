@@ -407,7 +407,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 
 		log.info(callingWorkflow + " Live Questions are " + (liveQuestions ? "ON" : "OFF"));
-		log.info(callingWorkflow + " SHow In Drafts is " + (showInDrafts ? "ON" : "OFF"));
+		log.info(callingWorkflow + " Show In Drafts is " + (showInDrafts ? "ON" : "OFF"));
 
 		Question q = null;
 		q = TaskUtils.getQuestion(questionCode, userToken);
