@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -237,6 +238,9 @@ public class TableUtils {
 		long starttime = System.currentTimeMillis();
 		long endtime2 = starttime;
 
+		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("CAL_");
+		
+		
 		Tuple2<String, List<String>> data = beUtils.getHql(searchBE);
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE =" + (endtime1 - starttime) + " ms");
@@ -251,6 +255,10 @@ public class TableUtils {
 				if (be != null) {
 					log.info("BE found with code " + be.getCode());
 					be = VertxUtils.privacyFilter(be, filterArray);
+					
+					
+						
+					
 					msg = new QDataBaseEntityMessage(be);
 					msg.setTotal(1L);
 
@@ -292,16 +300,30 @@ public class TableUtils {
 					resultCodes.add(code);
 					BaseEntity be = beUtils.getBaseEntityByCode(code);
 					be = VertxUtils.privacyFilter(be, filterArray);
+
+					
+					// Get any CAL attributes 
+					for (EntityAttribute calEA : cals) {
+						String attributeCode = calEA.getAttributeCode();
+						String linkBeCode = calEA.getValueString();
+						if (!StringUtils.isBlank(linkBeCode)) {
+							if (linkBeCode.startsWith("[")) {
+								linkBeCode = linkBeCode.substring(2, linkBeCode.length()-2);
+							}
+							BaseEntity associatedBe = beUtils.getBaseEntityByCode(linkBeCode);
+							String linkedValue = associatedBe.getValueAsString(attributeCode);
+							try {
+								be.addAnswer(new Answer(be.getCode(),be.getCode(),attributeCode+"_CAL",linkedValue));
+							} catch (BadDataException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
 					be.setIndex(i);
 					beArray[i] = be;
-
 				}
-				// List<BaseEntity> beList = resultCodes.stream().map(e -> {
-				// BaseEntity be = beUtils.getBaseEntityByCode(e);
-				// be = VertxUtils.privacyFilter(be, filterArray);
-				// be.setIndex(index++);
-				// return be;
-				// }).collect(Collectors.toList());
+				
 				msg = new QDataBaseEntityMessage(beArray);
 				Long total = resultJson.getLong("total");
 				msg.setTotal(total);
