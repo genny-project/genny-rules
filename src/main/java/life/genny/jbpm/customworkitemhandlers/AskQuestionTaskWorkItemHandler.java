@@ -167,7 +167,13 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			}
 		}
 		if (!newFields.isEmpty()) {
-			beUtils.saveAnswers(newFields, true);
+			List<Answer> saveFields = new CopyOnWriteArrayList<Answer>();
+			for (Answer ans : newFields) {
+				if (!("PRI_SUBMIT".equals(ans.getAttributeCode()) || "QQQ_QUESTION_GROUP".equals(ans.getAttributeCode()))) {
+					saveFields.add(ans);
+				}
+			}
+			beUtils.saveAnswers(saveFields, true);
 			BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
 			target.setRealm(userToken.getToken());
 
