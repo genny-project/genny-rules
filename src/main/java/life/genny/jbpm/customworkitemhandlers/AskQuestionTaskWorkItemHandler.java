@@ -402,15 +402,17 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
-		Boolean liveQuestions = (Boolean) workItem.getParameter("liveQuestions");
-		if (liveQuestions == null) {
-			liveQuestions = false;
-		}
+		Boolean liveQuestions = true;
+		String liveQuestionsStr = (String)workItem.getParameter("liveQuestions");
+		if (!StringUtils.isBlank(liveQuestionsStr)) {
+			liveQuestions = liveQuestionsStr.toLowerCase().contains("true");
+		} 
 		
-		Boolean showInDrafts = (Boolean) workItem.getParameter("showInDrafts");
-		if (showInDrafts == null) {
-			showInDrafts = true;
-		}
+		Boolean showInDrafts = true;
+		String showInDraftsStr = (String)workItem.getParameter("showInDrafts");
+		if (!StringUtils.isBlank(showInDraftsStr)) {
+			showInDrafts = showInDraftsStr.toLowerCase().contains("true");
+		} 
 
 		log.info(callingWorkflow + " Live Questions are " + (liveQuestions ? "ON" : "OFF"));
 		log.info(callingWorkflow + " Show In Drafts is " + (showInDrafts ? "ON" : "OFF"));
