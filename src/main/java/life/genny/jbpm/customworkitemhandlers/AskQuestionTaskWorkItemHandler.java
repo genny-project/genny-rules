@@ -592,7 +592,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (showInDrafts) {
 			taskData.setFaultName("SHOW_IN_DRAFTS");
 		} else {
-			taskData.setFaultName("DO_NO_SHOW_IN_DRAFTS");
+			taskData.setFaultName("DO_NOT_SHOW_IN_DRAFTS");
 		}
 		PeopleAssignmentHelper peopleAssignmentHelper = new PeopleAssignmentHelper(caseFile);
 		peopleAssignmentHelper.handlePeopleAssignments(workItem, task, taskData);
