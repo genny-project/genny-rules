@@ -402,7 +402,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
-		Boolean liveQuestions = true;
+		Boolean liveQuestions = false;
 		String liveQuestionsStr = (String)workItem.getParameter("liveQuestions");
 		if (!StringUtils.isBlank(liveQuestionsStr)) {
 			liveQuestions = liveQuestionsStr.toLowerCase().contains("true");
