@@ -505,6 +505,11 @@ public class RulesLoader {
 				ks = null; // clear
 				ks = KieServices.Factory.get();
 			}
+			
+			if (getKieBaseCache().containsKey(realm)) {
+				getKieBaseCache().remove(realm);
+				log.info(realm + " removed");
+			}
 
 			final KieFileSystem kfs = ks.newKieFileSystem();
 
@@ -1503,6 +1508,8 @@ public class RulesLoader {
 		List<String> reloadRealms = new ArrayList<String>();
 		reloadRealms.add(realm);
 		realms = new HashSet<>(reloadRealms);
+		
+
 
 		List<Tuple3<String, String, String>> rules = null;
 		if (GennySettings.useApiRules) {
