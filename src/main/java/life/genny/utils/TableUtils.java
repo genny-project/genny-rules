@@ -1326,7 +1326,6 @@ public class TableUtils {
 					return -1L;
 				}
 				
-				long s1time = System.currentTimeMillis();
 				/* get current search */
 				
 				long s2time = System.currentTimeMillis();
@@ -1416,8 +1415,8 @@ public class TableUtils {
 		
 				/* update(output); */
 				long endtime = System.currentTimeMillis();
-				System.out.println("init setup took " + (s1time - starttime) + " ms");
-				System.out.println("search session setup took " + (s2time - s1time) + " ms");
+				// System.out.println("init setup took " + (s1time - starttime) + " ms");
+				// System.out.println("search session setup took " + (s2time - s1time) + " ms");
 				System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
 				return (endtime - starttime);
 	}
