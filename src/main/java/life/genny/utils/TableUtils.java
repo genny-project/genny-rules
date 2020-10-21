@@ -353,12 +353,20 @@ public class TableUtils {
 	public SearchEntity getSessionSearch(final String searchCode) {
 		return getSessionSearch(searchCode, null, null);
 	}
-
+	
 	public SearchEntity getSessionSearch(final String searchCode, final String filterCode, final String filterValue) {
-		String sessionSearchCode = searchCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
 
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
 				beUtils.getGennyToken().getToken());
+		return getSessionSearch(searchBE, filterCode, filterValue);
+	}
+
+	public SearchEntity getSessionSearch(final SearchEntity searchBE) {
+		return getSessionSearch(searchBE, null, null);
+	}
+
+	public SearchEntity getSessionSearch(final SearchEntity searchBE, final String filterCode, final String filterValue) {
+		String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
 
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
@@ -384,10 +392,10 @@ public class TableUtils {
 		 */
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
-		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
+		SearchEntity searchEntity = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
-		return searchBE;
+		return searchEntity;
 	}
 
 	private SearchEntity processSearchString(Answer answer, final String searchBarCode, final String filterCode,
@@ -1297,15 +1305,10 @@ public class TableUtils {
 				String searchBeCode = "SBE_" + code;
 				System.out.println("SBE CODE   ::   " + searchBeCode);
 
-				TableUtils tableUtils = new TableUtils(beUtils);
-				SearchEntity searchBE = null;
-				try {
-					searchBE = tableUtils.getSessionSearch(searchBeCode, filterCode, filterValue);
-					return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
-				} catch (Exception e1) {
-					// TODO Auto-generated catch block
-					return -1L;
-				}
+				SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBeCode, SearchEntity.class,
+				beUtils.getGennyToken().getToken());
+
+				return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache) {
@@ -1318,6 +1321,14 @@ public class TableUtils {
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, String filterCode,
 			String filterValue, Boolean replace) {
+
+				TableUtils tableUtils = new TableUtils(beUtils);
+				try {
+					searchBE = tableUtils.getSessionSearch(searchBE, filterCode, filterValue);
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					return -1L;
+				}
 				
 				long starttime = System.currentTimeMillis();
 				
@@ -1347,7 +1358,6 @@ public class TableUtils {
 				CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 				
 				// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-				TableUtils tableUtils = new TableUtils(beUtils);
 				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
 		
 				List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
