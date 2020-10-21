@@ -367,6 +367,7 @@ public class TableUtils {
 
 	public SearchEntity getSessionSearch(final SearchEntity searchBE, final String filterCode, final String filterValue) {
 		String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
+		log.info("sessionSearchCode  ::  " + sessionSearchCode);
 
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
@@ -1302,13 +1303,13 @@ public class TableUtils {
 	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, String filterCode,
 			String filterValue, Boolean replace) {
 
-				String searchBeCode = "SBE_" + code;
-				System.out.println("SBE CODE   ::   " + searchBeCode);
+		String searchBeCode = "SBE_" + code;
+		System.out.println("SBE CODE   ::   " + searchBeCode);
 
-				SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBeCode, SearchEntity.class,
-				beUtils.getGennyToken().getToken());
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBeCode, SearchEntity.class,
+		beUtils.getGennyToken().getToken());
 
-				return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
+		return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache) {
