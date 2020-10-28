@@ -299,6 +299,13 @@ public class TableUtils {
 					String code = result.getString(i);
 					resultCodes.add(code);
 					BaseEntity be = beUtils.getBaseEntityByCode(code);
+					
+					// send long and lats if address is present
+					if(be.getValue("PRI_ADDRESS_FULL", null)!= null){
+						log.info("address is here");
+						be.addAnswer(new Answer(be.getCode(),be.getCode(),"PRI_ADDRESS_LATITUDE",be.getValue("PRI_ADDRESS_LATITUDE", "")));
+						be.addAnswer(new Answer(be.getCode(),be.getCode(),"PRI_ADDRESS_LONGITUDE",be.getValue("PRI_ADDRESS_LONGITUDE", "")));
+					}
 					be = VertxUtils.privacyFilter(be, filterArray);
 
 					
