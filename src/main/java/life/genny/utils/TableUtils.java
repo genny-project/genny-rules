@@ -350,6 +350,26 @@ public class TableUtils {
 		return msg;
 	}
 
+	private static void updateColIndex(SearchEntity searchBE ) {
+		int index = 1;
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("COL_")) {
+			    index++;
+			}
+		}
+		searchBE.setColIndex((double) index);
+	}
+
+	private static void updateActIndex(SearchEntity searchBE ) {
+		int index = 1;
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("ACT_")) {
+				index++;
+			}
+		}
+		searchBE.setActionIndex((double) index);
+	}
+
 	public SearchEntity getSessionSearch(final String searchCode) {
 		return getSessionSearch(searchCode, null, null);
 	}
@@ -358,6 +378,8 @@ public class TableUtils {
 
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
 				beUtils.getGennyToken().getToken());
+
+
 		return getSessionSearch(searchBE, filterCode, filterValue);
 	}
 
@@ -1354,7 +1376,10 @@ public class TableUtils {
 				
 				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
 				searchBE, beUtils.getGennyToken().getToken());
-				
+
+		        updateActIndex(searchBE);
+		        updateColIndex(searchBE);
+
 				long s3time = System.currentTimeMillis();
 				
 				ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
