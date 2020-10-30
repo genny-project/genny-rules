@@ -192,6 +192,10 @@ public class TaskUtils {
 			for (TaskSummary ts : taskSummarys) {
 				// We send an Ask to the frontend that contains the task items
 				Task task = RulesLoader.taskServiceMap.get(userToken.getSessionCode()).getTaskById(ts.getId());
+				TaskData td = task.getTaskData();
+				if ("DO_NOT_SHOW_IN_DRAFTS".equalsIgnoreCase(td.getFaultName())) {
+					continue;
+				}
 				if (!TaskUtils.IsTaskEmpty(task, userToken)) {
 
 					BaseEntity item = new BaseEntity(task.getName() + "-" + task.getId(), task.getDescription());
