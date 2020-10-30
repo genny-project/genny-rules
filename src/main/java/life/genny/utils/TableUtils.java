@@ -350,7 +350,7 @@ public class TableUtils {
 		return msg;
 	}
 
-	private void updateColIndex(SearchEntity searchBE ) {
+	private static void updateColIndex(SearchEntity searchBE ) {
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			if (ea.getAttributeCode().startsWith("COL_")) {
 			    searchBE.setColIndex((double) (searchBE.getColIndex().intValue() + 1));
@@ -358,7 +358,7 @@ public class TableUtils {
 		}
 	}
 
-	private void updateActIndex(SearchEntity searchBE ) {
+	private static void updateActIndex(SearchEntity searchBE ) {
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			if (ea.getAttributeCode().startsWith("ACT_")) {
 				searchBE.setActionIndex((double) (searchBE.getActionIndex().intValue() + 1));
@@ -409,10 +409,6 @@ public class TableUtils {
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
 		 */
-		// update index
-		updateColIndex(searchBE);
-		updateActIndex(searchBE);
-
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
 		SearchEntity searchEntity = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
@@ -1374,7 +1370,10 @@ public class TableUtils {
 				
 				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
 				searchBE, beUtils.getGennyToken().getToken());
-				
+
+		        updateActIndex(searchBE);
+		        updateColIndex(searchBE);
+
 				long s3time = System.currentTimeMillis();
 				
 				ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
