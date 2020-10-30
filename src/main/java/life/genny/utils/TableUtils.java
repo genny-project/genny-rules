@@ -350,6 +350,22 @@ public class TableUtils {
 		return msg;
 	}
 
+	private void updateColIndex(SearchEntity searchBE ) {
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("COL_")) {
+			    searchBE.setColIndex((double) (searchBE.getColIndex().intValue() + 1));
+			}
+		}
+	}
+
+	private void updateActIndex(SearchEntity searchBE ) {
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("ACT_")) {
+				searchBE.setActionIndex((double) (searchBE.getActionIndex().intValue() + 1));
+			}
+		}
+	}
+
 	public SearchEntity getSessionSearch(final String searchCode) {
 		return getSessionSearch(searchCode, null, null);
 	}
@@ -358,6 +374,11 @@ public class TableUtils {
 
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
 				beUtils.getGennyToken().getToken());
+
+		if (searchBE != null) {
+			updateColIndex(searchBE);
+			updateActIndex(searchBE);
+		}
 		return getSessionSearch(searchBE, filterCode, filterValue);
 	}
 
