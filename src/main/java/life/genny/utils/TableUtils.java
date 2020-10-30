@@ -418,11 +418,16 @@ public class TableUtils {
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
 		 */
+		// update index
+		updateColIndex(searchBE);
+		updateActIndex(searchBE);
+
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
 		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 		return searchBE;
 =======
@@ -435,6 +440,8 @@ public class TableUtils {
 			searchEntity.setColIndex(searchBE.getColIndex());
 			searchEntity.setActionIndex(searchBE.getActionIndex());
 		}
+=======
+>>>>>>> 9f4c0b6... Update fix
 		return searchEntity;
 >>>>>>> 76b3666... update index
 	}
