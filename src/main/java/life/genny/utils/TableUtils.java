@@ -387,6 +387,7 @@ public class TableUtils {
 		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
+		
 		return searchBE;
 	}
 
