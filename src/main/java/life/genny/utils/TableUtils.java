@@ -1341,6 +1341,7 @@ public class TableUtils {
 				/* get current search */
 				
 				long s2time = System.currentTimeMillis();
+				if (replace) { // user has clicked on fresh search
 				Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START", "0");
 				Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX", "1");
 				
@@ -1349,6 +1350,7 @@ public class TableUtils {
 				
 				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
+				}
 				
 				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
 				searchBE, beUtils.getGennyToken().getToken());
