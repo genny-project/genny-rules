@@ -376,11 +376,25 @@ public class TableUtils {
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
+<<<<<<< HEAD
 		/* update colIndex here, can remove if indexes work */		
 		if (searchBE != null) {
 			updateColIndex(searchBE);
 			updateActIndex(searchBE);
 		}
+=======
+
+		return getSessionSearch(searchBE, filterCode, filterValue);
+	}
+
+	public SearchEntity getSessionSearch(final SearchEntity searchBE) {
+		return getSessionSearch(searchBE, null, null);
+	}
+
+	public SearchEntity getSessionSearch(final SearchEntity searchBE, final String filterCode, final String filterValue) {
+		String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
+		log.info("sessionSearchCode  ::  " + sessionSearchCode);
+>>>>>>> 76b3666... update index
 
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
@@ -409,7 +423,20 @@ public class TableUtils {
 		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
+<<<<<<< HEAD
 		return searchBE;
+=======
+		if (searchBE != null) {
+			updateColIndex(searchBE);
+			updateActIndex(searchBE);
+		}
+
+		if (searchEntity != null) {
+			searchEntity.setColIndex(searchBE.getColIndex());
+			searchEntity.setActionIndex(searchBE.getActionIndex());
+		}
+		return searchEntity;
+>>>>>>> 76b3666... update index
 	}
 
 	private SearchEntity processSearchString(Answer answer, final String searchBarCode, final String filterCode,
