@@ -396,6 +396,10 @@ public class TableUtils {
 		SearchEntity searchEntity = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
+		if (searchEntity != null) {
+			searchEntity.setColIndex(searchBE.getColIndex());
+			searchEntity.setActionIndex(searchBE.getActionIndex());
+		}
 		return searchEntity;
 	}
 
