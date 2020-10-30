@@ -350,7 +350,7 @@ public class TableUtils {
 		return msg;
 	}
 
-	private void updateColIndex(SearchEntity searchBE ) {
+	private static void updateColIndex(SearchEntity searchBE ) {
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			if (ea.getAttributeCode().startsWith("COL_")) {
 			    searchBE.setColIndex((double) (searchBE.getColIndex().intValue() + 1));
@@ -358,7 +358,7 @@ public class TableUtils {
 		}
 	}
 
-	private void updateActIndex(SearchEntity searchBE ) {
+	private static void updateActIndex(SearchEntity searchBE ) {
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			if (ea.getAttributeCode().startsWith("ACT_")) {
 				searchBE.setActionIndex((double) (searchBE.getActionIndex().intValue() + 1));
@@ -418,10 +418,6 @@ public class TableUtils {
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
 		 */
-		// update index
-		updateColIndex(searchBE);
-		updateActIndex(searchBE);
-
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
 		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
@@ -1514,10 +1510,80 @@ public class TableUtils {
 				} catch (InterruptedException | ExecutionException e) {
 					e.printStackTrace();
 				}
+<<<<<<< HEAD
 
 				WORKER_THREAD_POOL.shutdown();
 				try {
 					if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
+=======
+				
+				/* get current search */
+				
+				long s2time = System.currentTimeMillis();
+				Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START", "0");
+				Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX", "1");
+				
+				searchBE = beUtils.updateBaseEntity(searchBE, pageAnswer, SearchEntity.class);
+				searchBE = beUtils.updateBaseEntity(searchBE, pageNumberAnswer, SearchEntity.class);
+				
+				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
+				beUtils.getGennyToken().getToken());
+				
+				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
+				searchBE, beUtils.getGennyToken().getToken());
+
+		        updateActIndex(searchBE);
+		        updateColIndex(searchBE);
+
+				long s3time = System.currentTimeMillis();
+				
+				ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
+				CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
+				
+				// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
+				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
+		
+				List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
+		
+				QBulkMessage aggregatedMessages = new QBulkMessage();
+		
+				long startProcessingTime = System.currentTimeMillis();
+				long totalProcessingTime;
+		
+				if (GennySettings.useConcurrencyMsgs) {
+					System.out.println("useConcurrencyMsgs is enabled");
+		
+					for (Callable<QBulkMessage> callable : callables) {
+						service.submit(callable);
+					}
+					try {
+						Future<QBulkMessage> future = service.take();
+						QBulkMessage firstThreadResponse = future.get();
+						aggregatedMessages.add(firstThreadResponse);
+						totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+		
+						/*
+						 * assertTrue("First response should be from the fast thread",
+						 * "fast thread".equals(firstThreadResponse.getData_type()));
+						 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
+						 */
+						System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
+		
+						future = service.take();
+						QBulkMessage secondThreadResponse = future.get();
+						aggregatedMessages.add(secondThreadResponse);
+						System.out.println("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
+					} catch (InterruptedException | ExecutionException e) {
+						e.printStackTrace();
+					}
+		
+					WORKER_THREAD_POOL.shutdown();
+					try {
+						if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
+							WORKER_THREAD_POOL.shutdownNow();
+						}
+					} catch (InterruptedException ex) {
+>>>>>>> 77542ff... update index
 						WORKER_THREAD_POOL.shutdownNow();
 					}
 				} catch (InterruptedException ex) {
