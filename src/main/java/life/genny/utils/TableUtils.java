@@ -350,6 +350,22 @@ public class TableUtils {
 		return msg;
 	}
 
+	private void updateColIndex(SearchEntity searchBE ) {
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("COL_")) {
+			    searchBE.setColIndex((double) (searchBE.getColIndex().intValue() + 1));
+			}
+		}
+	}
+
+	private void updateActIndex(SearchEntity searchBE ) {
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("ACT_")) {
+				searchBE.setActionIndex((double) (searchBE.getActionIndex().intValue() + 1));
+			}
+		}
+	}
+
 	public SearchEntity getSessionSearch(final String searchCode) {
 		return getSessionSearch(searchCode, null, null);
 	}
@@ -359,6 +375,12 @@ public class TableUtils {
 
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
 				beUtils.getGennyToken().getToken());
+
+		/* update colIndex here, can remove if indexes work */		
+		if (searchBE != null) {
+			updateColIndex(searchBE);
+			updateActIndex(searchBE);
+		}
 
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
