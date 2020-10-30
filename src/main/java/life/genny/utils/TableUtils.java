@@ -351,19 +351,23 @@ public class TableUtils {
 	}
 
 	private static void updateColIndex(SearchEntity searchBE ) {
+		int index = 1;
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			if (ea.getAttributeCode().startsWith("COL_")) {
-			    searchBE.setColIndex((double) (searchBE.getColIndex().intValue() + 1));
+			    index++;
 			}
 		}
+		searchBE.setColIndex((double) index);
 	}
 
 	private static void updateActIndex(SearchEntity searchBE ) {
+		int index = 1;
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			if (ea.getAttributeCode().startsWith("ACT_")) {
-				searchBE.setActionIndex((double) (searchBE.getActionIndex().intValue() + 1));
+				index++;
 			}
 		}
+		searchBE.setActionIndex((double) index);
 	}
 
 	public SearchEntity getSessionSearch(final String searchCode) {
