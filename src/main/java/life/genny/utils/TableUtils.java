@@ -151,6 +151,7 @@ public class TableUtils {
 			ret.add(searchBeMsg);
 		} else {
 			searchBeMsg.setToken(beUtils.getGennyToken().getToken());
+			searchBeMsg.setReplace(true);
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
 			// Now send the end_process msg
 			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
