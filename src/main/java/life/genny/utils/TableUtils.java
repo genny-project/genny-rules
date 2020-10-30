@@ -409,20 +409,15 @@ public class TableUtils {
 		 * Save Session Search in cache , ideally this should be in OutputParam and
 		 * saved to workflow
 		 */
+		// update index
+		updateColIndex(searchBE);
+		updateActIndex(searchBE);
+
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
 		SearchEntity searchEntity = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
-		if (searchBE != null) {
-			updateColIndex(searchBE);
-			updateActIndex(searchBE);
-		}
-
-		if (searchEntity != null) {
-			searchEntity.setColIndex(searchBE.getColIndex());
-			searchEntity.setActionIndex(searchBE.getActionIndex());
-		}
 		return searchEntity;
 	}
 
