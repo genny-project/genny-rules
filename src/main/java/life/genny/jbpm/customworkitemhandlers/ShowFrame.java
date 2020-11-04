@@ -702,7 +702,6 @@ public class ShowFrame implements WorkItemHandler {
 							/* This is for dynamically generated items */
 							SearchEntity sbe = JsonUtils.fromJson(searchBe.getString("value"), SearchEntity.class);
 							dropDownUtils.setSearch(sbe);
-							log.info("call sendSearchResults 705");
 							QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true,cache);
 							if (cache) {
 								qBulkMessage.add(resultsMsg);
