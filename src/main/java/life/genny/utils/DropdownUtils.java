@@ -117,8 +117,6 @@ public class DropdownUtils implements Serializable {
 			for (EntityAttribute filter : filters) {
 				searchBE.getBaseEntityAttributes().add(filter);
 			}
-		} else {
-			log.info("User Filters are empty");
 		}
 
 		// Check if present in cache
