@@ -78,7 +78,7 @@ public class DropdownUtils implements Serializable {
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue, Boolean replace,
 			Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight, Boolean cache)
 			throws IOException {
-
+		log.info("call getSearchResults");
 		QDataBaseEntityMessage beMessage = getSearchResults(this.searchEntity, parentCode, linkCode, linkValue, replace,
 				shouldDeleteLinkedBaseEntities, userToken, this.serviceToken, sortByWeight);
 
@@ -110,6 +110,7 @@ public class DropdownUtils implements Serializable {
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken, serviceToken);
 		TableUtils tableUtils = new TableUtils(beUtils);
 		
+		log.info("calling getUserFilters");
 		List<EntityAttribute> filters = tableUtils.getUserFilters(serviceToken, searchBE);
 
 		if (!filters.isEmpty()) {
@@ -121,6 +122,8 @@ public class DropdownUtils implements Serializable {
 		} else {
 			log.info("User Filters are empty");
 		}
+
+		log.info("after calling getUserFilters" + searchBE);
 
 		// Check if present in cache
 		// TODO THESE CACHES NEED TO BE CLEARED UPON ANY ADDITIONS
