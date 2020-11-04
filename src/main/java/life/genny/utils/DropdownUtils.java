@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
