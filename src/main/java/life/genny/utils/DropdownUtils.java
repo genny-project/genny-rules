@@ -19,6 +19,9 @@ import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
+import life.genny.utils.TableUtils;
+import life.genny.utils.VertxUtils;
+import life.genny.utils.BaseEntityUtils;
 
 public class DropdownUtils implements Serializable {
 
@@ -102,6 +105,21 @@ public class DropdownUtils implements Serializable {
 			GennyToken serviceToken, Boolean sortByWeight) throws IOException {
 
 		String token = userToken.getToken();
+		
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken, serviceToken);
+		TableUtils tableUtils = new TableUtils(beUtils);
+		
+		List<EntityAttribute> filters = tableUtils.getUserFilters(serviceToken, searchBE);
+
+		if (!filters.isEmpty()) {
+			log.info("User Filters are NOT empty");
+			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
+			for (EntityAttribute filter : filters) {
+				searchBE.getBaseEntityAttributes().add(filter);
+			}
+		} else {
+			log.info("User Filters are empty");
+		}
 
 		// Check if present in cache
 		// TODO THESE CACHES NEED TO BE CLEARED UPON ANY ADDITIONS
