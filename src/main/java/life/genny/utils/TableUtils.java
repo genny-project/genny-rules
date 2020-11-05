@@ -408,10 +408,10 @@ public class TableUtils {
 		 */
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
-		SearchEntity searchEntity = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(),
+		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(),
 				SearchEntity.class, beUtils.getGennyToken().getToken());
 
-		return searchEntity;
+		return searchBE;
 	}
 
 	private SearchEntity processSearchString(Answer answer, final String searchBarCode, final String filterCode,
