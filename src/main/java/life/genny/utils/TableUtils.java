@@ -379,15 +379,12 @@ public class TableUtils {
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
+		/* update colIndex here, can remove if indexes work */		
+		/* if (searchBE != null) {
+			updateColIndex(searchBE);
+			updateActIndex(searchBE);
+		} */
 
-		return getSessionSearch(searchBE, filterCode, filterValue);
-	}
-
-	public SearchEntity getSessionSearch(final SearchEntity searchBE) {
-		return getSessionSearch(searchBE, null, null);
-	}
-
-	public SearchEntity getSessionSearch(final SearchEntity searchBE, final String filterCode, final String filterValue) {
 		String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
 		log.info("sessionSearchCode  ::  " + sessionSearchCode);
 
@@ -1375,8 +1372,8 @@ public class TableUtils {
 				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
 				searchBE, beUtils.getGennyToken().getToken());
 
-		        updateActIndex(searchBE);
-		        updateColIndex(searchBE);
+		        /* updateActIndex(searchBE);
+		        updateColIndex(searchBE); */
 
 				long s3time = System.currentTimeMillis();
 				
