@@ -389,11 +389,14 @@ public class TableUtils {
 	}
 
 	public SearchEntity getSessionSearch(final SearchEntity searchBE, final String filterCode, final String filterValue) {
-		String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
-		log.info("sessionSearchCode  ::  " + sessionSearchCode);
 
-		/* we need to set the searchBe's code to session Search Code */
-		searchBE.setCode(sessionSearchCode);
+		if (!searchBE.getCode().contains(beUtils.getGennyToken().getSessionCode().toUpperCase())) {
+			/* we need to set the searchBe's code to session Search Code */
+			String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
+			searchBE.setCode(sessionSearchCode);
+		}
+		log.info("sessionSearchCode  ::  " + searchBE.getCode());
+
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			ea.setBaseEntityCode(searchBE.getCode());
 			if (ea.getAttributeCode().startsWith("SBE_")) {
