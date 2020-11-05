@@ -375,9 +375,11 @@ public class TableUtils {
 				beUtils.getGennyToken().getToken());
 
 		/* update colIndex here, can remove if indexes work */
-		/*
-		 * if (searchBE != null) { updateColIndex(searchBE); updateActIndex(searchBE); }
-		 */
+
+		if (searchBE != null) {
+			updateColIndex(searchBE);
+			updateActIndex(searchBE);
+		}
 
 		String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
 		log.info("sessionSearchCode  ::  " + sessionSearchCode);
