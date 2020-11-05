@@ -222,7 +222,6 @@ public class TableUtils {
 				}
 			}
 		}
-		log.info("filters   ::   " + filters);
 		return filters;
 
 	}
@@ -408,10 +407,15 @@ public class TableUtils {
 		 */
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
-		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(),
+		SearchEntity searchEntity = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(),
 				SearchEntity.class, beUtils.getGennyToken().getToken());
 
-		return searchBE;
+		if(searchEntity != null){
+			searchEntity.setColIndex((double)searchBE.getColIndex());
+			searchEntity.setActionIndex((double)searchBE.getActionIndex());
+		}
+
+		return searchEntity;
 	}
 
 	private SearchEntity processSearchString(Answer answer, final String searchBarCode, final String filterCode,
