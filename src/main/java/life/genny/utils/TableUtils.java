@@ -377,7 +377,10 @@ public class TableUtils {
 
 		if (searchBE != null) {
 			updateColIndex(searchBE);
+			log.info("searchBE colIndex" + searchBE.getColIndex());
 			updateActIndex(searchBE);
+			log.info("searchBE actIndex" + searchBE.getActionIndex());
+
 		}
 
 		String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
@@ -413,6 +416,10 @@ public class TableUtils {
 		if(searchEntity != null){
 			searchEntity.setColIndex((double)searchBE.getColIndex());
 			searchEntity.setActionIndex((double)searchBE.getActionIndex());
+
+			log.info("searchEntity colIndex" + searchEntity.getColIndex());
+			log.info("searchEntity actIndex" + searchEntity.getActionIndex());
+
 		}
 
 		return searchEntity;
