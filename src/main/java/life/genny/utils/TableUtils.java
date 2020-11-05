@@ -223,7 +223,6 @@ public class TableUtils {
 				}
 			}
 		}
-		log.info("filters   ::   " + filters);
 		return filters;
 
 	}
