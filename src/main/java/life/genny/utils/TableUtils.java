@@ -1341,117 +1341,89 @@ public class TableUtils {
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, String filterCode,
 			String filterValue, Boolean replace) {
+		long starttime = System.currentTimeMillis();
+		try {
+			log.info("Starting searchTable for searchBE : " + searchBE.getCode() + " and cache=" + (cache ? "ON" : "OFF"));
+			/* get current search */
+			TableUtils tableUtils = new TableUtils(beUtils);
 
-				TableUtils tableUtils = new TableUtils(beUtils);
+			ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
+			CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
+
+			// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
+			SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
+
+			List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
+
+			QBulkMessage aggregatedMessages = new QBulkMessage();
+
+			long startProcessingTime = System.currentTimeMillis();
+			long totalProcessingTime;
+
+			if (GennySettings.useConcurrencyMsgs && false) { // TODO
+				log.info("Starting Concurrent Tasks");
+
+				for (Callable<QBulkMessage> callable : callables) {
+					service.submit(callable);
+				}
+				log.info("Concurrent Tasks Submitted");
 				try {
-					searchBE = tableUtils.getSessionSearch(searchBE, filterCode, filterValue);
-				} catch (Exception e1) {
-					// TODO Auto-generated catch block
-					return -1L;
-				}
-				
-				long starttime = System.currentTimeMillis();
-				
-				if (searchBE == null) {
-					System.out.println("SearchBE is null");
-					return -1L;
-				}
-				
-				/* get current search */
-				
-				long s2time = System.currentTimeMillis();
-				Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START", "0");
-				Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX", "1");
-				
-				searchBE = beUtils.updateBaseEntity(searchBE, pageAnswer, SearchEntity.class);
-				searchBE = beUtils.updateBaseEntity(searchBE, pageNumberAnswer, SearchEntity.class);
-				
-				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
-				beUtils.getGennyToken().getToken());
-				
-				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
-				searchBE, beUtils.getGennyToken().getToken());
+					Future<QBulkMessage> future = service.take();
+					QBulkMessage firstThreadResponse = future.get();
+					aggregatedMessages.add(firstThreadResponse);
+					totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 
-		        /* updateActIndex(searchBE);
-		        updateColIndex(searchBE); */
+					/*
+					 * assertTrue("First response should be from the fast thread",
+					 * "fast thread".equals(firstThreadResponse.getData_type()));
+					 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
+					 */
+					log.info("Thread finished after: " + totalProcessingTime + " milliseconds");
 
-				long s3time = System.currentTimeMillis();
-				
-				ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
-				CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
-				
-				// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
-		
-				List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
-		
-				QBulkMessage aggregatedMessages = new QBulkMessage();
-		
-				long startProcessingTime = System.currentTimeMillis();
-				long totalProcessingTime;
-		
-				if (GennySettings.useConcurrencyMsgs) {
-					System.out.println("useConcurrencyMsgs is enabled");
-		
-					for (Callable<QBulkMessage> callable : callables) {
-						service.submit(callable);
-					}
-					try {
-						Future<QBulkMessage> future = service.take();
-						QBulkMessage firstThreadResponse = future.get();
-						aggregatedMessages.add(firstThreadResponse);
-						totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
-		
-						/*
-						 * assertTrue("First response should be from the fast thread",
-						 * "fast thread".equals(firstThreadResponse.getData_type()));
-						 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
-						 */
-						System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
-		
-						future = service.take();
-						QBulkMessage secondThreadResponse = future.get();
-						aggregatedMessages.add(secondThreadResponse);
-						System.out.println("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
-					} catch (InterruptedException | ExecutionException e) {
-						e.printStackTrace();
-					}
-		
-					WORKER_THREAD_POOL.shutdown();
-					try {
-						if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
-							WORKER_THREAD_POOL.shutdownNow();
-						}
-					} catch (InterruptedException ex) {
+					future = service.take();
+					QBulkMessage secondThreadResponse = future.get();
+					aggregatedMessages.add(secondThreadResponse);
+					log.info("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
+				} catch (InterruptedException | ExecutionException e) {
+					e.printStackTrace();
+				}
+
+				WORKER_THREAD_POOL.shutdown();
+				try {
+					if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
 						WORKER_THREAD_POOL.shutdownNow();
-						Thread.currentThread().interrupt();
 					}
-				} else {
-					// aggregatedMessages.add(tfc.call());
-					aggregatedMessages.add(sc.call());
-		
+				} catch (InterruptedException ex) {
+					WORKER_THREAD_POOL.shutdownNow();
+					Thread.currentThread().interrupt();
 				}
-				totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
-				System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
-				aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
-		
-				if (cache) {
-					String json = JsonUtils.toJson(aggregatedMessages);
-					VertxUtils.writeMsg("webcmds", json);
-					// Now send the end_process msg
-					QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
-					msgend.setToken(beUtils.getGennyToken().getToken());
-					msgend.setSend(true);
-					VertxUtils.writeMsg("webcmds", msgend);
-		
-				}
-		
-				/* update(output); */
-				long endtime = System.currentTimeMillis();
-				// System.out.println("init setup took " + (s1time - starttime) + " ms");
-				// System.out.println("search session setup took " + (s2time - s1time) + " ms");
-				System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
-				return (endtime - starttime);
+			} else {
+				log.info("Starting Non Concurrent Tasks");
+				// aggregatedMessages.add(tfc.call());
+				aggregatedMessages.add(sc.call());
+
+			}
+			totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+			log.info("All threads finished after: " + totalProcessingTime + " milliseconds");
+			aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
+
+			if (cache) {
+				log.info("Cache is enabled ! Sending Qbulk message with QDataBaseEntityMessage and QDataAskMessage !!!");
+				String json = JsonUtils.toJson(aggregatedMessages);
+				VertxUtils.writeMsg("webcmds", json);
+				// Now send the end_process msg
+				QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
+				msgend.setToken(beUtils.getGennyToken().getToken());
+				msgend.setSend(true);
+				VertxUtils.writeMsg("webcmds", msgend);
+
+			}
+		} catch (ClassCastException e) {
+			log.error(e.getLocalizedMessage());
+		}
+		/* update(output); */
+		long endtime = System.currentTimeMillis();
+		return (endtime - starttime);
 	}
 
 	static public Tuple2<String, List<String>> getHql(GennyToken serviceToken, SearchEntity searchBE) {
