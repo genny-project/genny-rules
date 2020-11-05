@@ -380,25 +380,11 @@ public class TableUtils {
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
-<<<<<<< HEAD
 		/* update colIndex here, can remove if indexes work */		
 		if (searchBE != null) {
 			updateColIndex(searchBE);
 			updateActIndex(searchBE);
 		}
-=======
-
-		return getSessionSearch(searchBE, filterCode, filterValue);
-	}
-
-	public SearchEntity getSessionSearch(final SearchEntity searchBE) {
-		return getSessionSearch(searchBE, null, null);
-	}
-
-	public SearchEntity getSessionSearch(final SearchEntity searchBE, final String filterCode, final String filterValue) {
-		String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
-		log.info("sessionSearchCode  ::  " + sessionSearchCode);
->>>>>>> 76b3666... update index
 
 		/* we need to set the searchBe's code to session Search Code */
 		searchBE.setCode(sessionSearchCode);
@@ -427,23 +413,7 @@ public class TableUtils {
 		searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
 				beUtils.getGennyToken().getToken());
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 		return searchBE;
-=======
-		if (searchBE != null) {
-			updateColIndex(searchBE);
-			updateActIndex(searchBE);
-		}
-
-		if (searchEntity != null) {
-			searchEntity.setColIndex(searchBE.getColIndex());
-			searchEntity.setActionIndex(searchBE.getActionIndex());
-		}
-=======
->>>>>>> 9f4c0b6... Update fix
-		return searchEntity;
->>>>>>> 76b3666... update index
 	}
 
 	private SearchEntity processSearchString(Answer answer, final String searchBarCode, final String filterCode,
@@ -1514,80 +1484,10 @@ public class TableUtils {
 				} catch (InterruptedException | ExecutionException e) {
 					e.printStackTrace();
 				}
-<<<<<<< HEAD
 
 				WORKER_THREAD_POOL.shutdown();
 				try {
 					if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
-=======
-				
-				/* get current search */
-				
-				long s2time = System.currentTimeMillis();
-				Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START", "0");
-				Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX", "1");
-				
-				searchBE = beUtils.updateBaseEntity(searchBE, pageAnswer, SearchEntity.class);
-				searchBE = beUtils.updateBaseEntity(searchBE, pageNumberAnswer, SearchEntity.class);
-				
-				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
-				beUtils.getGennyToken().getToken());
-				
-				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
-				searchBE, beUtils.getGennyToken().getToken());
-
-		        updateActIndex(searchBE);
-		        updateColIndex(searchBE);
-
-				long s3time = System.currentTimeMillis();
-				
-				ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
-				CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
-				
-				// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
-		
-				List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
-		
-				QBulkMessage aggregatedMessages = new QBulkMessage();
-		
-				long startProcessingTime = System.currentTimeMillis();
-				long totalProcessingTime;
-		
-				if (GennySettings.useConcurrencyMsgs) {
-					System.out.println("useConcurrencyMsgs is enabled");
-		
-					for (Callable<QBulkMessage> callable : callables) {
-						service.submit(callable);
-					}
-					try {
-						Future<QBulkMessage> future = service.take();
-						QBulkMessage firstThreadResponse = future.get();
-						aggregatedMessages.add(firstThreadResponse);
-						totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
-		
-						/*
-						 * assertTrue("First response should be from the fast thread",
-						 * "fast thread".equals(firstThreadResponse.getData_type()));
-						 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
-						 */
-						System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
-		
-						future = service.take();
-						QBulkMessage secondThreadResponse = future.get();
-						aggregatedMessages.add(secondThreadResponse);
-						System.out.println("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
-					} catch (InterruptedException | ExecutionException e) {
-						e.printStackTrace();
-					}
-		
-					WORKER_THREAD_POOL.shutdown();
-					try {
-						if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
-							WORKER_THREAD_POOL.shutdownNow();
-						}
-					} catch (InterruptedException ex) {
->>>>>>> 77542ff... update index
 						WORKER_THREAD_POOL.shutdownNow();
 					}
 				} catch (InterruptedException ex) {
