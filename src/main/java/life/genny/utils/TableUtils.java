@@ -799,12 +799,23 @@ public class TableUtils {
 
 		Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX",
 				pageNumber + "");
+		Answer totalAnswer2 = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_TOTAL",
+				totalResults + "");
+
+		Answer pageNumberAnswer2 = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_INDEX",
+				pageNumber + "");
 
 		beUtils.addAnswer(totalAnswer);
 		beUtils.addAnswer(pageNumberAnswer);
 
 		beUtils.updateBaseEntity(searchBE, totalAnswer);
 		beUtils.updateBaseEntity(searchBE, pageNumberAnswer);
+
+		beUtils.addAnswer(totalAnswer2);
+		beUtils.addAnswer(pageNumberAnswer2);
+
+		beUtils.updateBaseEntity(searchBE, totalAnswer2);
+		beUtils.updateBaseEntity(searchBE, pageNumberAnswer2);
 
 		log.info("Search Results for " + searchBE.getCode() + " and user " + beUtils.getGennyToken().getUserCode()); // use
 		// QUE_TABLE_VIEW_TEST
