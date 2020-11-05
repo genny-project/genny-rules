@@ -187,7 +187,7 @@ public class TableUtils {
 		return ret;
 	}
 
-	private List<EntityAttribute> getUserFilters(GennyToken serviceToken, final SearchEntity searchBE) {
+	public List<EntityAttribute> getUserFilters(GennyToken serviceToken, final SearchEntity searchBE) {
 		List<EntityAttribute> filters = new ArrayList<EntityAttribute>();
 
 		Map<String, Object> facts = new ConcurrentHashMap<String, Object>();
@@ -223,7 +223,6 @@ public class TableUtils {
 				}
 			}
 		}
-		log.info("filters   ::   " + filters);
 		return filters;
 
 	}
