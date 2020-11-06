@@ -121,7 +121,7 @@ public class TableUtils {
 		log.info(
 				"Time taken to search Results from SearchBE =" + (endtime1 - starttime) + " ms with total=" + msg.getTotal());
 
-		msg.setReplace(replace);
+		msg.setReplace(true);
 
 		if (cache) {
 			/* Add baseentity msg after search is done */
