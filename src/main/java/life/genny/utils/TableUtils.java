@@ -293,6 +293,7 @@ public class TableUtils {
 				resultJson = new JsonObject(resultJsonStr);
 				JsonArray result = resultJson.getJsonArray("codes");
 				List<String> resultCodes = new ArrayList<String>();
+
 				BaseEntity[] beArray = new BaseEntity[result.size()];
 
 				for (int i = 0; i < result.size(); i++) {
@@ -1400,7 +1401,7 @@ public class TableUtils {
 				CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 				
 				// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
+				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, true);
 		
 				List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
 		
