@@ -121,7 +121,7 @@ public class TableUtils {
 		log.info(
 				"Time taken to search Results from SearchBE =" + (endtime1 - starttime) + " ms with total=" + msg.getTotal());
 
-		msg.setReplace(true);
+		msg.setReplace(replace);
 
 		if (cache) {
 			/* Add baseentity msg after search is done */
@@ -1401,7 +1401,7 @@ public class TableUtils {
 				CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 				
 				// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, true);
+				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
 		
 				List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
 		
