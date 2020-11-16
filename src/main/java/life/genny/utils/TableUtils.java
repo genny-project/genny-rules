@@ -121,7 +121,7 @@ public class TableUtils {
 		log.info(
 				"Time taken to search Results from SearchBE =" + (endtime1 - starttime) + " ms with total=" + msg.getTotal());
 
-		msg.setReplace(true);
+		msg.setReplace(replace);
 
 		if (cache) {
 			/* Add baseentity msg after search is done */
@@ -151,7 +151,7 @@ public class TableUtils {
 			ret.add(searchBeMsg);
 		} else {
 			searchBeMsg.setToken(beUtils.getGennyToken().getToken());
-			searchBeMsg.setReplace(true);
+			/* searchBeMsg.setReplace(true); */
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
 			// Now send the end_process msg
 			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
@@ -1378,7 +1378,7 @@ public class TableUtils {
 				/* get current search */
 				
 				long s2time = System.currentTimeMillis();
-				if (replace) { // user has clicked on fresh search
+			/* 	if (replace) { // user has clicked on fresh search
 				Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START", "0");
 				Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX", "1");
 				
@@ -1387,7 +1387,7 @@ public class TableUtils {
 				
 				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
-				}
+				} */
 				
 				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
 				searchBE, beUtils.getGennyToken().getToken());
@@ -1401,7 +1401,7 @@ public class TableUtils {
 				CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
 				
 				// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, true);
+				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
 		
 				List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
 		
