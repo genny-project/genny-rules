@@ -1039,7 +1039,7 @@ public class RulesLoader {
 		if (processIdBySessionId.isPresent()) {
 			processId = processIdBySessionId.get();
 			if (kieSession.getProcessInstance(processId) != null) {
-			    shouldProcessMsg = true;
+				shouldProcessMsg = true;
 				log.info("Find ProcessId:" + processId + " for session:" + session_state);
 			} else {
 				log.error(debugStr + ", ProcessID:" + processId + " can not find in current kieSession");
