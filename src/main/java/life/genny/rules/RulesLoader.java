@@ -1032,29 +1032,21 @@ public class RulesLoader {
 		Long processId = null;
 		String session_state = facts.getUserToken().getSessionCode();
 
-		log.info("Looking up ProcessId by session " + session_state);
 		boolean shouldProcessMsg = false;
 		Optional<Long> processIdBySessionId = getProcessIdBysessionId(serviceToken.getRealm(), session_state);
 
 		// process id must belongs to current KieSession
 		if (processIdBySessionId.isPresent()) {
 			processId = processIdBySessionId.get();
-			if (kieSession.getProcessInstance(processId) != null)
-			{
+			if (kieSession.getProcessInstance(processId) != null) {
 			    shouldProcessMsg = true;
+				log.info("Find ProcessId:" + processId + " for session:" + session_state);
 			} else {
 				log.error(debugStr + ", ProcessID:" + processId + " can not find in current kieSession");
 			}
 		}
 
 		if (shouldProcessMsg) {
-			processId = processIdBySessionId.get();
-//			while(processState != ProcessInstance.STATE_COMPLETED) {
-//				log.warn("Current process:" + processId + " not completed, state is:" + processState + ", wait 1 second.");
-//				processState = kieSession.getProcessInstance(processId).getState();
-//				TimeUnit.SECONDS.sleep(1);
-//			}
-
 			/* If the message is QEventMessage then send in to event channel */
 			if (facts.getMessage() instanceof QEventMessage) {
 				processQEventMessageEvent(facts, processId, kieSession);
@@ -1062,7 +1054,6 @@ public class RulesLoader {
 				/* If the message is data message then send in to data channel */
 				processQDataMessageEvent(facts, processId, kieSession);
 			}
-			log.info(debugStr + "Session state:" + session_state +  ", ProcessID:" + processId);
 		} else {
 			if (facts.getMessage() instanceof QEventMessage
 					&& ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
