@@ -35,6 +35,7 @@ import org.drools.compiler.compiler.DroolsParserException;
 import org.drools.compiler.lang.descr.AttributeDescr;
 import org.drools.compiler.lang.descr.RuleDescr;
 import org.drools.core.impl.EnvironmentFactory;
+import org.drools.core.spi.ConsequenceException;
 import org.jbpm.executor.ExecutorServiceFactory;
 import org.jbpm.executor.impl.ExecutorImpl;
 import org.jbpm.executor.impl.ExecutorServiceImpl;
@@ -138,6 +139,7 @@ import life.genny.rules.processor.RequestProcessor;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
 import life.genny.utils.FrameUtils2;
+import life.genny.utils.GennyRulesExceptionHandler;
 import life.genny.utils.NodeStatusQueryMapper;
 import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
@@ -1090,13 +1092,19 @@ public class RulesLoader {
 
 		if (processIdBySessionId.isPresent()) {
 			processId = processIdBySessionId.get();
-			processState = kieSession.getProcessInstance(processId).getState();
-			if (processInstanceStat != processState) {
-				log.info(debugStr + "Found ProcessInstanceState change, Session state:" + session_state
-						+  ", ProcessID:" + processId + ", current processState:"
-						+ processState + ", previous processState:" + processInstanceStat);
-				processInstanceStat = processState;
-			}
+			log.info("sendEventThroughUserSession: processId="+processId);
+//			try {
+//				processState = kieSession.getProcessInstance(processId).getState();
+//			} catch (Exception e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			if (processInstanceStat != processState) {
+//				log.info(debugStr + "Found ProcessInstanceState change, Session state:" + session_state
+//						+  ", ProcessID:" + processId + ", current processState:"
+//						+ processState + ", previous processState:" + processInstanceStat);
+//				processInstanceStat = processState;
+//			}
 
 //			while(processState != ProcessInstance.STATE_COMPLETED) {
 //				log.warn("Current process:" + processId + " not completed, state is:" + processState + ", wait 1 second.");
@@ -1112,7 +1120,7 @@ public class RulesLoader {
 				processQDataMessageEvent(facts, processId, kieSession);
 			}
 
-			log.info(debugStr + "Session state:" + session_state +  ", ProcessID:" + processId + ", current processState:" + processState);
+			log.info(debugStr + "Session state:" + session_state +  ", ProcessID:" + processId + ", current processState:"/* + processState*/);
 		} else {
 			if (facts.getMessage() instanceof QEventMessage
 					&& ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
@@ -1181,7 +1189,11 @@ public class RulesLoader {
 			tx.begin();
 			/* If userToken is not null then send the event through user Session */
 			if (facts.getUserToken() != null) {
+				try {
 				sendEventThroughUserSession(facts, kieSession);
+				} catch (ConsequenceException ce) {
+					log.error("sendEventThroughUserSession(facts, kieSession) ERROR "+ce.getInfo()+" "+ce.getMessage());
+				}
 			} else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
 				/* When usertoken is null */
 				/* Running init_project workflow */
