@@ -32,6 +32,10 @@ public class OutputParam implements Serializable,Comparable<Object> {
 	@Expose
 	private String suitCase = "DUMMY";
 	@Expose
+	private String luggage = "DUMMY";
+	@Expose
+	private String path = "DUMMY";
+	@Expose
 	private Long taskId = -1L;
 	@Expose
 	private List<Long> longList = new ArrayList<Long>();
@@ -50,6 +54,18 @@ public class OutputParam implements Serializable,Comparable<Object> {
 		this.typeOfResult = typeOfResult;
 		this.targetCode = targetCode;
 		this.suitCase = suitCase;
+		this.level = 0;
+	}
+	
+	
+	public OutputParam(final String typeOfResult, final String resultCode, final String targetCode, final String suitCase, final String luggage, String path)
+	{
+		this.resultCode = resultCode;
+		this.typeOfResult = typeOfResult;
+		this.targetCode = targetCode;
+		this.suitCase = suitCase;
+		this.luggage = luggage;
+		this.path = path;
 		this.level = 0;
 	}
 	
@@ -163,6 +179,29 @@ public class OutputParam implements Serializable,Comparable<Object> {
 	public void setSuitCase(String suitCase) {
 		this.suitCase = suitCase;
 	}
+	
+	public String getLuggage() {
+		return luggage;
+	}
+
+	/**
+	 * @param targetCode the targetCode to set
+	 */
+	public void setLuggage(String luggage) {
+		this.luggage = luggage;
+	}
+	
+	public String getPath() {
+		return path;
+	}
+
+	/**
+	 * @param targetCode the targetCode to set
+	 */
+	public void setPath(String path) {
+		this.path = path;
+	}
+
 
 //	public Object getResult() {
 //		return result;
