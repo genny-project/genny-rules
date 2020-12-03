@@ -68,6 +68,8 @@ public class SearchUtils {
 	public QDataBaseEntityMessage fetchSearchResults(SearchEntity searchBE, GennyToken gennyToken) {
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
 
+		log.error("This should be changed to use the search24");
+		
 		if (gennyToken == null) {
 			log.error("GENNY TOKEN IS NULL!!! in getSearchResults");
 			return msg;
