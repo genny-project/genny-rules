@@ -577,11 +577,16 @@ public class TaskUtils {
 			if (validAnswer) {
 				try {
 					Attribute attribute = RulesUtils.getAttribute(answer.getAttributeCode(), userToken.getToken());
-					answer.setAttribute(attribute);
-					if (answer.getInferred()) {
-						validInferredAnswers.add(answer);
+					if (attribute != null) {
+						answer.setAttribute(attribute);
+						if (answer.getInferred()) {
+							validInferredAnswers.add(answer);
+						} else {
+							newBe.addAnswer(answer);
+						}
 					} else {
-						newBe.addAnswer(answer);
+						log.error("Attribute " + answer.getAttributeCode() + " not in attributes table ");
+						continue;
 					}
 
 				} catch (BadDataException e) {
