@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -313,12 +314,20 @@ public class TableUtils {
 								calBe = calBe.substring(2, calBe.length()-2);
 							}
 							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
-							String linkedValue = associatedBe.getValueAsString(linkBeCode);
-							try {
-								be.addAnswer(new Answer(be.getCode(),be.getCode(),"CAL_"+attributeCode,linkedValue));
-							} catch (BadDataException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
+							if (associateEa.isPresent()) {
+								String linkedValue = associatedBe.getValueAsString(linkBeCode);
+								try {
+									Answer ans = new Answer(be.getCode(),be.getCode(),"CAL_"+attributeCode+"_"+linkBeCode,linkedValue);
+									Attribute att = associateEa.get().getAttribute();
+									att.setCode("CAL_"+attributeCode+"_"+linkBeCode);
+									ans.setAttribute(att);
+									be.addAnswer(ans);
+								
+								} catch (BadDataException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
 							}
 						}
 					}
