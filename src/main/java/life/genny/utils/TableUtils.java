@@ -246,7 +246,10 @@ public class TableUtils {
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE =" + (endtime1 - starttime) + " ms");
 
+		
 		String[] filterArray = data._2.toArray(new String[0]);
+		// Add the associated columns
+		
 
 		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
 			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
@@ -324,7 +327,7 @@ public class TableUtils {
 								try {
 									Answer ans = new Answer(be.getCode(),be.getCode(),calEA.getAttributeCode(),linkedValue);
 									Attribute att = associateEa.get().getAttribute();
-									att.setCode("COL__"+attributeCode+"__"+linkBeCode);
+									att.setCode("_"+attributeCode+"__"+linkBeCode);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
 								
