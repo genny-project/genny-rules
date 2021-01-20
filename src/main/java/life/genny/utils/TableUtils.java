@@ -239,7 +239,7 @@ public class TableUtils {
 		long starttime = System.currentTimeMillis();
 		long endtime2 = starttime;
 
-		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("CAL_");
+		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
 		
 		
 		Tuple2<String, List<String>> data = beUtils.getHql(searchBE);
@@ -306,11 +306,11 @@ public class TableUtils {
 					
 					// Get any CAL attributes 
 					for (EntityAttribute calEA : cals) {
-						String[] calFields = calEA.getAttributeCode().split("__"); // this separates the indirect lnk field from the end field
+						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this separates the indirect lnk field from the end field
 						if (calFields.length!=2) {
 							continue;
 						}
-						String attributeCode = calFields[0].substring("CAL_".length());
+						String attributeCode = calFields[0];
 						String calBe = be.getValueAsString(attributeCode);
 						String linkBeCode = calEA.getValueString();
 						if (!StringUtils.isBlank(calBe)) {
@@ -324,7 +324,7 @@ public class TableUtils {
 								try {
 									Answer ans = new Answer(be.getCode(),be.getCode(),calEA.getAttributeCode(),linkedValue);
 									Attribute att = associateEa.get().getAttribute();
-									att.setCode("CAL_"+attributeCode+"_"+linkBeCode);
+									att.setCode("COL__"+attributeCode+"__"+linkBeCode);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
 								
