@@ -305,16 +305,17 @@ public class TableUtils {
 					
 					// Get any CAL attributes 
 					for (EntityAttribute calEA : cals) {
-						String attributeCode = calEA.getAttributeCode();
+						String attributeCode = calEA.getAttributeCode().substring("CAL_".length());
+						String calBe = be.getValueAsString(attributeCode);
 						String linkBeCode = calEA.getValueString();
-						if (!StringUtils.isBlank(linkBeCode)) {
-							if (linkBeCode.startsWith("[")) {
-								linkBeCode = linkBeCode.substring(2, linkBeCode.length()-2);
+						if (!StringUtils.isBlank(calBe)) {
+							if (calBe.startsWith("[")) {
+								calBe = calBe.substring(2, calBe.length()-2);
 							}
-							BaseEntity associatedBe = beUtils.getBaseEntityByCode(linkBeCode);
-							String linkedValue = associatedBe.getValueAsString(attributeCode);
+							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
+							String linkedValue = associatedBe.getValueAsString(linkBeCode);
 							try {
-								be.addAnswer(new Answer(be.getCode(),be.getCode(),attributeCode+"_CAL",linkedValue));
+								be.addAnswer(new Answer(be.getCode(),be.getCode(),"CAL_"+attributeCode,linkedValue));
 							} catch (BadDataException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
