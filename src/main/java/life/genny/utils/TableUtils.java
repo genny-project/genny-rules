@@ -306,7 +306,11 @@ public class TableUtils {
 					
 					// Get any CAL attributes 
 					for (EntityAttribute calEA : cals) {
-						String attributeCode = calEA.getAttributeCode().substring("CAL_".length());
+						String[] calFields = calEA.getAttributeCode().split("__"); // this separates the indirect lnk field from the end field
+						if (calFields.length!=2) {
+							continue;
+						}
+						String attributeCode = calFields[0].substring("CAL_".length());
 						String calBe = be.getValueAsString(attributeCode);
 						String linkBeCode = calEA.getValueString();
 						if (!StringUtils.isBlank(calBe)) {
@@ -318,7 +322,7 @@ public class TableUtils {
 							if (associateEa.isPresent()) {
 								String linkedValue = associatedBe.getValueAsString(linkBeCode);
 								try {
-									Answer ans = new Answer(be.getCode(),be.getCode(),"CAL_"+attributeCode+"_"+linkBeCode,linkedValue);
+									Answer ans = new Answer(be.getCode(),be.getCode(),calEA.getAttributeCode(),linkedValue);
 									Attribute att = associateEa.get().getAttribute();
 									att.setCode("CAL_"+attributeCode+"_"+linkBeCode);
 									ans.setAttribute(att);
