@@ -1365,11 +1365,17 @@ public class TableUtils {
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBeCode, SearchEntity.class,
 		beUtils.getGennyToken().getToken());
 		
-		if (code.startsWith("CNS_")) {
-			searchBE.setCode(code);
-		}
+		if (searchBE != null) {
+				
+			if (code.startsWith("CNS_")) {
+				searchBE.setCode(code);
+			}
 
-		return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
+			return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
+		} else {
+			System.out.println("Could not fetch " + searchBeCode + " from cache!!!");
+			return -1L;
+		}
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache) {
