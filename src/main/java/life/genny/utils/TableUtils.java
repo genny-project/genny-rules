@@ -1560,30 +1560,8 @@ public class TableUtils {
 			System.out.println("Count = " + resultJsonStr);
 			Long total = Long.parseLong(resultJsonStr);
 
-			/* Create a new BaseEntity and add the count attribute */
-			BaseEntity countBE = new BaseEntity("CNS_" + searchBE.getCode().split("SBE_")[1], searchBE.getName());
-			Attribute attr = RulesUtils.getAttribute("PRI_COUNT_LONG", this.beUtils.getGennyToken().getToken());
-			EntityAttribute countAttr = new EntityAttribute();
-			countAttr.setAttribute(attr);
-			countAttr.setValue(total);
-			countBE.getBaseEntityAttributes().add(countAttr);
-
-			// Add a Name Attribute to the count BE
-			Attribute priName = RulesUtils.getAttribute("PRI_NAME", this.beUtils.getGennyToken().getToken());
-			EntityAttribute nameAttr = new EntityAttribute();
-			nameAttr.setAttribute(priName);
-			nameAttr.setValue(searchBE.getName());
-			countBE.getBaseEntityAttributes().add(nameAttr);
-			System.out.println("Packaging and sending Count and SBE");
-
 			// Add PRI_TOTAL_RESULTS to SBE too
 			updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", total + "");
-
-			/* Create a QMsg with the count BE */
-			QDataBaseEntityMessage countMsg = new QDataBaseEntityMessage(countBE);
-			countMsg.setToken(this.beUtils.getGennyToken().getToken());
-			countMsg.setReplace(true);
-			countMsg.setParentCode(searchBE.getCode());
 
 			/* Create a QMsg with the Search BE */
 			QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
@@ -1592,7 +1570,6 @@ public class TableUtils {
 
 			// Package them up together
 			QBulkMessage bulkMsg = new QBulkMessage();
-			bulkMsg.add(countMsg);
 			bulkMsg.add(searchMsg);
 			bulkMsg.setToken(this.beUtils.getGennyToken().getToken());
 
