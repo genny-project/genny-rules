@@ -1365,11 +1365,17 @@ public class TableUtils {
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBeCode, SearchEntity.class,
 		beUtils.getGennyToken().getToken());
 		
-		if (code.startsWith("CNS_")) {
-			searchBE.setCode(code);
-		}
+		if (searchBE != null) {
+				
+			if (code.startsWith("CNS_")) {
+				searchBE.setCode(code);
+			}
 
-		return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
+			return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
+		} else {
+			System.out.println("Could not fetch " + searchBeCode + " from cache!!!");
+			return -1L;
+		}
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache) {
@@ -1554,44 +1560,16 @@ public class TableUtils {
 			System.out.println("Count = " + resultJsonStr);
 			Long total = Long.parseLong(resultJsonStr);
 
-			/* Create a new BaseEntity and add the count attribute */
-			BaseEntity countBE = new BaseEntity("CNS_" + searchBE.getCode().split("SBE_")[1], searchBE.getName());
-			Attribute attr = RulesUtils.getAttribute("PRI_COUNT_LONG", this.beUtils.getGennyToken().getToken());
-			EntityAttribute countAttr = new EntityAttribute();
-			countAttr.setAttribute(attr);
-			countAttr.setValue(total);
-			countBE.getBaseEntityAttributes().add(countAttr);
-
-			// Add a Name Attribute to the count BE
-			Attribute priName = RulesUtils.getAttribute("PRI_NAME", this.beUtils.getGennyToken().getToken());
-			EntityAttribute nameAttr = new EntityAttribute();
-			nameAttr.setAttribute(priName);
-			nameAttr.setValue(searchBE.getName());
-			countBE.getBaseEntityAttributes().add(nameAttr);
-			System.out.println("Packaging and sending Count and SBE");
-
 			// Add PRI_TOTAL_RESULTS to SBE too
 			updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", total + "");
-
-			/* Create a QMsg with the count BE */
-			QDataBaseEntityMessage countMsg = new QDataBaseEntityMessage(countBE);
-			countMsg.setToken(this.beUtils.getGennyToken().getToken());
-			countMsg.setReplace(true);
-			countMsg.setParentCode(searchBE.getCode());
 
 			/* Create a QMsg with the Search BE */
 			QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
 			searchMsg.setToken(this.beUtils.getGennyToken().getToken());
 			searchMsg.setReplace(true);
 
-			// Package them up together
-			QBulkMessage bulkMsg = new QBulkMessage();
-			bulkMsg.add(countMsg);
-			bulkMsg.add(searchMsg);
-			bulkMsg.setToken(this.beUtils.getGennyToken().getToken());
-
 			// Send to frontend
-			String json = JsonUtils.toJson(bulkMsg);
+			String json = JsonUtils.toJson(searchMsg);
 			VertxUtils.writeMsg("webcmds", json);
 
 		} catch (Exception e) {
