@@ -1568,13 +1568,8 @@ public class TableUtils {
 			searchMsg.setToken(this.beUtils.getGennyToken().getToken());
 			searchMsg.setReplace(true);
 
-			// Package them up together
-			QBulkMessage bulkMsg = new QBulkMessage();
-			bulkMsg.add(searchMsg);
-			bulkMsg.setToken(this.beUtils.getGennyToken().getToken());
-
 			// Send to frontend
-			String json = JsonUtils.toJson(bulkMsg);
+			String json = JsonUtils.toJson(searchMsg);
 			VertxUtils.writeMsg("webcmds", json);
 
 		} catch (Exception e) {
