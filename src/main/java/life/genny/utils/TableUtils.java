@@ -260,9 +260,6 @@ public class TableUtils {
 					log.info("BE found with code " + be.getCode());
 					be = VertxUtils.privacyFilter(be, filterArray);
 					
-					
-						
-					
 					msg = new QDataBaseEntityMessage(be);
 					msg.setTotal(1L);
 
@@ -1357,13 +1354,28 @@ public class TableUtils {
 	static public long searchTable(BaseEntityUtils beUtils, String code, Boolean cache, String filterCode,
 			String filterValue, Boolean replace) {
 
-		String searchBeCode = "SBE_" + code;
+		String searchBeCode = code;
+		if (searchBeCode.startsWith("CNS_")) {
+			searchBeCode = searchBeCode.substring(4);
+		} else if (!searchBeCode.startsWith("SBE_")) {
+			searchBeCode = "SBE_" + searchBeCode;
+		}
 		System.out.println("SBE CODE   ::   " + searchBeCode);
 
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBeCode, SearchEntity.class,
 		beUtils.getGennyToken().getToken());
+		
+		if (searchBE != null) {
+				
+			if (code.startsWith("CNS_")) {
+				searchBE.setCode(code);
+			}
 
-		return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
+			return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
+		} else {
+			System.out.println("Could not fetch " + searchBeCode + " from cache!!!");
+			return -1L;
+		}
 	}
 
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache) {
@@ -1377,120 +1389,127 @@ public class TableUtils {
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, String filterCode,
 			String filterValue, Boolean replace) {
 
-				TableUtils tableUtils = new TableUtils(beUtils);
+		TableUtils tableUtils = new TableUtils(beUtils);
+
+		if (searchBE.getCode().startsWith("CNS_")) {
+			// Remove CNS_ prefix
+			searchBE.setCode(searchBE.getCode().substring(4));
+			// Perform Count
+			return tableUtils.performAndSendCount(searchBE);
+		} else {
+	
+			try {
+				searchBE = tableUtils.getSessionSearch(searchBE, filterCode, filterValue);
+			} catch (Exception e1) {
+				return -1L;
+			}
+			
+			long starttime = System.currentTimeMillis();
+			
+			if (searchBE == null) {
+				System.out.println("SearchBE is null");
+				return -1L;
+			}
+			
+			/* get current search */
+			long s2time = System.currentTimeMillis();
+		/* 	if (replace) { // user has clicked on fresh search
+			Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START", "0");
+			Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX", "1");
+			
+			searchBE = beUtils.updateBaseEntity(searchBE, pageAnswer, SearchEntity.class);
+			searchBE = beUtils.updateBaseEntity(searchBE, pageNumberAnswer, SearchEntity.class);
+			
+			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
+			beUtils.getGennyToken().getToken());
+			} */
+			
+			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
+			searchBE, beUtils.getGennyToken().getToken());
+
+			updateActIndex(searchBE);
+			updateColIndex(searchBE);
+
+			long s3time = System.currentTimeMillis();
+			
+			ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
+			CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
+			
+			// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
+			SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
+
+			List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
+
+			QBulkMessage aggregatedMessages = new QBulkMessage();
+
+			long startProcessingTime = System.currentTimeMillis();
+			long totalProcessingTime;
+
+			if (GennySettings.useConcurrencyMsgs) {
+				System.out.println("useConcurrencyMsgs is enabled");
+
+				for (Callable<QBulkMessage> callable : callables) {
+					service.submit(callable);
+				}
 				try {
-					searchBE = tableUtils.getSessionSearch(searchBE, filterCode, filterValue);
-				} catch (Exception e1) {
-					// TODO Auto-generated catch block
-					return -1L;
-				}
-				
-				long starttime = System.currentTimeMillis();
-				
-				if (searchBE == null) {
-					System.out.println("SearchBE is null");
-					return -1L;
-				}
-				
-				/* get current search */
-				
-				long s2time = System.currentTimeMillis();
-			/* 	if (replace) { // user has clicked on fresh search
-				Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START", "0");
-				Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX", "1");
-				
-				searchBE = beUtils.updateBaseEntity(searchBE, pageAnswer, SearchEntity.class);
-				searchBE = beUtils.updateBaseEntity(searchBE, pageNumberAnswer, SearchEntity.class);
-				
-				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
-				beUtils.getGennyToken().getToken());
-				} */
-				
-				VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
-				searchBE, beUtils.getGennyToken().getToken());
+					Future<QBulkMessage> future = service.take();
+					QBulkMessage firstThreadResponse = future.get();
+					aggregatedMessages.add(firstThreadResponse);
+					totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 
-		        updateActIndex(searchBE);
-		        updateColIndex(searchBE);
+					/*
+					 * assertTrue("First response should be from the fast thread",
+					 * "fast thread".equals(firstThreadResponse.getData_type()));
+					 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
+					 */
+					System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
 
-				long s3time = System.currentTimeMillis();
-				
-				ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
-				CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
-				
-				// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-				SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
-		
-				List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
-		
-				QBulkMessage aggregatedMessages = new QBulkMessage();
-		
-				long startProcessingTime = System.currentTimeMillis();
-				long totalProcessingTime;
-		
-				if (GennySettings.useConcurrencyMsgs) {
-					System.out.println("useConcurrencyMsgs is enabled");
-		
-					for (Callable<QBulkMessage> callable : callables) {
-						service.submit(callable);
-					}
-					try {
-						Future<QBulkMessage> future = service.take();
-						QBulkMessage firstThreadResponse = future.get();
-						aggregatedMessages.add(firstThreadResponse);
-						totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
-		
-						/*
-						 * assertTrue("First response should be from the fast thread",
-						 * "fast thread".equals(firstThreadResponse.getData_type()));
-						 * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
-						 */
-						System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
-		
-						future = service.take();
-						QBulkMessage secondThreadResponse = future.get();
-						aggregatedMessages.add(secondThreadResponse);
-						System.out.println("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
-					} catch (InterruptedException | ExecutionException e) {
-						e.printStackTrace();
-					}
-		
-					WORKER_THREAD_POOL.shutdown();
-					try {
-						if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
-							WORKER_THREAD_POOL.shutdownNow();
-						}
-					} catch (InterruptedException ex) {
+					future = service.take();
+					QBulkMessage secondThreadResponse = future.get();
+					aggregatedMessages.add(secondThreadResponse);
+					System.out.println("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
+				} catch (InterruptedException | ExecutionException e) {
+					e.printStackTrace();
+				}
+
+				WORKER_THREAD_POOL.shutdown();
+				try {
+					if (!WORKER_THREAD_POOL.awaitTermination(90, TimeUnit.SECONDS)) {
 						WORKER_THREAD_POOL.shutdownNow();
-						Thread.currentThread().interrupt();
 					}
-				} else {
-					// aggregatedMessages.add(tfc.call());
-					aggregatedMessages.add(sc.call());
-		
+				} catch (InterruptedException ex) {
+					WORKER_THREAD_POOL.shutdownNow();
+					Thread.currentThread().interrupt();
 				}
-				totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
-				System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
-				aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
-		
-				if (cache) {
-					String json = JsonUtils.toJson(aggregatedMessages);
-					VertxUtils.writeMsg("webcmds", json);
-					// Now send the end_process msg
-		
-				}
-				
-				QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
-				msgend.setToken(beUtils.getGennyToken().getToken());
-				msgend.setSend(true);
-				VertxUtils.writeMsg("webcmds", msgend);
+			} else {
+				// aggregatedMessages.add(tfc.call());
+				aggregatedMessages.add(sc.call());
 
-		
-				/* update(output); */
-				long endtime = System.currentTimeMillis();
-				// System.out.println("init setup took " + (s1time - starttime) + " ms");
-				// System.out.println("search session setup took " + (s2time - s1time) + " ms");
-				System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
-				return (endtime - starttime);
+			}
+			totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+			System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
+			aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
+
+			if (cache) {
+				String json = JsonUtils.toJson(aggregatedMessages);
+				VertxUtils.writeMsg("webcmds", json);
+				// Now send the end_process msg
+
+			}
+			
+			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
+			msgend.setToken(beUtils.getGennyToken().getToken());
+			msgend.setSend(true);
+			VertxUtils.writeMsg("webcmds", msgend);
+
+
+			/* update(output); */
+			long endtime = System.currentTimeMillis();
+			// System.out.println("init setup took " + (s1time - starttime) + " ms");
+			// System.out.println("search session setup took " + (s2time - s1time) + " ms");
+			System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
+			return (endtime - starttime);
+		}
 	}
 
 	static public Tuple2<String, List<String>> getHql(GennyToken serviceToken, SearchEntity searchBE) {
@@ -1498,9 +1517,25 @@ public class TableUtils {
 		return beUtils.getHql(searchBE);
 	}
 
-	public void performAndSendCount(GennyToken serviceToken, SearchEntity searchBE) {
+	public long performAndSendCount(String searchCode) {
 
-		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+		log.info("Fetching SearchBE " + searchCode + " from cache");
+
+		SearchEntity searchBE = VertxUtils.getObject(this.beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
+		beUtils.getGennyToken().getToken());
+
+		return performAndSendCount(searchBE);
+	}
+
+	public long performAndSendCount(SearchEntity searchBE) {
+
+		System.out.println("SBE CODE   ::   " + searchBE.getCode());
+		long startTime = System.currentTimeMillis();
+		// Add the sessionCode to the SBE code
+		searchBE = this.getSessionSearch(searchBE, null, null);
+
+		// Attach any extra filters from SearchFilters rulegroup
+		List<EntityAttribute> filters = getUserFilters(this.beUtils.getServiceToken(), searchBE);
 
 		if (!filters.isEmpty()) {
 			log.info("User Filters are NOT empty");
@@ -1512,42 +1547,39 @@ public class TableUtils {
 			log.info("User Filters are empty");
 		}
 
-		Tuple2<String, List<String>> data = beUtils.getHql(searchBE);
+		// Convert SBE to hql for searching the database
+		Tuple2<String, List<String>> data = this.beUtils.getHql(searchBE);
 		String hql = data._1;
 		String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
+		log.info("hql = " + hql);
 		try {
 			/* Hit the api for a count */
 			String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count24/" + hql2,
-					serviceToken.getToken(), 120);
+					this.beUtils.getServiceToken().getToken(), 120);
 
-			// JsonObject json = new JsonObject(resultJsonStr);
-			// Long total = json.getLong("total");
 			System.out.println("Count = " + resultJsonStr);
 			Long total = Long.parseLong(resultJsonStr);
 
-			/* Create a new BaseEntity and add the count attribute */
-			BaseEntity countBE = new BaseEntity("CNS_" + searchBE.getCode().split("SBE_")[1], searchBE.getName());
-			Attribute attr = RulesUtils.getAttribute("PRI_COUNT_LONG", this.beUtils.getGennyToken().getToken());
-			EntityAttribute countAttr = new EntityAttribute();
-			countAttr.setAttribute(attr);
-			countAttr.setValue(total);
-			countBE.getBaseEntityAttributes().add(countAttr);
+			// Add PRI_TOTAL_RESULTS to SBE too
+			updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", total + "");
 
-			Attribute priName = RulesUtils.getAttribute("PRI_NAME", this.beUtils.getGennyToken().getToken());
-			EntityAttribute nameAttr = new EntityAttribute();
-			nameAttr.setAttribute(priName);
-			nameAttr.setValue(searchBE.getName());
-			countBE.getBaseEntityAttributes().add(nameAttr);
+			/* Create a QMsg with the Search BE */
+			QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
+			searchMsg.setToken(this.beUtils.getGennyToken().getToken());
+			searchMsg.setReplace(true);
 
-			/* Create and Send a BE MSG using the count value BE */
-			QDataBaseEntityMessage countMsg = new QDataBaseEntityMessage(countBE);
-
-			countMsg.setToken(this.beUtils.getGennyToken().getToken());
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(countMsg));
+			// Send to frontend
+			String json = JsonUtils.toJson(searchMsg);
+			VertxUtils.writeMsg("webcmds", json);
 
 		} catch (Exception e) {
 			System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
 		}
+
+		long endTime = System.currentTimeMillis();
+		long totalTime = (endTime - startTime);
+		System.out.println("duration was " + totalTime + "ms");
+		return totalTime;
 	}
 
 	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils){
