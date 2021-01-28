@@ -38,77 +38,40 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 
     // extract parameters
     QBaseMSGMessageType messageType =
-        (QBaseMSGMessageType) workItem.getParameter("notificationSignal");
-    String templateCode = (String) workItem.getParameter("notificationTemplate");
-    String[] arrNotificationRecipient = {
-      (String) workItem.getParameter("arrNotificationRecipient")
+        (QBaseMSGMessageType) workItem.getParameter("notificationType");
+    String templateCode = (String) workItem.getParameter("templateID");
+    String[] notificationRecipientArray = {
+      (String) workItem.getParameter("notificationRecipientArray")
     };
     HashMap<String, String> contextMap =
-        (HashMap<String, String>) workItem.getParameter("templateMap");
+        (HashMap<String, String>) workItem.getParameter("templateData");
     GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
 
-    log.info("notificationSignal = " + messageType);
-    log.info("notificationTemplate = " + templateCode);
-    log.info("arrNotificationRecipient = " + arrNotificationRecipient[0]);
-    log.info("templateMap = " + contextMap);
+    log.info("notificationType = " + messageType);
+    log.info("templateID = " + templateCode);
+    log.info("notificationRecipientArray = " + arrNotificationRecipient[0]);
+    log.info("templateData = " + contextMap);
     log.info("userToken = " + userToken);
 
     String recipientEmail = null;
     String recipientSms = null;
 
-    /*
-     *
-     * SEND EMAIL
-     *
-     */
     if (messageType.toString() == "EMAIL") {
-      EmailHelper emailHelper = new EmailHelper();
-      String emailBody =
-          emailHelper.prepareMessageBody(
-              arrNotificationRecipient, contextMap, templateCode, messageType, userToken);
 
-      try {
-        recipientEmail =
-            emailHelper.resolveRecipient(arrNotificationRecipient, contextMap, userToken);
-      } catch (Exception e) { // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-      /*
-       * This function sends the email to recipient mailbox,
-       * sending message to user such as cmds, webcmds, message
-       */
+		for (String recipientEmail : notificationRecipientArray) {
+			log.info("Sending EMAIL to " + recipientEmail);
+			EmailHelper.sendGrid(beUtils, recipientEmail, "", template_id, templateData);
+		}
 
-      try {
-        emailHelper.deliverEmailMsg("c.pyke85@gmail.com"/*recipientEmail*/, emailBody);
-      } catch (AddressException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      } catch (MessagingException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-    }
+    } else if (messageType.toString() == "SMS") {
+		
+		SmsHelper smsHelper = new SmsHelper();
+		String smsBody = templateData.get("smsBody");
+		for (String recipientSms : notificationRecipientArray) {
+			log.info("Sending SMS to " + recipientSms);
+			smsHelper.deliverSmsMsg(recipientSms, smsBody);
+		}
 
-    /*
-     *
-     * SEND SMS
-     *
-     */
-    if (messageType.toString() == "SMS") {
-      SmsHelper smsHelper = new SmsHelper();
-      String smsBody =
-          smsHelper.prepareMessageBody(
-              arrNotificationRecipient, contextMap, templateCode, messageType, userToken);
-
-      try {
-        recipientSms = smsHelper.resolveRecipient(arrNotificationRecipient, contextMap, userToken);
-      } catch (Exception e1) { // TODO Auto-generated catch block
-        e1.printStackTrace();
-      }
-
-      // This will send a SMS to the user
-      recipientSms = "+61433501177";
-      smsHelper.deliverSmsMsg(recipientSms, smsBody);
     }
     // notify manager that work item has been completed
     manager.completeWorkItem(workItem.getId(), null);
