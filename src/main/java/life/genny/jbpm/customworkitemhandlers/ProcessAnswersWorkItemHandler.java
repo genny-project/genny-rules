@@ -427,7 +427,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				results.put("serviceToken",
 						serviceToken); /* save the latest userToken that actually completes the form */
 				results.put("submitCode", submitCode); /* save the quesiton code of the submit button */
-				System.out.println("&&&&&&&&&&&&&&&& SubmitCode = " + results.get("submitCode"));
+				System.out.println("submitCode = " + results.get("submitCode"));
 
 				Boolean mandatorysAllDone = mandatoryDoneMap.get(taskSummary.getId());
 				if (Boolean.TRUE.equals(mandatorysAllDone)) {
