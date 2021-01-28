@@ -913,13 +913,10 @@ public class RulesLoader {
 		}
 
 		// HACK!!
-		if (msg_code.equals("QUE_SUBMIT")) {
+		if (msg_code.startsWith("QUE_SUBMIT")) {
 
 			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), facts.getUserToken().getUserCode(),
-					"PRI_SUBMIT", "QUE_SUBMIT");
-//									String ad = "{\"street_number\":\"63\",\"street_name\":\"Fakenham Road\",\"suburb\":\"Ashburton\",\"state\":\"Victoria\",\"country\":\"AU\",\"postal_code\":\"3147\",\"full_address\":\"64 Fakenham Rd, Ashburton VIC 3147, Australia\",\"latitude\":-37.863208,\"longitude\":145.092359,\"street_address\":\"64 Fakenham Road\"}";
-//									dataAnswer = new Answer(facts.getUserToken().getUserCode(),
-//											facts.getUserToken().getUserCode(), "PRI_ADDRESS_JSON", ad);
+					"PRI_SUBMIT", msg_code);
 			dataAnswer.setChangeEvent(false);
 			QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
 			SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(), facts.getUserToken(), dataMsg);
