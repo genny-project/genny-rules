@@ -188,6 +188,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		Map<String, Answer> answerMap = new ConcurrentHashMap<>();
 		answerMap.putAll(answerMap2); // working
 		Boolean submitDetected = submitDetected(answerMap2); // check if the submit button detected
+		String submitCode = getSubmitCode(answerMap2); // check if the submit button detected
 
 		/* resultMap is used to map the result Value to the output parameters */
 		Map<TaskSummary, ConcurrentHashMap<String, Object>> taskAskMap = new ConcurrentHashMap<>();
@@ -425,6 +426,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				results.put("userToken", userToken); /* save the latest userToken that actually completes the form */
 				results.put("serviceToken",
 						serviceToken); /* save the latest userToken that actually completes the form */
+				results.put("submitCode", submitCode); /* save the quesiton code of the submit button */
+				System.out.println("submitCode = " + results.get("submitCode"));
 
 				Boolean mandatorysAllDone = mandatoryDoneMap.get(taskSummary.getId());
 				if (Boolean.TRUE.equals(mandatorysAllDone)) {
@@ -592,6 +595,16 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 		}
 		return false;
+
+	}
+
+	private String getSubmitCode(Map<String, Answer> answerMap) {
+		for (Answer answer : answerMap.values()) {
+			if ("PRI_SUBMIT".equals(answer.getAttributeCode())) {
+				return answer.getValue();
+			}
+		}
+		return null;
 
 	}
 
