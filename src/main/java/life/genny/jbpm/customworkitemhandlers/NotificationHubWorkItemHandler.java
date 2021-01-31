@@ -2,6 +2,8 @@ package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
@@ -66,13 +68,16 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
     log.info("templateData = " + templateData);
     log.info("userToken = " + userToken);
 
+	List<String> ccList = Arrays.asList(ccArray);
+	List<String> bccList = Arrays.asList(bccArray);
+
 	try {
 			
 		if (messageType.toString() == "EMAIL") {
 
 			for (String recipientEmail : notificationRecipientArray) {
 				log.info("Sending EMAIL to " + recipientEmail);
-				EmailHelper.sendGrid(beUtils, recipientEmail, ccArray, bccArray, "", template_id, templateData);
+				EmailHelper.sendGrid(beUtils, recipientEmail, ccList, bccList, "", template_id, templateData);
 			}
 
 		} else if (messageType.toString() == "SMS") {
