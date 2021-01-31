@@ -46,6 +46,12 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
     String[] notificationRecipientArray = {
       (String) workItem.getParameter("notificationRecipientArray")
     };
+    String[] ccArray = {
+      (String) workItem.getParameter("ccArray")
+    };
+    String[] bccArray = {
+      (String) workItem.getParameter("bccArray")
+    };
     HashMap<String, String> templateData =
         (HashMap<String, String>) workItem.getParameter("templateData");
     GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
@@ -54,7 +60,9 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 
     log.info("notificationType = " + messageType);
     log.info("templateID = " + template_id);
-    log.info("notificationRecipientArray = " + notificationRecipientArray[0]);
+    log.info("notificationRecipientArray = " + notificationRecipientArray.toString());
+    log.info("ccArray = " + ccArray.toString());
+    log.info("bccArray = " + bccArray.toString());
     log.info("templateData = " + templateData);
     log.info("userToken = " + userToken);
 
@@ -64,7 +72,7 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 
 			for (String recipientEmail : notificationRecipientArray) {
 				log.info("Sending EMAIL to " + recipientEmail);
-				EmailHelper.sendGrid(beUtils, recipientEmail, "", template_id, templateData);
+				EmailHelper.sendGrid(beUtils, recipientEmail, ccArray, bccArray, "", template_id, templateData);
 			}
 
 		} else if (messageType.toString() == "SMS") {
