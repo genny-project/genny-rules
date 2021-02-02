@@ -275,11 +275,21 @@ public class TableUtils {
 							}
 							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
-							if (associateEa.isPresent()) {
-								String linkedValue = associatedBe.getValueAsString(linkBeCode);
+							if (associateEa.isPresent()||("PRI_NAME".equals(linkBeCode))) {
+								String linkedValue = null;
+								if ("PRI_NAME".equals(linkBeCode)) {
+									linkedValue = associatedBe.getName();
+								} else {
+									linkedValue = associatedBe.getValueAsString(linkBeCode);
+								}
 								try {
 									Answer ans = new Answer(be.getCode(),be.getCode(),calEA.getAttributeCode(),linkedValue);
-									Attribute att = associateEa.get().getAttribute();
+									Attribute att = null;
+									if ("PRI_NAME".equals(linkBeCode)) {
+										att = RulesUtils.getAttribute(calEA.getAttributeCode(), serviceToken);
+									} else {
+										att = associateEa.get().getAttribute();
+									}
 									att.setCode("_"+attributeCode+"__"+linkBeCode);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
