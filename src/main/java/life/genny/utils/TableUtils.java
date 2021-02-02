@@ -260,6 +260,38 @@ public class TableUtils {
 					log.info("BE found with code " + be.getCode());
 					be = VertxUtils.privacyFilter(be, filterArray);
 					
+					// Get any CAL attributes 
+					for (EntityAttribute calEA : cals) {
+						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this separates the indirect lnk field from the end field
+						if (calFields.length!=2) {
+							continue;
+						}
+						String attributeCode = calFields[0];
+						String calBe = be.getValueAsString(attributeCode);
+						String linkBeCode = calEA.getValueString();
+						if (!StringUtils.isBlank(calBe)) {
+							if (calBe.startsWith("[")) {
+								calBe = calBe.substring(2, calBe.length()-2);
+							}
+							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
+							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
+							if (associateEa.isPresent()) {
+								String linkedValue = associatedBe.getValueAsString(linkBeCode);
+								try {
+									Answer ans = new Answer(be.getCode(),be.getCode(),calEA.getAttributeCode(),linkedValue);
+									Attribute att = associateEa.get().getAttribute();
+									att.setCode("_"+attributeCode+"__"+linkBeCode);
+									ans.setAttribute(att);
+									be.addAnswer(ans);
+								
+								} catch (BadDataException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+							}
+						}
+					}
+					
 					msg = new QDataBaseEntityMessage(be);
 					msg.setTotal(1L);
 
