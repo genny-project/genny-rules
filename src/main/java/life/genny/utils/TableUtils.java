@@ -286,7 +286,10 @@ public class TableUtils {
 									Answer ans = new Answer(be.getCode(),be.getCode(),calEA.getAttributeCode(),linkedValue);
 									Attribute att = null;
 									if ("PRI_NAME".equals(linkBeCode)) {
-										att = RulesUtils.getAttribute(calEA.getAttributeCode(), serviceToken);
+										att = RulesUtils.getAttribute("PRI_NAME", serviceToken);
+										if (att == null) {
+											att = associateEa.get().getAttribute();
+										}
 									} else {
 										att = associateEa.get().getAttribute();
 									}
