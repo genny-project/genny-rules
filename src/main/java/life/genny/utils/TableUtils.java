@@ -133,9 +133,21 @@ public class TableUtils {
 		}
 		long endtime2 = System.currentTimeMillis();
 		log.info("Time taken to send Results =" + (endtime2 - endtime1) + " ms");
+		
+		Long totalResultCount = msg.getTotal();
+		if (searchBE.getCode().startsWith("SBE_SUMMARY_INTERNS")) {
+			Long result = performCount("SBE_COUNT_PLACED_INTERNS");
+			if (result != null) {
+				totalResultCount += result;
+			}
+			result = performCount("SBE_COUNT_PROGRESS_INTERNS");
+			if (result != null) {
+				totalResultCount += result;
+			}
+		}
 
 		/* publishing the searchBE to frontEnd */
-		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", (msg.getTotal()) + ""); // if result
+		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", totalResultCount + ""); // if result
 		long endtime3 = System.currentTimeMillis();
 		log.info("Time taken to updateBE =" + (endtime3 - endtime2) + " ms");
 
@@ -1605,6 +1617,13 @@ public class TableUtils {
 			System.out.println("Count = " + resultJsonStr);
 			Long total = Long.parseLong(resultJsonStr);
 
+			if (searchBE.getCode().startsWith("SBE_COUNT_TOTAL_INTERNS")) {
+				Long result = performCount("SBE_COUNT_PLACED_INTERNS");
+				if (result != null) {
+					total += result;
+				}
+			}
+
 			// Add PRI_TOTAL_RESULTS to SBE too
 			updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", total + "");
 
@@ -1625,6 +1644,54 @@ public class TableUtils {
 		long totalTime = (endTime - startTime);
 		System.out.println("duration was " + totalTime + "ms");
 		return totalTime;
+	}
+
+	public Long performCount(String searchCode) {
+
+		log.info("Fetching SearchBE " + searchCode + " from cache");
+
+		SearchEntity searchBE = VertxUtils.getObject(this.beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
+		beUtils.getGennyToken().getToken());
+
+		return performCount(searchBE);
+	}
+
+	public Long performCount(SearchEntity searchBE) {
+
+		System.out.println("SBE CODE   ::   " + searchBE.getCode());
+		long startTime = System.currentTimeMillis();
+
+		// Attach any extra filters from SearchFilters rulegroup
+		List<EntityAttribute> filters = getUserFilters(this.beUtils.getServiceToken(), searchBE);
+
+		if (!filters.isEmpty()) {
+			log.info("User Filters are NOT empty");
+			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
+			for (EntityAttribute filter : filters) {
+				searchBE.getBaseEntityAttributes().add(filter);
+			}
+		} else {
+			log.info("User Filters are empty");
+		}
+		Long total = null;
+
+		// Convert SBE to hql for searching the database
+		Tuple2<String, List<String>> data = this.beUtils.getHql(searchBE);
+		String hql = data._1;
+		String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
+		log.info("hql = " + hql);
+		try {
+			/* Hit the api for a count */
+			String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count24/" + hql2,
+					this.beUtils.getServiceToken().getToken(), 120);
+
+			System.out.println("Count = " + resultJsonStr);
+			total = Long.parseLong(resultJsonStr);
+
+		} catch (Exception e) {
+			System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
+		}
+		return total;
 	}
 
 	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils){
