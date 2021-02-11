@@ -1591,54 +1591,19 @@ public class TableUtils {
 		// Add the sessionCode to the SBE code
 		searchBE = this.getSessionSearch(searchBE, null, null);
 
-		// Attach any extra filters from SearchFilters rulegroup
-		List<EntityAttribute> filters = getUserFilters(this.beUtils.getServiceToken(), searchBE);
+		Long total = performCount(searchBE);
 
-		if (!filters.isEmpty()) {
-			log.info("User Filters are NOT empty");
-			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
-			for (EntityAttribute filter : filters) {
-				searchBE.getBaseEntityAttributes().add(filter);
-			}
-		} else {
-			log.info("User Filters are empty");
-		}
+		// Add PRI_TOTAL_RESULTS to SBE too
+		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", total + "");
 
-		// Convert SBE to hql for searching the database
-		Tuple2<String, List<String>> data = this.beUtils.getHql(searchBE);
-		String hql = data._1;
-		String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
-		log.info("hql = " + hql);
-		try {
-			/* Hit the api for a count */
-			String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count24/" + hql2,
-					this.beUtils.getServiceToken().getToken(), 120);
+		/* Create a QMsg with the Search BE */
+		QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
+		searchMsg.setToken(this.beUtils.getGennyToken().getToken());
+		searchMsg.setReplace(true);
 
-			System.out.println("Count = " + resultJsonStr);
-			Long total = Long.parseLong(resultJsonStr);
-
-			if (searchBE.getCode().startsWith("SBE_COUNT_TOTAL_INTERNS")) {
-				Long result = performCount("SBE_COUNT_PLACED_INTERNS");
-				if (result != null) {
-					total += result;
-				}
-			}
-
-			// Add PRI_TOTAL_RESULTS to SBE too
-			updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", total + "");
-
-			/* Create a QMsg with the Search BE */
-			QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
-			searchMsg.setToken(this.beUtils.getGennyToken().getToken());
-			searchMsg.setReplace(true);
-
-			// Send to frontend
-			String json = JsonUtils.toJson(searchMsg);
-			VertxUtils.writeMsg("webcmds", json);
-
-		} catch (Exception e) {
-			System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
-		}
+		// Send to frontend
+		String json = JsonUtils.toJson(searchMsg);
+		VertxUtils.writeMsg("webcmds", json);
 
 		long endTime = System.currentTimeMillis();
 		long totalTime = (endTime - startTime);
@@ -1690,6 +1655,19 @@ public class TableUtils {
 
 		} catch (Exception e) {
 			System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
+		}
+
+		// Perform count for any combined search attributes
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("CMB_")) {
+				String combinedSearchCode = ea.getAttributeCode().substring("CMB_".length());
+				Long subTotal = performCount(combinedSearchCode);
+				if (subTotal != null) {
+					total += subTotal;
+				} else {
+					log.info("subTotal count for " + combinedSearchCode + " is NULL");
+				}
+			}
 		}
 		return total;
 	}
