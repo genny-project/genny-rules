@@ -352,7 +352,7 @@ public class TableUtils {
 				JsonArray result = resultJson.getJsonArray("codes");
 				List<String> resultCodes = new ArrayList<String>();
 
-				BaseEntity[] beArray = new BaseEntity[result.size()];
+				List<BaseEntity> beArray = new ArrayList<BaseEntity>();
 
 				for (int i = 0; i < result.size(); i++) {
 					String code = result.getString(i);
@@ -393,11 +393,37 @@ public class TableUtils {
 						}
 					}
 					be.setIndex(i);
-					beArray[i] = be;
+					beArray.add(be);
+				}
+
+				msg = new QDataBaseEntityMessage(beArray);
+
+				// Here we will perform count for any combined search attributes
+				// and add the results to the msg.
+				for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+					if (ea.getAttributeCode().startsWith("CMB_")) {
+						// Grab the search from the cache
+						String combinedSearchCode = ea.getAttributeCode().substring("CMB_".length());
+						SearchEntity subSearchBE = VertxUtils.getObject(this.beUtils.getGennyToken().getRealm(), "", combinedSearchCode, SearchEntity.class,
+						beUtils.getGennyToken().getToken());
+						if (subSearchBE != null) {
+							// Perform search for combined SBE
+							QDataBaseEntityMessage subSearchMsg = new QDataBaseEntityMessage;
+							subSearchMsg = searchUsingHql(serviceToken, subSearchBE, msg);
+							// Set index for each item and add to msg
+							for (int i = 0; i < subSearchMsg.getItems().length; i++) {
+								BaseEntity entity = msg.getItems()[i];
+								entity.setIndex(msg.getItems().length+i);
+								msg.add(entity);
+							}
+						} else {
+							log.info("SearchBE with code " + combinedSearchCode + " is not in cache");
+						}
+					}
 				}
 				
-				msg = new QDataBaseEntityMessage(beArray);
-				Long total = resultJson.getLong("total");
+				// Long total = resultJson.getLong("total");
+				Long total = Long.valueOf(msg.getItems().length);
 				msg.setTotal(total);
 				msg.setReplace(true);
 				msg.setParentCode(searchBE.getCode());
@@ -421,6 +447,8 @@ public class TableUtils {
 
 		return msg;
 	}
+
+
 
 	private static void updateColIndex(SearchEntity searchBE ) {
 		Integer index = 1;
