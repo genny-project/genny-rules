@@ -135,16 +135,6 @@ public class TableUtils {
 		log.info("Time taken to send Results =" + (endtime2 - endtime1) + " ms");
 		
 		Long totalResultCount = msg.getTotal();
-		if (searchBE.getCode().startsWith("SBE_SUMMARY_INTERNS")) {
-			Long result = performCount("SBE_COUNT_PLACED_INTERNS");
-			if (result != null) {
-				totalResultCount += result;
-			}
-			result = performCount("SBE_COUNT_PROGRESS_INTERNS");
-			if (result != null) {
-				totalResultCount += result;
-			}
-		}
 
 		/* publishing the searchBE to frontEnd */
 		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", totalResultCount + ""); // if result
