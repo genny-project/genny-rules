@@ -370,6 +370,7 @@ public class ShowFrame implements WorkItemHandler {
 					/* recursively check validations */
 					checkAskValidation(aask, callingWorkflow);
 					TaskUtils.enableAttribute("PRI_SUBMIT",aask, callingWorkflow,enabledSubmit);
+					aask.setId(output.getTaskId());
 				}
 				askMsg.setToken(userToken.getToken());
 
