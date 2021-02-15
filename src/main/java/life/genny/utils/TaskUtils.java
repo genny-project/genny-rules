@@ -78,7 +78,7 @@ public class TaskUtils {
 		String userCode = userToken.getUserCode();
 		List<TaskSummary> tasks = RulesLoader.taskServiceMap.get(userToken.getSessionCode())
 				.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
-		log.info("Tasks=" + tasks);
+		log.info("Tasks=" + tasks.size()+ " for user "+userToken.getUsername());
 		return tasks;
 	}
 
