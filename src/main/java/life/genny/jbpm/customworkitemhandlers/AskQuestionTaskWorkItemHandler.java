@@ -485,7 +485,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			beType = baseEntityTarget.getValueAsString("PRI_STATUS");
 			if (!StringUtils.isBlank(beType)) {
 				// will be only one
-				if (beType.contains("PENDING")) {
+				if (beType.contains("PENDING_")) {
 					String attributeCode = beType.substring("PENDING_".length());
 					attributeCode = attributeCode.replaceAll("_", " ");
 					beType = StringUtils.capitalize(attributeCode.toLowerCase());
