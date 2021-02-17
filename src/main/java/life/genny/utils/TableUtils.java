@@ -1579,6 +1579,41 @@ public class TableUtils {
 		// Add the sessionCode to the SBE code
 		searchBE = this.getSessionSearch(searchBE, null, null);
 
+		Long total = performCount(searchBE);
+
+		// Add PRI_TOTAL_RESULTS to SBE too
+		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", total + "");
+
+		/* Create a QMsg with the Search BE */
+		QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
+		searchMsg.setToken(this.beUtils.getGennyToken().getToken());
+		searchMsg.setReplace(true);
+
+		// Send to frontend
+		String json = JsonUtils.toJson(searchMsg);
+		VertxUtils.writeMsg("webcmds", json);
+
+		long endTime = System.currentTimeMillis();
+		long totalTime = (endTime - startTime);
+		System.out.println("duration was " + totalTime + "ms");
+		return totalTime;
+	}
+
+	public Long performCount(String searchCode) {
+
+		log.info("Fetching SearchBE " + searchCode + " from cache");
+
+		SearchEntity searchBE = VertxUtils.getObject(this.beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
+		beUtils.getGennyToken().getToken());
+
+		return performCount(searchBE);
+	}
+
+	public Long performCount(SearchEntity searchBE) {
+
+		System.out.println("SBE CODE   ::   " + searchBE.getCode());
+		long startTime = System.currentTimeMillis();
+
 		// Attach any extra filters from SearchFilters rulegroup
 		List<EntityAttribute> filters = getUserFilters(this.beUtils.getServiceToken(), searchBE);
 
@@ -1591,6 +1626,7 @@ public class TableUtils {
 		} else {
 			log.info("User Filters are empty");
 		}
+		Long total = null;
 
 		// Convert SBE to hql for searching the database
 		Tuple2<String, List<String>> data = this.beUtils.getHql(searchBE);
@@ -1603,28 +1639,25 @@ public class TableUtils {
 					this.beUtils.getServiceToken().getToken(), 120);
 
 			System.out.println("Count = " + resultJsonStr);
-			Long total = Long.parseLong(resultJsonStr);
-
-			// Add PRI_TOTAL_RESULTS to SBE too
-			updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", total + "");
-
-			/* Create a QMsg with the Search BE */
-			QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
-			searchMsg.setToken(this.beUtils.getGennyToken().getToken());
-			searchMsg.setReplace(true);
-
-			// Send to frontend
-			String json = JsonUtils.toJson(searchMsg);
-			VertxUtils.writeMsg("webcmds", json);
+			total = Long.parseLong(resultJsonStr);
 
 		} catch (Exception e) {
 			System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
 		}
 
-		long endTime = System.currentTimeMillis();
-		long totalTime = (endTime - startTime);
-		System.out.println("duration was " + totalTime + "ms");
-		return totalTime;
+		// Perform count for any combined search attributes
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("CMB_")) {
+				String combinedSearchCode = ea.getAttributeCode().substring("CMB_".length());
+				Long subTotal = performCount(combinedSearchCode);
+				if (subTotal != null) {
+					total += subTotal;
+				} else {
+					log.info("subTotal count for " + combinedSearchCode + " is NULL");
+				}
+			}
+		}
+		return total;
 	}
 
 	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils){
@@ -1640,4 +1673,3 @@ public class TableUtils {
 		VertxUtils.writeMsg("webcmds",msg);
 }
 }
-
