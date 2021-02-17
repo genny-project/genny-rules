@@ -133,9 +133,23 @@ public class TableUtils {
 		}
 		long endtime2 = System.currentTimeMillis();
 		log.info("Time taken to send Results =" + (endtime2 - endtime1) + " ms");
+		
+		Long totalResultCount = msg.getTotal();
+		// Perform count for any combined search attributes
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("CMB_")) {
+				String combinedSearchCode = ea.getAttributeCode().substring("CMB_".length());
+				Long subTotal = performCount(combinedSearchCode);
+				if (subTotal != null) {
+					totalResultCount += subTotal;
+				} else {
+					log.info("subTotal count for " + combinedSearchCode + " is NULL");
+				}
+			}
+		}
 
 		/* publishing the searchBE to frontEnd */
-		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", (msg.getTotal()) + ""); // if result
+		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", totalResultCount + ""); // if result
 		long endtime3 = System.currentTimeMillis();
 		log.info("Time taken to updateBE =" + (endtime3 - endtime2) + " ms");
 
