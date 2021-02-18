@@ -891,7 +891,8 @@ public class RulesLoader {
 	private void processQEventMessageEvent(SessionFacts facts, long processId, KieSession kieSession) {
 		((QEventMessage) facts.getMessage()).setToken(facts.getUserToken().getToken());
 
-		String msg_code = ((QEventMessage) facts.getMessage()).getData().getCode();
+		MessageData msg_data = ((QEventMessage) facts.getMessage()).getData();
+		String msg_code = msg_data.getCode();
 		String bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
 		// Save an associated Bridge IP to the session
@@ -915,7 +916,9 @@ public class RulesLoader {
 		// HACK!!
 		if (msg_code.startsWith("QUE_SUBMIT")) {
 
-			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), facts.getUserToken().getUserCode(),
+			System.out.println("SUBMIT_HACK INITIATED");
+
+			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), msg_data.getTargetCode(),
 					"PRI_SUBMIT", msg_code);
 			dataAnswer.setChangeEvent(false);
 			QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
