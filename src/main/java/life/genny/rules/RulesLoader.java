@@ -916,8 +916,6 @@ public class RulesLoader {
 		// HACK!!
 		if (msg_code.startsWith("QUE_SUBMIT")) {
 
-			System.out.println("SUBMIT_HACK INITIATED");
-
 			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), msg_data.getTargetCode(),
 					"PRI_SUBMIT", msg_code);
 			dataAnswer.setChangeEvent(false);
