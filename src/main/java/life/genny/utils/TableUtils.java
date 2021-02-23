@@ -249,7 +249,7 @@ public class TableUtils {
 	 * @param msg
 	 * @return
 	 */
-	private QDataBaseEntityMessage searchUsingHql(GennyToken serviceToken, final SearchEntity searchBE,
+	public QDataBaseEntityMessage searchUsingHql(GennyToken serviceToken, final SearchEntity searchBE,
 			QDataBaseEntityMessage msg) {
 		long starttime = System.currentTimeMillis();
 		long endtime2 = starttime;

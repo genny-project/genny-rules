@@ -51,6 +51,12 @@ public class DropdownUtils implements Serializable {
 		this.searchEntity = sbe;
 	}
 
+	public QDataBaseEntityMessage sendSearchResultsUsingAltSearch(String parentCode, String linkCode, String linkValue,
+			GennyToken userToken, Boolean sortByWeight, Boolean cache) throws IOException {
+
+		return this.sendSearchResults(parentCode, linkCode, linkValue, true, false, userToken, sortByWeight, cache, true);
+	}
+
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
 			GennyToken userToken) throws IOException {
 
@@ -60,26 +66,26 @@ public class DropdownUtils implements Serializable {
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
 			GennyToken userToken, Boolean sortByWeight) throws IOException {
 
-		return this.sendSearchResults(parentCode, linkCode, linkValue, true, false, userToken, sortByWeight, false);
+		return this.sendSearchResults(parentCode, linkCode, linkValue, true, false, userToken, sortByWeight, false, false);
 	}
 
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue,
 			GennyToken userToken, Boolean sortByWeight, Boolean cache) throws IOException {
 
-		return this.sendSearchResults(parentCode, linkCode, linkValue, true, false, userToken, sortByWeight, cache);
+		return this.sendSearchResults(parentCode, linkCode, linkValue, true, false, userToken, sortByWeight, cache, false);
 	}
 
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue, Boolean replace,
 			Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight) throws IOException {
 		return sendSearchResults(parentCode, linkCode, linkValue, replace, shouldDeleteLinkedBaseEntities, userToken,
-				sortByWeight, false);
+				sortByWeight, false, false);
 	}
 
 	public QDataBaseEntityMessage sendSearchResults(String parentCode, String linkCode, String linkValue, Boolean replace,
-			Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight, Boolean cache)
+			Object shouldDeleteLinkedBaseEntities, GennyToken userToken, Boolean sortByWeight, Boolean cache, Boolean useSearchAlt)
 			throws IOException {
 		QDataBaseEntityMessage beMessage = getSearchResults(this.searchEntity, parentCode, linkCode, linkValue, replace,
-				shouldDeleteLinkedBaseEntities, userToken, this.serviceToken, sortByWeight);
+				shouldDeleteLinkedBaseEntities, userToken, this.serviceToken, sortByWeight, useSearchAlt);
 
 		if (beMessage != null) {
 
@@ -102,7 +108,7 @@ public class DropdownUtils implements Serializable {
 	 */
 	private QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, String parentCode, String linkCode,
 			String linkValue, Boolean replace, Object shouldDeleteLinkedBaseEntities, GennyToken userToken,
-			GennyToken serviceToken, Boolean sortByWeight) throws IOException {
+			GennyToken serviceToken, Boolean sortByWeight, Boolean useSearchAlt) throws IOException {
 
 		String token = userToken.getToken();
 		
@@ -126,14 +132,22 @@ public class DropdownUtils implements Serializable {
 
 		if (DROPDOWN_MSG == null || true) { // TODO, update search caches upon item add/delete
 
-			String jsonSearchBE = JsonUtils.toJson(searchBE);
-			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-					jsonSearchBE, serviceToken.getToken());
+			QDataBaseEntityMessage msg = null;
 
-			QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+			if (GennySettings.searchAlt && useSearchAlt) {
+				System.out.println("Using alt search for dropdown");
+				msg = tableUtils.searchUsingHql(serviceToken, searchBE, msg);
+
+			} else {
+				System.out.println("Using standard search for dropdown");
+				String jsonSearchBE = JsonUtils.toJson(searchBE);
+				String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
+						jsonSearchBE, serviceToken.getToken());
+
+				msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
+			}
 
 			if (msg != null) {
-
 				msg.setParentCode(parentCode);
 				msg.setToken(token);
 				msg.setLinkCode(linkCode);

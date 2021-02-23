@@ -432,7 +432,7 @@ public class ShowFrame implements WorkItemHandler {
 									continue;
 						}
 
-						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken,cache);
+						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
 						qBulkMessage.add(qb);
 					
 					}
@@ -673,7 +673,7 @@ public class ShowFrame implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	public static QBulkMessage sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken, Boolean cache) {
+	public static QBulkMessage sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		DropdownUtils dropDownUtils = new DropdownUtils(serviceToken);
@@ -702,8 +702,12 @@ public class ShowFrame implements WorkItemHandler {
 
 							/* This is for dynamically generated items */
 							SearchEntity sbe = JsonUtils.fromJson(searchBe.getString("value"), SearchEntity.class);
+							sbe.addColumn("PRI_NAME", "Name");
+							if (dropdownTarget != null) {
+								sbe.setDropdownTarget(dropdownTarget);
+							}
 							dropDownUtils.setSearch(sbe);
-							QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true,cache);
+							QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResultsUsingAltSearch(groupCode, "LNK_CORE", "ITEMS", userToken, true, false);
 							if (cache) {
 								qBulkMessage.add(resultsMsg);
 							}
@@ -739,7 +743,7 @@ public class ShowFrame implements WorkItemHandler {
 								dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items").setSourceCode(groupCode)
 										.setPageStart(0).setPageSize(10000);
 
-								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true,cache);
+								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true, cache);
 								if (cache) {
 									qBulkMessage.add(qdb);
 								}
