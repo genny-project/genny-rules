@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.Collections;
 
 import com.google.gson.reflect.TypeToken;
 
@@ -1689,20 +1690,21 @@ public class TableUtils {
 	}
 
 	static public void sendFilterQuestions(BaseEntityUtils beUtils, String code) {
-		System.out.println("[*] Sending filter questions for " + code);
-		// Check for Session Code
-		String sessionSearchCode = code;
-		if (!code.contains(beUtils.getGennyToken().getSessionCode().toUpperCase())) {
-			/* we need to set the searchBe's code to session Search Code */
-			sessionSearchCode = code + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
-		}
-		System.out.println("sessionSearchCode = " + sessionSearchCode);
-		// Get the Session Search from cache
-		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", sessionSearchCode, SearchEntity.class,
+		// Grab Search from cache
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", code, SearchEntity.class,
 				beUtils.getGennyToken().getToken());
+		sendFilterQuestions(beUtils, searchBE);
+	}
 
+	static public void sendFilterQuestions(BaseEntityUtils beUtils, SearchEntity searchBE) {
+		System.out.println("[*] Sending filter questions for " + searchBE.getCode());
+		// Check for Session Code
+		String baseSearchCode = searchBE.getCode();
+		if (!baseSearchCode.contains(beUtils.getGennyToken().getSessionCode().toUpperCase())) {
+			/* we need to set the searchBe's code to session Search Code */
+			baseSearchCode = baseSearchCode.substring(0, baseSearchCode.length()-beUtils.getGennyToken().getSessionCode().length()-1);
+		}
 		/* Retrieve the base SBE */
-		String baseSearchCode = sessionSearchCode.substring(0, sessionSearchCode.length()-beUtils.getGennyToken().getSessionCode().length()-1);
 		System.out.println("baseSearchCode = " + baseSearchCode);
 
 		SearchEntity baseSearchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", baseSearchCode, SearchEntity.class,
@@ -1731,7 +1733,7 @@ public class TableUtils {
 		Attribute filterValueDateTimeAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_DATETIME", beUtils.getGennyToken().getToken());
 		
 		// Search Filter group
-		Question filterGrpQues = new Question("QUE_FILTER_GRP"+searchBE.getCode(), "Filters", questionAttribute, true);
+		Question filterGrpQues = new Question("QUE_FILTER_GRP_"+searchBE.getCode(), "Filters", questionAttribute, true);
 		Ask filterGrpAsk = new Ask(filterGrpQues, sourceCode, targetCode);
 
 		// Add Filter group
@@ -1760,23 +1762,27 @@ public class TableUtils {
 		addFilterGrpAsk.setChildAsks(addFilterChildAsks);
 
 		// Existing Filters group
-		Question existingFilterGrpQues = new Question("QUE_ADD_FILTER_GRP", "Existing Filters", questionAttribute, true);
+		Question existingFilterGrpQues = new Question("QUE_EXISTING_FILTERS_GRP", "Existing Filters", questionAttribute, true);
 		Ask existingFilterGrpAsk = new Ask(existingFilterGrpQues, sourceCode, targetCode);
 		List<Ask> askList = new ArrayList<>();
 
 		for (EntityAttribute filt : searchBE.getBaseEntityAttributes()) {
-			if (filt.getWeight() > baseMaxWeight) {
+			// Get the raw attribute
+			String rawAttributeCode = beUtils.removePrefixFromCode(filt.getAttributeCode(), "AND");
+			if (filt.getWeight() > baseMaxWeight && (rawAttributeCode.startsWith("PRI_") || rawAttributeCode.startsWith("LNK_")) ) {
 				// We know this is not a default filter
-				// Get the raw attribute
-				String rawAttributeCode = beUtils.removePrefixFromCode(filt.getAttributeCode(), "AND");
 				Attribute attr = RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken().getToken());
 				// Form a Question for the filter
 				Question filterQues = new Question("QUE_"+filt.getAttributeCode(), attr.getName(), eventAttribute, true);
 				Ask filterAsk = new Ask(filterQues, sourceCode, targetCode);
+				filterAsk.setWeight(filt.getWeight());
 				// Add it to the list
 				askList.add(filterAsk);
 			}
 		}
+		// Sort them by weight
+		Comparator<Ask> compareByWeight = (Ask a, Ask b) -> a.getWeight().compareTo( b.getWeight() );
+		Collections.sort(askList, compareByWeight);
 		// Convert ArrayList to Array
 		Ask[] existingFilterChildAsks = new Ask[askList.size()];
 		for (int i = 0; i < askList.size(); i++) {
@@ -1787,6 +1793,11 @@ public class TableUtils {
 
 		Ask[] filterGrpChildAsks = { addFilterGrpAsk, existingFilterGrpAsk };
 		filterGrpAsk.setChildAsks(filterGrpChildAsks);
+		
+		// Cache the Ask group
+		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", filterGrpAsk.getQuestionCode(), filterGrpAsk,
+			beUtils.getGennyToken().getToken());
+
 		// Send Asks to FE
 		QDataAskMessage askMsg = new QDataAskMessage(filterGrpAsk);
 		askMsg.setToken(beUtils.getGennyToken().getToken());
