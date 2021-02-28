@@ -1700,7 +1700,7 @@ public class TableUtils {
 		System.out.println("[*] Sending filter questions for " + searchBE.getCode());
 		// Check for Session Code
 		String baseSearchCode = searchBE.getCode();
-		if (!baseSearchCode.contains(beUtils.getGennyToken().getSessionCode().toUpperCase())) {
+		if (baseSearchCode.contains(beUtils.getGennyToken().getSessionCode().toUpperCase())) {
 			/* we need to set the searchBe's code to session Search Code */
 			baseSearchCode = baseSearchCode.substring(0, baseSearchCode.length()-beUtils.getGennyToken().getSessionCode().length()-1);
 		}
@@ -1711,14 +1711,7 @@ public class TableUtils {
 			beUtils.getGennyToken().getToken());
 
 		/* Find the highest weight of filters in base SBE */
-		Double baseMaxWeight = 0.0;
-		for (EntityAttribute ea : baseSearchBE.getBaseEntityAttributes()) {
-			if (ea.getAttributeCode().startsWith("PRI_") || ea.getAttributeCode().startsWith("LNK_")) {
-				if (ea.getWeight() > baseMaxWeight) {
-					baseMaxWeight = ea.getWeight();
-				}
-			}
-		}
+		Double baseMaxWeight = baseSearchBE.getMaximumFilterWeight();
 		System.out.println("baseMaxWeight = " + baseMaxWeight);
 
 		String sourceCode = beUtils.getGennyToken().getUserCode();
@@ -1770,6 +1763,7 @@ public class TableUtils {
 			// Get the raw attribute
 			String rawAttributeCode = beUtils.removePrefixFromCode(filt.getAttributeCode(), "AND");
 			if (filt.getWeight() > baseMaxWeight && (rawAttributeCode.startsWith("PRI_") || rawAttributeCode.startsWith("LNK_")) ) {
+				System.out.println("Found additional filter for attribute " + rawAttributeCode);
 				// We know this is not a default filter
 				Attribute attr = RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken().getToken());
 				// Form a Question for the filter
