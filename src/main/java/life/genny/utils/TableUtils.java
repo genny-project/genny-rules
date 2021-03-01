@@ -47,6 +47,7 @@ import life.genny.models.Theme;
 import life.genny.models.ThemeAttribute;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.Link;
 import life.genny.qwanda.Context;
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.ContextType;
@@ -1759,6 +1760,13 @@ public class TableUtils {
 		Ask existingFilterGrpAsk = new Ask(existingFilterGrpQues, sourceCode, targetCode);
 		List<Ask> askList = new ArrayList<>();
 
+		// Init column items
+		BaseEntity columnGrp = new BaseEntity("GRP_FILTER_COLUMNS", "Filter Columns");
+		Attribute attributeLink = new Attribute("LNK_CORE", "LNK_CORE", new DataType(String.class));
+		Set<EntityEntity> childLinks = new HashSet<>();
+		List<BaseEntity> columnFilterArray = new ArrayList<>();
+
+		double index = -1.0;
 		for (EntityAttribute filt : searchBE.getBaseEntityAttributes()) {
 			// Get the raw attribute
 			String rawAttributeCode = beUtils.removePrefixFromCode(filt.getAttributeCode(), "AND");
@@ -1773,7 +1781,27 @@ public class TableUtils {
 				// Add it to the list
 				askList.add(filterAsk);
 			}
+
+			// Create filterable column for each sort
+			if (filt.getAttributeCode().startsWith("SRT_")) {
+				index++;
+				// Get the attribute
+				String attributeCode = filt.getAttributeCode().split("SRT_")[1];
+				Attribute attr = RulesUtils.getAttribute(attributeCode, beUtils.getGennyToken().getToken());
+				// Create a new BE for the item
+				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), attr.getName());
+				// Create a link between GRP and BE
+				EntityEntity ee = new EntityEntity(columnGrp, filterColumn, attributeLink, index);
+				Link link = new Link(columnGrp.getCode(), filterColumn.getCode(), attributeLink.getCode(), "ITEMS", index);
+				ee.setLink(link);
+				childLinks.add(ee);
+				// Add BE to list 
+				columnFilterArray.add(filterColumn);
+			}
 		}
+		// Set child links and add parent BE to list
+		columnGrp.setLinks(childLinks);
+		columnFilterArray.add(columnGrp);
 		// Sort them by weight
 		Comparator<Ask> compareByWeight = (Ask a, Ask b) -> a.getWeight().compareTo( b.getWeight() );
 		Collections.sort(askList, compareByWeight);
@@ -1797,6 +1825,13 @@ public class TableUtils {
 		askMsg.setToken(beUtils.getGennyToken().getToken());
 		VertxUtils.writeMsg("webcmds", askMsg);
 		System.out.println("Asks sent to FE");
+
+		// Send column dropdown items
+		QDataBaseEntityMessage columnItems = new QDataBaseEntityMessage(columnFilterArray);
+		columnItems.setParentCode(columnGrp.getCode());
+		columnItems.setToken(beUtils.getGennyToken().getToken());
+		VertxUtils.writeMsg("webcmds", columnItems);
+		System.out.println("Dropdown items sent to FE");
 
 	}
 }
