@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.Collections;
 
 import com.google.gson.reflect.TypeToken;
 
@@ -46,6 +47,7 @@ import life.genny.models.Theme;
 import life.genny.models.ThemeAttribute;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
+import life.genny.qwanda.Link;
 import life.genny.qwanda.Context;
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.ContextType;
@@ -1686,6 +1688,151 @@ public class TableUtils {
 		msg.setToken(beUtils.getGennyToken().getToken());
 		msg.setSend(true);  		
 		VertxUtils.writeMsg("webcmds",msg);
+	}
+
+	static public void sendFilterQuestions(BaseEntityUtils beUtils, String code) {
+		// Grab Search from cache
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", code, SearchEntity.class,
+				beUtils.getGennyToken().getToken());
+		sendFilterQuestions(beUtils, searchBE);
+	}
+
+	static public void sendFilterQuestions(BaseEntityUtils beUtils, SearchEntity searchBE) {
+		System.out.println("[*] Sending filter questions for " + searchBE.getCode());
+		// Check for Session Code
+		String baseSearchCode = searchBE.getCode();
+		if (baseSearchCode.contains(beUtils.getGennyToken().getSessionCode().toUpperCase())) {
+			/* we need to set the searchBe's code to session Search Code */
+			baseSearchCode = baseSearchCode.substring(0, baseSearchCode.length()-beUtils.getGennyToken().getSessionCode().length()-1);
+		}
+		/* Retrieve the base SBE */
+		System.out.println("baseSearchCode = " + baseSearchCode);
+
+		SearchEntity baseSearchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", baseSearchCode, SearchEntity.class,
+			beUtils.getGennyToken().getToken());
+
+		/* Find the highest weight of filters in base SBE */
+		Double baseMaxWeight = baseSearchBE.getMaximumFilterWeight();
+		System.out.println("baseMaxWeight = " + baseMaxWeight);
+
+		String sourceCode = beUtils.getGennyToken().getUserCode();
+		String targetCode = beUtils.getGennyToken().getUserCode();
+		
+		// Define Attributes
+		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
+		Attribute eventAttribute = new Attribute("PRI_EVENT", "link", new DataType(String.class));
+		Attribute selectColumnAttribute = RulesUtils.getAttribute("LNK_FILTER_COLUMN", beUtils.getGennyToken().getToken());
+		Attribute selectOptionAttribute = RulesUtils.getAttribute("LNK_FILTER_OPTION", beUtils.getGennyToken().getToken());
+		Attribute filterValueTextAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_TEXT", beUtils.getGennyToken().getToken());
+		Attribute filterValueDateTimeAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_DATETIME", beUtils.getGennyToken().getToken());
+		
+		// Search Filter group
+		Question filterGrpQues = new Question("QUE_FILTER_GRP_"+searchBE.getCode(), "Filters", questionAttribute, true);
+		Ask filterGrpAsk = new Ask(filterGrpQues, sourceCode, targetCode);
+
+		// Add Filter group
+		Question addFilterGrpQues = new Question("QUE_ADD_FILTER_GRP", "Add Filter", questionAttribute, true);
+		Ask addFilterGrpAsk = new Ask(addFilterGrpQues, sourceCode, targetCode);
+
+		// Question for selecting the column to filter
+		Question filterColumnQues = new Question("QUE_FILTER_COLUMN", "Select Column", selectColumnAttribute, true);
+		Ask filterColumnAsk = new Ask(filterColumnQues, sourceCode, targetCode);
+		
+		// Question for selecting the filter option
+		Question filterOptionQues = new Question("QUE_FILTER_OPTION", "Select Filter Option", selectOptionAttribute, true);
+		Ask filterOptionAsk = new Ask(filterOptionQues , sourceCode, targetCode);
+
+		// Question for inputing a value in text
+		Question filterValueTextQues = new Question("QUE_FILTER_VALUE_TEXT", "Filter Value", filterValueTextAttribute, true);
+		Ask filterValueTextAsk = new Ask(filterValueTextQues , sourceCode, targetCode);
+		
+		// Question for inputing a value using a date picker
+		Question filterValueDateTimeQues = new Question("QUE_FILTER_VALUE_DATETIME", "Filter Value", filterValueDateTimeAttribute, true);
+		Ask filterValueDateTimeAsk = new Ask(filterValueDateTimeQues , sourceCode, targetCode);
+		// Set DateTime picker hidden by default
+		filterValueDateTimeAsk.setHidden(true);
+
+		Ask[] addFilterChildAsks = { filterColumnAsk, filterOptionAsk, filterValueTextAsk, filterValueDateTimeAsk };
+		addFilterGrpAsk.setChildAsks(addFilterChildAsks);
+
+		// Existing Filters group
+		Question existingFilterGrpQues = new Question("QUE_EXISTING_FILTERS_GRP", "Existing Filters", questionAttribute, true);
+		Ask existingFilterGrpAsk = new Ask(existingFilterGrpQues, sourceCode, targetCode);
+		List<Ask> askList = new ArrayList<>();
+
+		// Init column items
+		BaseEntity columnGrp = new BaseEntity("GRP_FILTER_COLUMNS", "Filter Columns");
+		Attribute attributeLink = new Attribute("LNK_CORE", "LNK_CORE", new DataType(String.class));
+		Set<EntityEntity> childLinks = new HashSet<>();
+		List<BaseEntity> columnFilterArray = new ArrayList<>();
+
+		double index = -1.0;
+		for (EntityAttribute filt : searchBE.getBaseEntityAttributes()) {
+			// Get the raw attribute
+			String rawAttributeCode = beUtils.removePrefixFromCode(filt.getAttributeCode(), "AND");
+			if (filt.getWeight() > baseMaxWeight && (rawAttributeCode.startsWith("PRI_") || rawAttributeCode.startsWith("LNK_")) ) {
+				System.out.println("Found additional filter for attribute " + rawAttributeCode);
+				// We know this is not a default filter
+				Attribute attr = RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken().getToken());
+				// Form a Question for the filter
+				Question filterQues = new Question("QUE_"+filt.getAttributeCode(), attr.getName(), eventAttribute, true);
+				Ask filterAsk = new Ask(filterQues, sourceCode, targetCode);
+				filterAsk.setWeight(filt.getWeight());
+				// Add it to the list
+				askList.add(filterAsk);
+			}
+
+			// Create filterable column for each sort
+			if (filt.getAttributeCode().startsWith("SRT_")) {
+				index++;
+				// Get the attribute
+				String attributeCode = filt.getAttributeCode().split("SRT_")[1];
+				Attribute attr = RulesUtils.getAttribute(attributeCode, beUtils.getGennyToken().getToken());
+				// Create a new BE for the item
+				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), attr.getName());
+				// Create a link between GRP and BE
+				EntityEntity ee = new EntityEntity(columnGrp, filterColumn, attributeLink, index);
+				Link link = new Link(columnGrp.getCode(), filterColumn.getCode(), attributeLink.getCode(), "ITEMS", index);
+				ee.setLink(link);
+				childLinks.add(ee);
+				// Add BE to list 
+				columnFilterArray.add(filterColumn);
+			}
+		}
+		// Set child links and add parent BE to list
+		columnGrp.setLinks(childLinks);
+		columnFilterArray.add(columnGrp);
+		// Sort them by weight
+		Comparator<Ask> compareByWeight = (Ask a, Ask b) -> a.getWeight().compareTo( b.getWeight() );
+		Collections.sort(askList, compareByWeight);
+		// Convert ArrayList to Array
+		Ask[] existingFilterChildAsks = new Ask[askList.size()];
+		for (int i = 0; i < askList.size(); i++) {
+			existingFilterChildAsks[i] = askList.get(i);
+		}
+		// Set childAsks of the existing filter group
+		existingFilterGrpAsk.setChildAsks(existingFilterChildAsks);
+
+		Ask[] filterGrpChildAsks = { addFilterGrpAsk, existingFilterGrpAsk };
+		filterGrpAsk.setChildAsks(filterGrpChildAsks);
+		
+		// Cache the Ask group
+		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", filterGrpAsk.getQuestionCode(), filterGrpAsk,
+			beUtils.getGennyToken().getToken());
+
+		// Send Asks to FE
+		QDataAskMessage askMsg = new QDataAskMessage(filterGrpAsk);
+		askMsg.setToken(beUtils.getGennyToken().getToken());
+		VertxUtils.writeMsg("webcmds", askMsg);
+		System.out.println("Asks sent to FE");
+
+		// Send column dropdown items
+		QDataBaseEntityMessage columnItems = new QDataBaseEntityMessage(columnFilterArray);
+		columnItems.setParentCode(columnGrp.getCode());
+		columnItems.setToken(beUtils.getGennyToken().getToken());
+		VertxUtils.writeMsg("webcmds", columnItems);
+		System.out.println("Dropdown items sent to FE");
+
 	}
 
 	public SearchEntity copySearch(final String oldSearchCode, final String newSearchCode) {
