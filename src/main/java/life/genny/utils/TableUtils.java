@@ -1790,6 +1790,7 @@ public class TableUtils {
 				Attribute attr = RulesUtils.getAttribute(attributeCode, beUtils.getGennyToken().getToken());
 				// Create a new BE for the item
 				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), attr.getName());
+				filterColumn.setIndex(filt.getWeight().intValue());
 				// Create a link between GRP and BE
 				EntityEntity ee = new EntityEntity(columnGrp, filterColumn, attributeLink, index);
 				Link link = new Link(columnGrp.getCode(), filterColumn.getCode(), attributeLink.getCode(), "ITEMS", index);
@@ -1799,6 +1800,10 @@ public class TableUtils {
 				columnFilterArray.add(filterColumn);
 			}
 		}
+		// Sort the Column Filters by index
+		Comparator<BaseEntity> compareByIndex = (BaseEntity a, BaseEntity b) -> a.getIndex().compareTo( b.getIndex() );
+		Collections.sort(columnFilterArray, compareByIndex);
+
 		// Set child links and add parent BE to list
 		columnGrp.setLinks(childLinks);
 		columnFilterArray.add(columnGrp);
