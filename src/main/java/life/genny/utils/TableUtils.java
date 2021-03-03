@@ -1834,4 +1834,20 @@ public class TableUtils {
 		System.out.println("Dropdown items sent to FE");
 
 	}
+
+	public SearchEntity copySearch(final String oldSearchCode, final String newSearchCode) {
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", oldSearchCode, SearchEntity.class,
+		beUtils.getGennyToken().getToken());
+		if(searchBE != null){
+			searchBE.setCode(newSearchCode);
+			for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+				ea.setBaseEntityCode(newSearchCode);
+				if (ea.getAttributeCode().startsWith("SBE_")) {
+					ea.setAttributeCode(newSearchCode);
+				}
+			}
+			return searchBE;
+		}
+		return null;
+	}
 }
