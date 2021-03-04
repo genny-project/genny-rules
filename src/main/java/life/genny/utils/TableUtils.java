@@ -1828,6 +1828,7 @@ public class TableUtils {
 		// Send Asks to FE
 		QDataAskMessage askMsg = new QDataAskMessage(filterGrpAsk);
 		askMsg.setToken(beUtils.getGennyToken().getToken());
+		askMsg.setReplace(true);
 		VertxUtils.writeMsg("webcmds", askMsg);
 		System.out.println("Asks sent to FE");
 
@@ -1835,6 +1836,7 @@ public class TableUtils {
 		QDataBaseEntityMessage columnItems = new QDataBaseEntityMessage(columnFilterArray);
 		columnItems.setParentCode(columnGrp.getCode());
 		columnItems.setToken(beUtils.getGennyToken().getToken());
+		columnItems.setReplace(true);
 		VertxUtils.writeMsg("webcmds", columnItems);
 		System.out.println("Dropdown items sent to FE");
 
