@@ -694,56 +694,59 @@ public class ShowFrame implements WorkItemHandler {
 
 						String groupCode = val.getSelectionBaseEntityGroupList().get(0);
 
-						JsonObject searchBe = VertxUtils.readCachedJson(userToken.getRealm(), "SBE_" + groupCode,
-								userToken.getToken());
+						if (!groupCode.equals("GRP_EXISTING_STUDENTS_SELECTION")) {
 
-						if ("ok".equalsIgnoreCase(searchBe.getString("status"))) {
-
-							/* This is for dynamically generated items */
-							SearchEntity sbe = JsonUtils.fromJson(searchBe.getString("value"), SearchEntity.class);
-							dropDownUtils.setSearch(sbe);
-							QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true,cache);
-							if (cache) {
-								qBulkMessage.add(resultsMsg);
-							}
-
-						} else {
-
-							// Check if already in cache
-							QDataBaseEntityMessage qdb = null;
-
-							JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "QDB_" + groupCode,
+							JsonObject searchBe = VertxUtils.readCachedJson(userToken.getRealm(), "SBE_" + groupCode,
 									userToken.getToken());
 
-							if ("null".equals(json.getString("value"))) {
+							if ("ok".equalsIgnoreCase(searchBe.getString("status"))) {
 
-								log.error(
-										val.getCode() + " groupCode has Illegal Group Code : [" + groupCode
-												+ "] dataType=[" + dt + "] for attributeCode:[" + attributeCode + "]");
-
-							} else if ("ok".equalsIgnoreCase(json.getString("status"))) {
-
-								qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
-							
-								
+								/* This is for dynamically generated items */
+								SearchEntity sbe = JsonUtils.fromJson(searchBe.getString("value"), SearchEntity.class);
+								dropDownUtils.setSearch(sbe);
+								QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true,cache);
 								if (cache) {
-									qBulkMessage.add(qdb);
-								} else {
-									qdb.setToken(userToken.getToken());
-									VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qdb));
+									qBulkMessage.add(resultsMsg);
 								}
 
 							} else {
 
-								dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items").setSourceCode(groupCode)
-										.setPageStart(0).setPageSize(10000);
+								// Check if already in cache
+								QDataBaseEntityMessage qdb = null;
 
-								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true,cache);
-								if (cache) {
-									qBulkMessage.add(qdb);
+								JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "QDB_" + groupCode,
+										userToken.getToken());
+
+								if ("null".equals(json.getString("value"))) {
+
+									log.error(
+											val.getCode() + " groupCode has Illegal Group Code : [" + groupCode
+													+ "] dataType=[" + dt + "] for attributeCode:[" + attributeCode + "]");
+
+								} else if ("ok".equalsIgnoreCase(json.getString("status"))) {
+
+									qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
+								
+									
+									if (cache) {
+										qBulkMessage.add(qdb);
+									} else {
+										qdb.setToken(userToken.getToken());
+										VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qdb));
+									}
+
+								} else {
+
+									dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items").setSourceCode(groupCode)
+											.setPageStart(0).setPageSize(10000);
+
+									qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true,cache);
+									if (cache) {
+										qBulkMessage.add(qdb);
+									}
+									VertxUtils.writeCachedJson(userToken.getRealm(), "QDB_" + groupCode,
+											JsonUtils.toJson(qdb), userToken.getToken());
 								}
-								VertxUtils.writeCachedJson(userToken.getRealm(), "QDB_" + groupCode,
-										JsonUtils.toJson(qdb), userToken.getToken());
 							}
 						}
 					}
