@@ -1791,6 +1791,13 @@ public class TableUtils {
 				// Create a new BE for the item
 				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), attr.getName());
 				filterColumn.setIndex(filt.getWeight().intValue());
+				// Add PRI_NAME to the BE
+				Attribute nameAttr = RulesUtils.getAttribute("PRI_NAME", beUtils.getGennyToken().getToken());
+				try {
+					filterColumn.addAttribute(nameAttr, 1.0, attr.getName());
+				} catch (Exception e) {
+					System.out.println(e.getLocalizedMessage());
+				}
 				// Create a link between GRP and BE
 				EntityEntity ee = new EntityEntity(columnGrp, filterColumn, attributeLink, index);
 				Link link = new Link(columnGrp.getCode(), filterColumn.getCode(), attributeLink.getCode(), "ITEMS", index);
