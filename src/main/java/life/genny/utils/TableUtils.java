@@ -1790,6 +1790,14 @@ public class TableUtils {
 				Attribute attr = RulesUtils.getAttribute(attributeCode, beUtils.getGennyToken().getToken());
 				// Create a new BE for the item
 				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), attr.getName());
+				filterColumn.setIndex(filt.getWeight().intValue());
+				// Add PRI_NAME to the BE
+				Attribute nameAttr = RulesUtils.getAttribute("PRI_NAME", beUtils.getGennyToken().getToken());
+				try {
+					filterColumn.addAttribute(nameAttr, 1.0, attr.getName());
+				} catch (Exception e) {
+					System.out.println(e.getLocalizedMessage());
+				}
 				// Create a link between GRP and BE
 				EntityEntity ee = new EntityEntity(columnGrp, filterColumn, attributeLink, index);
 				Link link = new Link(columnGrp.getCode(), filterColumn.getCode(), attributeLink.getCode(), "ITEMS", index);
@@ -1799,6 +1807,10 @@ public class TableUtils {
 				columnFilterArray.add(filterColumn);
 			}
 		}
+		// Sort the Column Filters by index
+		Comparator<BaseEntity> compareByIndex = (BaseEntity a, BaseEntity b) -> a.getIndex().compareTo( b.getIndex() );
+		Collections.sort(columnFilterArray, compareByIndex);
+
 		// Set child links and add parent BE to list
 		columnGrp.setLinks(childLinks);
 		columnFilterArray.add(columnGrp);
@@ -1823,6 +1835,7 @@ public class TableUtils {
 		// Send Asks to FE
 		QDataAskMessage askMsg = new QDataAskMessage(filterGrpAsk);
 		askMsg.setToken(beUtils.getGennyToken().getToken());
+		askMsg.setReplace(true);
 		VertxUtils.writeMsg("webcmds", askMsg);
 		System.out.println("Asks sent to FE");
 
@@ -1830,6 +1843,7 @@ public class TableUtils {
 		QDataBaseEntityMessage columnItems = new QDataBaseEntityMessage(columnFilterArray);
 		columnItems.setParentCode(columnGrp.getCode());
 		columnItems.setToken(beUtils.getGennyToken().getToken());
+		columnItems.setReplace(true);
 		VertxUtils.writeMsg("webcmds", columnItems);
 		System.out.println("Dropdown items sent to FE");
 
