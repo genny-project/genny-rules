@@ -1721,6 +1721,7 @@ public class TableUtils {
 		// Define Attributes
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 		Attribute eventAttribute = new Attribute("PRI_EVENT", "link", new DataType(String.class));
+		Attribute submitAttribute = RulesUtils.getAttribute("PRI_SUBMIT", beUtils.getGennyToken().getToken());
 		Attribute selectColumnAttribute = RulesUtils.getAttribute("LNK_FILTER_COLUMN", beUtils.getGennyToken().getToken());
 		Attribute selectOptionAttribute = RulesUtils.getAttribute("LNK_FILTER_OPTION", beUtils.getGennyToken().getToken());
 		Attribute filterValueTextAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_TEXT", beUtils.getGennyToken().getToken());
@@ -1745,6 +1746,8 @@ public class TableUtils {
 		// Question for inputing a value in text
 		Question filterValueTextQues = new Question("QUE_FILTER_VALUE_TEXT", "Filter Value", filterValueTextAttribute, true);
 		Ask filterValueTextAsk = new Ask(filterValueTextQues , sourceCode, targetCode);
+		// Set value text hidden by default
+		filterValueTextAsk.setHidden(true);
 		
 		// Question for inputing a value using a date picker
 		Question filterValueDateTimeQues = new Question("QUE_FILTER_VALUE_DATETIME", "Filter Value", filterValueDateTimeAttribute, true);
@@ -1752,7 +1755,13 @@ public class TableUtils {
 		// Set DateTime picker hidden by default
 		filterValueDateTimeAsk.setHidden(true);
 
-		Ask[] addFilterChildAsks = { filterColumnAsk, filterOptionAsk, filterValueTextAsk, filterValueDateTimeAsk };
+		// Submit Button
+		Question submitQues = new Question("QUE_SUBMIT", "Submit", submitAttribute, true);
+		Ask submitAsk = new Ask(submitQues , sourceCode, targetCode);
+		// Set Submit disabled by default
+		submitAsk.setDisabled(true);
+
+		Ask[] addFilterChildAsks = { filterColumnAsk, filterOptionAsk, filterValueTextAsk, filterValueDateTimeAsk, submitAsk };
 		addFilterGrpAsk.setChildAsks(addFilterChildAsks);
 
 		// Existing Filters group
