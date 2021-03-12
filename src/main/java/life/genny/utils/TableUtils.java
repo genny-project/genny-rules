@@ -1716,7 +1716,7 @@ public class TableUtils {
 		System.out.println("baseMaxWeight = " + baseMaxWeight);
 
 		String sourceCode = beUtils.getGennyToken().getUserCode();
-		String targetCode = beUtils.getGennyToken().getUserCode();
+		String targetCode = searchBE.getCode();
 		
 		// Define Attributes
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
