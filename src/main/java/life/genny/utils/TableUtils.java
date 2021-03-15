@@ -1781,10 +1781,28 @@ public class TableUtils {
 			String rawAttributeCode = beUtils.removePrefixFromCode(filt.getAttributeCode(), "AND");
 			if (filt.getWeight() > baseMaxWeight && (rawAttributeCode.startsWith("PRI_") || rawAttributeCode.startsWith("LNK_")) ) {
 				System.out.println("Found additional filter for attribute " + rawAttributeCode);
-				// We know this is not a default filter
-				Attribute attr = RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken().getToken());
-				// Question name is format: Attribute - Comparison - Value
-				String questionName = attr.getName()+" "+SearchEntity.convertFromSaveable(filt.getAttributeName())+" \""+filt.getValue().toString().replace("%","")+"\"";
+				// Find the correlated sort entity attribute
+				EntityAttribute correlatedSort = searchBE.findEntityAttribute("SRT_"+rawAttributeCode).orElse(null);
+				String sortName = null;
+				if (correlatedSort != null) {
+					// find the sort name
+					sortName = correlatedSort.getAttributeName();
+				} else {
+					// Default to the attribute name instead
+					System.out.println("correlatedSort is null");
+					Attribute attr = RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken().getToken());
+					sortName = attr.getName();
+				}
+				// String replacement
+				String filtOptionString = filt.getAttributeName()
+					.replaceAll("_GT_", "GREATER THAN")
+					.replaceAll("_GTE_", "GREATER THAN OR EQUAL TO")
+					.replaceAll("_LT_", "LESS THAN")
+					.replaceAll("_LTE_", "LESS THAN OR EQUAL TO")
+					.replaceAll("_NOT_", "NOT ")
+					.replaceAll("_EQ_", "EQUAL TO");
+				// Question name is format: Sort Name - Comparison - Value
+				String questionName = sortName+" "+filtOptionString+" \""+filt.getValue().toString().replace("%","")+"\"";
 				// Form a Question for the filter
 				Question filterQues = new Question("QUE_"+filt.getAttributeCode(), questionName, eventAttribute, true);
 				Ask filterAsk = new Ask(filterQues, sourceCode, targetCode);
