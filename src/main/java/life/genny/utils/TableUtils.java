@@ -1783,8 +1783,10 @@ public class TableUtils {
 				System.out.println("Found additional filter for attribute " + rawAttributeCode);
 				// We know this is not a default filter
 				Attribute attr = RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken().getToken());
+				// Question name is format: Attribute - Comparison - Value
+				String questionName = attr.getName()+" "+filt.getAttributeName()+" "+filt.getValue().toString();
 				// Form a Question for the filter
-				Question filterQues = new Question("QUE_"+filt.getAttributeCode(), attr.getName(), eventAttribute, true);
+				Question filterQues = new Question("QUE_"+filt.getAttributeCode(), questionName, eventAttribute, true);
 				Ask filterAsk = new Ask(filterQues, sourceCode, targetCode);
 				filterAsk.setWeight(filt.getWeight());
 				// Add it to the list
