@@ -206,7 +206,8 @@ public class DropdownUtils implements Serializable {
 	private BaseEntity[] sortBaseEntityByWeight(BaseEntity[] items, String parentCode,
 			List<EntityEntity> sortedChildLinks) {
 		// Set sorted links
-		BaseEntity[] newItems = new BaseEntity[items.length];
+		BaseEntity[] newItems = new BaseEntity[0];
+		ArrayList<BaseEntity> newItemsList = new ArrayList<>();
 
 		HashMap<String, BaseEntity> beMapping = new HashMap<>();
 		for (BaseEntity be : items) {
@@ -219,13 +220,14 @@ public class DropdownUtils implements Serializable {
 			String targetCode = ee.getLink().getTargetCode();
 			if (beMapping.containsKey(targetCode)) {
 				beMapping.get(targetCode).setIndex(index);
-				newItems[index] = beMapping.get(targetCode);
+				newItemsList.add(beMapping.get(targetCode));
+//				newItems[index] = beMapping.get(targetCode);
 				index++;
 			} else {
 				log.error(String.format("Parent Code %s doesn't have Link code %s", parentCode, targetCode));
 			}
 		}
-		return newItems;
+		return newItemsList.toArray(newItems);
 	}
 
 	/*
