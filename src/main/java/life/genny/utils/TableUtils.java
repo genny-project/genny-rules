@@ -1811,8 +1811,11 @@ public class TableUtils {
 				askList.add(filterAsk);
 			}
 
+
 			// Create filterable column for each FLC attribute
 			if (filt.getAttributeCode().startsWith("FLC_")) {
+        System.out.println("Allowing Filtering for - " + filt.getAttributeCode() + " : " + filt.getAttributeName());
+
 				index++;
 				// Create a new BE for the item
 				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), filt.getAttributeName());
