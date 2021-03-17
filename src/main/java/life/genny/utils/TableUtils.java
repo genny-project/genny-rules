@@ -1782,16 +1782,16 @@ public class TableUtils {
 			if (filt.getWeight() > baseMaxWeight && (rawAttributeCode.startsWith("PRI_") || rawAttributeCode.startsWith("LNK_")) ) {
 				System.out.println("Found additional filter for attribute " + rawAttributeCode);
 				// Find the correlated sort entity attribute
-				EntityAttribute correlatedSort = searchBE.findEntityAttribute("SRT_"+rawAttributeCode).orElse(null);
-				String sortName = null;
-				if (correlatedSort != null) {
+				EntityAttribute correlatedFlc = searchBE.findEntityAttribute("FLC_"+rawAttributeCode).orElse(null);
+				String flcName = null;
+				if (correlatedFlc != null) {
 					// find the sort name
-					sortName = correlatedSort.getAttributeName();
+					flcName = correlatedFlc.getAttributeName();
 				} else {
 					// Default to the attribute name instead
-					System.out.println("correlatedSort is null");
+					System.out.println("correlatedFlc is null");
 					Attribute attr = RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken().getToken());
-					sortName = attr.getName();
+					flcName = attr.getName();
 				}
 				// String replacement
 				String filtOptionString = filt.getAttributeName()
@@ -1802,7 +1802,7 @@ public class TableUtils {
 					.replaceAll("_NOT_", "NOT ")
 					.replaceAll("_EQ_", "EQUAL TO");
 				// Question name is format: Sort Name - Comparison - Value
-				String questionName = sortName+" "+filtOptionString+" \""+filt.getValue().toString().replace("%","")+"\"";
+				String questionName = flcName+" "+filtOptionString+" \""+filt.getValue().toString().replace("%","")+"\"";
 				// Form a Question for the filter
 				Question filterQues = new Question("QUE_"+filt.getAttributeCode(), questionName, eventAttribute, true);
 				Ask filterAsk = new Ask(filterQues, sourceCode, targetCode);
@@ -1811,19 +1811,16 @@ public class TableUtils {
 				askList.add(filterAsk);
 			}
 
-			// Create filterable column for each sort
-			if (filt.getAttributeCode().startsWith("SRT_")) {
+			// Create filterable column for each FLC attribute
+			if (filt.getAttributeCode().startsWith("FLC_")) {
 				index++;
-				// Get the attribute
-				String attributeCode = filt.getAttributeCode().split("SRT_")[1];
-				Attribute attr = RulesUtils.getAttribute(attributeCode, beUtils.getGennyToken().getToken());
 				// Create a new BE for the item
-				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), attr.getName());
+				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), filt.getAttributeName());
 				filterColumn.setIndex(filt.getWeight().intValue());
 				// Add PRI_NAME to the BE
 				Attribute nameAttr = RulesUtils.getAttribute("PRI_NAME", beUtils.getGennyToken().getToken());
 				try {
-					filterColumn.addAttribute(nameAttr, 1.0, attr.getName());
+					filterColumn.addAttribute(nameAttr, 1.0, filt.getAttributeName());
 				} catch (Exception e) {
 					System.out.println(e.getLocalizedMessage());
 				}
