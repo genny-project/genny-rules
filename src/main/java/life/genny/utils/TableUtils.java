@@ -1774,6 +1774,7 @@ public class TableUtils {
 		Attribute attributeLink = new Attribute("LNK_CORE", "LNK_CORE", new DataType(String.class));
 		Set<EntityEntity> childLinks = new HashSet<>();
 		List<BaseEntity> columnFilterArray = new ArrayList<>();
+		System.out.println("searchBE = " + searchBE);
 
 		double index = -1.0;
 		for (EntityAttribute filt : searchBE.getBaseEntityAttributes()) {
