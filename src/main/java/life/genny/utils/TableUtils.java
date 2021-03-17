@@ -1813,6 +1813,7 @@ public class TableUtils {
 
 			// Create filterable column for each sort
 			if (filt.getAttributeCode().startsWith("SRT_")) {
+				System.out.println("Allowing Filtering for - " + filt.getAttributeCode() + " : " + filt.getAttributeName());
 				index++;
 				// Get the attribute
 				String attributeCode = filt.getAttributeCode().split("SRT_")[1];
