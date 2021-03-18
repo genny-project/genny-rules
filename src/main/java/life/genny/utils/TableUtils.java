@@ -1774,7 +1774,6 @@ public class TableUtils {
 		Attribute attributeLink = new Attribute("LNK_CORE", "LNK_CORE", new DataType(String.class));
 		Set<EntityEntity> childLinks = new HashSet<>();
 		List<BaseEntity> columnFilterArray = new ArrayList<>();
-		System.out.println("searchBE = " + searchBE);
 
 		double index = -1.0;
 		for (EntityAttribute filt : searchBE.getBaseEntityAttributes()) {
@@ -1815,8 +1814,6 @@ public class TableUtils {
 
 			// Create filterable column for each FLC attribute
 			if (filt.getAttributeCode().startsWith("FLC_")) {
-        System.out.println("Allowing Filtering for - " + filt.getAttributeCode() + " : " + filt.getAttributeName());
-
 				index++;
 				// Create a new BE for the item
 				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), filt.getAttributeName());
