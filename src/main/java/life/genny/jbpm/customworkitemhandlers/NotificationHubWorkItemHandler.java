@@ -71,6 +71,13 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 	List<String> ccList = Arrays.asList(ccArray);
 	List<String> bccList = Arrays.asList(bccArray);
 
+	if (ccList.isEmpty()) {
+		ccList = null;
+	}
+	if (bccList.isEmpty()) {
+		bccList = null;
+	}
+
 	try {
 			
 		if (messageType.toString() == "EMAIL") {
