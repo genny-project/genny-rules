@@ -45,9 +45,7 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
     QBaseMSGMessageType messageType =
         (QBaseMSGMessageType) workItem.getParameter("notificationType");
     String template_id = (String) workItem.getParameter("templateID");
-    String[] notificationRecipientArray = {
-      (String) workItem.getParameter("notificationRecipientArray")
-    };
+    String notificationRecipient = (String) workItem.getParameter("notificationRecipient");
     String[] ccArray = {
       (String) workItem.getParameter("ccArray")
     };
@@ -62,7 +60,7 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 
     log.info("notificationType = " + messageType);
     log.info("templateID = " + template_id);
-    log.info("notificationRecipientArray = " + notificationRecipientArray.toString());
+    log.info("notificationRecipient = " + notificationRecipient);
     log.info("ccArray = " + ccArray.toString());
     log.info("bccArray = " + bccArray.toString());
     log.info("templateData = " + templateData);
@@ -82,19 +80,15 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 			
 		if (messageType.toString() == "EMAIL") {
 
-			for (String recipientEmail : notificationRecipientArray) {
-				log.info("Sending EMAIL to " + recipientEmail);
-				EmailHelper.sendGrid(beUtils, recipientEmail, ccList, bccList, "", template_id, templateData);
-			}
+			log.info("Sending EMAIL to " + notificationRecipient);
+			EmailHelper.sendGrid(beUtils, notificationRecipient, ccList, bccList, "", template_id, templateData);
 
 		} else if (messageType.toString() == "SMS") {
 			
 			SmsHelper smsHelper = new SmsHelper();
 			String smsBody = templateData.get("smsBody");
-			for (String recipientSms : notificationRecipientArray) {
-				log.info("Sending SMS to " + recipientSms);
-				smsHelper.deliverSmsMsg(recipientSms, smsBody);
-			}
+			log.info("Sending SMS to " + notificationRecipient);
+			smsHelper.deliverSmsMsg(notificationRecipient, smsBody);
 
 		}
 	} catch (IOException e) {
