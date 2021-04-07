@@ -69,10 +69,10 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 	List<String> ccList = Arrays.asList(ccArray);
 	List<String> bccList = Arrays.asList(bccArray);
 
-	if (ccList.get(0).isEmpty()) {
+	if (ccList.get(0) == null) {
 		ccList = null;
 	}
-	if (bccList.get(0).isEmpty()) {
+	if (bccList.get(0) == null) {
 		bccList = null;
 	}
 
