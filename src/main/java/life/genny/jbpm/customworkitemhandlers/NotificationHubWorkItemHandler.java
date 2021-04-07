@@ -63,14 +63,14 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
     log.info("templateData = " + templateData);
     log.info("userToken = " + userToken);
 
-	List<String> ccList = Arrays.asList(cc);
-	List<String> bccList = Arrays.asList(bcc);
+	List<String> ccList = null;
+	List<String> bccList = null;
 
-	if (ccList.get(0).isEmpty()) {
-		ccList = null;
+	if (cc != null) {
+		ccList = Arrays.asList(cc);
 	}
-	if (bccList.get(0).isEmpty()) {
-		bccList = null;
+	if (bcc != null) {
+		bccList = Arrays.asList(bcc);
 	}
 
 	try {
