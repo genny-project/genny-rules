@@ -61,7 +61,7 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
     log.info("notificationType = " + messageType);
     log.info("templateID = " + template_id);
     log.info("notificationRecipient = " + notificationRecipient);
-    log.info("ccArray = " + Arrays.toString(ccArray));
+    log.info("ccArray = " + ccArray.toString());
     log.info("bccArray = " + bccArray.toString());
     log.info("templateData = " + templateData);
     log.info("userToken = " + userToken);
@@ -69,10 +69,10 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 	List<String> ccList = Arrays.asList(ccArray);
 	List<String> bccList = Arrays.asList(bccArray);
 
-	if (ccList.get(0) == null) {
+	if (ccList.get(0).isEmpty()) {
 		ccList = null;
 	}
-	if (bccList.get(0) == null) {
+	if (bccList.get(0).isEmpty()) {
 		bccList = null;
 	}
 
