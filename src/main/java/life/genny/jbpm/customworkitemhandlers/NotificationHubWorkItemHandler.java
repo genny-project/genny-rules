@@ -45,7 +45,7 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
     QBaseMSGMessageType messageType =
         (QBaseMSGMessageType) workItem.getParameter("notificationType");
     String template_id = (String) workItem.getParameter("templateID");
-    String notificationRecipient = (String) workItem.getParameter("notificationRecipient");
+    String recipient = (String) workItem.getParameter("recipient");
     String[] ccArray = {
       (String) workItem.getParameter("ccArray")
     };
@@ -60,14 +60,14 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 
     log.info("notificationType = " + messageType);
     log.info("templateID = " + template_id);
-    log.info("notificationRecipient = " + notificationRecipient);
-    log.info("ccArray = " + ccArray.toString());
-    log.info("bccArray = " + bccArray.toString());
+    log.info("recipient = " + recipient);
+    log.info("cc = " + cc);
+    log.info("bcc = " + bcc);
     log.info("templateData = " + templateData);
     log.info("userToken = " + userToken);
 
-	List<String> ccList = Arrays.asList(ccArray);
-	List<String> bccList = Arrays.asList(bccArray);
+	List<String> ccList = Arrays.asList(cc);
+	List<String> bccList = Arrays.asList(bcc);
 
 	if (ccList.get(0).isEmpty()) {
 		ccList = null;
@@ -80,15 +80,15 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 			
 		if (messageType.toString() == "EMAIL") {
 
-			log.info("Sending EMAIL to " + notificationRecipient);
-			EmailHelper.sendGrid(beUtils, notificationRecipient, ccList, bccList, "", template_id, templateData);
+			log.info("Sending EMAIL to " + recipient);
+			EmailHelper.sendGrid(beUtils, recipient, ccList, bccList, "", template_id, templateData);
 
 		} else if (messageType.toString() == "SMS") {
 			
 			SmsHelper smsHelper = new SmsHelper();
 			String smsBody = templateData.get("smsBody");
-			log.info("Sending SMS to " + notificationRecipient);
-			smsHelper.deliverSmsMsg(notificationRecipient, smsBody);
+			log.info("Sending SMS to " + recipient);
+			smsHelper.deliverSmsMsg(recipient, smsBody);
 
 		}
 	} catch (IOException e) {
