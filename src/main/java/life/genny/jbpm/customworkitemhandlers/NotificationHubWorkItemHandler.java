@@ -46,12 +46,8 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
         (QBaseMSGMessageType) workItem.getParameter("notificationType");
     String template_id = (String) workItem.getParameter("templateID");
     String recipient = (String) workItem.getParameter("recipient");
-    String[] ccArray = {
-      (String) workItem.getParameter("ccArray")
-    };
-    String[] bccArray = {
-      (String) workItem.getParameter("bccArray")
-    };
+    String cc = (String) workItem.getParameter("cc");
+    String bcc = (String) workItem.getParameter("bcc");
     HashMap<String, String> templateData =
         (HashMap<String, String>) workItem.getParameter("templateData");
     GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
