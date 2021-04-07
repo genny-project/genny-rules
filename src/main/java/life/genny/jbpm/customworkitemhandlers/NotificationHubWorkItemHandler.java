@@ -58,8 +58,8 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
     log.info("notificationType = " + messageType);
     log.info("templateID = " + template_id);
     log.info("recipient = " + recipient);
-    log.info("ccArray = " + ccArray.toString());
-    log.info("bccArray = " + bccArray.toString());
+    log.info("cc = " + cc);
+    log.info("bcc = " + bcc);
     log.info("templateData = " + templateData);
     log.info("userToken = " + userToken);
 
