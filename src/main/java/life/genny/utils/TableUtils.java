@@ -174,7 +174,8 @@ public class TableUtils {
 			// Now send the end_process msg
 			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 
-			VertxUtils.writeMsgEnd(beUtils.getGennyToken());
+			// COMMENTED BECAUSE IT IS ANNOYING
+			// VertxUtils.writeMsgEnd(beUtils.getGennyToken());
 
 		}
 		// long endtime4 = System.currentTimeMillis();
@@ -1562,7 +1563,8 @@ public class TableUtils {
 			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 			msgend.setToken(beUtils.getGennyToken().getToken());
 			msgend.setSend(true);
-			VertxUtils.writeMsg("webcmds", msgend);
+			// COMMENTED BECAUSE IT IS ANNOYING
+			// VertxUtils.writeMsg("webcmds", msgend);
 
 
 			/* update(output); */
