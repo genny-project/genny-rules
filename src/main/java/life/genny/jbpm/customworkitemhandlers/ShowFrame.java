@@ -78,7 +78,7 @@ public class ShowFrame implements WorkItemHandler {
 			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 			msgend.setToken(userToken.getToken());
 			msgend.setSend(true);
-			VertxUtils.writeMsg("webcmds", msgend);
+			// VertxUtils.writeMsg("webcmds", msgend);
 
 		}
 		
