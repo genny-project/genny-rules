@@ -197,7 +197,9 @@ public class SearchUtils {
 		for (EntityAttribute ea : cols) {
 			String attributeCode = ea.getAttributeCode();
 			String attributeName = ea.getAttributeName();
-			if (attributeCode.startsWith("COL_")) {
+			if (attributeCode.startsWith("COL__")) {
+				columns.put(attributeCode.split("COL__")[1], attributeName); // TODO
+			} else if (attributeCode.startsWith("COL_")) {
 				columns.put(attributeCode.split("COL_")[1], attributeName);
 			} else if (attributeCode.startsWith("CAL_")) {
 				columns.put(attributeCode.split("CAL_")[1], attributeName);
