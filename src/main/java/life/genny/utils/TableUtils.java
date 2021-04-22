@@ -258,7 +258,9 @@ public class TableUtils {
 		long endtime2 = starttime;
 
 		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
-
+		if (cals!=null) {
+			log.info("searchUsingHql -> detected "+cals.size()+" CALS");
+		}
 		Tuple2<String, List<String>> data = beUtils.getHql(searchBE);
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE =" + (endtime1 - starttime) + " ms");
@@ -288,6 +290,7 @@ public class TableUtils {
 																												// end
 																												// field
 						if (calFields.length != 2) {
+							log.error("CALS length is bad for "+searchBE.getCode()+" :"+calEA.getAttributeCode());
 							continue;
 						}
 						String attributeCode = calFields[0];
