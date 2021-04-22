@@ -279,6 +279,8 @@ public class TableUtils {
 
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
+						log.info("In searchUsingHql SINGLE CALEA is "+calEA.getAttributeCode());
+
 						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
 																												// separates
 																												// the
@@ -379,6 +381,7 @@ public class TableUtils {
 
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
+						log.info("In searchUsingHql LOOP CALEA is "+calEA.getAttributeCode());
 						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
 																												// separates
 																												// the
@@ -390,16 +393,25 @@ public class TableUtils {
 																												// end
 																												// field
 						if (calFields.length != 2) {
+							log.error("CALS length is bad for "+searchBE.getCode()+" :"+calEA.getAttributeCode());
 							continue;
 						}
 						String attributeCode = calFields[0];
+						log.info("CAL SEARCH attributeCode = "+attributeCode);
 						String calBe = be.getValueAsString(attributeCode);
+						log.info("CAL SEARCH value = "+calBe);
 						String linkBeCode = calEA.getValueString();
 						if (!StringUtils.isBlank(calBe)) {
 							if (calBe.startsWith("[")) {
 								calBe = calBe.substring(2, calBe.length() - 2);
 							}
 							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
+							if (associatedBe != null) {
+								log.info("If associatedBe exists ->"+associatedBe.getCode());
+							} else {
+								log.info("associatedBe DOES NOT exist ->"+calBe);
+								continue;
+							}
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
 							if (associateEa.isPresent()) {
 								String linkedValue = associatedBe.getValueAsString(linkBeCode);
