@@ -414,6 +414,7 @@ public class TableUtils {
 						String calBe = be.getValueAsString(attributeCode);
 						log.info("CAL SEARCH value = " + calBe);
 						String linkBeCode = calFields[1];
+						log.info("CAL SEARCH linkBeCode = " + linkBeCode);
 						if (!StringUtils.isBlank(calBe)) {
 							if (calBe.startsWith("[")) {
 								calBe = calBe.substring(2, calBe.length() - 2);
@@ -428,6 +429,7 @@ public class TableUtils {
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
 							if (associateEa.isPresent()) {
 								String linkedValue = associatedBe.getValueAsString(linkBeCode);
+								log.info("CAL SEARCH linkedValue = " + linkedValue);
 								try {
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(),
 											linkedValue);
