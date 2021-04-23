@@ -413,7 +413,7 @@ public class TableUtils {
 						log.info("CAL SEARCH attributeCode = " + attributeCode);
 						String calBe = be.getValueAsString(attributeCode);
 						log.info("CAL SEARCH value = " + calBe);
-						String linkBeCode = calEA.getValueString();
+						String linkBeCode = calFields[1];
 						if (!StringUtils.isBlank(calBe)) {
 							if (calBe.startsWith("[")) {
 								calBe = calBe.substring(2, calBe.length() - 2);
