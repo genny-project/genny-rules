@@ -433,10 +433,10 @@ public class TableUtils {
 								String linkedValue = associatedBe.getValueAsString(linkBeCode);
 								log.info("CAL SEARCH linkedValue = " + linkedValue);
 								try {
-									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(),
-											linkedValue);
+									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
 									Attribute att = associateEa.get().getAttribute();
-									att.setCode("_" + attributeCode + "__" + linkBeCode);
+									/*att.setCode("_" + attributeCode + "__" + linkBeCode);*/
+									att.setCode(linkBeCode);
 									log.info("The CAL att is "+att);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
