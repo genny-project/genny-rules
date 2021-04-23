@@ -425,14 +425,17 @@ public class TableUtils {
 								log.info("associatedBe DOES NOT exist ->" + calBe);
 								continue;
 							}
+							log.info("CAL Searching for ea "+linkBeCode);
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
 							if (associateEa.isPresent()) {
+								log.info("CAL ea exists! "+linkBeCode);
 								String linkedValue = associatedBe.getValueAsString(linkBeCode);
 								try {
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(),
 											linkedValue);
 									Attribute att = associateEa.get().getAttribute();
 									att.setCode("_" + attributeCode + "__" + linkBeCode);
+									log.info("The CAL att is "+att);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
 
