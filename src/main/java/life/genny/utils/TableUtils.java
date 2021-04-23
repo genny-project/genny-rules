@@ -435,9 +435,10 @@ public class TableUtils {
 								try {
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
 									Attribute att = associateEa.get().getAttribute();
-									/*att.setCode("_" + attributeCode + "__" + linkBeCode);*/
-									att.setCode(linkBeCode);
-									log.info("The CAL att is "+att);
+									log.info("The CAL att privacy field is "+(att.getDefaultPrivacyFlag()? "true" : "false"));
+									att.setCode(attributeCode + "__" + linkBeCode);
+									/*att.setCode(linkBeCode);*/
+									log.info("The CAL att after is "+att);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
 
