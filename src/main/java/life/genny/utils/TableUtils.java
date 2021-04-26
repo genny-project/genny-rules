@@ -1726,8 +1726,11 @@ public class TableUtils {
 		Attribute submitAttribute = RulesUtils.getAttribute("PRI_SUBMIT", beUtils.getGennyToken().getToken());
 		Attribute selectColumnAttribute = RulesUtils.getAttribute("LNK_FILTER_COLUMN", beUtils.getGennyToken().getToken());
 		Attribute selectOptionAttribute = RulesUtils.getAttribute("LNK_FILTER_OPTION", beUtils.getGennyToken().getToken());
+		// Value Picker Attributes
 		Attribute filterValueTextAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_TEXT", beUtils.getGennyToken().getToken());
 		Attribute filterValueDateTimeAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_DATETIME", beUtils.getGennyToken().getToken());
+		Attribute filterValueCountryAttribute = RulesUtils.getAttribute("LNK_SELECT_COUNTRY", beUtils.getGennyToken().getToken());
+		Attribute filterValueStateAttribute = RulesUtils.getAttribute("LNK_SELECT_STATE", beUtils.getGennyToken().getToken());
 		
 		// Search Filter group
 		Question filterGrpQues = new Question("QUE_FILTER_GRP_"+searchBE.getCode(), "Filters", questionAttribute, true);
@@ -1757,13 +1760,25 @@ public class TableUtils {
 		// Set DateTime picker hidden by default
 		filterValueDateTimeAsk.setHidden(true);
 
+		// Question for inputing a value using a country picker
+		Question filterValueCountryQues = new Question("QUE_FILTER_VALUE_COUNTRY", "Filter Value", filterValueCountryAttribute, true);
+		Ask filterValueCountryAsk = new Ask(filterValueCountryQues , sourceCode, targetCode);
+		// Set Country picker hidden by default
+		filterValueCountryAsk.setHidden(true);
+
+		// Question for inputing a value using a state picker
+		Question filterValueStateQues = new Question("QUE_FILTER_VALUE_STATE", "Filter Value", filterValueStateAttribute, true);
+		Ask filterValueStateAsk = new Ask(filterValueStateQues , sourceCode, targetCode);
+		// Set State picker hidden by default
+		filterValueStateAsk.setHidden(true);
+
 		// Submit Button
 		Question submitQues = new Question("QUE_SUBMIT", "Submit", submitAttribute, true);
 		Ask submitAsk = new Ask(submitQues , sourceCode, targetCode);
 		// Set Submit disabled by default
 		submitAsk.setDisabled(true);
 
-		Ask[] addFilterChildAsks = { filterColumnAsk, filterOptionAsk, filterValueTextAsk, filterValueDateTimeAsk, submitAsk };
+		Ask[] addFilterChildAsks = { filterColumnAsk, filterOptionAsk, filterValueTextAsk, filterValueDateTimeAsk, filterValueCountryAsk, filterValueStateAsk, submitAsk };
 		addFilterGrpAsk.setChildAsks(addFilterChildAsks);
 
 		// Existing Filters group
