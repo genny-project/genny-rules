@@ -121,8 +121,8 @@ public class TableUtils {
 			msg = fetchSearchResults(searchBE);
 		}
 		long endtime1 = System.currentTimeMillis();
-		log.info(
-				"Time taken to search Results from SearchBE =" + (endtime1 - starttime) + " ms with total=" + msg.getTotal());
+		log.info("Time taken to search Results from SearchBE =" + (endtime1 - starttime) + " ms with total="
+				+ msg.getTotal());
 
 		msg.setReplace(replace);
 
@@ -135,7 +135,7 @@ public class TableUtils {
 		}
 		long endtime2 = System.currentTimeMillis();
 		log.info("Time taken to send Results =" + (endtime2 - endtime1) + " ms");
-		
+
 		Long totalResultCount = msg.getTotal();
 
 		// Perform count for any combined search attributes
@@ -218,8 +218,8 @@ public class TableUtils {
 		RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
 
 		log.info("serviceToken " + beUtils.getServiceToken());
-		Map<String, Object> results = ruleFlowGroupHandler.executeRules(beUtils.getServiceToken(), beUtils.getGennyToken(),
-				facts, "SearchFilters", "TableUtils:GetFilters");
+		Map<String, Object> results = ruleFlowGroupHandler.executeRules(beUtils.getServiceToken(),
+				beUtils.getGennyToken(), facts, "SearchFilters", "TableUtils:GetFilters");
 
 		Object obj = results.get("payload");
 		/* log.info("obj   ::   " +obj); */
@@ -258,30 +258,43 @@ public class TableUtils {
 		long endtime2 = starttime;
 
 		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
-		
-		
+		if (cals != null) {
+			log.info("searchUsingHql -> detected " + cals.size() + " CALS");
+		}
 		Tuple2<String, List<String>> data = beUtils.getHql(searchBE);
 		long endtime1 = System.currentTimeMillis();
 		log.info("Time taken to getHql from SearchBE =" + (endtime1 - starttime) + " ms");
 
-		
 		String[] filterArray = data._2.toArray(new String[0]);
 		// Add the associated columns
-		
 
 		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
 			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
-				// This means we are searching for a single entity				
+				// This means we are searching for a single entity
+				log.info("SINGLE BSAE ENTITY SEARCH DETECTED");
 				BaseEntity be = beUtils.getBaseEntityByCode(attr.getValue());
 
 				if (be != null) {
-					log.info("BE found with code " + be.getCode());
+					log.info("SINGLE - BE found with code " + be.getCode());
 					be = VertxUtils.privacyFilter(be, filterArray);
-					
-					// Get any CAL attributes 
+
+					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
-						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this separates the indirect lnk field from the end field
-						if (calFields.length!=2) {
+						log.info("SINGLE - In searchUsingHql SINGLE CALEA is " + calEA.getAttributeCode());
+
+						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
+																												// separates
+																												// the
+																												// indirect
+																												// lnk
+																												// field
+																												// from
+																												// the
+																												// end
+																												// field
+						if (calFields.length != 2) {
+							log.error("SINGLE - CALS length is bad for " + searchBE.getCode() + " :"
+									+ calEA.getAttributeCode());
 							continue;
 						}
 						String attributeCode = calFields[0];
@@ -289,11 +302,11 @@ public class TableUtils {
 						String linkBeCode = calEA.getValueString();
 						if (!StringUtils.isBlank(calBe)) {
 							if (calBe.startsWith("[")) {
-								calBe = calBe.substring(2, calBe.length()-2);
+								calBe = calBe.substring(2, calBe.length() - 2);
 							}
 							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
-							if (associateEa.isPresent()||("PRI_NAME".equals(linkBeCode))) {
+							if (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode))) {
 								String linkedValue = null;
 								if ("PRI_NAME".equals(linkBeCode)) {
 									linkedValue = associatedBe.getName();
@@ -301,7 +314,8 @@ public class TableUtils {
 									linkedValue = associatedBe.getValueAsString(linkBeCode);
 								}
 								try {
-									Answer ans = new Answer(be.getCode(),be.getCode(),calEA.getAttributeCode(),linkedValue);
+									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(),
+											linkedValue);
 									Attribute att = null;
 									if ("PRI_NAME".equals(linkBeCode)) {
 										att = RulesUtils.getAttribute("PRI_NAME", serviceToken);
@@ -311,10 +325,10 @@ public class TableUtils {
 									} else {
 										att = associateEa.get().getAttribute();
 									}
-									att.setCode("_"+attributeCode+"__"+linkBeCode);
+									att.setCode("_" + attributeCode + "__" + linkBeCode);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
-								
+
 								} catch (BadDataException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -322,12 +336,12 @@ public class TableUtils {
 							}
 						}
 					}
-					
+
 					msg = new QDataBaseEntityMessage(be);
 					msg.setTotal(1L);
 
 				} else {
-					log.error("Could not find BE");
+					log.error("SINGLE - Could not find BE");
 					msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
 					Long total = 0L;
 					msg.setTotal(total);
@@ -344,53 +358,90 @@ public class TableUtils {
 
 		hql = Base64.getUrlEncoder().encodeToString(hql.getBytes());
 		try {
-			String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search24/" + hql
-					+ "/" + searchBE.getPageStart(0) + "/" + searchBE.getPageSize(GennySettings.defaultPageSize),
+			String resultJsonStr = QwandaUtils.apiGet(
+					GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search24/" + hql + "/"
+							+ searchBE.getPageStart(0) + "/" + searchBE.getPageSize(GennySettings.defaultPageSize),
 					serviceToken.getToken(), 120);
 
 			endtime2 = System.currentTimeMillis();
-			log.info("Time taken to fetch Data =" + (endtime2 - endtime1) + " ms");
+			log.info("NOT SINGLE - Time taken to fetch Data =" + (endtime2 - endtime1) + " ms");
 
 			JsonObject resultJson = null;
 
 			try {
 				resultJson = new JsonObject(resultJsonStr);
 				JsonArray result = resultJson.getJsonArray("codes");
+				if (result == null) {
+					log.error("SEARCH RESULT JSON ARRAY IS NULL");
+				}
 				List<String> resultCodes = new ArrayList<String>();
 
 				BaseEntity[] beArray = new BaseEntity[result.size()];
 
 				for (int i = 0; i < result.size(); i++) {
+
+					log.info("IN SEARCh RESULT LOOP ");
 					String code = result.getString(i);
 					resultCodes.add(code);
 					BaseEntity be = beUtils.getBaseEntityByCode(code);
+					if (be != null) {
+						log.info("IN SEARCh RESULT LOOP -> " + be.getCode());
+					} else {
+						log.error("result BE row was null");
+					}
 					be = VertxUtils.privacyFilter(be, filterArray);
-
-					
-					// Get any CAL attributes 
+					log.info("be is past privacy filter");
+					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
-						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this separates the indirect lnk field from the end field
-						if (calFields.length!=2) {
+						log.info("In searchUsingHql LOOP CALEA is " + calEA.getAttributeCode());
+						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
+																												// separates
+																												// the
+																												// indirect
+																												// lnk
+																												// field
+																												// from
+																												// the
+																												// end
+						// field
+						log.info("Number of calFields is " + calFields.length);
+						if (calFields.length != 2) {
+							log.error("CALS length is bad for " + searchBE.getCode() + " :" + calEA.getAttributeCode());
 							continue;
 						}
 						String attributeCode = calFields[0];
+						log.info("CAL SEARCH attributeCode = " + attributeCode);
 						String calBe = be.getValueAsString(attributeCode);
-						String linkBeCode = calEA.getValueString();
+						log.info("CAL SEARCH value = " + calBe);
+						String linkBeCode = calFields[1];
+						log.info("CAL SEARCH linkBeCode = " + linkBeCode);
 						if (!StringUtils.isBlank(calBe)) {
 							if (calBe.startsWith("[")) {
-								calBe = calBe.substring(2, calBe.length()-2);
+								calBe = calBe.substring(2, calBe.length() - 2);
 							}
 							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
+							if (associatedBe != null) {
+								log.info("If associatedBe exists ->" + associatedBe.getCode());
+							} else {
+								log.info("associatedBe DOES NOT exist ->" + calBe);
+								continue;
+							}
+							log.info("CAL Searching for ea "+linkBeCode);
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
 							if (associateEa.isPresent()) {
+								log.info("CAL ea exists! "+linkBeCode);
 								String linkedValue = associatedBe.getValueAsString(linkBeCode);
+								log.info("CAL SEARCH linkedValue = " + linkedValue);
 								try {
-									Answer ans = new Answer(be.getCode(),be.getCode(),calEA.getAttributeCode(),linkedValue);
+									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
 									Attribute att = associateEa.get().getAttribute();
-									att.setCode("_"+attributeCode+"__"+linkBeCode);
+									log.info("The CAL att privacy field is "+(att.getDefaultPrivacyFlag()? "true" : "false"));
+									att.setCode("PRI_" +attributeCode + "__" + linkBeCode);
+									/*att.setCode(linkBeCode);*/
+									log.info("The CAL att after is "+att);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
-								
+
 								} catch (BadDataException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -401,7 +452,7 @@ public class TableUtils {
 					be.setIndex(i);
 					beArray[i] = be;
 				}
-				
+
 				msg = new QDataBaseEntityMessage(beArray);
 				Long total = resultJson.getLong("total");
 				msg.setTotal(total);
@@ -428,17 +479,17 @@ public class TableUtils {
 		return msg;
 	}
 
-	private static void updateColIndex(SearchEntity searchBE ) {
+	private static void updateColIndex(SearchEntity searchBE) {
 		Integer index = 1;
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			if (ea.getAttributeCode().startsWith("COL_")) {
-			    index++;
+				index++;
 			}
 		}
 		searchBE.setColIndex(index.doubleValue());
 	}
 
-	private static void updateActIndex(SearchEntity searchBE ) {
+	private static void updateActIndex(SearchEntity searchBE) {
 		Integer index = 1;
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			if (ea.getAttributeCode().startsWith("ACT_")) {
@@ -451,12 +502,11 @@ public class TableUtils {
 	public SearchEntity getSessionSearch(final String searchCode) {
 		return getSessionSearch(searchCode, null, null);
 	}
-	
+
 	public SearchEntity getSessionSearch(final String searchCode, final String filterCode, final String filterValue) {
 
-		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
-				beUtils.getGennyToken().getToken());
-
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchCode,
+				SearchEntity.class, beUtils.getGennyToken().getToken());
 
 		return getSessionSearch(searchBE, filterCode, filterValue);
 	}
@@ -465,11 +515,13 @@ public class TableUtils {
 		return getSessionSearch(searchBE, null, null);
 	}
 
-	public SearchEntity getSessionSearch(final SearchEntity searchBE, final String filterCode, final String filterValue) {
+	public SearchEntity getSessionSearch(final SearchEntity searchBE, final String filterCode,
+			final String filterValue) {
 
 		if (!searchBE.getCode().contains(beUtils.getGennyToken().getSessionCode().toUpperCase())) {
 			/* we need to set the searchBe's code to session Search Code */
-			String sessionSearchCode = searchBE.getCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase();
+			String sessionSearchCode = searchBE.getCode() + "_"
+					+ beUtils.getGennyToken().getSessionCode().toUpperCase();
 			searchBE.setCode(sessionSearchCode);
 		}
 		log.info("sessionSearchCode  ::  " + searchBE.getCode());
@@ -477,7 +529,8 @@ public class TableUtils {
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			ea.setBaseEntityCode(searchBE.getCode());
 			if (ea.getAttributeCode().startsWith("SBE_")) {
-				ea.setAttributeCode(ea.getAttributeCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
+				ea.setAttributeCode(
+						ea.getAttributeCode() + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
 			}
 		}
 
@@ -496,8 +549,8 @@ public class TableUtils {
 		 */
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
 				beUtils.getGennyToken().getToken());
-		SearchEntity searchEntity = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), SearchEntity.class,
-				beUtils.getGennyToken().getToken());
+		SearchEntity searchEntity = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(),
+				SearchEntity.class, beUtils.getGennyToken().getToken());
 
 		return searchEntity;
 	}
@@ -639,7 +692,8 @@ public class TableUtils {
 		/* converting rowAsks list to array */
 		Ask[] rowAsksArr = rowAsks.stream().toArray(Ask[]::new);
 
-		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_RESULTS", "link", new DataType(String.class));
+		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP_TABLE_RESULTS", "link",
+				new DataType(String.class));
 		Question tableResultQuestion = new Question("QUE_TABLE_RESULTS_GRP", "Table Results Question Group",
 				questionAttribute, true);
 
@@ -739,7 +793,10 @@ public class TableUtils {
 		for (EntityAttribute ea : cols) {
 			String attributeCode = ea.getAttributeCode();
 			String attributeName = ea.getAttributeName();
-			if (attributeCode.startsWith("COL_")) {
+			if (attributeCode.startsWith("COL__")) {
+				columns.put(attributeCode.split("COL__")[1], attributeName);
+
+			} else if (attributeCode.startsWith("COL_")) {
 				columns.put(attributeCode.split("COL_")[1], attributeName);
 			} else if (attributeCode.startsWith("CAL_")) {
 				columns.put(attributeCode.split("CAL_")[1], attributeName);
@@ -773,44 +830,44 @@ public class TableUtils {
 
 			tests.add(createTestCompany("Melbourne University", "0398745321", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Monash University", "0398744421", "support@melbuni.edu.au", "CLAYTON", "Victoria",
-					"3142"));
-			tests.add(createTestCompany("Latrobe University", "0398733321", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
+			tests.add(createTestCompany("Monash University", "0398744421", "support@melbuni.edu.au", "CLAYTON",
+					"Victoria", "3142"));
+			tests.add(createTestCompany("Latrobe University", "0398733321", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
 			tests.add(createTestCompany("University Of Warracknabeal", "0392225321", "support@melbuni.edu.au",
 					"WARRACKNABEAL", "Victoria", "3993"));
 			tests.add(createTestCompany("Ashburton University", "0398741111", "support@melbuni.edu.au", "ASHBURTON",
 					"Victoria", "3147"));
-			tests.add(createTestCompany("Outcome Academy", "0398745777", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
-			tests.add(createTestCompany("Holland University", "0298555521", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
+			tests.add(createTestCompany("Outcome Academy", "0398745777", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
+			tests.add(createTestCompany("Holland University", "0298555521", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
 			tests.add(createTestCompany("University of Greenvale", "0899995321", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Crow University", "0398749999", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
-			tests.add(createTestCompany("RMIT University", "0398748787", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
+			tests.add(createTestCompany("Crow University", "0398749999", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
+			tests.add(createTestCompany("RMIT University", "0398748787", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
 			tests.add(createTestCompany("Mt Buller University", "0398836421", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Australian National University", "0198876541", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("Australian National University", "0198876541", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany("Dodgy University", "0390000001", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Dodgy University", "0390000001", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
-			tests.add(createTestCompany("Australian Catholic University", "0398711121", "support@melbuni.edu.au", "MELBOURNE",
-					"Victoria", "3001"));
-			tests.add(createTestCompany("Australian Jedi University", "0798788881", "support@melbuni.edu.au", "MELBOURNE",
-					"Victoria", "3001"));
+			tests.add(createTestCompany("Australian Catholic University", "0398711121", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany("Australian Jedi University", "0798788881", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
 			tests.add(createTestCompany("Brisbane Lions University", "0401020319", "support@melbuni.edu.au", "BRISBANE",
 					"Queensland", "4000"));
-			tests.add(
-					createTestCompany("AFL University", "0390000001", "support@melbuni.edu.au", "MELBOURNE", "Victoria", "3001"));
-			tests.add(createTestCompany("Uluru University", "0398711441", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
-			tests.add(createTestCompany("University Of Hard Knocks", "0798744881", "support@melbuni.edu.au", "MELBOURNE",
+			tests.add(createTestCompany("AFL University", "0390000001", "support@melbuni.edu.au", "MELBOURNE",
 					"Victoria", "3001"));
-			tests.add(createTestCompany("Scam University", "0705020319", "support@melbuni.edu.au", "MELBOURNE", "Victoria",
-					"3001"));
+			tests.add(createTestCompany("Uluru University", "0398711441", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
+			tests.add(createTestCompany("University Of Hard Knocks", "0798744881", "support@melbuni.edu.au",
+					"MELBOURNE", "Victoria", "3001"));
+			tests.add(createTestCompany("Scam University", "0705020319", "support@melbuni.edu.au", "MELBOURNE",
+					"Victoria", "3001"));
 
 			for (Integer pageIndex = pageStart; pageIndex < (pageStart + pageSize); pageIndex++) {
 				if (pageIndex < tests.size()) {
@@ -927,8 +984,10 @@ public class TableUtils {
 		result1.setRealm(beUtils.getGennyToken().getRealm());
 		try {
 			result1.addAnswer(new Answer(result1, result1, attribute("PRI_EMAIL", beUtils.getGennyToken()), email));
-			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_STATE", beUtils.getGennyToken()), state));
-			result1.addAnswer(new Answer(result1, result1, attribute("PRI_ADDRESS_CITY", beUtils.getGennyToken()), city));
+			result1.addAnswer(
+					new Answer(result1, result1, attribute("PRI_ADDRESS_STATE", beUtils.getGennyToken()), state));
+			result1.addAnswer(
+					new Answer(result1, result1, attribute("PRI_ADDRESS_CITY", beUtils.getGennyToken()), city));
 			result1.addAnswer(
 					new Answer(result1, result1, attribute("PRI_ADDRESS_POSTCODE", beUtils.getGennyToken()), postcode));
 			result1.addAnswer(new Answer(result1, result1, attribute("PRI_LANDLINE", beUtils.getGennyToken()), phone));
@@ -974,7 +1033,8 @@ public class TableUtils {
 
 			/* Initialize Column Header Ask group */
 			Question columnHeaderQuestion = new Question("QUE_" + attributeCode, attributeName, priEvent, true);
-			Ask columnHeaderAsk = new Ask(columnHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
+			Ask columnHeaderAsk = new Ask(columnHeaderQuestion, beUtils.getGennyToken().getUserCode(),
+					searchBe.getCode());
 
 			/* creating ask for table header label-sort */
 			/*
@@ -1009,7 +1069,8 @@ public class TableUtils {
 		/*
 		 * we create a table-header ask grp and set all the column asks as it's childAsk
 		 */
-		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", searchBe.getName(), questionAttribute, true);
+		Question tableHeaderQuestion = new Question("QUE_TABLE_HEADER_GRP", searchBe.getName(), questionAttribute,
+				true);
 
 		Ask tableHeaderAsk = new Ask(tableHeaderQuestion, beUtils.getGennyToken().getUserCode(), searchBe.getCode());
 		tableHeaderAsk.setChildAsks(asksArray);
@@ -1030,15 +1091,15 @@ public class TableUtils {
 		return createVirtualContext(ask, themeList, linkCode, VisualControlType.VCL_INPUT, themeMsgList);
 	}
 
-	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType,
-			List<QDataBaseEntityMessage> themeMsgList) {
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode,
+			VisualControlType visualControlType, List<QDataBaseEntityMessage> themeMsgList) {
 		List<BaseEntity> themeList = new ArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType, themeMsgList);
 	}
 
-	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode, VisualControlType visualControlType,
-			Double weight, List<QDataBaseEntityMessage> themeMsgList) {
+	public Ask createVirtualContext(Ask ask, BaseEntity theme, ContextType linkCode,
+			VisualControlType visualControlType, Double weight, List<QDataBaseEntityMessage> themeMsgList) {
 		List<BaseEntity> themeList = new ArrayList<>();
 		themeList.add(theme);
 		return createVirtualContext(ask, themeList, linkCode, visualControlType, weight, themeMsgList);
@@ -1202,7 +1263,8 @@ public class TableUtils {
 					if (sourceFrame.getCode().equals(ask.getQuestionCode())) {
 
 						log.info("ShowFrame : Found Source Frame BaseEntity : " + sourceFrame);
-						EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute, 1.0, "CENTRE");
+						EntityEntity entityEntity = new EntityEntity(targetFrame, sourceFrame, attribute, 1.0,
+								"CENTRE");
 						Set<EntityEntity> entEntList = targetFrame.getLinks();
 						entEntList.add(entityEntity);
 						targetFrame.setLinks(entEntList);
@@ -1249,8 +1311,8 @@ public class TableUtils {
 						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
 
 						if (attr != null) {
-							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
-									true);
+							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(),
+									attributeName, attr, true);
 							Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
 							childAsk.setReadonly(true);
 							childAskList.add(childAsk);
@@ -1273,7 +1335,8 @@ public class TableUtils {
 					Attribute tableRowAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_ROW");
 
 					/* Generate ask for the baseentity */
-					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(), tableRowAttribute, true);
+					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
+							tableRowAttribute, true);
 					Ask parentAsk = new Ask(parentQuestion, targetCode, be.getCode());
 
 					/* set readOnly to true */
@@ -1425,11 +1488,11 @@ public class TableUtils {
 		}
 		System.out.println("SBE CODE   ::   " + searchBeCode);
 
-		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBeCode, SearchEntity.class,
-		beUtils.getGennyToken().getToken());
-		
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", searchBeCode,
+				SearchEntity.class, beUtils.getGennyToken().getToken());
+
 		if (searchBE != null) {
-				
+
 			if (code.startsWith("CNS_")) {
 				searchBE.setCode(code);
 			}
@@ -1460,46 +1523,51 @@ public class TableUtils {
 			// Perform Count
 			return tableUtils.performAndSendCount(searchBE);
 		} else {
-	
+
 			try {
 				searchBE = tableUtils.getSessionSearch(searchBE, filterCode, filterValue);
 			} catch (Exception e1) {
 				return -1L;
 			}
-			
+
 			long starttime = System.currentTimeMillis();
-			
+
 			if (searchBE == null) {
 				System.out.println("SearchBE is null");
 				return -1L;
 			}
-			
+
 			/* get current search */
 			long s2time = System.currentTimeMillis();
-		/* 	if (replace) { // user has clicked on fresh search
-			Answer pageAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_PAGE_START", "0");
-			Answer pageNumberAnswer = new Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "PRI_INDEX", "1");
-			
-			searchBE = beUtils.updateBaseEntity(searchBE, pageAnswer, SearchEntity.class);
-			searchBE = beUtils.updateBaseEntity(searchBE, pageNumberAnswer, SearchEntity.class);
-			
-			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", searchBE.getCode(), searchBE,
-			beUtils.getGennyToken().getToken());
-			} */
-			
-			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH", beUtils.getGennyToken().getSessionCode(),
-			searchBE, beUtils.getGennyToken().getToken());
+			/*
+			 * if (replace) { // user has clicked on fresh search Answer pageAnswer = new
+			 * Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(),
+			 * "SCH_PAGE_START", "0"); Answer pageNumberAnswer = new
+			 * Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(),
+			 * "PRI_INDEX", "1");
+			 * 
+			 * searchBE = beUtils.updateBaseEntity(searchBE, pageAnswer,
+			 * SearchEntity.class); searchBE = beUtils.updateBaseEntity(searchBE,
+			 * pageNumberAnswer, SearchEntity.class);
+			 * 
+			 * VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "",
+			 * searchBE.getCode(), searchBE, beUtils.getGennyToken().getToken()); }
+			 */
+
+			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH",
+					beUtils.getGennyToken().getSessionCode(), searchBE, beUtils.getGennyToken().getToken());
 
 			updateActIndex(searchBE);
 			updateColIndex(searchBE);
 
 			long s3time = System.currentTimeMillis();
-			
+
 			ExecutorService WORKER_THREAD_POOL = Executors.newFixedThreadPool(10);
 			CompletionService<QBulkMessage> service = new ExecutorCompletionService<>(WORKER_THREAD_POOL);
-			
+
 			// TableFrameCallable tfc = new TableFrameCallable(beUtils, cache);
-			SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue, replace);
+			SearchCallable sc = new SearchCallable(tableUtils, searchBE, beUtils, cache, filterCode, filterValue,
+					replace);
 
 			List<Callable<QBulkMessage>> callables = Arrays.asList(sc);
 
@@ -1559,13 +1627,12 @@ public class TableUtils {
 				// Now send the end_process msg
 
 			}
-			
+
 			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 			msgend.setToken(beUtils.getGennyToken().getToken());
 			msgend.setSend(true);
 			// COMMENTED BECAUSE IT IS ANNOYING
 			// VertxUtils.writeMsg("webcmds", msgend);
-
 
 			/* update(output); */
 			long endtime = System.currentTimeMillis();
@@ -1585,8 +1652,8 @@ public class TableUtils {
 
 		log.info("Fetching SearchBE " + searchCode + " from cache");
 
-		SearchEntity searchBE = VertxUtils.getObject(this.beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
-		beUtils.getGennyToken().getToken());
+		SearchEntity searchBE = VertxUtils.getObject(this.beUtils.getGennyToken().getRealm(), "", searchCode,
+				SearchEntity.class, beUtils.getGennyToken().getToken());
 
 		return performAndSendCount(searchBE);
 	}
@@ -1622,8 +1689,8 @@ public class TableUtils {
 
 		log.info("Fetching SearchBE " + searchCode + " from cache");
 
-		SearchEntity searchBE = VertxUtils.getObject(this.beUtils.getGennyToken().getRealm(), "", searchCode, SearchEntity.class,
-		beUtils.getGennyToken().getToken());
+		SearchEntity searchBE = VertxUtils.getObject(this.beUtils.getGennyToken().getRealm(), "", searchCode,
+				SearchEntity.class, beUtils.getGennyToken().getToken());
 
 		return performCount(searchBE);
 	}
@@ -1654,7 +1721,8 @@ public class TableUtils {
 		log.info("hql = " + hql);
 		try {
 			/* Hit the api for a count */
-			String resultJsonStr = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count24/" + hql2,
+			String resultJsonStr = QwandaUtils.apiGet(
+					GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count24/" + hql2,
 					this.beUtils.getServiceToken().getToken(), 120);
 
 			System.out.println("Count = " + resultJsonStr);
@@ -1679,17 +1747,17 @@ public class TableUtils {
 		return total;
 	}
 
-	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils){
+	static public void moveEntity(String code, String sourceCode, String targetCode, BaseEntityUtils beUtils) {
 		QCmdMessage msg = new QCmdMessage("MOVE_ENTITY", code);
-		if(sourceCode != null){
+		if (sourceCode != null) {
 			msg.setSourceCode(sourceCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
 		}
-		if(targetCode != null){
+		if (targetCode != null) {
 			msg.setTargetCode(targetCode + "_" + beUtils.getGennyToken().getSessionCode().toUpperCase());
 		}
 		msg.setToken(beUtils.getGennyToken().getToken());
-		msg.setSend(true);  		
-		VertxUtils.writeMsg("webcmds",msg);
+		msg.setSend(true);
+		VertxUtils.writeMsg("webcmds", msg);
 	}
 
 	static public void sendFilterQuestions(BaseEntityUtils beUtils, String code) {
@@ -1705,13 +1773,14 @@ public class TableUtils {
 		String baseSearchCode = searchBE.getCode();
 		if (baseSearchCode.contains(beUtils.getGennyToken().getSessionCode().toUpperCase())) {
 			/* we need to set the searchBe's code to session Search Code */
-			baseSearchCode = baseSearchCode.substring(0, baseSearchCode.length()-beUtils.getGennyToken().getSessionCode().length()-1);
+			baseSearchCode = baseSearchCode.substring(0,
+					baseSearchCode.length() - beUtils.getGennyToken().getSessionCode().length() - 1);
 		}
 		/* Retrieve the base SBE */
 		System.out.println("baseSearchCode = " + baseSearchCode);
 
-		SearchEntity baseSearchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", baseSearchCode, SearchEntity.class,
-			beUtils.getGennyToken().getToken());
+		SearchEntity baseSearchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", baseSearchCode,
+				SearchEntity.class, beUtils.getGennyToken().getToken());
 
 		/* Find the highest weight of filters in base SBE */
 		Double baseMaxWeight = baseSearchBE.getMaximumFilterWeight();
@@ -1719,21 +1788,28 @@ public class TableUtils {
 
 		String sourceCode = beUtils.getGennyToken().getUserCode();
 		String targetCode = searchBE.getCode();
-		
+
 		// Define Attributes
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 		Attribute eventAttribute = new Attribute("PRI_EVENT", "link", new DataType(String.class));
 		Attribute submitAttribute = RulesUtils.getAttribute("PRI_SUBMIT", beUtils.getGennyToken().getToken());
-		Attribute selectColumnAttribute = RulesUtils.getAttribute("LNK_FILTER_COLUMN", beUtils.getGennyToken().getToken());
-		Attribute selectOptionAttribute = RulesUtils.getAttribute("LNK_FILTER_OPTION", beUtils.getGennyToken().getToken());
-		// Value Picker Attributes
-		Attribute filterValueTextAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_TEXT", beUtils.getGennyToken().getToken());
-		Attribute filterValueDateTimeAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_DATETIME", beUtils.getGennyToken().getToken());
-		Attribute filterValueCountryAttribute = RulesUtils.getAttribute("LNK_SELECT_COUNTRY", beUtils.getGennyToken().getToken());
-		Attribute filterValueStateAttribute = RulesUtils.getAttribute("LNK_SELECT_STATE", beUtils.getGennyToken().getToken());
 		
+		Attribute selectColumnAttribute = RulesUtils.getAttribute("LNK_FILTER_COLUMN",
+				beUtils.getGennyToken().getToken());
+		Attribute selectOptionAttribute = RulesUtils.getAttribute("LNK_FILTER_OPTION",
+				beUtils.getGennyToken().getToken());
+		Attribute filterValueTextAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_TEXT",
+				beUtils.getGennyToken().getToken());
+		Attribute filterValueDateTimeAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_DATETIME",
+				beUtils.getGennyToken().getToken());
+		Attribute filterValueCountryAttribute = RulesUtils.getAttribute("LNK_SELECT_COUNTRY", 
+				beUtils.getGennyToken().getToken());
+		Attribute filterValueStateAttribute = RulesUtils.getAttribute("LNK_SELECT_STATE", 
+				beUtils.getGennyToken().getToken());
+
 		// Search Filter group
-		Question filterGrpQues = new Question("QUE_FILTER_GRP_"+searchBE.getCode(), "Filters", questionAttribute, true);
+		Question filterGrpQues = new Question("QUE_FILTER_GRP_" + searchBE.getCode(), "Filters", questionAttribute,
+				true);
 		Ask filterGrpAsk = new Ask(filterGrpQues, sourceCode, targetCode);
 
 		// Add Filter group
@@ -1743,20 +1819,23 @@ public class TableUtils {
 		// Question for selecting the column to filter
 		Question filterColumnQues = new Question("QUE_FILTER_COLUMN", "Select Column", selectColumnAttribute, true);
 		Ask filterColumnAsk = new Ask(filterColumnQues, sourceCode, targetCode);
-		
+
 		// Question for selecting the filter option
-		Question filterOptionQues = new Question("QUE_FILTER_OPTION", "Select Filter Option", selectOptionAttribute, true);
-		Ask filterOptionAsk = new Ask(filterOptionQues , sourceCode, targetCode);
+		Question filterOptionQues = new Question("QUE_FILTER_OPTION", "Select Filter Option", selectOptionAttribute,
+				true);
+		Ask filterOptionAsk = new Ask(filterOptionQues, sourceCode, targetCode);
 
 		// Question for inputing a value in text
-		Question filterValueTextQues = new Question("QUE_FILTER_VALUE_TEXT", "Filter Value", filterValueTextAttribute, true);
-		Ask filterValueTextAsk = new Ask(filterValueTextQues , sourceCode, targetCode);
+		Question filterValueTextQues = new Question("QUE_FILTER_VALUE_TEXT", "Filter Value", filterValueTextAttribute,
+				true);
+		Ask filterValueTextAsk = new Ask(filterValueTextQues, sourceCode, targetCode);
 		// Set value text hidden by default
 		filterValueTextAsk.setHidden(true);
-		
+
 		// Question for inputing a value using a date picker
-		Question filterValueDateTimeQues = new Question("QUE_FILTER_VALUE_DATETIME", "Filter Value", filterValueDateTimeAttribute, true);
-		Ask filterValueDateTimeAsk = new Ask(filterValueDateTimeQues , sourceCode, targetCode);
+		Question filterValueDateTimeQues = new Question("QUE_FILTER_VALUE_DATETIME", "Filter Value",
+				filterValueDateTimeAttribute, true);
+		Ask filterValueDateTimeAsk = new Ask(filterValueDateTimeQues, sourceCode, targetCode);
 		// Set DateTime picker hidden by default
 		filterValueDateTimeAsk.setHidden(true);
 
@@ -1774,15 +1853,17 @@ public class TableUtils {
 
 		// Submit Button
 		Question submitQues = new Question("QUE_SUBMIT", "Submit", submitAttribute, true);
-		Ask submitAsk = new Ask(submitQues , sourceCode, targetCode);
+		Ask submitAsk = new Ask(submitQues, sourceCode, targetCode);
 		// Set Submit disabled by default
 		submitAsk.setDisabled(true);
 
-		Ask[] addFilterChildAsks = { filterColumnAsk, filterOptionAsk, filterValueTextAsk, filterValueDateTimeAsk, filterValueCountryAsk, filterValueStateAsk, submitAsk };
+		Ask[] addFilterChildAsks = { filterColumnAsk, filterOptionAsk, filterValueTextAsk, filterValueDateTimeAsk, 
+			filterValueCountryAsk, filterValueStateAsk, submitAsk };
 		addFilterGrpAsk.setChildAsks(addFilterChildAsks);
 
 		// Existing Filters group
-		Question existingFilterGrpQues = new Question("QUE_EXISTING_FILTERS_GRP", "Existing Filters", questionAttribute, true);
+		Question existingFilterGrpQues = new Question("QUE_EXISTING_FILTERS_GRP", "Existing Filters", questionAttribute,
+				true);
 		Ask existingFilterGrpAsk = new Ask(existingFilterGrpQues, sourceCode, targetCode);
 		List<Ask> askList = new ArrayList<>();
 
@@ -1796,10 +1877,11 @@ public class TableUtils {
 		for (EntityAttribute filt : searchBE.getBaseEntityAttributes()) {
 			// Get the raw attribute
 			String rawAttributeCode = beUtils.removePrefixFromCode(filt.getAttributeCode(), "AND");
-			if (filt.getWeight() > baseMaxWeight && (rawAttributeCode.startsWith("PRI_") || rawAttributeCode.startsWith("LNK_")) ) {
+			if (filt.getWeight() > baseMaxWeight
+					&& (rawAttributeCode.startsWith("PRI_") || rawAttributeCode.startsWith("LNK_"))) {
 				System.out.println("Found additional filter for attribute " + rawAttributeCode);
 				// Find the correlated sort entity attribute
-				EntityAttribute correlatedFlc = searchBE.findEntityAttribute("FLC_"+rawAttributeCode).orElse(null);
+				EntityAttribute correlatedFlc = searchBE.findEntityAttribute("FLC_" + rawAttributeCode).orElse(null);
 				String flcName = null;
 				if (correlatedFlc != null) {
 					// find the sort name
@@ -1811,29 +1893,28 @@ public class TableUtils {
 					flcName = attr.getName();
 				}
 				// String replacement
-				String filtOptionString = filt.getAttributeName()
-					.replaceAll("_GT_", "GREATER THAN")
-					.replaceAll("_GTE_", "GREATER THAN OR EQUAL TO")
-					.replaceAll("_LT_", "LESS THAN")
-					.replaceAll("_LTE_", "LESS THAN OR EQUAL TO")
-					.replaceAll("_NOT_", "NOT ")
-					.replaceAll("_EQ_", "EQUAL TO");
+				String filtOptionString = filt.getAttributeName().replaceAll("_GT_", "GREATER THAN")
+						.replaceAll("_GTE_", "GREATER THAN OR EQUAL TO").replaceAll("_LT_", "LESS THAN")
+						.replaceAll("_LTE_", "LESS THAN OR EQUAL TO").replaceAll("_NOT_", "NOT ")
+						.replaceAll("_EQ_", "EQUAL TO");
 				// Question name is format: Sort Name - Comparison - Value
-				String questionName = flcName+" "+filtOptionString+" \""+filt.getValue().toString().replace("%","")+"\"";
+				String questionName = flcName + " " + filtOptionString + " \""
+						+ filt.getValue().toString().replace("%", "") + "\"";
 				// Form a Question for the filter
-				Question filterQues = new Question("QUE_"+filt.getAttributeCode(), questionName, eventAttribute, true);
+				Question filterQues = new Question("QUE_" + filt.getAttributeCode(), questionName, eventAttribute,
+						true);
 				Ask filterAsk = new Ask(filterQues, sourceCode, targetCode);
 				filterAsk.setWeight(filt.getWeight());
 				// Add it to the list
 				askList.add(filterAsk);
 			}
 
-
 			// Create filterable column for each FLC attribute
 			if (filt.getAttributeCode().startsWith("FLC_")) {
 				index++;
 				// Create a new BE for the item
-				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_"+filt.getAttributeCode(), filt.getAttributeName());
+				BaseEntity filterColumn = new BaseEntity("SEL_FILTER_COLUMN_" + filt.getAttributeCode(),
+						filt.getAttributeName());
 				filterColumn.setIndex(filt.getWeight().intValue());
 				// Add PRI_NAME to the BE
 				Attribute nameAttr = RulesUtils.getAttribute("PRI_NAME", beUtils.getGennyToken().getToken());
@@ -1844,22 +1925,23 @@ public class TableUtils {
 				}
 				// Create a link between GRP and BE
 				EntityEntity ee = new EntityEntity(columnGrp, filterColumn, attributeLink, index);
-				Link link = new Link(columnGrp.getCode(), filterColumn.getCode(), attributeLink.getCode(), "ITEMS", index);
+				Link link = new Link(columnGrp.getCode(), filterColumn.getCode(), attributeLink.getCode(), "ITEMS",
+						index);
 				ee.setLink(link);
 				childLinks.add(ee);
-				// Add BE to list 
+				// Add BE to list
 				columnFilterArray.add(filterColumn);
 			}
 		}
 		// Sort the Column Filters by index
-		Comparator<BaseEntity> compareByIndex = (BaseEntity a, BaseEntity b) -> a.getIndex().compareTo( b.getIndex() );
+		Comparator<BaseEntity> compareByIndex = (BaseEntity a, BaseEntity b) -> a.getIndex().compareTo(b.getIndex());
 		Collections.sort(columnFilterArray, compareByIndex);
 
 		// Set child links and add parent BE to list
 		columnGrp.setLinks(childLinks);
 		columnFilterArray.add(columnGrp);
 		// Sort them by weight
-		Comparator<Ask> compareByWeight = (Ask a, Ask b) -> a.getWeight().compareTo( b.getWeight() );
+		Comparator<Ask> compareByWeight = (Ask a, Ask b) -> a.getWeight().compareTo(b.getWeight());
 		Collections.sort(askList, compareByWeight);
 		// Convert ArrayList to Array
 		Ask[] existingFilterChildAsks = new Ask[askList.size()];
@@ -1871,10 +1953,10 @@ public class TableUtils {
 
 		Ask[] filterGrpChildAsks = { addFilterGrpAsk, existingFilterGrpAsk };
 		filterGrpAsk.setChildAsks(filterGrpChildAsks);
-		
+
 		// Cache the Ask group
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", filterGrpAsk.getQuestionCode(), filterGrpAsk,
-			beUtils.getGennyToken().getToken());
+				beUtils.getGennyToken().getToken());
 
 		// Send Asks to FE
 		QDataAskMessage askMsg = new QDataAskMessage(filterGrpAsk);
@@ -1894,9 +1976,9 @@ public class TableUtils {
 	}
 
 	public SearchEntity copySearch(final String oldSearchCode, final String newSearchCode) {
-		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", oldSearchCode, SearchEntity.class,
-		beUtils.getGennyToken().getToken());
-		if(searchBE != null){
+		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", oldSearchCode,
+				SearchEntity.class, beUtils.getGennyToken().getToken());
+		if (searchBE != null) {
 			searchBE.setCode(newSearchCode);
 			for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 				ea.setBaseEntityCode(newSearchCode);
