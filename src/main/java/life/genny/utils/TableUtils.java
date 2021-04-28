@@ -275,12 +275,10 @@ public class TableUtils {
 				BaseEntity be = beUtils.getBaseEntityByCode(attr.getValue());
 
 				if (be != null) {
-					log.info("SINGLE - BE found with code " + be.getCode());
 					be = VertxUtils.privacyFilter(be, filterArray);
 
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
-						log.info("SINGLE - In searchUsingHql SINGLE CALEA is " + calEA.getAttributeCode());
 
 						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
 																												// separates
@@ -372,7 +370,6 @@ public class TableUtils {
 				resultJson = new JsonObject(resultJsonStr);
 				JsonArray result = resultJson.getJsonArray("codes");
 				if (result == null) {
-					log.error("SEARCH RESULT JSON ARRAY IS NULL");
 				}
 				List<String> resultCodes = new ArrayList<String>();
 
@@ -380,20 +377,15 @@ public class TableUtils {
 
 				for (int i = 0; i < result.size(); i++) {
 
-					log.info("IN SEARCh RESULT LOOP ");
 					String code = result.getString(i);
 					resultCodes.add(code);
 					BaseEntity be = beUtils.getBaseEntityByCode(code);
 					if (be != null) {
-						log.info("IN SEARCh RESULT LOOP -> " + be.getCode());
 					} else {
-						log.error("result BE row was null");
 					}
 					be = VertxUtils.privacyFilter(be, filterArray);
-					log.info("be is past privacy filter");
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
-						log.info("In searchUsingHql LOOP CALEA is " + calEA.getAttributeCode());
 						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
 																												// separates
 																												// the
@@ -404,17 +396,13 @@ public class TableUtils {
 																												// the
 																												// end
 						// field
-						log.info("Number of calFields is " + calFields.length);
 						if (calFields.length != 2) {
 							log.error("CALS length is bad for " + searchBE.getCode() + " :" + calEA.getAttributeCode());
 							continue;
 						}
 						String attributeCode = calFields[0];
-						log.info("CAL SEARCH attributeCode = " + attributeCode);
 						String calBe = be.getValueAsString(attributeCode);
-						log.info("CAL SEARCH value = " + calBe);
 						String linkBeCode = calFields[1];
-						log.info("CAL SEARCH linkBeCode = " + linkBeCode);
 						if (!StringUtils.isBlank(calBe)) {
 							if (calBe.startsWith("[")) {
 								calBe = calBe.substring(2, calBe.length() - 2);
@@ -426,16 +414,13 @@ public class TableUtils {
 								log.info("associatedBe DOES NOT exist ->" + calBe);
 								continue;
 							}
-							log.info("CAL Searching for ea "+linkBeCode);
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
 							if (associateEa.isPresent()) {
-								log.info("CAL ea exists! "+linkBeCode);
 								String linkedValue = associatedBe.getValueAsString(linkBeCode);
 								log.info("CAL SEARCH linkedValue = " + linkedValue);
 								try {
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
 									Attribute att = associateEa.get().getAttribute();
-									log.info("The CAL att privacy field is "+(att.getDefaultPrivacyFlag()? "true" : "false"));
 									att.setCode("PRI_" +attributeCode + "__" + linkBeCode);
 									/*att.setCode(linkBeCode);*/
 									log.info("The CAL att after is "+att);
