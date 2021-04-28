@@ -420,8 +420,8 @@ public class TableUtils {
 								log.info("CAL SEARCH linkedValue = " + linkedValue);
 								try {
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
-									Attribute att = associateEa.get().getAttribute();
-									att.setCode("PRI_" +attributeCode + "__" + linkBeCode);
+									Attribute att = new Attribute("PRI_" +attributeCode + "__" + linkBeCode, calEA.getAttribute().getName(), calEA.getAttribute().getDataType());
+									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
 									/*att.setCode(linkBeCode);*/
 									log.info("The CAL att after is "+att);
 									ans.setAttribute(att);
