@@ -419,14 +419,14 @@ public class TableUtils {
 								String linkedValue = associatedBe.getValueAsString(linkBeCode);
 								log.info("CAL SEARCH linkedValue = " + linkedValue);
 								try {
+									Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
-									Attribute att = new Attribute("PRI_" +attributeCode + "__" + linkBeCode, calEA.getAttribute().getName(), calEA.getAttribute().getDataType());
+									Attribute att = new Attribute("PRI_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
 									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
 									/*att.setCode(linkBeCode);*/
 									log.info("The CAL att after is "+att);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
-
 								} catch (BadDataException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -446,7 +446,8 @@ public class TableUtils {
 				log.info("Search Results = " + resultCodes.size() + " out of total " + total);
 
 			} catch (Exception e1) {
-				log.error("Bad Json -> [" + resultJsonStr);
+				log.error("Possible Bad Json -> " + resultJsonStr);
+				log.error("Exception -> " + e1.getLocalizedMessage());
 				msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
 				Long total = 0L;
 				msg.setTotal(total);
