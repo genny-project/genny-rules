@@ -78,7 +78,7 @@ public class NotificationHubWorkItemHandler implements WorkItemHandler {
 		if (messageType.toString() == "EMAIL") {
 
 			log.info("Sending EMAIL to " + recipient);
-			EmailHelper.sendGrid(beUtils, recipient, ccList, bccList, "", template_id, templateData);
+			EmailHelper.sendGrid(beUtils, recipient, ccList, bccList, "", template_id, templateData, false);
 
 		} else if (messageType.toString() == "SMS") {
 			
