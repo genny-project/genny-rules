@@ -1916,7 +1916,19 @@ public class TableUtils {
 				ee.setLink(link);
 				childLinks.add(ee);
 				// Add BE to list
-				columnFilterArray.add(filterColumn);
+				if (filterColumn.getCode().contains("STATE")) {
+					for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+						if (ea.getAttributeCode().startsWith("PRI_") || ea.getAttributeCode().startsWith("LNK_")) {
+							if (ea.getAttributeCode().contains("COUNTRY") && ea.getValue().toString().equals("Australia")) {
+								System.out.println("Country = Australia, adding state filter entity");
+								columnFilterArray.add(filterColumn);
+								break;
+							}
+						}
+					}
+				} else {
+					columnFilterArray.add(filterColumn);
+				}
 			}
 		}
 		// Sort the Column Filters by index
