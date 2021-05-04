@@ -110,6 +110,8 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	@Override
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
+		System.out.println("userToken = " + userToken);
+		System.out.println("userCode = " + userToken.getUserCode());
 
 		if (this.runtimeEngine == null) {
 			this.runtimeEngine = RulesLoader.runtimeManager.getRuntimeEngine(EmptyContext.get());
