@@ -36,6 +36,7 @@ import org.kie.api.task.model.Task;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,6 +61,8 @@ public class ShowFrame implements WorkItemHandler {
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
 		OutputParam output = (OutputParam) workItem.getParameter("output");
 
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+
 		if (rootFrameCode.equals("NONE")) { // Do not change anything
 			return;
 		}
@@ -79,9 +82,14 @@ public class ShowFrame implements WorkItemHandler {
 			msgend.setToken(userToken.getToken());
 			msgend.setSend(true);
 			// VertxUtils.writeMsg("webcmds", msgend);
-
 		}
-		
+
+		// Get filtered ask from the AskFilters ruleflow group
+		Ask filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
+		// Send these filtered asks to overwrite
+		// QDataAskMessage filteredAskMsg = new QDataAskMessage(filteredAsk);
+		// filteredAskMsg.setToken(userToken.getToken());
+		// VertxUtils.writeMsg("webcmds", filteredAskMsg);
 		
 		// notify manager that work item has been completed
 		if (workItem == null) {
@@ -671,6 +679,45 @@ public class ShowFrame implements WorkItemHandler {
 
 	public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
 		// Do nothing, notifications cannot be aborted
+	}
+
+	public Ask getAskFilters(BaseEntityUtils beUtils, final Ask ask) {
+
+		Ask ret = null;
+
+		Map<String, Object> facts = new ConcurrentHashMap<String, Object>();
+		facts.put("serviceToken", beUtils.getServiceToken());
+		facts.put("userToken", beUtils.getGennyToken());
+		facts.put("ask", ask);
+
+		/* log.info("facts   ::  " +facts); */
+		RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
+
+		log.info("serviceToken " + beUtils.getServiceToken());
+		Map<String, Object> results = ruleFlowGroupHandler.executeRules(beUtils.getServiceToken(),
+				beUtils.getGennyToken(), facts, "AskFilters", "ShowFrame:GetAskFilters");
+
+		Object obj = results.get("payload");
+		/* log.info("obj   ::   " +obj); */
+
+		if (obj instanceof QBulkMessage) {
+			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
+
+			// Check if bulkMsg not empty
+			if (bulkMsg.getMessages().length > 0) {
+
+				// Get the first QDataBaseEntityMessage from bulkMsg
+				QDataAskMessage msg = bulkMsg.getAsks()[0];
+
+				// Check if msg is not empty
+				if (msg.getItems().length > 0) {
+
+					ret = msg.getItems()[0];
+				}
+			}
+		}
+		return ret;
+
 	}
 
 	public static QBulkMessage sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget) {
