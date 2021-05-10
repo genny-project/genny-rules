@@ -716,7 +716,6 @@ public class ShowFrame implements WorkItemHandler {
 				}
 			}
 		}
-		System.out.println("Ret Code = " + ret.getQuestionCode());
 		return ret;
 
 	}
