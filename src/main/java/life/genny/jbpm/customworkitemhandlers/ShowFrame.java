@@ -87,9 +87,9 @@ public class ShowFrame implements WorkItemHandler {
 		// Get filtered ask from the AskFilters ruleflow group
 		Ask filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
 		// Send these filtered asks to overwrite
-		QDataAskMessage filteredAskMsg = new QDataAskMessage(filteredAsk);
-		filteredAskMsg.setToken(userToken.getToken());
-		VertxUtils.writeMsg("webcmds", filteredAskMsg);
+		// QDataAskMessage filteredAskMsg = new QDataAskMessage(filteredAsk);
+		// filteredAskMsg.setToken(userToken.getToken());
+		// VertxUtils.writeMsg("webcmds", filteredAskMsg);
 		
 		// notify manager that work item has been completed
 		if (workItem == null) {
@@ -716,6 +716,7 @@ public class ShowFrame implements WorkItemHandler {
 				}
 			}
 		}
+		System.out.println("Ret Code = " + ret.getQuestionCode());
 		return ret;
 
 	}
