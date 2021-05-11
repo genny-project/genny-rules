@@ -141,6 +141,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		if (StringUtils.isBlank(callingWorkflow)) {
 			callingWorkflow = "";
 		}
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		beUtils.setServiceToken(serviceToken);
+
 
 		// If no need to process anything then exit
 		if ((output == null) || ("NO_PROCESSING".equalsIgnoreCase(output.getTypeOfResult())) || ((answersToSave == null)
@@ -156,8 +159,6 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			return;
 		}
 
-		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-		beUtils.setServiceToken(serviceToken);
 
 		// Send back the 'validated' answers
 		BaseEntity originalTarget = beUtils.getBaseEntityByCode(answersToSave.getAnswers().get(0).getTargetCode());

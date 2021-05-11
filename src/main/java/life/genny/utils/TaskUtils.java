@@ -542,22 +542,34 @@ public class TaskUtils {
 
 	public static Boolean validate(Answer answer, GennyToken userToken) {
 		// TODO - check value using regexs
+		if (answer.getInferred()) { // inferred means that internally it is fine
+			return true;
+		}
+
 		if (!answer.getSourceCode().equals(userToken.getUserCode())) {
-			if ((userToken.hasRole("admin")) || (answer.getInferred())) {
-				return true;
-			}
 			return false;
 		}
-		return true;
+		
+		
+		return true; 
 	}
 
 	public static Boolean doValidAnswersExist(Answers answersToSave, GennyToken userToken) {
+		if ((userToken.hasRole("superadmin"))||(userToken.hasRole("dev"))) {  // superadmins get to do whatever they want
+			return true;
+		}
+
+		Boolean valid = true;
+		// speed up the check
+		
 		for (Answer answer : answersToSave.getAnswers()) {
 			if (TaskUtils.validate(answer, userToken)) {
-				return true;
+				//return true;
+			} else {
+				return false;
 			}
 		}
-		return false;
+		return valid;
 
 	}
 
@@ -569,8 +581,21 @@ public class TaskUtils {
 
 		BaseEntity originalBe = beUtils.getBaseEntityByCode(answersToSave.getAnswers().get(0).getTargetCode());
 		BaseEntity newBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
-		BaseEntity inferredBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
+	//	BaseEntity inferredBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
 
+		// Get the associated DEF for this baseentity
+		long start = System.currentTimeMillis();
+		BaseEntity defEntity = beUtils.getDEF(originalBe);
+		if (defEntity == null) {
+			log.error("NO DEF EXISTS for "+originalBe.getCode()+" returning empty");
+			return Tuple.of(validInferredAnswers, newBe);
+		} else {
+			long end = System.currentTimeMillis();
+			log.info("USING DEF "+defEntity.getCode()+":"+defEntity.getName()+" in "+(end-start)+" ms");
+		}
+		
+		
+		
 		for (Answer answer : answersToSave2) {
 			Boolean validAnswer = TaskUtils.validate(answer, userToken);
 			// Quick and dirty ...
