@@ -85,7 +85,9 @@ public class ShowFrame implements WorkItemHandler {
 		}
 
 		// Get filtered ask from the AskFilters ruleflow group
-		Ask filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
+		if (qBulkMessage.getAsks().length > 0 && qBulkMessage.getAsks()[0].getItems().length > 0) {
+			Ask filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
+		}
 		// Send these filtered asks to overwrite
 		// QDataAskMessage filteredAskMsg = new QDataAskMessage(filteredAsk);
 		// filteredAskMsg.setToken(userToken.getToken());
