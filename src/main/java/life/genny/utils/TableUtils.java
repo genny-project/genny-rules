@@ -115,7 +115,8 @@ public class TableUtils {
 
 		if (searchAlt && (GennySettings.searchAlt)) {
 			log.info("searchCode   ::   " + searchBE.getCode());
-			msg = searchUsingHql(serviceToken, searchBE, msg);
+			// msg = searchUsingHql(serviceToken, searchBE, msg);
+			msg = searchUsingSearch25(serviceToken, searchBE, msg);
 		} else {
 			log.info("Old Search");
 			msg = fetchSearchResults(searchBE);
@@ -246,6 +247,29 @@ public class TableUtils {
 
 	}
 
+	public List<String> getSearchColumnFilterArray(SearchEntity searchBE) 
+	{
+		List<String> attributeFilter = new ArrayList<String>();
+		List<String> assocAttributeFilter = new ArrayList<String>();
+
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			String attributeCode = ea.getAttributeCode();
+			if (attributeCode.startsWith("COL_") || attributeCode.startsWith("CAL_")) {
+				if (attributeCode.equals("COL_PRI_ADDRESS_FULL")) {
+					attributeFilter.add("PRI_ADDRESS_LATITUDE");
+					attributeFilter.add("PRI_ADDRESS_LONGITUDE");
+				}
+				attributeFilter.add(attributeCode.substring("COL_".length()));
+
+			} else if ((attributeCode.startsWith("COL__")) || (attributeCode.startsWith("CAL_"))) {
+				String[] splitCode = attributeCode.substring("COL__".length()).split("__");
+				assocAttributeFilter.add(splitCode[0]);
+			}
+		}
+		attributeFilter.addAll(assocAttributeFilter);
+		return attributeFilter;
+	}
+
 	/**
 	 * @param serviceToken
 	 * @param searchBE
@@ -363,6 +387,201 @@ public class TableUtils {
 
 			endtime2 = System.currentTimeMillis();
 			log.info("NOT SINGLE - Time taken to fetch Data =" + (endtime2 - endtime1) + " ms");
+
+			JsonObject resultJson = null;
+
+			try {
+				resultJson = new JsonObject(resultJsonStr);
+				JsonArray result = resultJson.getJsonArray("codes");
+				if (result == null) {
+				}
+				List<String> resultCodes = new ArrayList<String>();
+
+				BaseEntity[] beArray = new BaseEntity[result.size()];
+
+				for (int i = 0; i < result.size(); i++) {
+
+					String code = result.getString(i);
+					resultCodes.add(code);
+					BaseEntity be = beUtils.getBaseEntityByCode(code);
+					if (be != null) {
+					} else {
+					}
+					be = VertxUtils.privacyFilter(be, filterArray);
+					// Get any CAL attributes
+					for (EntityAttribute calEA : cals) {
+						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
+																												// separates
+																												// the
+																												// indirect
+																												// lnk
+																												// field
+																												// from
+																												// the
+																												// end
+						// field
+						if (calFields.length != 2) {
+							log.error("CALS length is bad for " + searchBE.getCode() + " :" + calEA.getAttributeCode());
+							continue;
+						}
+						String attributeCode = calFields[0];
+						String calBe = be.getValueAsString(attributeCode);
+						String linkBeCode = calFields[1];
+						if (!StringUtils.isBlank(calBe)) {
+							if (calBe.startsWith("[")) {
+								calBe = calBe.substring(2, calBe.length() - 2);
+							}
+							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
+							if (associatedBe != null) {
+								log.info("If associatedBe exists ->" + associatedBe.getCode());
+							} else {
+								log.info("associatedBe DOES NOT exist ->" + calBe);
+								continue;
+							}
+							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
+							if (associateEa.isPresent()) {
+								String linkedValue = associatedBe.getValueAsString(linkBeCode);
+								log.info("CAL SEARCH linkedValue = " + linkedValue);
+								try {
+									Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
+									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
+									Attribute att = new Attribute("PRI_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
+									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
+									/*att.setCode(linkBeCode);*/
+									log.info("The CAL att after is "+att);
+									ans.setAttribute(att);
+									be.addAnswer(ans);
+								} catch (BadDataException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+							}
+						}
+					}
+					be.setIndex(i);
+					beArray[i] = be;
+				}
+
+				msg = new QDataBaseEntityMessage(beArray);
+				Long total = resultJson.getLong("total");
+				msg.setTotal(total);
+				msg.setReplace(true);
+				msg.setParentCode(searchBE.getCode());
+				log.info("Search Results = " + resultCodes.size() + " out of total " + total);
+
+			} catch (Exception e1) {
+				log.error("Possible Bad Json -> " + resultJsonStr);
+				log.error("Exception -> " + e1.getLocalizedMessage());
+				msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
+				Long total = 0L;
+				msg.setTotal(total);
+				msg.setReplace(true);
+				msg.setParentCode(searchBE.getCode());
+
+			}
+
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		long endtime3 = System.currentTimeMillis();
+		log.info("Time taken to get cached Bes added to list =" + (endtime3 - endtime2) + " ms");
+
+		return msg;
+	}
+
+	public QDataBaseEntityMessage searchUsingSearch25(GennyToken serviceToken, final SearchEntity searchBE,
+			QDataBaseEntityMessage msg) {
+		long starttime = System.currentTimeMillis();
+		long endtime2 = starttime;
+
+		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
+		if (cals != null) {
+			log.info("searchUsingSearch25 -> detected " + cals.size() + " CALS");
+		}
+		String[] filterArray = getSearchColumnFilterArray(searchBE).toArray(new String[0]);
+		// Add the associated columns
+
+		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
+			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
+				// This means we are searching for a single entity
+				log.info("SINGLE BSAE ENTITY SEARCH DETECTED");
+				BaseEntity be = beUtils.getBaseEntityByCode(attr.getValue());
+
+				if (be != null) {
+					be = VertxUtils.privacyFilter(be, filterArray);
+
+					// Get any CAL attributes
+					for (EntityAttribute calEA : cals) {
+						// this separates the indirect lnk field from the end field
+						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); 
+						if (calFields.length != 2) {
+							log.error("SINGLE - CALS length is bad for " + searchBE.getCode() + " :"
+									+ calEA.getAttributeCode());
+							continue;
+						}
+						String attributeCode = calFields[0];
+						String calBe = be.getValueAsString(attributeCode);
+						String linkBeCode = calEA.getValueString();
+						if (!StringUtils.isBlank(calBe)) {
+							if (calBe.startsWith("[")) {
+								calBe = calBe.substring(2, calBe.length() - 2);
+							}
+							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
+							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
+							if (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode))) {
+								String linkedValue = null;
+								if ("PRI_NAME".equals(linkBeCode)) {
+									linkedValue = associatedBe.getName();
+								} else {
+									linkedValue = associatedBe.getValueAsString(linkBeCode);
+								}
+								try {
+									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(),
+											linkedValue);
+									Attribute att = null;
+									if ("PRI_NAME".equals(linkBeCode)) {
+										att = RulesUtils.getAttribute("PRI_NAME", serviceToken);
+										if (att == null) {
+											att = associateEa.get().getAttribute();
+										}
+									} else {
+										att = associateEa.get().getAttribute();
+									}
+									att.setCode("_" + attributeCode + "__" + linkBeCode);
+									ans.setAttribute(att);
+									be.addAnswer(ans);
+
+								} catch (BadDataException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+							}
+						}
+					}
+
+					msg = new QDataBaseEntityMessage(be);
+					msg.setTotal(1L);
+
+				} else {
+					log.error("SINGLE - Could not find BE");
+					msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
+					Long total = 0L;
+					msg.setTotal(total);
+				}
+				msg.setReplace(true);
+				msg.setParentCode(searchBE.getCode());
+
+				return msg;
+			}
+		}
+
+		try {
+			String resultJsonStr = QwandaUtils.apiPostEntity2(
+					GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
+					JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
+
+			endtime2 = System.currentTimeMillis();
+			log.info("NOT SINGLE - Time taken to fetch Data =" + (endtime2 - starttime) + " ms");
 
 			JsonObject resultJson = null;
 
