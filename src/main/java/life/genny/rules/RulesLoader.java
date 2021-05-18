@@ -86,6 +86,7 @@ import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -104,7 +105,6 @@ public class RulesLoader {
 	static {
 		setKieBaseCache(new ConcurrentHashMap<String, KieBase>());
 	}
-	public static KieFileSystem kfs = null;
 	public static ReleaseId releaseId = null;
 	public static KieServices ks = KieServices.Factory.get();
 
@@ -172,6 +172,7 @@ public class RulesLoader {
 		map.put(tuple._2, tuple._3);
 		return map;
 	}
+
 	static Map<String, String> overrideMapByPrecedence(
 			Map<String, String> mapA,
 			Map<String, String> mapB
@@ -191,12 +192,12 @@ public class RulesLoader {
 			.get();
 	}
 
-	public static void writeAllToKieFileSystem(Map<String, String> rules, String path){
-		rules.entrySet().stream().forEach(d ->{
-			String resourceAbsolutePath =path+ d.getKey();
-			Resource rs = ks.getResources().newReaderResource(new StringReader(d.getValue()));
+	public static void writeAllToKieFileSystem(Map<String, String> rules, String path, KieFileSystem kfs){
+		for(Entry<String, String> rule :rules.entrySet()){
+			String resourceAbsolutePath = path + rule.getKey();
+			Resource rs = ks.getResources().newReaderResource(new StringReader(rule.getValue()));
 			kfs.write(resourceAbsolutePath, rs.setResourceType(ResourceType.DRL));
-		});
+		}
 	}
 
 	public static void reloadRules(String realm){
@@ -220,8 +221,8 @@ public class RulesLoader {
 		Map<String, String> distictRulesByName = getOverridenRules(rules);
 		KieFileSystem kfs = ks.newKieFileSystem();
 		String kjarFolerPath ="src/main/resources/life/genny/rules/";
-		writeAllToKieFileSystem(distictRulesByName, kjarFolerPath);
-		updateFileIfExist(kfs, kjarFolerPath, fileName,body);
+		writeAllToKieFileSystem(distictRulesByName, kjarFolerPath,kfs);
+		updateFileIfExist(kfs, kjarFolerPath, fileName, body);
 		final KieBuilder kieBuilder = ks.newKieBuilder(kfs).buildAll();
 		ReleaseId releaseId = kieBuilder.getKieModule().getReleaseId();
 		final KieContainer kContainer = ks.newKieContainer(releaseId);
@@ -624,7 +625,7 @@ public class RulesLoader {
 				log.info(realm + " removed");
 			}
 
-			kfs = ks.newKieFileSystem();
+			KieFileSystem kfs = ks.newKieFileSystem();
 
 			// Write each rule into it's realm cache
 			for (final Tuple3<String, String, String> rule : rules) {
