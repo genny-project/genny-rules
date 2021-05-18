@@ -104,7 +104,8 @@ public class RulesLoader {
 	static {
 		setKieBaseCache(new ConcurrentHashMap<String, KieBase>());
 	}
-
+	public static KieFileSystem kfs = null;
+	public static ReleaseId releaseId = null;
 	public static KieServices ks = KieServices.Factory.get();
 
 	public static Set<String> realms = new ConcurrentHashSet<String>();
@@ -158,6 +159,83 @@ public class RulesLoader {
 	}
 	public String getLinkedSessionState() {
 		return linkedSessionState;
+	}
+
+	static Comparator<Tuple3<String, String, String>> byRealm = (o1, o2)-> 
+			Optional.of(o1._1)
+			.filter("genny"::equals)
+			.map(d-> -1)
+			.orElse(1);
+
+	static Map<String, String> tuple1And3ToMap(Tuple3<String, String, String> tuple){
+		Map<String, String> map = new HashMap<>();
+		map.put(tuple._2, tuple._3);
+		return map;
+	}
+	static Map<String, String> overrideMapByPrecedence(
+			Map<String, String> mapA,
+			Map<String, String> mapB
+			){
+		mapA.putAll(mapB);
+		return mapA;	
+	}
+
+	// Map with rules name by key and content by value
+	public static Map<String, String> getOverridenRules(
+			List<Tuple3<String, String, String>> rules
+			){
+		return rules.stream()
+			.sorted(byRealm)
+			.map(RulesLoader::tuple1And3ToMap)
+		  .reduce(RulesLoader::overrideMapByPrecedence)
+			.get();
+	}
+
+	public static void writeAllToKieFileSystem(Map<String, String> rules, String path){
+		rules.entrySet().stream().forEach(d ->{
+			String resourceAbsolutePath =path+ d.getKey();
+			Resource rs = ks.getResources().newReaderResource(new StringReader(d.getValue()));
+			kfs.write(resourceAbsolutePath, rs.setResourceType(ResourceType.DRL));
+		});
+	}
+
+	public static void reloadRules(String realm){
+		reloadRules(realm,null,null);
+	}
+
+	public static void updateFileIfExist(KieFileSystem kfs, String kjarFolerPath, String fileName, String body){
+		Optional.ofNullable(fileName).stream()
+			.map(kjarFolerPath::concat)
+			.peek(kfs::delete)
+			.findFirst()
+			.ifPresent(filePath -> {
+				Resource rs = ks.getResources().newReaderResource(new StringReader(body));
+				kfs.write(filePath, rs.setResourceType(ResourceType.DRL));
+			});
+	}
+
+	public static void reloadRules(String realm,String fileName,String body){
+		List<Tuple3<String, String, String>> rules = 
+			processFileRealmsFromFiles("genny",GennySettings.rulesDir, RulesLoader.realms);
+		Map<String, String> distictRulesByName = getOverridenRules(rules);
+		KieFileSystem kfs = ks.newKieFileSystem();
+		String kjarFolerPath ="src/main/resources/life/genny/rules/";
+		writeAllToKieFileSystem(distictRulesByName, kjarFolerPath);
+		updateFileIfExist(kfs, kjarFolerPath, fileName,body);
+		final KieBuilder kieBuilder = ks.newKieBuilder(kfs).buildAll();
+		ReleaseId releaseId = kieBuilder.getKieModule().getReleaseId();
+		final KieContainer kContainer = ks.newKieContainer(releaseId);
+		final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
+		kbconf.setProperty("name",realm);
+		kbconf.setProperty(ConsequenceExceptionHandlerOption.PROPERTY_NAME, 
+				"life.genny.utils.GennyRulesExceptionHandler");
+		final KieBase kbase = kContainer.newKieBase(kbconf);
+		log.info("Put rules KieBase into Custom Cache");
+		if (getKieBaseCache().containsKey(realm)) {
+			getKieBaseCache().remove(realm);
+		}
+		getKieBaseCache().put(realm, kbase);
+		log.info(realm+ " rules updated\n");
 	}
 
 	/**
@@ -546,7 +624,7 @@ public class RulesLoader {
 				log.info(realm + " removed");
 			}
 
-			final KieFileSystem kfs = ks.newKieFileSystem();
+			kfs = ks.newKieFileSystem();
 
 			// Write each rule into it's realm cache
 			for (final Tuple3<String, String, String> rule : rules) {
@@ -568,7 +646,7 @@ public class RulesLoader {
 				log.info(kieBuilder.getResults().toString());
 			}
 
-			ReleaseId releaseId = kieBuilder.getKieModule().getReleaseId();
+			releaseId = kieBuilder.getKieModule().getReleaseId();
 			log.info("kieBuilder kieModule getReleaseId = " + releaseId);
 			final KieContainer kContainer = ks.newKieContainer(releaseId);
 			final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
@@ -777,6 +855,7 @@ public class RulesLoader {
 				} else {
 					final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 					Resource rs = ks.getResources().newReaderResource(new StringReader(rule._3));
+					log.error("Error here ::::"+rule._3);
 					kfs.write(inMemoryDrlFileName, rs.setResourceType(ResourceType.DRL));
 					DrlParser parser = new DrlParser();
 					try {
@@ -813,23 +892,6 @@ public class RulesLoader {
 				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 				Resource rs = ks.getResources().newReaderResource(new StringReader(rule._3));
 				kfs.write(inMemoryDrlFileName, rs.setResourceType(ResourceType.BPMN2));
-//				processJbpm(realm, rule);
-//				DrlParser parser = new DrlParser();
-//				try {
-//					RuleDescr ruleObj = parser.parse(rs).getRules().get(0);
-//					processRule(realm, ruleObj, rule);
-//				} catch (NullPointerException e) {
-//					log.error("Error with the rules:: " + rule._2 + " -> " + e.getLocalizedMessage());
-//				}
-//				catch (DroolsParserException e) {
-//					log.error("BAD RULE : " + rule._2 + " -> " + e.getLocalizedMessage());
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-
-			} else if (rule._2.endsWith(".xls")) {
-				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 
 			} else {
 				final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
