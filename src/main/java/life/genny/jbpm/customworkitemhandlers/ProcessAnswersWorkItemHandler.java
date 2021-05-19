@@ -142,22 +142,15 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			callingWorkflow = "";
 		}
 
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		beUtils.setServiceToken(serviceToken);
+
 		// If no need to process anything then exit
 		if ((output == null) || ("NO_PROCESSING".equalsIgnoreCase(output.getTypeOfResult())) || ((answersToSave == null)
 				|| (answersToSave.getAnswers() == null) || (answersToSave.getAnswers().isEmpty()))) {
 			exitOut(workItem, manager, OutputParam.getNone());
 			return;
 		}
-
-		// If the answers do not come from the specified source or an admin then ignore.
-		// This is just to be quick
-		if (!TaskUtils.doValidAnswersExist(answersToSave, userToken)) {
-			exitOut(workItem, manager, OutputParam.getNone());
-			return;
-		}
-
-		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-		beUtils.setServiceToken(serviceToken);
 
 		// Send back the 'validated' answers
 		BaseEntity originalTarget = beUtils.getBaseEntityByCode(answersToSave.getAnswers().get(0).getTargetCode());
@@ -167,6 +160,18 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			return;
 
 		}
+
+		BaseEntity defBe = beUtils.getDEF(originalTarget);
+		
+		
+		// If the answers do not come from the specified source or an admin then ignore.
+		// This is just to be quick
+		if (!TaskUtils.doValidAnswersExist(defBe,answersToSave, userToken)) {
+			exitOut(workItem, manager, OutputParam.getNone());
+			return;
+		}
+
+
 
 		Tuple2<List<Answer>, BaseEntity> answerBes = TaskUtils.gatherValidAnswers(beUtils, answersToSave, userToken); // TODO,
 																														// use
@@ -184,7 +189,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		log.info(callingWorkflow + " PROCESS VALID ANSWERS WorkItem Handler *************************");
 
 		// Construct a set of unique AnswerCodes for the incoming Answers
-		Map<String, Answer> answerMap2 = constructAnswerMap(answersToSave, userToken); // original
+		Map<String, Answer> answerMap2 = constructAnswerMap(defBe,answersToSave, userToken); // original
 		Map<String, Answer> answerMap = new ConcurrentHashMap<>();
 		answerMap.putAll(answerMap2); // working
 		Boolean submitDetected = submitDetected(answerMap2); // check if the submit button detected
@@ -574,11 +579,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		return kSession;
 	}
 
-	private Map<String, Answer> constructAnswerMap(Answers answersToSave, GennyToken userToken) {
+	private Map<String, Answer> constructAnswerMap(BaseEntity defBe,Answers answersToSave, GennyToken userToken) {
 		Map<String, Answer> answerMap = new ConcurrentHashMap<>();
 
 		for (Answer answer : answersToSave.getAnswers()) {
-			Boolean validAnswer = TaskUtils.validate(answer, userToken);
+			Boolean validAnswer = TaskUtils.validate(defBe,answer, userToken);
 			if (Boolean.TRUE.equals(validAnswer)) {
 				String key = answer.getSourceCode() + ":" + answer.getTargetCode() + ":" + answer.getAttributeCode();
 				answerMap.put(key, answer);

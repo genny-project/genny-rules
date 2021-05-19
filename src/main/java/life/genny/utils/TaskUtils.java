@@ -540,24 +540,30 @@ public class TaskUtils {
 
 	}
 
-	public static Boolean validate(Answer answer, GennyToken userToken) {
+	public static Boolean validate(BaseEntity defBe,Answer answer, GennyToken userToken) {
+		if ((userToken.hasRole("admin")) || (answer.getInferred())) {
+			return true;
+		}
+
 		// TODO - check value using regexs
 		if (!answer.getSourceCode().equals(userToken.getUserCode())) {
-			if ((userToken.hasRole("admin")) || (answer.getInferred())) {
-				return true;
-			}
+			return false;
+		}
+		
+		if (!defBe.containsEntityAttribute("ATT_"+answer.getAttributeCode())) {
 			return false;
 		}
 		return true;
 	}
 
-	public static Boolean doValidAnswersExist(Answers answersToSave, GennyToken userToken) {
+	public static Boolean doValidAnswersExist(BaseEntity defBe,Answers answersToSave, GennyToken userToken) {
+		Boolean ok = true;
 		for (Answer answer : answersToSave.getAnswers()) {
-			if (TaskUtils.validate(answer, userToken)) {
-				return true;
+			if (!TaskUtils.validate(defBe,answer, userToken)) {
+				return false;
 			}
 		}
-		return false;
+		return ok;
 
 	}
 
@@ -571,8 +577,10 @@ public class TaskUtils {
 		BaseEntity newBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
 		BaseEntity inferredBe = new BaseEntity(answersToSave2.get(0).getTargetCode(), originalBe.getName());
 
+		BaseEntity defBe = beUtils.getDEF(originalBe);
+		
 		for (Answer answer : answersToSave2) {
-			Boolean validAnswer = TaskUtils.validate(answer, userToken);
+			Boolean validAnswer = TaskUtils.validate(defBe,answer, userToken);
 			// Quick and dirty ...
 			if (validAnswer) {
 				try {
