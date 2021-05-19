@@ -386,7 +386,7 @@ public class SearchUtils {
 	 * Setting dynamic links between parents and child. ie. linking DropDown items
 	 * to the DropDown field. Copied from DropdownUtils
 	 */
-	static QDataBaseEntityMessage setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
+	static public  QDataBaseEntityMessage setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
 			String linkValue, GennyToken gennyToken, Boolean sortByWeight) {
 		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);
 		if (parentBe != null) {
