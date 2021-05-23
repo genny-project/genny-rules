@@ -856,7 +856,6 @@ public class RulesLoader {
 				} else {
 					final String inMemoryDrlFileName = RESOURCE_PATH + rule._2;
 					Resource rs = ks.getResources().newReaderResource(new StringReader(rule._3));
-					log.error("Error here ::::"+rule._3);
 					kfs.write(inMemoryDrlFileName, rs.setResourceType(ResourceType.DRL));
 					DrlParser parser = new DrlParser();
 					try {
