@@ -489,6 +489,12 @@ public class TableUtils {
 		return msg;
 	}
 
+	/**
+	 * @param serviceToken
+	 * @param searchBE
+	 * @param msg
+	 * @return
+	 */
 	public QDataBaseEntityMessage searchUsingSearch25(GennyToken serviceToken, final SearchEntity searchBE,
 			QDataBaseEntityMessage msg) {
 		long starttime = System.currentTimeMillis();
@@ -496,8 +502,9 @@ public class TableUtils {
 
 		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
 		if (cals != null) {
-			log.info("searchUsingSearch25 -> detected " + cals.size() + " CALS");
+			log.info("searchUsingHql -> detected " + cals.size() + " CALS");
 		}
+
 		String[] filterArray = getSearchColumnFilterArray(searchBE).toArray(new String[0]);
 		// Add the associated columns
 
@@ -512,6 +519,7 @@ public class TableUtils {
 
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
+						
 						// this separates the indirect lnk field from the end field
 						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); 
 						if (calFields.length != 2) {
@@ -605,16 +613,8 @@ public class TableUtils {
 					be = VertxUtils.privacyFilter(be, filterArray);
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
-						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
-																												// separates
-																												// the
-																												// indirect
-																												// lnk
-																												// field
-																												// from
-																												// the
-																												// end
-						// field
+						// this separates the indirect lnk field from the end field
+						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); 
 						if (calFields.length != 2) {
 							log.error("CALS length is bad for " + searchBE.getCode() + " :" + calEA.getAttributeCode());
 							continue;
