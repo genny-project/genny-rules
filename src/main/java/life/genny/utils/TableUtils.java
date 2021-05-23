@@ -115,8 +115,8 @@ public class TableUtils {
 
 		if (searchAlt && (GennySettings.searchAlt)) {
 			log.info("searchCode   ::   " + searchBE.getCode());
-			msg = searchUsingHql(serviceToken, searchBE, msg);
-			// msg = searchUsingSearch25(serviceToken, searchBE, msg);
+			// msg = searchUsingHql(serviceToken, searchBE, msg);
+			msg = searchUsingSearch25(serviceToken, searchBE, msg);
 		} else {
 			log.info("Old Search");
 			msg = fetchSearchResults(searchBE);
