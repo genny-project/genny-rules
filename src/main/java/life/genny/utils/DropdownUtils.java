@@ -136,7 +136,8 @@ public class DropdownUtils implements Serializable {
 
 			if (GennySettings.searchAlt && useSearchAlt) {
 				System.out.println("Using alt search for dropdown");
-				msg = tableUtils.searchUsingHql(serviceToken, searchBE, msg);
+				// msg = tableUtils.searchUsingHql(serviceToken, searchBE, msg);
+				msg = tableUtils.searchUsingSearch25(serviceToken, searchBE, msg);
 
 			} else {
 				System.out.println("Using standard search for dropdown");
