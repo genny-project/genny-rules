@@ -302,7 +302,7 @@ public class TaskUtils {
 		recipients[0] = userToken.getUserCode();
 		askMsg.setRecipientCodeArray(recipients); // Send to all clients that this user is attached to
 		String sendingMsg = JsonUtils.toJson(askMsg);
-		VertxUtils.writeMsg("webcmds", sendingMsg);
+		VertxUtils.writeMsg("webdata", sendingMsg); // send to the user
 
 	}
 

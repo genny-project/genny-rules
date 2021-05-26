@@ -216,6 +216,7 @@ public class RulesLoader {
 	}
 
 	public static void reloadRules(String realm,String fileName,String body){
+		log.info("Reloading Rules for realms "+RulesLoader.realms+" with single realm "+realm);
 		List<Tuple3<String, String, String>> rules = 
 			processFileRealmsFromFiles("genny",GennySettings.rulesDir, RulesLoader.realms);
 		Map<String, String> distictRulesByName = getOverridenRules(rules);
@@ -232,9 +233,9 @@ public class RulesLoader {
 				"life.genny.utils.GennyRulesExceptionHandler");
 		final KieBase kbase = kContainer.newKieBase(kbconf);
 		log.info("Put rules KieBase into Custom Cache");
-		if (getKieBaseCache().containsKey(realm)) {
-			getKieBaseCache().remove(realm);
-		}
+//		if (getKieBaseCache().containsKey(realm)) {
+//			getKieBaseCache().remove(realm);
+//		}
 		getKieBaseCache().put(realm, kbase);
 		log.info(realm+ " rules updated\n");
 	}
@@ -486,7 +487,7 @@ public class RulesLoader {
 						if ((activeRealms.stream().anyMatch(fileprj::equals))
 								|| ("prj_genny".equalsIgnoreCase(fileName))) {
 							localRealm = fileName.substring("prj_".length()).toLowerCase(); // extract realm name
-							log.info("LocalRealm changed to " + localRealm);
+							//log.info("LocalRealm changed to " + localRealm);
 						} else {
 							continue;
 						}
@@ -1012,7 +1013,7 @@ public class RulesLoader {
 		}
 
 		// HACK!!
-		if (msg_code.startsWith("QUE_SUBMIT")) {
+		if ((msg_code != null) && (msg_code.startsWith("QUE_SUBMIT")) ) {
 
 			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), msg_data.getTargetCode(),
 					"PRI_SUBMIT", msg_code);
@@ -1023,7 +1024,7 @@ public class RulesLoader {
 					+ processId);
 			kieSession.signalEvent("data", sessionFactsData, processId);
 		} 
-		if (msg_code.equals("QUE_CANCEL")) {
+		if ((msg_code != null) && (msg_code.equals("QUE_CANCEL"))) {
 
 			kieSession.signalEvent("event", facts, processId);
 

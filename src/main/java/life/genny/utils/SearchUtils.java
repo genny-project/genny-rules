@@ -205,6 +205,12 @@ public class SearchUtils {
 	}
 
 	static public QDataBaseEntityMessage getDropdownData(BaseEntityUtils beUtils, QEventDropdownMessage message) {
+		
+		return getDropdownData(beUtils,message,GennySettings.defaultDropDownPageSize);
+	}
+
+	
+	static public QDataBaseEntityMessage getDropdownData(BaseEntityUtils beUtils, QEventDropdownMessage message, Integer dropdownSize) {
 
 		BaseEntity project = beUtils.getBaseEntityByCode("PRJ_" + beUtils.getServiceToken().getRealm().toUpperCase());
 
@@ -242,7 +248,7 @@ public class SearchUtils {
 
 		JsonObject searchValueJson =new JsonObject(serValue);
 		Integer pageStart = 0;
-		Integer pageSize = 8;
+		Integer pageSize = dropdownSize;
 
 		String searchBeCode = "SBE_DROPDOWN";
 
@@ -346,7 +352,10 @@ public class SearchUtils {
 			}
 		}
 		/* searchBE.addFilter("PRI_IS_EDU_PROVIDER", true); */
-		searchBE.addFilter("PRI_NAME", StringFilter.LIKE, message.getData().getValue() + "%");
+		//searchBE.addFilter("PRI_NAME", StringFilter.REGEXP, "\\\\b"+message.getData().getValue());
+		
+		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE,message.getData().getValue()+"%")
+		.addOr("PRI_NAME", SearchEntity.StringFilter.LIKE, "% "+message.getData().getValue()+"%");
 
 		searchBE.setRealm(beUtils.getServiceToken().getRealm());
 		searchBE.setPageStart(pageStart);
@@ -364,19 +373,19 @@ public class SearchUtils {
 		}
 
 		BaseEntity[] arrayItems = items.toArray(new BaseEntity[0]);
-		System.out.println("questionCode = "+message.getData().getParentCode()+" with "+Long.decode(items.size()+"")+" Items");
+		System.out.println("questionCode = "+message.getQuestionCode()+" with "+Long.decode(items.size()+"")+" Items");
 		System.out.println("parentCode = "+message.getData().getParentCode());
 		QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, message.getData().getParentCode(), "LINK", Long.decode(items.size()+""));
 		msg.setParentCode(message.getData().getParentCode());
-		msg.setQuestionCode(message.getData().getParentCode()); /* unsure why this is here */
+		msg.setQuestionCode(message.getQuestionCode()); 
 		msg.setToken(beUtils.getGennyToken().getToken());
 		msg.setLinkCode("LNK_CORE");
-		msg.setLinkValue("ITEMS");
+		msg.setLinkValue("DROPDOWNITEMS");
 		msg.setReplace(true);
 		msg.setShouldDeleteLinkedBaseEntities(false);
 
 		/* Linking child baseEntity to the parent baseEntity */
-		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getParentCode(), "LNK_CORE", "ITEMS", beUtils.getGennyToken(),
+		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getParentCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
 				false);
 
 		return beMessage;
