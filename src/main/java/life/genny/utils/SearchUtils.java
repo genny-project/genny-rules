@@ -216,8 +216,8 @@ public class SearchUtils {
 
 		// firstly work out what the DEF isThe Nott
 
-		BaseEntity targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode());
-		BaseEntity internBe = beUtils.getBaseEntityByCode("DEF_INTERN");
+		//BaseEntity targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode());
+		//BaseEntity internBe = beUtils.getBaseEntityByCode("DEF_INTERN");
 		// BaseEntity defBe = beUtils.getDEF(targetBe);
 
 		/* targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode()); */
