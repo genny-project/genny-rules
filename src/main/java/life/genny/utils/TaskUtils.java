@@ -549,9 +549,13 @@ public class TaskUtils {
 		if (!answer.getSourceCode().equals(userToken.getUserCode())) {
 			return false;
 		}
-		
-		if (!defBe.containsEntityAttribute("ATT_"+answer.getAttributeCode())) {
-			return false;
+		if (defBe != null) {
+			if (!defBe.containsEntityAttribute("ATT_"+answer.getAttributeCode())) {
+				return false;
+			}
+		} else {
+			log.error("NO DEF FOR answer "+answer.getTargetCode());
+			
 		}
 		return true;
 	}
