@@ -76,8 +76,14 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 		log.info(callingWorkflow + ":pid" + workItem.getProcessInstanceId() + " Running rule flow group "
 				+ ruleFlowGroup);
 
-		final Map<String, Object> resultMap = executeRules(serviceToken, userToken, items, ruleFlowGroup,
-				callingWorkflow);
+		Map<String, Object> resultMap = new HashMap<>();
+		
+		try {
+			resultMap = executeRules(serviceToken, userToken, items, ruleFlowGroup,
+					callingWorkflow);
+		} catch (Exception e) {
+			log.error("Error in executing rules "+e.getLocalizedMessage());
+		}
 
 		// notify manager that work item has been completed
 		manager.completeWorkItem(workItem.getId(), resultMap);

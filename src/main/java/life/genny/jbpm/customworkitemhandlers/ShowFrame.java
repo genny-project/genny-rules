@@ -85,9 +85,12 @@ public class ShowFrame implements WorkItemHandler {
 		}
 
 		// Get filtered ask from the AskFilters ruleflow group
+
 		if (qBulkMessage.getAsks().length > 0 && qBulkMessage.getAsks()[0].getItems().length > 0) {
 			Ask filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
 		}
+
+
 		// Send these filtered asks to overwrite
 		// QDataAskMessage filteredAskMsg = new QDataAskMessage(filteredAsk);
 		// filteredAskMsg.setToken(userToken.getToken());
@@ -437,7 +440,9 @@ public class ShowFrame implements WorkItemHandler {
 						if( dropdownCode.equals("LNK_OCCUPATION") || 
 								dropdownCode.equals("LNK_HOST_COMPANY_REP") ||
 								dropdownCode.equals("LNK_INTERN_SUPERVISOR") ||
-								dropdownCode.equals("LNK_INTERNSHIP") ){
+								dropdownCode.equals("LNK_INTERNSHIP") || dropdownCode.equals("LNK_EDU_PROVIDER")
+								
+								){
 									
 									continue;
 						}

@@ -171,7 +171,8 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (!newFields.isEmpty()) {
 			List<Answer> saveFields = new CopyOnWriteArrayList<Answer>();
 			for (Answer ans : newFields) {
-				if (!("PRI_SUBMIT".equals(ans.getAttributeCode()) || "QQQ_QUESTION_GROUP".equals(ans.getAttributeCode()))) {
+				if (!("PRI_SUBMIT".equals(ans.getAttributeCode())
+						|| "QQQ_QUESTION_GROUP".equals(ans.getAttributeCode()))) {
 					saveFields.add(ans);
 				}
 			}
@@ -405,17 +406,17 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			callingWorkflow = "";
 		}
 		Boolean liveQuestions = false;
-	
-		String liveQuestionsStr = (String)workItem.getParameter("liveQuestions");
+
+		String liveQuestionsStr = (String) workItem.getParameter("liveQuestions");
 		if (!StringUtils.isBlank(liveQuestionsStr)) {
 			liveQuestions = liveQuestionsStr.toLowerCase().contains("true");
-		} 
-		
+		}
+
 		Boolean showInDrafts = true;
-		String showInDraftsStr = (String)workItem.getParameter("showInDrafts");
+		String showInDraftsStr = (String) workItem.getParameter("showInDrafts");
 		if (!StringUtils.isBlank(showInDraftsStr)) {
 			showInDrafts = showInDraftsStr.toLowerCase().contains("true");
-		} 
+		}
 
 		log.info(callingWorkflow + " Live Questions are " + (liveQuestions ? "ON" : "OFF"));
 		log.info(callingWorkflow + " Show In Drafts is " + (showInDrafts ? "ON" : "OFF"));
@@ -478,31 +479,36 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		baseEntityTarget = beUtils.getBaseEntityByCode(baseEntityTargetCode); // get latest
 
+		BaseEntity defBe = beUtils.getDEF(baseEntityTarget);
 
 		// Work out tyope of BE
-		String beType = "";
-		List<EntityAttribute> eas = baseEntityTarget.findPrefixEntityAttributes("PRI_IS_");
-		if ((eas == null) || (eas.isEmpty())) {
+		String beType = defBe.getName();
+		log.info("AskQuestion BaseEntityType identifed by DEF as " + defBe.getName());
 
-			beType = baseEntityTarget.getValueAsString("PRI_STATUS");
-			if (!StringUtils.isBlank(beType)) {
-				// will be only one
-				if (beType.contains("PENDING_")) {
-					String attributeCode = beType.substring("PENDING_".length());
-					attributeCode = attributeCode.replaceAll("_", " ");
-					beType = StringUtils.capitalize(attributeCode.toLowerCase());
-				} else {
-					beType = "";
+		if (StringUtils.isBlank(beType)) {
+			List<EntityAttribute> eas = baseEntityTarget.findPrefixEntityAttributes("PRI_IS_");
+			if ((eas == null) || (eas.isEmpty())) {
+
+				beType = baseEntityTarget.getValueAsString("PRI_STATUS");
+				if (!StringUtils.isBlank(beType)) {
+					// will be only one
+					if (beType.contains("PENDING_")) {
+						String attributeCode = beType.substring("PENDING_".length());
+						attributeCode = attributeCode.replaceAll("_", " ");
+						beType = StringUtils.capitalize(attributeCode.toLowerCase());
+					} else {
+						beType = "";
+					}
 				}
-			}
-		} else {
-			Optional<EntityAttribute> role = baseEntityTarget.getHighestEA("PRI_IS_");
-			if (role.isPresent()) {
-				String roleName = role.get().getAttributeCode();
-				roleName = roleName.substring("PRI_IS_".length());
-				roleName = roleName.replaceAll("_", " ");
-				beType = StringUtils.capitalize(roleName.toLowerCase());
-				
+			} else {
+				Optional<EntityAttribute> role = baseEntityTarget.getHighestEA("PRI_IS_");
+				if (role.isPresent()) {
+					String roleName = role.get().getAttributeCode();
+					roleName = roleName.substring("PRI_IS_".length());
+					roleName = roleName.replaceAll("_", " ");
+					beType = StringUtils.capitalize(roleName.toLowerCase());
+
+				}
 			}
 		}
 
@@ -591,7 +597,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		} else {
 			taskData.setFaultType("ABSORB_INFERRED");
 		}
-		
+
 		if (showInDrafts) {
 			taskData.setFaultName("SHOW_IN_DRAFTS");
 		} else {
