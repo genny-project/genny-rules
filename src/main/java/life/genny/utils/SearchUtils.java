@@ -341,7 +341,7 @@ public class SearchUtils {
 					if (valSplit[0].contains("LIKE")) {
 						val = val + "%";// just keep the front bit
 					}
-					searchBE.addFilter(searchBeCode, stringFilter, val);
+					searchBE.addFilter(searchBeCode, SearchEntity.StringFilter.LIKE, val);
 
 				}
 
