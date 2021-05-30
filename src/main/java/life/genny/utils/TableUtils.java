@@ -1902,6 +1902,7 @@ public class TableUtils {
 
 	public Long performCount(SearchEntity searchBE) {
 
+
 		System.out.println("SBE CODE   ::   " + searchBE.getCode());
 		long startTime = System.currentTimeMillis();
 
@@ -1919,22 +1920,40 @@ public class TableUtils {
 		}
 		Long total = null;
 
-		// Convert SBE to hql for searching the database
-		Tuple2<String, List<String>> data = this.beUtils.getHql(searchBE);
-		String hql = data._1;
-		String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
-		log.info("hql = " + hql);
-		try {
-			/* Hit the api for a count */
-			String resultJsonStr = QwandaUtils.apiGet(
-					GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count24/" + hql2,
-					this.beUtils.getServiceToken().getToken(), 120);
+		// In case it needs to be changed back to hql quickly
+		Boolean useHql = false;
+		if (useHql) {
+				
+			Tuple2<String, List<String>> data = this.beUtils.getHql(searchBE);
+			String hql = data._1;
+			String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
+			log.info("hql = " + hql);
+			try {
+				/* Hit the api for a count */
+				String resultJsonStr = QwandaUtils.apiGet(
+						GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count24/" + hql2,
+						this.beUtils.getServiceToken().getToken(), 120);
 
-			System.out.println("Count = " + resultJsonStr);
-			total = Long.parseLong(resultJsonStr);
+				System.out.println("Count = " + resultJsonStr);
+				total = Long.parseLong(resultJsonStr);
 
-		} catch (Exception e) {
-			System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
+			} catch (Exception e) {
+				System.out.println("EXCEPTION RUNNING COUNT WITH HQL: " + e.toString());
+			}
+		} else {
+			// Now using updated search
+			try {
+				/* Hit the api for a count */
+				String resultJsonStr = QwandaUtils.apiPostEntity2(
+						GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count25/",
+						JsonUtils.toJson(searchBE), this.beUtils.getServiceToken().getToken(), null);
+
+				System.out.println("Count = " + resultJsonStr);
+				total = Long.parseLong(resultJsonStr);
+
+			} catch (Exception e) {
+				System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
+			}
 		}
 
 		// Perform count for any combined search attributes
