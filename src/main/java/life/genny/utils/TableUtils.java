@@ -502,7 +502,7 @@ public class TableUtils {
 
 		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
 		if (cals != null) {
-			log.info("searchUsingHql -> detected " + cals.size() + " CALS");
+			log.info("searchUsingSearch25 -> detected " + cals.size() + " CALS");
 		}
 
 		String[] filterArray = getSearchColumnFilterArray(searchBE).toArray(new String[0]);
