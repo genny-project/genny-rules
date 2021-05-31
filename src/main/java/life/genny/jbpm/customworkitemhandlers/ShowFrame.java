@@ -85,8 +85,8 @@ public class ShowFrame implements WorkItemHandler {
 		}
 
 		// Get filtered ask from the AskFilters ruleflow group
-		if (qBulkMessage.getAsks() != null && qBulkMessage.getAsks()[0].getItems() != null) {
-			if (qBulkMessage.getAsks().length > 0 && qBulkMessage.getAsks()[0].getItems().length > 0) {
+		if (qBulkMessage.getAsks() != null && qBulkMessage.getAsks().length > 0) {
+			if (qBulkMessage.getAsks()[0].getItems() != null && qBulkMessage.getAsks()[0].getItems().length > 0) {
 				Ask filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
 			}
 		}
