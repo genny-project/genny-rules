@@ -511,7 +511,7 @@ public class TableUtils {
 		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
 			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
 				// This means we are searching for a single entity
-				log.info("SINGLE BSAE ENTITY SEARCH DETECTED");
+				log.info("SINGLE BASE ENTITY SEARCH DETECTED");
 				BaseEntity be = beUtils.getBaseEntityByCode(attr.getValue());
 
 				if (be != null) {
@@ -584,9 +584,27 @@ public class TableUtils {
 		}
 
 		try {
-			String resultJsonStr = QwandaUtils.apiPostEntity2(
+
+			String resultJsonStr = null;
+			if (GennySettings.qwandaServiceUrl.contains("genny.life")) { //THIS IS TERRIBLE! I (ACC) DID IT BECAUSE I COULD NOT EASILY FIND WHY SEARCH25 DID NOT WORK LOCALLY BUT SEARCH24 DID
+				Tuple2<String, List<String>> data = getHql(serviceToken,searchBE);
+				String hql = data._1;
+
+				hql = Base64.getUrlEncoder().encodeToString(hql.getBytes());
+				resultJsonStr = QwandaUtils.apiGet(
+						GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search24/" + hql + "/"
+								+ searchBE.getPageStart(0) + "/" + searchBE.getPageSize(GennySettings.defaultPageSize),
+						serviceToken.getToken(), 120);
+			} else {
+
+			
+			resultJsonStr =  QwandaUtils.apiPostEntity2(
 					GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
 					JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
+			}
+//			String resultJsonStr = QwandaUtils.apiPostEntity2(
+//					GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
+//					JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
 
 			endtime2 = System.currentTimeMillis();
 			log.info("NOT SINGLE - Time taken to fetch Data =" + (endtime2 - starttime) + " ms");
