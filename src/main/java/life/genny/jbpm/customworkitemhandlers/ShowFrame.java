@@ -75,25 +75,26 @@ public class ShowFrame implements WorkItemHandler {
 
 		Boolean cache = false;
 		QBulkMessage qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output,cache);
+
+		// Get filtered ask from the AskFilters ruleflow group
+		Ask filteredAsk = null;
+		if (qBulkMessage.getAsks() != null && qBulkMessage.getAsks().length > 0) {
+			if (qBulkMessage.getAsks()[0].getItems() != null && qBulkMessage.getAsks()[0].getItems().length > 0) {
+				// Run AskFilters rules to edit asks as needed
+				filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
+				// Now replace ask in message with new filtered ask
+				qBulkMessage.getAsks()[0].getItems()[0] = filteredAsk;
+			}
+		}
+
 		if (cache) {
 			qBulkMessage.setToken(userToken.getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
-			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
-			msgend.setToken(userToken.getToken());
-			msgend.setSend(true);
+			// QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
+			// msgend.setToken(userToken.getToken());
+			// msgend.setSend(true);
 			// VertxUtils.writeMsg("webcmds", msgend);
 		}
-
-		// Get filtered ask from the AskFilters ruleflow group
-		if (qBulkMessage.getAsks() != null && qBulkMessage.getAsks().length > 0) {
-			if (qBulkMessage.getAsks()[0].getItems() != null && qBulkMessage.getAsks()[0].getItems().length > 0) {
-				Ask filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
-			}
-		}
-		// Send these filtered asks to overwrite
-		// QDataAskMessage filteredAskMsg = new QDataAskMessage(filteredAsk);
-		// filteredAskMsg.setToken(userToken.getToken());
-		// VertxUtils.writeMsg("webcmds", filteredAskMsg);
 		
 		// notify manager that work item has been completed
 		if (workItem == null) {
@@ -702,7 +703,7 @@ public class ShowFrame implements WorkItemHandler {
 				beUtils.getGennyToken(), facts, "AskFilters", "ShowFrame:GetAskFilters");
 
 		Object obj = results.get("payload");
-		/* log.info("obj   ::   " +obj); */
+		log.info("obj   ::   " + JsonUtils.toJson(obj));
 
 		if (obj instanceof QBulkMessage) {
 			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
