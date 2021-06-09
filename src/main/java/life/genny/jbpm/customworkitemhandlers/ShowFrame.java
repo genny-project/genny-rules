@@ -99,6 +99,7 @@ public class ShowFrame implements WorkItemHandler {
 		}
 
 		if (cache) {
+			log.info("publishing the qBulkMessage from Line 102");				
 			qBulkMessage.setToken(userToken.getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
 			// QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
