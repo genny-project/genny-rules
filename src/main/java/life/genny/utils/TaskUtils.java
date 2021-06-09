@@ -585,15 +585,15 @@ public class TaskUtils {
 
 		// Get the associated DEF for this baseentity
 		long start = System.currentTimeMillis();
-		BaseEntity defEntity = beUtils.getDEF(originalBe);
-		if (defEntity == null) {
-			log.error("NO DEF EXISTS for "+originalBe.getCode()+" returning empty");
-			return Tuple.of(validInferredAnswers, newBe);
-		} else {
-			long end = System.currentTimeMillis();
-			log.info("USING DEF "+defEntity.getCode()+":"+defEntity.getName()+" in "+(end-start)+" ms");
-		}
-		
+//		BaseEntity defEntity = beUtils.getDEF(originalBe);
+//		if (defEntity == null) {
+//			log.error("NO DEF EXISTS for "+originalBe.getCode()+" returning empty");
+//			return Tuple.of(validInferredAnswers, newBe);
+//		} else {
+//			long end = System.currentTimeMillis();
+//			log.info("USING DEF "+defEntity.getCode()+":"+defEntity.getName()+" in "+(end-start)+" ms");
+//		}
+//		
 		
 		
 		for (Answer answer : answersToSave2) {
