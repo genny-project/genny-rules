@@ -82,10 +82,14 @@ public class ShowFrame implements WorkItemHandler {
 			if (qBulkMessage.getAsks()[0].getItems() != null && qBulkMessage.getAsks()[0].getItems().length > 0) {
 				// Run AskFilters rules to edit asks as needed
 				filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
-				log.info("actual ask length   ::  " + qBulkMessage.getAsks()[0].getItems()[0].getChildAsks().length);				
-				log.info("filteredAsk length  ::  " + filteredAsk.getChildAsks().length);				
+				log.info("BEFORE actual ask length   ::  " + qBulkMessage.getAsks()[0].getItems()[0].getChildAsks().length);				
+				/* log.info("filteredAsk length  ::  " + filteredAsk.getChildAsks().length);				 */
 				// Now replace ask in message with new filtered ask
-				qBulkMessage.getAsks()[0].getItems()[0] = filteredAsk;
+				//qBulkMessage.getAsks()[0].getItems()[0] = filteredAsk;
+				Ask[] filteredAskArr = {filteredAsk};
+				log.info("filteredAskArr length  ::  " + filteredAskArr.length);				
+				qBulkMessage.getAsks()[0].setItems(filteredAskArr);
+				log.info("AFTER actual ask length   ::  " + qBulkMessage.getAsks()[0].getItems()[0].getChildAsks().length);				
 			}
 		}
 
