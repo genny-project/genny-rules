@@ -38,7 +38,7 @@
 		<vertx-concurrent.version>1.0.0</vertx-concurrent.version>
 		<junit-version>4.13.1</junit-version>
 		<version.hibernate>5.3.13.Final</version.hibernate>
-		<version.hibernate-validator>6.1.0.Final</version.hibernate-validator>
+		<version.hibernate-validator>6.1.5.Final</version.hibernate-validator>
 		<version.javaassist>3.25.0-GA</version.javaassist>
 	</properties>
 
