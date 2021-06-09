@@ -715,6 +715,7 @@ public class ShowFrame implements WorkItemHandler {
 
 		Object obj = results.get("payload");
 		if (obj instanceof QBulkMessage) {
+			log.info("obj is an instance of QBulkMessage");
 			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
 
 			// Check if bulkMsg not empty
@@ -730,6 +731,8 @@ public class ShowFrame implements WorkItemHandler {
 					ret = msg.getItems()[0];
 				}
 			}
+		}else{
+			log.info("obj is not an instance of QBulkMessage");
 		}
 		return ret;
 
