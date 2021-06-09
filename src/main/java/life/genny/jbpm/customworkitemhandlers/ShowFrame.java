@@ -83,7 +83,7 @@ public class ShowFrame implements WorkItemHandler {
 				// Run AskFilters rules to edit asks as needed
 				filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
 				log.info("BEFORE actual ask length   ::  " + qBulkMessage.getAsks()[0].getItems()[0].getChildAsks().length);				
-				/* log.info("filteredAsk length  ::  " + filteredAsk.getChildAsks().length);				 */
+				
 				// Now replace ask in message with new filtered ask
 				//qBulkMessage.getAsks()[0].getItems()[0] = filteredAsk;
 				if(filteredAsk != null){
