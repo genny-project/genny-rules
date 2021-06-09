@@ -720,7 +720,7 @@ public class ShowFrame implements WorkItemHandler {
 			log.info("bulkMsg  ::  "  + JsonUtils.toJson(bulkMsg));
 
 			// Check if bulkMsg not empty
-			if (bulkMsg.getMessages().length > 0) {
+			if (bulkMsg.getAsks().length > 0) {
 				log.info("bulkMsg is not empty");
 
 				// Get the first QDataBaseEntityMessage from bulkMsg
