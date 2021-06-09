@@ -257,7 +257,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 				Long processInstanceId = processInstance.getId();
 				String sessionCode = userToken.getSessionCode();
 				String realm = userToken.getRealm(); //TODO
-				SessionPid sessionPid = new SessionPid(realm,sessionCode,processInstanceId);
+				SessionPid sessionPid = new SessionPid(userToken.getUsername(),realm,sessionCode,processInstanceId);
 				persist(sessionPid,event);
 	
 				logger.info("After Process Started");
@@ -290,6 +290,19 @@ public class NodeStatusLog extends AbstractAuditLogger {
 			if (log != null) {
 				log = (ProcessInstanceLog) builder.buildEvent(event, log);
 				em.merge(log);
+				
+				// save the end date time to SessionPid
+				
+				logger.info("After Process Completed");
+				List<SessionPid> result = em.createQuery(
+						"from session_pid as spid where spid.pid = :piId")
+						.setParameter("piId", processInstanceId).getResultList();
+				if (result != null && result.size() != 0) {
+					SessionPid  spid = result.get(result.size() - 1);
+					spid.setSessionend(new Date());
+					em.merge(spid);
+				}
+		
 			}
 			leaveTransaction(em, tx);
 		}

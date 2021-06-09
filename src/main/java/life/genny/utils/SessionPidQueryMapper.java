@@ -56,11 +56,13 @@ public class SessionPidQueryMapper extends AbstractQueryMapper<SessionPid> imple
     
     protected SessionPid buildInstance(DataSet dataSetResult, int index) {
         SessionPid pi = new life.genny.model.SessionPid(
+        		getColumnStringValue(dataSetResult, "usercode", index),
                 getColumnLongValue(dataSetResult, "id", index),
                 getColumnDateValue(dataSetResult, "log_date", index),
                 getColumnStringValue(dataSetResult, "realm", index),
                 getColumnStringValue(dataSetResult, "sessioncode", index),              
                 getColumnLongValue(dataSetResult, "pid", index)
+                
                  );
 
          return pi;

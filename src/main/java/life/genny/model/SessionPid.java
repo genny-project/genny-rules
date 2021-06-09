@@ -59,10 +59,36 @@ public class SessionPid implements Serializable/*, AuditEvent, org.kie.api.runti
     @Expose
     @Column(name = "pid")
 	private Long processInstanceId;
- 	
+    
+    @Expose
+    @Column(name="usercode")
+    private String usercode;
+ 
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "sessionend")
+    private Date sessionend;
+
 	private SessionPid()
 	{
 		// used by hibernate
+	}
+	
+	/**
+	 * @param userCode
+	 * @param nodeName
+	 * @param nodeId
+	 * @param realm
+	 * @param processInstanceId
+	 * @param processId
+	 */
+	
+	public SessionPid(String usercode,long id,Date date,String realm,String sessionCode,Long processInstanceId) {
+		this.usercode = usercode;
+		this.id = id;
+		this.date = date;
+		this.sessionCode = sessionCode;
+		this.processInstanceId = processInstanceId;
+		this.realm = realm;
 	}
 	
 	/**
@@ -89,6 +115,15 @@ public class SessionPid implements Serializable/*, AuditEvent, org.kie.api.runti
 		this.sessionCode = sessionCode;
 		this.processInstanceId = processInstanceId;
 		this.realm = realm;
+	}
+	
+	public SessionPid(String usercode,String realm,String sessionCode,Long processInstanceId) {
+
+		this.date = new Date();
+		this.sessionCode = sessionCode;
+		this.processInstanceId = processInstanceId;
+		this.realm = realm;
+		this.usercode = usercode;
 	}
 
 	/**
@@ -161,6 +196,37 @@ public class SessionPid implements Serializable/*, AuditEvent, org.kie.api.runti
 		this.processInstanceId = processInstanceId;
 	}
 
+	
+	
+	
+	/**
+	 * @return the sessionend
+	 */
+	public Date getSessionend() {
+		return sessionend;
+	}
+
+	/**
+	 * @param sessionend the sessionend to set
+	 */
+	public void setSessionend(Date sessionend) {
+		this.sessionend = sessionend;
+	}
+
+	/**
+	 * @return the usercode
+	 */
+	public String getUsercode() {
+		return usercode;
+	}
+
+	/**
+	 * @param usercode the usercode to set
+	 */
+	public void setUsercode(String usercode) {
+		this.usercode = usercode;
+	}
+
 	/**
 	 * @return the serialversionuid
 	 */
@@ -208,6 +274,7 @@ public class SessionPid implements Serializable/*, AuditEvent, org.kie.api.runti
 	@Override
 	public String toString() {
 		return "SessionPid [" + (date != null ? "date=" + date + ", " : "")
+				+ (usercode != null ? "usercode=" + usercode+ ", " : "")
 				+ (sessionCode != null ? "sessionCode=" + sessionCode + ", " : "")
 				+ (realm != null ? "realm=" + realm + ", " : "")
 				+ (processInstanceId != null ? "processInstanceId=" + processInstanceId : "") + "]";
