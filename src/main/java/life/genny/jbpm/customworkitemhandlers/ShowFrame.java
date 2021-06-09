@@ -92,6 +92,8 @@ public class ShowFrame implements WorkItemHandler {
 					log.info("filteredAskArr length  ::  " + filteredAskArr.length);				
 					qBulkMessage.getAsks()[0].setItems(filteredAskArr);
 					log.info("AFTER actual ask length   ::  " + qBulkMessage.getAsks()[0].getItems()[0].getChildAsks().length);				
+				}else{
+					log.info("filteredAsk is null");				
 				}
 			}
 		}
@@ -712,8 +714,6 @@ public class ShowFrame implements WorkItemHandler {
 				beUtils.getGennyToken(), facts, "AskFilters", "ShowFrame:GetAskFilters");
 
 		Object obj = results.get("payload");
-		log.info("obj   ::   " + JsonUtils.toJson(obj));
-
 		if (obj instanceof QBulkMessage) {
 			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
 
