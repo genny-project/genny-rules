@@ -257,7 +257,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 				Long processInstanceId = processInstance.getId();
 				String sessionCode = userToken.getSessionCode();
 				String realm = userToken.getRealm(); //TODO
-				SessionPid sessionPid = new SessionPid(userToken.getUsername(),realm,sessionCode,processInstanceId);
+				SessionPid sessionPid = new SessionPid(userToken.getUserCode(),realm,sessionCode,processInstanceId);
 				persist(sessionPid,event);
 	
 				logger.info("After Process Started");
