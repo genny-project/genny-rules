@@ -295,7 +295,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 				
 				logger.info("After Process Completed");
 				List<SessionPid> result = em.createQuery(
-						"from session_pid as spid where spid.pid = :piId")
+						"from SessionPid as spid where spid.processInstanceId = :piId")
 						.setParameter("piId", processInstanceId).getResultList();
 				if (result != null && result.size() != 0) {
 					SessionPid  spid = result.get(result.size() - 1);
