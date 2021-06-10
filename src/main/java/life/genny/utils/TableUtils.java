@@ -506,6 +506,7 @@ public class TableUtils {
 		}
 
 		String[] filterArray = getSearchColumnFilterArray(searchBE).toArray(new String[0]);
+		log.info("filterArray :: " + filterArray);
 		// Add the associated columns
 
 		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
@@ -607,9 +608,7 @@ public class TableUtils {
 					String code = result.getString(i);
 					resultCodes.add(code);
 					BaseEntity be = beUtils.getBaseEntityByCode(code);
-					if (be != null) {
-					} else {
-					}
+					log.info("going through privacyFilter 610");
 					be = VertxUtils.privacyFilter(be, filterArray);
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
