@@ -506,7 +506,7 @@ public class TableUtils {
 		}
 
 		String[] filterArray = getSearchColumnFilterArray(searchBE).toArray(new String[0]);
-		log.info("filterArray :: " + Arrays.toString(filterArray));
+		// log.info("filterArray :: " + Arrays.toString(filterArray));
 		// Add the associated columns
 
 		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
