@@ -712,7 +712,7 @@ public class ShowFrame implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	public Ask getAskFilters(BaseEntityUtils beUtils, final Ask ask) {
+	public static Ask getAskFilters(BaseEntityUtils beUtils, final Ask ask) {
 
 		Ask ret = null;
 
