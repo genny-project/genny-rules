@@ -2,57 +2,47 @@ package life.genny.utils;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Type;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.apache.http.client.ClientProtocolException;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.Logger;
 
-import com.google.gson.reflect.TypeToken;
-
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
-import life.genny.models.TableData;
-import life.genny.models.Theme;
-import life.genny.models.ThemeAttribute;
-import life.genny.models.ThemeAttributeType;
-import life.genny.models.ThemePosition;
-import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
-import life.genny.qwanda.Context;
-import life.genny.qwanda.ContextList;
-import life.genny.qwanda.ContextType;
+import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
-import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
-import life.genny.qwanda.exception.BadDataException;
-import life.genny.qwanda.message.QBulkMessage;
-import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
-import life.genny.qwanda.validation.Validation;
-import life.genny.qwanda.validation.ValidationList;
+import life.genny.qwanda.message.QEventDropdownMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
-import life.genny.rules.QRules;
-import life.genny.utils.ContextUtils;
 
 public class SearchUtils {
 
@@ -211,4 +201,295 @@ public class SearchUtils {
 		return columns;
 	}
 
+	static public QDataBaseEntityMessage getDropdownData(BaseEntityUtils beUtils, QEventDropdownMessage message) {
+		
+		return getDropdownData(beUtils,message,GennySettings.defaultDropDownPageSize);
+	}
+
+	
+	static public QDataBaseEntityMessage getDropdownData(BaseEntityUtils beUtils, QEventDropdownMessage message, Integer dropdownSize) {
+
+		BaseEntity project = beUtils.getBaseEntityByCode("PRJ_" + beUtils.getServiceToken().getRealm().toUpperCase());
+
+		// firstly work out what the DEF isThe Nott
+
+		//BaseEntity targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode());
+		//BaseEntity internBe = beUtils.getBaseEntityByCode("DEF_INTERN");
+		// BaseEntity defBe = beUtils.getDEF(targetBe);
+
+		/* targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode()); */
+		/* BaseEntity defBe = beUtils.getDEF(targetBe); */
+
+		BaseEntity defBe = beUtils.getBaseEntityByCode("DEF_INTERN");
+
+		/*
+		 * Now check if this attribute is ok if
+		 * (!internBe.containsEntityAttribute("ATT_"+qEventDropdownMessage.
+		 * getAttributeCode())) {
+		 * System.out.println("Error - Attribute "+qEventDropdownMessage.
+		 * getAttributeCode()+" is not allowed for this target"); }
+		 */
+
+		/*
+		 * because it is a drop down event we will search the DEF for the search
+		 * attribute
+		 */
+		Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + message.getAttributeCode()); // SER_LNK_EDU_PROVIDER
+		String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_EDU_PROVIDER\",\"value\":\"true\"}]}";
+		if (searchAtt.isPresent()) {
+			serValue = searchAtt.get().getValueString();
+			System.out.println("Search Attribute Value = " + serValue);
+		} else {
+			return new QDataBaseEntityMessage();
+		}
+
+		JsonObject searchValueJson =new JsonObject(serValue);
+		Integer pageStart = 0;
+		Integer pageSize = dropdownSize;
+
+		String searchBeCode = "SBE_DROPDOWN";
+
+		SearchEntity searchBE = new SearchEntity("SBE_DROPDOWN",
+				project.getValue("PRI_NAME", project.getCode()) + " Search")
+						.addSort("PRI_NAME", "Name", SearchEntity.Sort.ASC).addColumn("PRI_CODE", "Code")
+						.addColumn("PRI_NAME", "Name");
+
+	
+		/*
+		 * SearchEntity searchBE =
+		 * beUtils.getBaseEntityByCode(searchValueJson.getString("search")
+		 */
+		JsonArray jsonParms = searchValueJson.getJsonArray("parms");
+		for (Object parmValue : jsonParms) {
+
+			try {
+				JsonObject json = (JsonObject) parmValue;
+				Attribute att = RulesUtils.getAttribute(json.getString("attributeCode"), beUtils.getServiceToken());
+				String val = json.getString("value");
+				String[] valSplit = new String[1];
+				SearchEntity.Filter filter = SearchEntity.Filter.EQUALS;
+				valSplit[0] = val;
+				if (val.contains(":")) {
+					valSplit = val.split(":");
+					filter = SearchEntity.convertOperatorToFilter(valSplit[0]);
+					val = valSplit[1];
+				}
+
+				final String dataType = att.getDataType().getClassName();
+				switch (dataType) {
+				case "java.lang.Integer":
+				case "Integer":
+					searchBE.addFilter(json.getString("attributeCode"), filter, Integer.parseInt(val));
+					break;
+				case "java.time.LocalDateTime":
+				case "LocalDateTime":
+					String dt = val;
+					LocalDateTime dateTime = null;
+					List<String> formatStrings = Arrays.asList("yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss",
+							"yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd HH:mm:ss.SSSZ");
+					for (String formatString : formatStrings) {
+						try {
+							Date olddate = new SimpleDateFormat(formatString).parse(dt);
+							dateTime = olddate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+							break;
+
+						} catch (ParseException e) {
+						}
+					}
+					searchBE.addFilter(json.getString("attributeCode"), filter, dateTime);
+					break;
+				case "java.time.LocalTime":
+				case "LocalTime":
+					dt = val;
+					final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+					final LocalTime ltime = LocalTime.parse(dt, formatter);
+					searchBE.addFilter(json.getString("attributeCode"), filter, ltime);
+					break;
+				case "java.lang.Long":
+				case "Long":
+					searchBE.addFilter(json.getString("attributeCode"), filter, Long.parseLong(val));
+					break;
+				case "java.lang.Double":
+				case "Double":
+					searchBE.addFilter(json.getString("attributeCode"), filter, Double.parseDouble(val));
+					break;
+				case "java.lang.Boolean":
+				case "Boolean":
+					searchBE.addFilter(json.getString("attributeCode"), "TRUE".equalsIgnoreCase(val));
+					break;
+				case "java.time.LocalDate":
+				case "LocalDate":
+					dt = val;
+					Date olddate = null;
+					try {
+						olddate = DateUtils.parseDate(dt, "M/y", "yyyy-MM-dd", "yyyy/MM/dd", "yyyy-MM-dd'T'HH:mm:ss",
+								"yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+					} catch (java.text.ParseException e) {
+						olddate = DateUtils.parseDate(dt, "yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd HH:mm:ss",
+								"yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyy-MM-dd HH:mm:ss.SSSZ");
+					}
+					LocalDate ldate = olddate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+					searchBE.addFilter(json.getString("attributeCode"), filter, ldate);
+					break;
+				case "org.javamoney.moneta.Money":
+				case "java.lang.String":
+				default:
+					SearchEntity.StringFilter stringFilter = SearchEntity.convertOperatorToStringFilter(valSplit[0]);
+					if (valSplit[0].contains("LIKE")) {
+						val = val + "%";// just keep the front bit
+					}
+					searchBE.addFilter(searchBeCode, SearchEntity.StringFilter.LIKE, val);
+
+				}
+
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				log.error("Bad Json Value ---> " + parmValue.toString());
+				continue;
+			}
+		}
+		/* searchBE.addFilter("PRI_IS_EDU_PROVIDER", true); */
+		//searchBE.addFilter("PRI_NAME", StringFilter.REGEXP, "\\\\b"+message.getData().getValue());
+		
+		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE,message.getData().getValue()+"%")
+		.addOr("PRI_NAME", SearchEntity.StringFilter.LIKE, "% "+message.getData().getValue()+"%");
+
+		searchBE.setRealm(beUtils.getServiceToken().getRealm());
+		searchBE.setPageStart(pageStart);
+		searchBE.setPageSize(pageSize);
+		pageStart += pageSize;
+		
+		List<BaseEntity> items = beUtils.getBaseEntitys(searchBE);
+		if (!items.isEmpty()) {
+			log.info("Loaded " + items.size() + " baseentitys");
+		}
+
+		for (BaseEntity item : items) {
+			
+			System.out.println("item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
+		}
+
+		BaseEntity[] arrayItems = items.toArray(new BaseEntity[0]);
+		System.out.println("questionCode = "+message.getQuestionCode()+" with "+Long.decode(items.size()+"")+" Items");
+		System.out.println("parentCode = "+message.getData().getParentCode());
+		QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, message.getData().getParentCode(), "LINK", Long.decode(items.size()+""));
+		msg.setParentCode(message.getData().getParentCode());
+		msg.setQuestionCode(message.getQuestionCode()); 
+		msg.setToken(beUtils.getGennyToken().getToken());
+		msg.setLinkCode("LNK_CORE");
+		msg.setLinkValue("DROPDOWNITEMS");
+		msg.setReplace(true);
+		msg.setShouldDeleteLinkedBaseEntities(false);
+
+		/* Linking child baseEntity to the parent baseEntity */
+		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getParentCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
+				false);
+
+		return beMessage;
+	}
+
+	/*
+	 * Setting dynamic links between parents and child. ie. linking DropDown items
+	 * to the DropDown field. Copied from DropdownUtils
+	 */
+	static public  QDataBaseEntityMessage setDynamicLinksToParentBe(QDataBaseEntityMessage beMsg, String parentCode, String linkCode,
+			String linkValue, GennyToken gennyToken, Boolean sortByWeight) {
+		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);
+		if (parentBe != null) {
+			Set<EntityEntity> childLinks = new LinkedHashSet<>();
+			double index = -1.0;
+			/* creating a dumb attribute for linking the search results to the parent */
+			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
+
+			for (BaseEntity be : beMsg.getItems()) {
+				// Sort items based on weight
+				if (sortByWeight) {
+					if (parentBe.getLinks().size() > 0) {
+						List<EntityEntity> sortedChildLinks = sortChildLinksByWeight(parentBe);
+						// update links
+						parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
+
+						BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentBe.getCode(), sortedChildLinks);
+						beMsg.setItems(sortedItems);
+					}
+					beMsg.add(parentBe);
+					return beMsg;
+				} else {
+					index++;
+					childLinks = new HashSet<>();
+					parentBe.setLinks(childLinks);
+					EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
+					/* creating link for child */
+					Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
+					/* adding link */
+					ee.setLink(link);
+					/* adding child link to set of links */
+					childLinks.add(ee);
+				}
+			}
+			parentBe.setLinks(childLinks);
+			beMsg.add(parentBe);
+			return beMsg;
+		} else {
+			log.error("Unable to fetch Parent BaseEntity : parentCode");
+			return null;
+		}
+	}
+
+	static double getWeight(BaseEntity be, String parentCode) {
+
+		double weight = 1.0;
+
+		try {
+			Set<EntityEntity> entities = be.getLinks();
+
+			for (EntityEntity entity : entities) {
+
+				if (entity.getLink().getSourceCode().equals(parentCode)) {
+
+					weight = entity.getLink().getWeight();
+					break;
+				}
+			}
+		} catch (Exception e) {
+
+			// e.printStackTrace();
+		}
+
+		return weight;
+	}
+
+	static List<EntityEntity> sortChildLinksByWeight(BaseEntity parentBe) {
+		Set<EntityEntity> childLinks = parentBe.getLinks();
+		List<EntityEntity> sortedChildLinks = childLinks.stream().sorted(Comparator.comparing(EntityEntity::getWeight))
+				.collect(Collectors.toList());
+		return sortedChildLinks;
+	}
+
+	static BaseEntity[] sortBaseEntityByWeight(BaseEntity[] items, String parentCode,
+			List<EntityEntity> sortedChildLinks) {
+		// Set sorted links
+		BaseEntity[] newItems = new BaseEntity[0];
+		ArrayList<BaseEntity> newItemsList = new ArrayList<>();
+
+		HashMap<String, BaseEntity> beMapping = new HashMap<>();
+		for (BaseEntity be : items) {
+			String beCode = be.getCode();
+			beMapping.put(beCode, be);
+		}
+
+		int index = 0;
+		for (EntityEntity ee : sortedChildLinks) {
+			String targetCode = ee.getLink().getTargetCode();
+			if (beMapping.containsKey(targetCode)) {
+				beMapping.get(targetCode).setIndex(index);
+				newItemsList.add(beMapping.get(targetCode));
+//				newItems[index] = beMapping.get(targetCode);
+				index++;
+			} else {
+				log.error(String.format("Parent Code %s doesn't have Link code %s", parentCode, targetCode));
+			}
+		}
+		return newItemsList.toArray(newItems);
+	}
 }
