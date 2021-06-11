@@ -608,7 +608,6 @@ public class TableUtils {
 					String code = result.getString(i);
 					resultCodes.add(code);
 					BaseEntity be = beUtils.getBaseEntityByCode(code);
-					log.info("going through privacyFilter 610");
 					be = VertxUtils.privacyFilter(be, filterArray);
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {

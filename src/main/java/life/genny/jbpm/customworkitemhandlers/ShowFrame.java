@@ -732,7 +732,6 @@ public class ShowFrame implements WorkItemHandler {
 		if (obj instanceof QBulkMessage) {
 			log.info("obj is an instance of QBulkMessage");
 			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
-			log.info("bulkMsg  ::  "  + JsonUtils.toJson(bulkMsg));
 
 			// Check if bulkMsg not empty
 			if (bulkMsg.getAsks().length > 0) {
