@@ -77,26 +77,26 @@ public class ShowFrame implements WorkItemHandler {
 		QBulkMessage qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output,cache);
 
 		// Get filtered ask from the AskFilters ruleflow group
-		Ask filteredAsk = null;
-		if (qBulkMessage.getAsks() != null && qBulkMessage.getAsks().length > 0) {
-			if (qBulkMessage.getAsks()[0].getItems() != null && qBulkMessage.getAsks()[0].getItems().length > 0) {
-				// Run AskFilters rules to edit asks as needed
-				filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
-				log.info("BEFORE actual ask length   ::  " + qBulkMessage.getAsks()[0].getItems()[0].getChildAsks().length);				
+		// Ask filteredAsk = null;
+		// if (qBulkMessage.getAsks() != null && qBulkMessage.getAsks().length > 0) {
+		// 	if (qBulkMessage.getAsks()[0].getItems() != null && qBulkMessage.getAsks()[0].getItems().length > 0) {
+		// 		// Run AskFilters rules to edit asks as needed
+		// 		filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
+		// 		log.info("BEFORE actual ask length   ::  " + qBulkMessage.getAsks()[0].getItems()[0].getChildAsks().length);				
 				
-				// Now replace ask in message with new filtered ask
-				//qBulkMessage.getAsks()[0].getItems()[0] = filteredAsk;
-				if(filteredAsk != null){
-					log.info("filteredAsk is not null");				
-					Ask[] filteredAskArr = {filteredAsk};
-					log.info("filteredAskArr length  ::  " + filteredAskArr.length);				
-					qBulkMessage.getAsks()[0].setItems(filteredAskArr);
-					log.info("AFTER actual ask length   ::  " + qBulkMessage.getAsks()[0].getItems()[0].getChildAsks().length);				
-				}else{
-					log.info("filteredAsk is null");				
-				}
-			}
-		}
+		// 		// Now replace ask in message with new filtered ask
+		// 		//qBulkMessage.getAsks()[0].getItems()[0] = filteredAsk;
+		// 		if(filteredAsk != null){
+		// 			log.info("filteredAsk is not null");				
+		// 			Ask[] filteredAskArr = {filteredAsk};
+		// 			log.info("filteredAskArr length  ::  " + filteredAskArr.length);				
+		// 			qBulkMessage.getAsks()[0].setItems(filteredAskArr);
+		// 			log.info("AFTER actual ask length   ::  " + qBulkMessage.getAsks()[0].getItems()[0].getChildAsks().length);				
+		// 		}else{
+		// 			log.info("filteredAsk is null");				
+		// 		}
+		// 	}
+		// }
 
 		if (cache) {
 			log.info("publishing the qBulkMessage from Line 102");				
