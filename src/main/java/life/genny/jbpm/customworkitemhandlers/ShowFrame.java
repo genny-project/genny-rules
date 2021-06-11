@@ -266,9 +266,11 @@ public class ShowFrame implements WorkItemHandler {
 
 					FRM_MSG.setReplace(true);
 					if (cache) {
+						log.info("calling from ShowFrame:display() 269");			
 						qBulkMessage.add(FRM_MSG);
 					} else {
-						FRM_MSG.setToken(userToken.getToken());					
+						FRM_MSG.setToken(userToken.getToken());		
+						log.info("calling from ShowFrame:display() 272");			
 						VertxUtils.writeMsg("webcmds", FRM_MSG);
 					}
 					
@@ -287,7 +289,7 @@ public class ShowFrame implements WorkItemHandler {
 //						// TODO Auto-generated catch block
 //						e.printStackTrace();
 //					}
-
+					log.info("calling sendAsks from ShowFrame 292");			
 					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output,cache);
 					qBulkMessage.add(asks);
 				} else {
@@ -298,7 +300,7 @@ public class ShowFrame implements WorkItemHandler {
 			}
 
 		}
-		
+		log.info("calling from ShowFrame:display() 301");
 		VertxUtils.writeMsgEnd(userToken);
 		return qBulkMessage;
 	}
@@ -399,6 +401,17 @@ public class ShowFrame implements WorkItemHandler {
 				}
 				askMsg.setToken(userToken.getToken());
 
+				/* call the ask filters */
+				log.info("Calling getAskFilters: ShowFrame:406");
+				Ask filteredAsk = getAskFilters(beUtils, askMsg.getItems()[0]);
+				if(filteredAsk != null){
+					log.info("filteredAsk is not null: ShowFrame:408");
+					Ask[] filteredAskArr = {filteredAsk};
+					askMsg.setItems(filteredAskArr);
+				}
+				log.info("askMsg Items length  :: " + askMsg.getItems()[0].getChildAsks().length);
+
+
 				String jsonStr = updateSourceAndTarget(askMsg, sourceCode, targetCode, output, userToken);
 				QDataAskMessage updated = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
 				// Find all the target be's to send
@@ -466,6 +479,7 @@ public class ShowFrame implements WorkItemHandler {
 				
 				qBulkMessage.add(updated);
 				if (!cache) {
+					log.info("It's from here we send the asks !!!!");
 					VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 				}
 			}
