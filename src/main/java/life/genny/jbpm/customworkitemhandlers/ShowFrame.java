@@ -373,7 +373,7 @@ public class ShowFrame implements WorkItemHandler {
 				askMsg.setToken(userToken.getToken());
 
 				/* call the ask filters */
-				log.info("Calling getAskFilters: ShowFrame:406");
+				log.info("Calling getAskFilters");
 				Ask filteredAsk = getAskFilters(beUtils, askMsg.getItems()[0]);
 				if(filteredAsk != null){
 					log.info("filteredAsk is not null. Using filteredAsk");
