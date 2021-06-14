@@ -75,25 +75,11 @@ public class ShowFrame implements WorkItemHandler {
 
 		Boolean cache = false;
 		QBulkMessage qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output,cache);
+
 		if (cache) {
 			qBulkMessage.setToken(userToken.getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
-			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
-			msgend.setToken(userToken.getToken());
-			msgend.setSend(true);
-			// VertxUtils.writeMsg("webcmds", msgend);
 		}
-
-		// Get filtered ask from the AskFilters ruleflow group
-		if (qBulkMessage.getAsks() != null && qBulkMessage.getAsks().length > 0) {
-			if (qBulkMessage.getAsks()[0].getItems() != null && qBulkMessage.getAsks()[0].getItems().length > 0) {
-				Ask filteredAsk = getAskFilters(beUtils, qBulkMessage.getAsks()[0].getItems()[0]);
-			}
-		}
-		// Send these filtered asks to overwrite
-		// QDataAskMessage filteredAskMsg = new QDataAskMessage(filteredAsk);
-		// filteredAskMsg.setToken(userToken.getToken());
-		// VertxUtils.writeMsg("webcmds", filteredAskMsg);
 		
 		// notify manager that work item has been completed
 		if (workItem == null) {
@@ -255,7 +241,8 @@ public class ShowFrame implements WorkItemHandler {
 					if (cache) {
 						qBulkMessage.add(FRM_MSG);
 					} else {
-						FRM_MSG.setToken(userToken.getToken());					
+						FRM_MSG.setToken(userToken.getToken());		
+						log.info("Sending FRM_MSG");			
 						VertxUtils.writeMsg("webcmds", FRM_MSG);
 					}
 					
@@ -274,7 +261,6 @@ public class ShowFrame implements WorkItemHandler {
 //						// TODO Auto-generated catch block
 //						e.printStackTrace();
 //					}
-
 					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output,cache);
 					qBulkMessage.add(asks);
 				} else {
@@ -285,7 +271,7 @@ public class ShowFrame implements WorkItemHandler {
 			}
 
 		}
-		
+		log.info("Sending the EndMsg Now !!!");
 		VertxUtils.writeMsgEnd(userToken);
 		return qBulkMessage;
 	}
@@ -386,6 +372,15 @@ public class ShowFrame implements WorkItemHandler {
 				}
 				askMsg.setToken(userToken.getToken());
 
+				/* call the ask filters */
+				log.info("Calling getAskFilters");
+				Ask filteredAsk = getAskFilters(beUtils, askMsg.getItems()[0]);
+				if(filteredAsk != null){
+					log.info("filteredAsk is not null. Using filteredAsk");
+					Ask[] filteredAskArr = {filteredAsk};
+					askMsg.setItems(filteredAskArr);
+				}
+
 				String jsonStr = updateSourceAndTarget(askMsg, sourceCode, targetCode, output, userToken);
 				QDataAskMessage updated = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
 				// Find all the target be's to send
@@ -453,6 +448,7 @@ public class ShowFrame implements WorkItemHandler {
 				
 				qBulkMessage.add(updated);
 				if (!cache) {
+					log.info("Sending the Asks Now !!!");
 					VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
 				}
 			}
@@ -685,7 +681,7 @@ public class ShowFrame implements WorkItemHandler {
 		// Do nothing, notifications cannot be aborted
 	}
 
-	public Ask getAskFilters(BaseEntityUtils beUtils, final Ask ask) {
+	public static Ask getAskFilters(BaseEntityUtils beUtils, final Ask ask) {
 
 		Ask ret = null;
 
@@ -702,20 +698,19 @@ public class ShowFrame implements WorkItemHandler {
 				beUtils.getGennyToken(), facts, "AskFilters", "ShowFrame:GetAskFilters");
 
 		Object obj = results.get("payload");
-		/* log.info("obj   ::   " +obj); */
-
 		if (obj instanceof QBulkMessage) {
 			QBulkMessage bulkMsg = (QBulkMessage) results.get("payload");
 
 			// Check if bulkMsg not empty
-			if (bulkMsg.getMessages().length > 0) {
+			if (bulkMsg.getAsks().length > 0) {
+				log.info("bulkMsg is not empty");
 
 				// Get the first QDataBaseEntityMessage from bulkMsg
 				QDataAskMessage msg = bulkMsg.getAsks()[0];
 
 				// Check if msg is not empty
 				if (msg.getItems().length > 0) {
-
+					log.info("QDataAskMessage's msg is not empty");
 					ret = msg.getItems()[0];
 				}
 			}
