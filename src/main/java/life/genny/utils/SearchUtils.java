@@ -213,14 +213,14 @@ public class SearchUtils {
 
 		// firstly work out what the DEF isThe Nott
 
-		//BaseEntity targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode());
+		BaseEntity targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode());
 		//BaseEntity internBe = beUtils.getBaseEntityByCode("DEF_INTERN");
-		// BaseEntity defBe = beUtils.getDEF(targetBe);
+		BaseEntity defBe = beUtils.getDEF(targetBe);
 
 		/* targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode()); */
 		/* BaseEntity defBe = beUtils.getDEF(targetBe); */
 
-		BaseEntity defBe = beUtils.getBaseEntityByCode("DEF_INTERN");
+		// BaseEntity defBe = beUtils.getBaseEntityByCode("DEF_INTERN");
 
 		/*
 		 * Now check if this attribute is ok if
@@ -235,7 +235,8 @@ public class SearchUtils {
 		 * attribute
 		 */
 		Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + message.getAttributeCode()); // SER_LNK_EDU_PROVIDER
-		String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_EDU_PROVIDER\",\"value\":\"true\"}]}";
+		// String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_EDU_PROVIDER\",\"value\":\"true\"}]}";
+		String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_INTERN\",\"value\":\"true\"}]}";
 		if (searchAtt.isPresent()) {
 			serValue = searchAtt.get().getValueString();
 			System.out.println("Search Attribute Value = " + serValue);
