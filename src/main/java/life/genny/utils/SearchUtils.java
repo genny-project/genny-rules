@@ -216,11 +216,8 @@ public class SearchUtils {
 		BaseEntity targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode());
 		//BaseEntity internBe = beUtils.getBaseEntityByCode("DEF_INTERN");
 		BaseEntity defBe = beUtils.getDEF(targetBe);
-
-		/* targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode()); */
-		/* BaseEntity defBe = beUtils.getDEF(targetBe); */
-
-		// BaseEntity defBe = beUtils.getBaseEntityByCode("DEF_INTERN");
+		log.info("DROPDOWN :identified Dropdown Target Baseentity as "+defBe.getCode()+" : "+defBe.getName());
+		log.info("DROPDOWN :identified Dropdown Attribute as "+message.getAttributeCode());
 
 		/*
 		 * Now check if this attribute is ok if
@@ -239,7 +236,7 @@ public class SearchUtils {
 		String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_INTERN\",\"value\":\"true\"}]}";
 		if (searchAtt.isPresent()) {
 			serValue = searchAtt.get().getValueString();
-			System.out.println("Search Attribute Value = " + serValue);
+			log.info("DROPDOWN :Search Attribute Value = " + serValue);
 		} else {
 			//return new QDataBaseEntityMessage();
 		}
@@ -345,7 +342,7 @@ public class SearchUtils {
 
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
-				log.error("Bad Json Value ---> " + parmValue.toString());
+				log.error("DROPDOWN :Bad Json Value ---> " + parmValue.toString());
 				continue;
 			}
 		}
@@ -362,17 +359,17 @@ public class SearchUtils {
 		
 		List<BaseEntity> items = beUtils.getBaseEntitys(searchBE);
 		if (!items.isEmpty()) {
-			log.info("Loaded " + items.size() + " baseentitys");
+			log.info("DROPDOWN :Loaded " + items.size() + " baseentitys");
 		}
 
 		for (BaseEntity item : items) {
 			
-			System.out.println("item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
+			log.info("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
 		}
 
 		BaseEntity[] arrayItems = items.toArray(new BaseEntity[0]);
-		System.out.println("code = "+message.getData().getCode()+" with "+Long.decode(items.size()+"")+" Items");
-		System.out.println("parentCode = "+message.getData().getParentCode());
+		log.info("DROPDOWN :code = "+message.getData().getCode()+" with "+Long.decode(items.size()+"")+" Items");
+		log.info("DROPDOWN :parentCode = "+message.getData().getParentCode());
 		QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, message.getData().getParentCode(), "LINK", Long.decode(items.size()+""));
 		msg.setParentCode(message.getData().getParentCode());
 		msg.setQuestionCode(message.getData().getCode()); 
