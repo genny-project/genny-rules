@@ -241,7 +241,7 @@ public class SearchUtils {
 			serValue = searchAtt.get().getValueString();
 			System.out.println("Search Attribute Value = " + serValue);
 		} else {
-			return new QDataBaseEntityMessage();
+			//return new QDataBaseEntityMessage();
 		}
 
 		JsonObject searchValueJson =new JsonObject(serValue);
