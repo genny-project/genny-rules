@@ -371,11 +371,11 @@ public class SearchUtils {
 		}
 
 		BaseEntity[] arrayItems = items.toArray(new BaseEntity[0]);
-		System.out.println("questionCode = "+message.getQuestionCode()+" with "+Long.decode(items.size()+"")+" Items");
+		System.out.println("code = "+message.getData().getCode()+" with "+Long.decode(items.size()+"")+" Items");
 		System.out.println("parentCode = "+message.getData().getParentCode());
 		QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, message.getData().getParentCode(), "LINK", Long.decode(items.size()+""));
 		msg.setParentCode(message.getData().getParentCode());
-		msg.setQuestionCode(message.getQuestionCode()); 
+		msg.setQuestionCode(message.getData().getCode()); 
 		msg.setToken(beUtils.getGennyToken().getToken());
 		msg.setLinkCode("LNK_CORE");
 		msg.setLinkValue("DROPDOWNITEMS");
@@ -383,7 +383,7 @@ public class SearchUtils {
 		msg.setShouldDeleteLinkedBaseEntities(false);
 
 		/* Linking child baseEntity to the parent baseEntity */
-		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getParentCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
+		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
 				false);
 
 		return beMessage;
