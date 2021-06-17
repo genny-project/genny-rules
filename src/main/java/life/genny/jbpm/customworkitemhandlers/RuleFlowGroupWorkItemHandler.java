@@ -54,6 +54,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
+	public static GennyRuleTimingListener ruleTimingListener = new GennyRuleTimingListener();
+	
 	RuntimeEngine runtimeEngine;
 
 	public RuleFlowGroupWorkItemHandler() {
@@ -213,7 +215,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 					/* Setting focus to rule-flow group */
 					newKieSession.getAgenda().getAgendaGroup(ruleFlowGroup).setFocus();
-					newKieSession.addEventListener(new GennyRuleTimingListener());
+					
+					newKieSession.addEventListener(ruleTimingListener);
 					newKieSession.fireAllRules();
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #7");
 //	    	ObjectFilter filter = new ObjectFilter() {
