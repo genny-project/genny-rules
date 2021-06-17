@@ -397,44 +397,47 @@ public class SearchUtils {
 			String linkValue, GennyToken gennyToken, Boolean sortByWeight) {
 		BaseEntity parentBe = new BaseEntityUtils(gennyToken).getBaseEntityByCode(parentCode);
 		if (parentBe != null) {
-			Set<EntityEntity> childLinks = new LinkedHashSet<>();
-			double index = -1.0;
-			/* creating a dumb attribute for linking the search results to the parent */
-			Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
-
-			for (BaseEntity be : beMsg.getItems()) {
-				// Sort items based on weight
-				if (sortByWeight) {
-					if (parentBe.getLinks().size() > 0) {
-						List<EntityEntity> sortedChildLinks = sortChildLinksByWeight(parentBe);
-						// update links
-						parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
-
-						BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentBe.getCode(), sortedChildLinks);
-						beMsg.setItems(sortedItems);
-					}
-					beMsg.add(parentBe);
-					return beMsg;
-				} else {
-					index++;
-					childLinks = new HashSet<>();
-					parentBe.setLinks(childLinks);
-					EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
-					/* creating link for child */
-					Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
-					/* adding link */
-					ee.setLink(link);
-					/* adding child link to set of links */
-					childLinks.add(ee);
-				}
-			}
-			parentBe.setLinks(childLinks);
-			beMsg.add(parentBe);
-			return beMsg;
+			log.error("Found parentBE");
 		} else {
 			log.error("Unable to fetch Parent BaseEntity : parentCode");
-			return null;
+			log.error("Creating entity instead");
+			parentBe = new BaseEntity(parentCode, parentCode);
 		}
+		Set<EntityEntity> childLinks = new LinkedHashSet<>();
+		double index = -1.0;
+		/* creating a dumb attribute for linking the search results to the parent */
+		Attribute attributeLink = new Attribute(linkCode, linkCode, new DataType(String.class));
+
+		for (BaseEntity be : beMsg.getItems()) {
+			// Sort items based on weight
+			if (sortByWeight) {
+				if (parentBe.getLinks().size() > 0) {
+					List<EntityEntity> sortedChildLinks = sortChildLinksByWeight(parentBe);
+					// update links
+					parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
+
+					BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentBe.getCode(), sortedChildLinks);
+					beMsg.setItems(sortedItems);
+				}
+				beMsg.add(parentBe);
+				return beMsg;
+			} else {
+				index++;
+				childLinks = new HashSet<>();
+				parentBe.setLinks(childLinks);
+				EntityEntity ee = new EntityEntity(parentBe, be, attributeLink, index);
+				/* creating link for child */
+				Link link = new Link(parentCode, be.getCode(), attributeLink.getCode(), linkValue, index);
+				/* adding link */
+				ee.setLink(link);
+				/* adding child link to set of links */
+				childLinks.add(ee);
+			}
+		}
+		parentBe.setLinks(childLinks);
+		beMsg.add(parentBe);
+		return beMsg;
+
 	}
 
 	static double getWeight(BaseEntity be, String parentCode) {
