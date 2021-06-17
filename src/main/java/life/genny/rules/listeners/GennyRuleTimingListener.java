@@ -31,6 +31,14 @@ public class GennyRuleTimingListener implements  AgendaEventListener {
 	static Map<String,Long> ruleAverageTime = new ConcurrentHashMap<String,Long>();
 	static Map<String,Long> ruleCount = new ConcurrentHashMap<String,Long>();
 	
+	
+	static public void showLogs(String filter)
+	{
+		showAverageLog(filter);
+		showTotalLog(filter);
+		showCountLog(filter);
+	}
+	
 	static public void showAverageLog(String filter)
 	{
 		// sort by by Average time decreasing
