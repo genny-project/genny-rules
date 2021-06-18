@@ -1593,7 +1593,7 @@ public class TableUtils {
 		return ret;
 	}
 
-	private void updateBaseEntity(BaseEntity be, String attributeCode, String value) {
+	public void updateBaseEntity(BaseEntity be, String attributeCode, String value) {
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, beUtils.getGennyToken().getToken());
 		try {
 			be.addAnswer(new Answer(be, be, attribute, value));
