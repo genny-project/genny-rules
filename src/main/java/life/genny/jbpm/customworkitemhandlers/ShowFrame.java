@@ -723,7 +723,7 @@ public class ShowFrame implements WorkItemHandler {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		DropdownUtils dropDownUtils = new DropdownUtils(serviceToken);
-
+		
 		try {
 			if (attribute != null) {
 
@@ -749,6 +749,7 @@ public class ShowFrame implements WorkItemHandler {
 							/* This is for dynamically generated items */
 							SearchEntity sbe = JsonUtils.fromJson(searchBe.getString("value"), SearchEntity.class);
 							sbe.addColumn("PRI_NAME", "Name");
+							sbe.setPageSize(1500); // for old dropdown
 							if (dropdownTarget != null) {
 								sbe.setDropdownTarget(dropdownTarget);
 							}
