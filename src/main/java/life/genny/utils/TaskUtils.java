@@ -76,9 +76,14 @@ public class TaskUtils {
 
 		String realm = userToken.getRealm();
 		String userCode = userToken.getUserCode();
-		List<TaskSummary> tasks = RulesLoader.taskServiceMap.get(userToken.getSessionCode())
-				.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
-		log.info("Tasks=" + tasks.size()+ " for user "+userToken.getUsername());
+		TaskService ts = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
+		List<TaskSummary> tasks = new ArrayList<>();
+		if (ts != null) {
+				tasks = ts.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
+				log.info("Tasks=" + tasks.size()+ " for user "+userToken.getUsername());
+		} else {
+			log.error("No Task exists for the userToken sessionCode = "+userToken.getSessionCode());
+		}
 		return tasks;
 	}
 
