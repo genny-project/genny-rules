@@ -429,16 +429,20 @@ public class ShowFrame implements WorkItemHandler {
 					for (String dropdownCode : dropdownCodeSet) {
 						
 						dropdownCode = dropdownCode.replaceAll("\"", "");
-						log.info("Dropdown code :: " + dropdownCode);
+						
 						
 						if( dropdownCode.equals("LNK_OCCUPATION") || 
 								dropdownCode.equals("LNK_HOST_COMPANY_REP") ||
 								dropdownCode.equals("LNK_INTERN_SUPERVISOR") ||
-								dropdownCode.equals("LNK_INTERNSHIP") ){
-									
+								dropdownCode.equals("LNK_INTERNSHIP")  ||
+								dropdownCode.equals("LNK_EDU_PROVIDER")  
+								|| dropdownCode.equals("LNK_SELECT_COUNTRY") 
+								/*|| dropdownCode.equals("LNK_SELECT_BATCH")*/
+								){
+									log.info("Dropdown code :: " + dropdownCode);
 									continue;
 						}
-
+						log.info("OLD Dropdown code :: " + dropdownCode);
 						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
 						qBulkMessage.add(qb);
 					
