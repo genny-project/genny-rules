@@ -264,7 +264,7 @@ public class RulesLoader {
 
 	public static void updateFileIfExist(KieFileSystem kfs, String kjarFolerPath, String fileName, String body){
 		Optional<String> optFilename = Optional.ofNullable(fileName);
-		optFilename.get().stream()
+		optFilename.stream()
 			.map(kjarFolerPath::concat)
 			.peek(kfs::delete)
 			.findFirst()
