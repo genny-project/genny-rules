@@ -329,6 +329,18 @@ public class SearchUtils {
 					LocalDate ldate = olddate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 					searchBE.addFilter(json.getString("attributeCode"), filter, ldate);
 					break;
+					
+				case "life.genny.qwanda.entity.BaseEntity":
+					// The LNK means that a baseentitycode is being searched for
+					// TODO handle multiples
+					if ("LNK_CORE".equals(att.getCode())) {
+						// oldschool
+						searchBE.addFilter(searchBeCode, SearchEntity.StringFilter.EQUAL, val);
+					} else {
+						val = "\""+val+"\"";
+						searchBE.addFilter(searchBeCode, SearchEntity.StringFilter.LIKE, val);
+					}
+					break;
 				case "org.javamoney.moneta.Money":
 				case "java.lang.String":
 				default:
