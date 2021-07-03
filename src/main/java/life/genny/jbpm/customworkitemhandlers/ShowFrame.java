@@ -372,19 +372,20 @@ public class ShowFrame implements WorkItemHandler {
 				}
 				askMsg.setToken(userToken.getToken());
 
-				String jsonStr = updateSourceAndTarget(askMsg, sourceCode, targetCode, output, userToken);
-				QDataAskMessage updated = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
-
 				/* call the ask filters */
 				log.info("Calling getAskFilters");
-				Ask filteredAsk = getAskFilters(beUtils, updated.getItems()[0]);
+				// HACK, because setting source and target first isnt working for some reason
+				Ask itemZero = askMsg.getItems()[0];
+				itemZero.setTargetCode(targetCode);
+				Ask filteredAsk = getAskFilters(beUtils, itemZero);
 				if(filteredAsk != null){
 					log.info("filteredAsk is not null. Using filteredAsk");
 					Ask[] filteredAskArr = {filteredAsk};
-					System.out.println("UPDATED ITEMS = " + JsonUtils.toJson(updated.getItems()));
-					updated.setItems(filteredAskArr);
-					System.out.println("UPDATED ITEMS = " + JsonUtils.toJson(updated.getItems()));
+					askMsg.setItems(filteredAskArr);
 				}
+
+				String jsonStr = updateSourceAndTarget(askMsg, sourceCode, targetCode, output, userToken);
+				QDataAskMessage updated = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
 
 				// Find all the target be's to send
 				Set<String> beCodes = new HashSet<String>();
