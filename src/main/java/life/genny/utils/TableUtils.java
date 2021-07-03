@@ -2014,74 +2014,15 @@ public class TableUtils {
 		// Define Attributes
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 		Attribute eventAttribute = new Attribute("PRI_EVENT", "link", new DataType(String.class));
-		Attribute submitAttribute = RulesUtils.getAttribute("PRI_SUBMIT", beUtils.getGennyToken().getToken());
 		
-		Attribute selectColumnAttribute = RulesUtils.getAttribute("LNK_FILTER_COLUMN",
-				beUtils.getGennyToken().getToken());
-		Attribute selectOptionAttribute = RulesUtils.getAttribute("LNK_FILTER_OPTION",
-				beUtils.getGennyToken().getToken());
-		Attribute filterValueTextAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_TEXT",
-				beUtils.getGennyToken().getToken());
-		Attribute filterValueDateTimeAttribute = RulesUtils.getAttribute("PRI_FILTER_VALUE_DATETIME",
-				beUtils.getGennyToken().getToken());
-		Attribute filterValueCountryAttribute = RulesUtils.getAttribute("LNK_SELECT_COUNTRY", 
-				beUtils.getGennyToken().getToken());
-		Attribute filterValueStateAttribute = RulesUtils.getAttribute("LNK_SELECT_STATE", 
-				beUtils.getGennyToken().getToken());
-
 		// Search Filter group
 		Question filterGrpQues = new Question("QUE_FILTER_GRP_" + searchBE.getCode(), "Filters", questionAttribute,
 				true);
 		Ask filterGrpAsk = new Ask(filterGrpQues, sourceCode, targetCode);
 
 		// Add Filter group
-		Question addFilterGrpQues = new Question("QUE_ADD_FILTER_GRP", "Add Filter", questionAttribute, true);
-		Ask addFilterGrpAsk = new Ask(addFilterGrpQues, sourceCode, targetCode);
-
-		// Question for selecting the column to filter
-		Question filterColumnQues = new Question("QUE_FILTER_COLUMN", "Select Column", selectColumnAttribute, true);
-		Ask filterColumnAsk = new Ask(filterColumnQues, sourceCode, targetCode);
-
-		// Question for selecting the filter option
-		Question filterOptionQues = new Question("QUE_FILTER_OPTION", "Select Filter Option", selectOptionAttribute,
-				true);
-		Ask filterOptionAsk = new Ask(filterOptionQues, sourceCode, targetCode);
-
-		// Question for inputing a value in text
-		Question filterValueTextQues = new Question("QUE_FILTER_VALUE_TEXT", "Filter Value", filterValueTextAttribute,
-				true);
-		Ask filterValueTextAsk = new Ask(filterValueTextQues, sourceCode, targetCode);
-		// Set value text hidden by default
-		filterValueTextAsk.setHidden(true);
-
-		// Question for inputing a value using a date picker
-		Question filterValueDateTimeQues = new Question("QUE_FILTER_VALUE_DATETIME", "Filter Value",
-				filterValueDateTimeAttribute, true);
-		Ask filterValueDateTimeAsk = new Ask(filterValueDateTimeQues, sourceCode, targetCode);
-		// Set DateTime picker hidden by default
-		filterValueDateTimeAsk.setHidden(true);
-
-		// Question for inputing a value using a country picker
-		Question filterValueCountryQues = new Question("QUE_FILTER_VALUE_COUNTRY", "Filter Value", filterValueCountryAttribute, true);
-		Ask filterValueCountryAsk = new Ask(filterValueCountryQues , sourceCode, targetCode);
-		// Set Country picker hidden by default
-		filterValueCountryAsk.setHidden(true);
-
-		// Question for inputing a value using a state picker
-		Question filterValueStateQues = new Question("QUE_FILTER_VALUE_STATE", "Filter Value", filterValueStateAttribute, true);
-		Ask filterValueStateAsk = new Ask(filterValueStateQues , sourceCode, targetCode);
-		// Set State picker hidden by default
-		filterValueStateAsk.setHidden(true);
-
-		// Submit Button
-		Question submitQues = new Question("QUE_SUBMIT", "Submit", submitAttribute, true);
-		Ask submitAsk = new Ask(submitQues, sourceCode, targetCode);
-		// Set Submit disabled by default
-		submitAsk.setDisabled(true);
-
-		Ask[] addFilterChildAsks = { filterColumnAsk, filterOptionAsk, filterValueTextAsk, filterValueDateTimeAsk, 
-			filterValueCountryAsk, filterValueStateAsk, submitAsk };
-		addFilterGrpAsk.setChildAsks(addFilterChildAsks);
+		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, "QUE_ADD_FILTER_GRP", beUtils.getGennyToken().getToken());
+		Ask addFilterGrpAsk = askMessage.getItems()[0];
 
 		// Existing Filters group
 		Question existingFilterGrpQues = new Question("QUE_EXISTING_FILTERS_GRP", "Existing Filters", questionAttribute,
