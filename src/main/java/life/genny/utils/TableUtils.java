@@ -2021,8 +2021,11 @@ public class TableUtils {
 		Ask filterGrpAsk = new Ask(filterGrpQues, sourceCode, targetCode);
 
 		// Add Filter group
+		log.info("Before");
 		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, "QUE_ADD_FILTER_GRP", beUtils.getGennyToken().getToken());
+		log.info("Between");
 		Ask addFilterGrpAsk = askMessage.getItems()[0];
+		log.info("After");
 
 		// Existing Filters group
 		Question existingFilterGrpQues = new Question("QUE_EXISTING_FILTERS_GRP", "Existing Filters", questionAttribute,
