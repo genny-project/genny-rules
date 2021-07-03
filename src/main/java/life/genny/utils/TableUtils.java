@@ -2023,7 +2023,7 @@ public class TableUtils {
 		// Add Filter group
 		log.info("Before");
 		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, "QUE_ADD_FILTER_GRP", beUtils.getGennyToken().getToken());
-		log.info("Between");
+		System.out.println(JsonUtils.toJson(askMessage));
 		Ask addFilterGrpAsk = askMessage.getItems()[0];
 		log.info("After");
 
