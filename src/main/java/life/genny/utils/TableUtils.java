@@ -2021,8 +2021,9 @@ public class TableUtils {
 		Ask filterGrpAsk = new Ask(filterGrpQues, sourceCode, targetCode);
 
 		// Add Filter group
-		log.info("Before");
-		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, "QUE_ADD_FILTER_GRP", beUtils.getGennyToken().getToken());
+		log.info("Getting now");
+		QDataAskMessage askMessage = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", 
+				"FRM_QUE_ADD_FILTER_GRP_ASKS", QDataAskMessage.class, beUtils.getGennyToken().getToken());
 		System.out.println(JsonUtils.toJson(askMessage));
 		Ask addFilterGrpAsk = askMessage.getItems()[0];
 		log.info("After");
