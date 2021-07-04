@@ -335,10 +335,11 @@ public class SearchUtils {
 					// TODO handle multiples
 					if ("LNK_CORE".equals(att.getCode())) {
 						// oldschool
-						searchBE.addFilter(searchBeCode, SearchEntity.StringFilter.EQUAL, val);
+						searchBE.setLinkCode(json.getString("attributeCode"));
+						searchBE.setLinkValue(val);
 					} else {
 						val = "\""+val+"\"";
-						searchBE.addFilter(searchBeCode, SearchEntity.StringFilter.LIKE, val);
+						searchBE.addFilter(json.getString("attributeCode"), SearchEntity.StringFilter.LIKE, val);
 					}
 					break;
 				case "org.javamoney.moneta.Money":
@@ -348,7 +349,7 @@ public class SearchUtils {
 					if (valSplit[0].contains("LIKE")) {
 						val = val + "%";// just keep the front bit
 					}
-					searchBE.addFilter(searchBeCode, SearchEntity.StringFilter.LIKE, val);
+					searchBE.addFilter(json.getString("attributeCode"), SearchEntity.StringFilter.LIKE, val);
 
 				}
 
@@ -372,6 +373,8 @@ public class SearchUtils {
 		List<BaseEntity> items = beUtils.getBaseEntitys(searchBE);
 		if (!items.isEmpty()) {
 			log.info("DROPDOWN :Loaded " + items.size() + " baseentitys");
+		} else {
+			log.info("DROPDOWN :Loaded NO baseentitys");
 		}
 
 		for (BaseEntity item : items) {
