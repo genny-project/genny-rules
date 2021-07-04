@@ -2030,7 +2030,7 @@ public class TableUtils {
 
 		// NOTE: Temporary until hidden works from sheets
 		for (Ask childAsk : addFilterGrpAsk.getChildAsks()) {
-			if (childAsk.getQuestionCode().contains("VALUE")) {
+			if (childAsk.getQuestionCode().contains("QUE_FILTER_VALUE_")) {
 				childAsk.setHidden(true);
 			} else if (childAsk.getQuestionCode().equals("QUE_SUBMIT")) {
 				childAsk.setDisabled(true);
