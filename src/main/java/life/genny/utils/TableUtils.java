@@ -2021,18 +2021,22 @@ public class TableUtils {
 		Ask filterGrpAsk = new Ask(filterGrpQues, sourceCode, targetCode);
 
 		// Add Filter group
-		log.info("Getting now");
 		String askMessageStr = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", 
 				"FRM_QUE_ADD_FILTER_GRP_ASKS", String.class, beUtils.getGennyToken().getToken());
 		Type type = new TypeToken<Set<QDataAskMessage>>() {}.getType();
-		log.info("Unpacking");
 		Set<QDataAskMessage> askMessageSet = JsonUtils.fromJson(askMessageStr, type);
-		log.info("Next");
 		QDataAskMessage askMessage = askMessageSet.iterator().next();
-		System.out.println(JsonUtils.toJson(askMessage));
 		Ask addFilterGrpAsk = askMessage.getItems()[0];
-		log.info("After");
 
+		// NOTE: Temporary until hidden works from sheets
+		for (Ask childAsk : addFilterGrpAsk.getChildAsks()) {
+			if (childAsk.getQuestionCode().contains("VALUE")) {
+				childAsk.setHidden(true);
+			} else if (childAsk.getQuestionCode().equals("QUE_SUBMIT")) {
+				childAsk.setDisabled(true);
+			}
+		}
+		
 		// Existing Filters group
 		Question existingFilterGrpQues = new Question("QUE_EXISTING_FILTERS_GRP", "Existing Filters", questionAttribute,
 				true);
