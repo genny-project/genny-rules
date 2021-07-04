@@ -2023,9 +2023,13 @@ public class TableUtils {
 		// Add Filter group
 		String askMessageStr = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", 
 				"FRM_QUE_ADD_FILTER_GRP_ASKS", String.class, beUtils.getGennyToken().getToken());
+		askMessageStr = askMessageStr.replaceAll("PER_SOURCE", sourceCode);
+		askMessageStr = askMessageStr.replaceAll("PER_TARGET", targetCode);
+
 		Type type = new TypeToken<Set<QDataAskMessage>>() {}.getType();
 		Set<QDataAskMessage> askMessageSet = JsonUtils.fromJson(askMessageStr, type);
 		QDataAskMessage askMessage = askMessageSet.iterator().next();
+
 		Ask addFilterGrpAsk = askMessage.getItems()[0];
 
 		// NOTE: Temporary until hidden works from sheets
