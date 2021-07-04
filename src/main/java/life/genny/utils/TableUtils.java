@@ -2024,7 +2024,11 @@ public class TableUtils {
 		log.info("Getting now");
 		String askMessageStr = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", 
 				"FRM_QUE_ADD_FILTER_GRP_ASKS", String.class, beUtils.getGennyToken().getToken());
-		QDataAskMessage askMessage = JsonUtils.fromJson(askMessageStr, QDataAskMessage.class);
+		Type type = new TypeToken<Set<QDataAskMessage>>() {}.getType();
+		log.info("Unpacking");
+		Set<QDataAskMessage> askMessageSet = JsonUtils.fromJson(askMessageStr, type);
+		log.info("Next");
+		QDataAskMessage askMessage = askMessageSet.iterator().next();
 		System.out.println(JsonUtils.toJson(askMessage));
 		Ask addFilterGrpAsk = askMessage.getItems()[0];
 		log.info("After");
