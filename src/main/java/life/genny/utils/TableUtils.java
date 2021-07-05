@@ -446,7 +446,7 @@ public class TableUtils {
 								try {
 									Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
-									Attribute att = new Attribute("PRI_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
+									Attribute att = new Attribute("_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
 									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
 									/*att.setCode(linkBeCode);*/
 									log.info("The CAL att after is "+att);
@@ -621,11 +621,6 @@ public class TableUtils {
 						String attributeCode = calFields[0];
 						String calBe = be.getValueAsString(attributeCode);
 						String linkBeCode = calFields[1];
-						if (i == 0) {
-							System.out.println("BE CODE = " + be.getCode());
-							System.out.println("AttributeCode = " + attributeCode + ", linkBeCode = " + linkBeCode);
-							System.out.println("calBe = " + calBe);
-						}
 						if (!StringUtils.isBlank(calBe)) {
 							if (calBe.startsWith("[")) {
 								calBe = calBe.substring(2, calBe.length() - 2);
@@ -644,7 +639,7 @@ public class TableUtils {
 								try {
 									Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
-									Attribute att = new Attribute("PRI_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
+									Attribute att = new Attribute("_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
 									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
 									/*att.setCode(linkBeCode);*/
 									log.info("The CAL att after is "+att);
