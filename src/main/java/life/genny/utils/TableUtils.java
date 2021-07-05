@@ -259,11 +259,12 @@ public class TableUtils {
 					attributeFilter.add("PRI_ADDRESS_LATITUDE");
 					attributeFilter.add("PRI_ADDRESS_LONGITUDE");
 				}
+				if (attributeCode.startsWith("COL__")) {
+					String[] splitCode = attributeCode.substring("COL__".length()).split("__");
+					assocAttributeFilter.add(splitCode[0]);
+				} else {
 				attributeFilter.add(attributeCode.substring("COL_".length()));
-
-			} else if ((attributeCode.startsWith("COL__")) || (attributeCode.startsWith("CAL_"))) {
-				String[] splitCode = attributeCode.substring("COL__".length()).split("__");
-				assocAttributeFilter.add(splitCode[0]);
+				}
 			}
 		}
 		attributeFilter.addAll(assocAttributeFilter);
@@ -445,7 +446,7 @@ public class TableUtils {
 								try {
 									Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
-									Attribute att = new Attribute("PRI_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
+									Attribute att = new Attribute("_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
 									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
 									/*att.setCode(linkBeCode);*/
 									log.info("The CAL att after is "+att);
@@ -532,9 +533,7 @@ public class TableUtils {
 						String calBe = be.getValueAsString(attributeCode);
 						String linkBeCode = calEA.getValueString();
 						if (!StringUtils.isBlank(calBe)) {
-							if (calBe.startsWith("[")) {
-								calBe = calBe.substring(2, calBe.length() - 2);
-							}
+							calBe = beUtils.cleanUpAttributeValue(calBe);
 							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
 							if (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode))) {
@@ -621,9 +620,7 @@ public class TableUtils {
 						String calBe = be.getValueAsString(attributeCode);
 						String linkBeCode = calFields[1];
 						if (!StringUtils.isBlank(calBe)) {
-							if (calBe.startsWith("[")) {
-								calBe = calBe.substring(2, calBe.length() - 2);
-							}
+							calBe = beUtils.cleanUpAttributeValue(calBe);
 							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
 							if (associatedBe != null) {
 								log.info("If associatedBe exists ->" + associatedBe.getCode());
@@ -638,7 +635,7 @@ public class TableUtils {
 								try {
 									Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
-									Attribute att = new Attribute("PRI_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
+									Attribute att = new Attribute("_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
 									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
 									/*att.setCode(linkBeCode);*/
 									log.info("The CAL att after is "+att);
