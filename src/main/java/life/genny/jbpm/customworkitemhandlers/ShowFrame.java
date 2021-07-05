@@ -440,7 +440,7 @@ public class ShowFrame implements WorkItemHandler {
 								dropdownCode.equals("LNK_INTERN_SUPERVISOR") ||
 								dropdownCode.equals("LNK_INTERNSHIP")  ||
 								dropdownCode.equals("LNK_EDU_PROVIDER")  
-								|| dropdownCode.equals("LNK_SELECT_COUNTRY") 
+								/*|| dropdownCode.equals("LNK_SELECT_COUNTRY") */
 								/*|| dropdownCode.equals("LNK_SELECT_BATCH")*/
 								){
 									log.info("Dropdown code :: " + dropdownCode);
