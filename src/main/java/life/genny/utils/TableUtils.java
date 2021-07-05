@@ -259,11 +259,12 @@ public class TableUtils {
 					attributeFilter.add("PRI_ADDRESS_LATITUDE");
 					attributeFilter.add("PRI_ADDRESS_LONGITUDE");
 				}
+				if (attributeCode.startsWith("COL__")) {
+					String[] splitCode = attributeCode.substring("COL__".length()).split("__");
+					assocAttributeFilter.add(splitCode[0]);
+				} else {
 				attributeFilter.add(attributeCode.substring("COL_".length()));
-
-			} else if ((attributeCode.startsWith("COL__")) || (attributeCode.startsWith("CAL_"))) {
-				String[] splitCode = attributeCode.substring("COL__".length()).split("__");
-				assocAttributeFilter.add(splitCode[0]);
+				}
 			}
 		}
 		attributeFilter.addAll(assocAttributeFilter);
