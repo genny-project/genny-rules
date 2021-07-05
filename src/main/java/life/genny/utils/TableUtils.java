@@ -533,9 +533,7 @@ public class TableUtils {
 						String calBe = be.getValueAsString(attributeCode);
 						String linkBeCode = calEA.getValueString();
 						if (!StringUtils.isBlank(calBe)) {
-							if (calBe.startsWith("[")) {
-								calBe = calBe.substring(2, calBe.length() - 2);
-							}
+							calBe = beUtils.cleanUpAttributeValue(calBe);
 							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
 							if (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode))) {
@@ -622,9 +620,7 @@ public class TableUtils {
 						String calBe = be.getValueAsString(attributeCode);
 						String linkBeCode = calFields[1];
 						if (!StringUtils.isBlank(calBe)) {
-							if (calBe.startsWith("[")) {
-								calBe = calBe.substring(2, calBe.length() - 2);
-							}
+							calBe = beUtils.cleanUpAttributeValue(calBe);
 							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
 							if (associatedBe != null) {
 								log.info("If associatedBe exists ->" + associatedBe.getCode());
