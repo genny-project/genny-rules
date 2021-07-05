@@ -435,12 +435,18 @@ public class ShowFrame implements WorkItemHandler {
 						
 						dropdownCode = dropdownCode.replaceAll("\"", "");
 						
+						Boolean eduProvIntern = false;
+						if (defBe != null) {
+							if ((dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
+								eduProvIntern = true;
+							}
+ 						}
 						
 						if( dropdownCode.equals("LNK_OCCUPATION") || 
 								dropdownCode.equals("LNK_HOST_COMPANY_REP") ||
 								dropdownCode.equals("LNK_INTERN_SUPERVISOR") ||
 								dropdownCode.equals("LNK_INTERNSHIP")  ||
-								(dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) 
+								eduProvIntern
 								/*|| dropdownCode.equals("LNK_SELECT_COUNTRY") */
 								/*|| dropdownCode.equals("LNK_SELECT_BATCH")*/
 								){
