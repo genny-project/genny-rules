@@ -322,7 +322,7 @@ public class ShowFrame implements WorkItemHandler {
 		String sourceCode = null;
 		String targetCode = null;
 		Boolean enabledSubmit = false ; 
-		
+		BaseEntity defBe = null;
 
 		
 		if ((output != null)) {
@@ -349,6 +349,7 @@ public class ShowFrame implements WorkItemHandler {
 					}
 				}
 				BaseEntity target = beUtils.getBaseEntityByCode(targetCode);
+				defBe = beUtils.getDEF(target);
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target,taskAsks);
 
 			} else {
@@ -438,8 +439,9 @@ public class ShowFrame implements WorkItemHandler {
 								dropdownCode.equals("LNK_HOST_COMPANY_REP") ||
 								dropdownCode.equals("LNK_INTERN_SUPERVISOR") ||
 								dropdownCode.equals("LNK_INTERNSHIP")  ||
-								dropdownCode.equals("LNK_EDU_PROVIDER")  
-								|| dropdownCode.equals("LNK_SELECT_COUNTRY") 
+								(dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) 
+
+							/*	|| dropdownCode.equals("LNK_SELECT_COUNTRY") */
 								/*|| dropdownCode.equals("LNK_SELECT_BATCH")*/
 								){
 									log.info("Dropdown code :: " + dropdownCode);
