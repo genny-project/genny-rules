@@ -620,6 +620,11 @@ public class TableUtils {
 						String attributeCode = calFields[0];
 						String calBe = be.getValueAsString(attributeCode);
 						String linkBeCode = calFields[1];
+						if (i == 0) {
+							System.out.println("BE CODE = " + be.getCode());
+							System.out.println("AttributeCode = " + attributeCode + ", linkBeCode = " + linkBeCode);
+							System.out.println("calBe = " + calBe);
+						}
 						if (!StringUtils.isBlank(calBe)) {
 							if (calBe.startsWith("[")) {
 								calBe = calBe.substring(2, calBe.length() - 2);
