@@ -277,7 +277,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				}
 			}
 
-			log.info("%s Saving %d Valid Answers ...", callingWorkflow, validAnswers.size());
+			log.info(callingWorkflow+" Saving "+validAnswers.size()+" Valid Answers ...");
 
 			if (Boolean.FALSE.equals(submitDetected)) { // dont save if submit
 				beUtils.saveAnswers(validAnswers); // save answers in one big thing
@@ -336,28 +336,18 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 				String processId = iTask.getTaskData().getProcessId();
 				processId = processId.replaceAll("_", " ");
-				String beType = StringUtils.capitalize(processId.toLowerCase());
+				BaseEntity defBe = beUtils.getDEF(originalTarget);
+				String beType = defBe.getName();//.capitalize(processId.toLowerCase());
 
 				
 				String description = task.getDescription();
+		
 				switch (ask.getAsk().getAttributeCode()) {
 				case "PRI_NAME":
 				case "PRI_ABN":
 				case "PRI_FIRSTNAME":
 				case "PRI_TRADING_NAME":
-					primaryFieldDetected = true;
-					String prefix = originalTarget.getCode().substring(0, 3); // identify what this be is
-					if (prefix.equals("CPY")) {
 						description = setDescription(beType, originalTarget, ask);
-
-					} else if (prefix.equals("PER")) {
-						description = setDescription(beType, originalTarget, ask);
-					} else if (prefix.equals("BEG")) {
-						description = setDescription(beType, originalTarget, ask);
-					} else {
-						description = beType + " - " + ask.getValue();
-					}
-
 					if (!StringUtils.isBlank(description)) {
 						iTask.setDescription(description);
 					}
@@ -382,14 +372,19 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				taskAskMap.put(taskSummary, taskAsks);
 			}
 
-			Map<String, Object> results = saveTaskData(taskAskMap, kSession, taskSummary, hackTrigger, task, taskAsks);
 
 			if (Boolean.TRUE.equals(mandatoryDoneMap.get(taskSummary.getId()))) {
 				log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for " + task.getName());
 				// if there is a submit button then enable it
 				if (submitTaskAsk != null) {
 					Ask submitAsk = submitTaskAsk.getAsk();
-					TaskUtils.enableTaskQuestion(submitAsk, true, userToken);
+					if (submitAsk.getDisabled()) {
+							TaskUtils.enableTaskQuestion(submitAsk, true, userToken);
+							log.info("processAnswers: SEND ENABLE SUBMIT submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED") );
+							
+					} else {
+						log.info("processAnswers: NO SEND ENABLE SUBMIT -> submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED"));
+					}
 				}
 
 				if (submitDetected) {
@@ -399,9 +394,15 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				// originalTarget.getCode(), userToken);
 			} else {
 				Ask submitAsk = submitTaskAsk.getAsk();
-				TaskUtils.enableTaskQuestion(submitAsk, false, userToken);
-
+				if (!submitAsk.getDisabled()) {
+					TaskUtils.enableTaskQuestion(submitAsk, false, userToken);
+					log.info("processAnswers: SEND DISABLE SUBMIT -> submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED"));
+				} else {
+					log.info("processAnswers: NO SEND DISABLE SUBMIT -> submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED"));
+				}
 			}
+
+			Map<String, Object> results = saveTaskData(taskAskMap, kSession, taskSummary, hackTrigger, task, taskAsks);
 
 			if (primaryFieldDetected) {
 				TaskUtils.sendTaskAskItems(userToken);
@@ -427,7 +428,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				results.put("serviceToken",
 						serviceToken); /* save the latest userToken that actually completes the form */
 				results.put("submitCode", submitCode); /* save the quesiton code of the submit button */
-				System.out.println("submitCode = " + results.get("submitCode"));
+				log.info("submitCode = " + results.get("submitCode"));
 
 				Boolean mandatorysAllDone = mandatoryDoneMap.get(taskSummary.getId());
 				if (Boolean.TRUE.equals(mandatorysAllDone)) {
@@ -439,6 +440,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					if (submitDetected) {
 						beUtils.removeEntityAttribute(originalTarget,"PRI_SUBMIT");
 					}
+
 					taskService.complete(iTask.getId(), userToken.getRealmUserCode(), results);
 					TaskUtils.sendTaskAskItems(userToken);
 				}
