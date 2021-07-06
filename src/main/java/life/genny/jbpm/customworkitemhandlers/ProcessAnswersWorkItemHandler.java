@@ -162,7 +162,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		// Send back the 'validated' answers
 		BaseEntity originalTarget = beUtils.getBaseEntityByCode(answersToSave.getAnswers().get(0).getTargetCode());
 		if (originalTarget == null) {
-			log.error("Target BaseEntity does not exist ! %s", answersToSave.getAnswers().get(0).getTargetCode());
+			log.error(callingWorkflow+" Target BaseEntity does not exist ! %s", answersToSave.getAnswers().get(0).getTargetCode());
 			exitOut(workItem, manager, OutputParam.getNone());
 			return;
 
@@ -198,7 +198,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 		List<TaskSummary> tasks = taskService.getTasksOwnedByStatus(userToken.getRealmUserCode(),
 				TaskUtils.getTaskStatusList(), null);
-		log.info("Tasks=%s", tasks);
+		log.info(callingWorkflow+" Tasks="+tasks);
 
 		KieSession kSession = getKieSession(workItem, manager, userToken, callingWorkflow);
 
@@ -212,6 +212,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			if (!originalTarget.getCode().equals(taskSummary.getSubject())) {
 				continue; // don't process tasks that are not related to the targetCode
 			}
+			
+			log.info(callingWorkflow+" Checking Task Summary "+taskSummary.getSubject());
+			
 			Boolean hackTrigger = false; // used for debugging and testing trigger
 			mandatoryDoneMap.put(taskSummary.getId(), false);
 
@@ -235,7 +238,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 							e.printStackTrace();
 						}
 					}
-					log.info("Sending Inferred BE to frontend");
+					log.info(callingWorkflow+" Sending Inferred BE to frontend");
 					beUtils.writeMsg(inferredBe);
 				}
 	//		}
@@ -247,7 +250,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			try {
 				taskAsks = TaskUtils.getTaskAsks(taskService, task);
 			} catch (Exception e) {
-				log.error("Bad TaskAsk issue");
+				log.error(callingWorkflow+" Bad TaskAsk issue");
 				exitOut(workItem, manager, OutputParam.getNone());
 			}
 
@@ -273,7 +276,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						validAnswers.add(answer);
 					}
 				} else {
-					log.error("Not a valid ASK! %s", key);
+					log.error(callingWorkflow+" Not a valid ASK! %s", key);
 				}
 			}
 
@@ -336,7 +339,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 				String processId = iTask.getTaskData().getProcessId();
 				processId = processId.replaceAll("_", " ");
-				BaseEntity defBe = beUtils.getDEF(originalTarget);
+				BaseEntity tsBe = beUtils.getBaseEntityByCode(taskSummary.getSubject());
+				BaseEntity defBe = beUtils.getDEF(tsBe);
 				String beType = defBe.getName();//.capitalize(processId.toLowerCase());
 
 				
@@ -374,21 +378,21 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 
 			if (Boolean.TRUE.equals(mandatoryDoneMap.get(taskSummary.getId()))) {
-				log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for " + task.getName());
+				log.info(callingWorkflow+"  ALL MANDATORY FIELDS HAVE BEEN ANSWERED! for " + task.getName());
 				// if there is a submit button then enable it
 				if (submitTaskAsk != null) {
 					Ask submitAsk = submitTaskAsk.getAsk();
 					if (submitAsk.getDisabled()) {
 							TaskUtils.enableTaskQuestion(submitAsk, true, userToken);
-							log.info("processAnswers: SEND ENABLE SUBMIT submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED") );
+							log.info(callingWorkflow+" : ***SENT*** ENABLE SUBMIT submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED") );
 							
 					} else {
-						log.info("processAnswers: NO SEND ENABLE SUBMIT -> submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED"));
+						log.info(callingWorkflow+" : NO SEND ENABLE SUBMIT -> submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED"));
 					}
 				}
 
 				if (submitDetected) {
-					log.info("processAnswers: ALL MANDATORY FIELDS HAVE BEEN ANSWERED AND SUBMIT DETECTED!");
+					log.info(callingWorkflow+" : ALL MANDATORY FIELDS HAVE BEEN ANSWERED AND SUBMIT DETECTED!");
 				}
 				// TaskUtils.enableTaskQuestion(Question question,true,
 				// originalTarget.getCode(), userToken);
@@ -396,9 +400,9 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				Ask submitAsk = submitTaskAsk.getAsk();
 				if (!submitAsk.getDisabled()) {
 					TaskUtils.enableTaskQuestion(submitAsk, false, userToken);
-					log.info("processAnswers: SEND DISABLE SUBMIT -> submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED"));
+					log.info(callingWorkflow+" : ****SENT**** DISABLE SUBMIT -> submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED"));
 				} else {
-					log.info("processAnswers: NO SEND DISABLE SUBMIT -> submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED"));
+					log.info(callingWorkflow+" : NO SEND DISABLE SUBMIT -> submit now "+(submitAsk.getDisabled()?"DISABLED":"ENABLED"));
 				}
 			}
 
@@ -416,11 +420,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			Map<String, Object> results = taskAskMap.get(taskSummary);
 			if (results != null) {
 				InternalTask iTask = (InternalTask) taskService.getTaskById(taskSummary.getId());
-				log.info("%s CLOSING task with status  %s", callingWorkflow, iTask.getTaskData().getStatus());
+				log.info(callingWorkflow+" CLOSING task with status "+ iTask.getTaskData().getStatus());
 
 				KieSession taskSession = kieSessionMap.get(iTask.getId());
 				if (taskSession == null) {
-					log.error("NULL kSession when trying to retrieve kSession for kieSesswionId=%s",
+					log.error(callingWorkflow+" NULL kSession when trying to retrieve kSession for kieSesswionId=%s",
 							iTask.getTaskData().getProcessSessionId());
 				}
 				results.put("taskid", iTask.getId());
@@ -432,7 +436,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 				Boolean mandatorysAllDone = mandatoryDoneMap.get(taskSummary.getId());
 				if (Boolean.TRUE.equals(mandatorysAllDone)) {
-					log.info("processAnswers: SAVING FORM ANSWERS! " + iTask.getFormName() + ":" + iTask.getSubject()
+					log.info(callingWorkflow+" : SAVING FORM ANSWERS! " + iTask.getFormName() + ":" + iTask.getSubject()
 							+ ":" + userToken.getRealmUserCode());
 
 					saveAnswers(beUtils, answerMap2);
