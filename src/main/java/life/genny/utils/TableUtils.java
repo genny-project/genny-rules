@@ -631,14 +631,14 @@ public class TableUtils {
 							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
 							if (associateEa.isPresent()) {
 								String linkedValue = associatedBe.getValueAsString(linkBeCode);
-								log.info("CAL SEARCH linkedValue = " + linkedValue);
+								// log.info("CAL SEARCH linkedValue = " + linkedValue);
 								try {
 									Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
 									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
 									Attribute att = new Attribute("_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
 									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
 									/*att.setCode(linkBeCode);*/
-									log.info("The CAL att after is "+att);
+									// log.info("The CAL att after is "+att);
 									ans.setAttribute(att);
 									be.addAnswer(ans);
 								} catch (BadDataException e) {
@@ -2030,13 +2030,13 @@ public class TableUtils {
 		Ask addFilterGrpAsk = askMessage.getItems()[0];
 
 		// NOTE: Temporary until hidden works from sheets
-		for (Ask childAsk : addFilterGrpAsk.getChildAsks()) {
-			if (childAsk.getQuestionCode().contains("QUE_FILTER_VALUE_")) {
-				childAsk.setHidden(true);
-			} else if (childAsk.getQuestionCode().equals("QUE_SUBMIT")) {
-				childAsk.setDisabled(true);
-			}
-		}
+		// for (Ask childAsk : addFilterGrpAsk.getChildAsks()) {
+		// 	if (childAsk.getQuestionCode().contains("QUE_FILTER_VALUE_")) {
+		// 		childAsk.setHidden(true);
+		// 	} else if (childAsk.getQuestionCode().equals("QUE_SUBMIT")) {
+		// 		childAsk.setDisabled(true);
+		// 	}
+		// }
 		
 		// Existing Filters group
 		Question existingFilterGrpQues = new Question("QUE_EXISTING_FILTERS_GRP", "Existing Filters", questionAttribute,
