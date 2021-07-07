@@ -362,8 +362,9 @@ public class SearchUtils {
 		/* searchBE.addFilter("PRI_IS_EDU_PROVIDER", true); */
 		//searchBE.addFilter("PRI_NAME", StringFilter.REGEXP, "\\\\b"+message.getData().getValue());
 		
-		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE,message.getData().getValue()+"%")
-		.addOr("PRI_NAME", SearchEntity.StringFilter.LIKE, "% "+message.getData().getValue()+"%");
+		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE,message.getData().getValue()+"%");
+		// NOTE: TEMPORARILY DISABLED BECAUSE OR IS BROKEN
+		// .addOr("PRI_NAME", SearchEntity.StringFilter.LIKE, "% "+message.getData().getValue()+"%");
 
 		searchBE.setRealm(beUtils.getServiceToken().getRealm());
 		searchBE.setPageStart(pageStart);
