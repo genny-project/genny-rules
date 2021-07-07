@@ -446,6 +446,9 @@ public class ShowFrame implements WorkItemHandler {
 							if ((dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
 								eduProvIntern = true;
 							}
+							if ((dropdownCode.equals("LNK_SELECT_COUNTRY") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
+								eduProvIntern = true;
+							}
  						}
 						
 						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown search exists for it...
