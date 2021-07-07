@@ -8,6 +8,7 @@ import life.genny.qwanda.Ask;
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
@@ -147,7 +148,7 @@ public class ShowFrame implements WorkItemHandler {
 						if (VertxUtils.cachedEnabled) {
 							return qBulkMessage; // don't worry about it
 						}
-						log.error("FRAME IS NOT IN CACHE  - " + rootFrameCode);
+						log.error(callingWorkflow + ": FRAME IS NOT IN CACHE  - " + rootFrameCode);
 						// ok, grab frame from rules
 						BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 						BaseEntity rule = beUtils.getBaseEntityByCode("RUL_" + rootFrameCode);
@@ -177,7 +178,7 @@ public class ShowFrame implements WorkItemHandler {
 							frame = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode, Frame3.class,
 									userToken.getToken());
 
-							log.error("frame.getCode() in display  is null ");
+							log.error(callingWorkflow + ": frame.getCode() in display  is null ");
 							// return;
 						}
 					}
@@ -242,7 +243,7 @@ public class ShowFrame implements WorkItemHandler {
 						qBulkMessage.add(FRM_MSG);
 					} else {
 						FRM_MSG.setToken(userToken.getToken());		
-						log.info("Sending FRM_MSG");			
+						log.info(callingWorkflow + ": Sending FRM_MSG");			
 						VertxUtils.writeMsg("webcmds", FRM_MSG);
 					}
 					
@@ -323,6 +324,7 @@ public class ShowFrame implements WorkItemHandler {
 		String targetCode = null;
 		Boolean enabledSubmit = false ; 
 		BaseEntity defBe = null;
+		BaseEntity target = null;
 
 		
 		if ((output != null)) {
@@ -334,7 +336,7 @@ public class ShowFrame implements WorkItemHandler {
 				Long docId = task.getTaskData().getDocumentContentId();
 				Content c = taskService.getContentById(docId);
 				if (c == null) {
-					log.error("*************** Task content is NULL *********** ABORTING");
+					log.error(callingWorkflow + ": *************** Task content is NULL *********** ABORTING");
 					return qBulkMessage;
 				}
 				taskAsks = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
@@ -348,7 +350,7 @@ public class ShowFrame implements WorkItemHandler {
 						targetCode = taskAsk.getAsk().getTargetCode();
 					}
 				}
-				BaseEntity target = beUtils.getBaseEntityByCode(targetCode);
+				target = beUtils.getBaseEntityByCode(targetCode);
 				defBe = beUtils.getDEF(target);
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target,taskAsks);
 
@@ -364,7 +366,7 @@ public class ShowFrame implements WorkItemHandler {
 		if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
 			for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
 				for (Ask aask : askMsg.getItems()) {
-					log.info("aask: " + aask);
+					log.info(callingWorkflow + ": aask: " + aask);
 					
 					/* recursively check validations */
 					checkAskValidation(aask, callingWorkflow);
@@ -374,13 +376,13 @@ public class ShowFrame implements WorkItemHandler {
 				askMsg.setToken(userToken.getToken());
 
 				/* call the ask filters */
-				log.info("Calling getAskFilters");
+				log.info(callingWorkflow + ": Calling getAskFilters");
 				// HACK, because setting source and target first isnt working for some reason
 				Ask itemZero = askMsg.getItems()[0];
 				itemZero.setTargetCode(targetCode);
 				Ask filteredAsk = getAskFilters(beUtils, itemZero);
 				if(filteredAsk != null){
-					log.info("filteredAsk is not null. Using filteredAsk");
+					log.info(callingWorkflow + ": filteredAsk is not null. Using filteredAsk");
 					Ask[] filteredAskArr = {filteredAsk};
 					askMsg.setItems(filteredAskArr);
 				}
@@ -419,7 +421,7 @@ public class ShowFrame implements WorkItemHandler {
 				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN",
 						String.class,userToken.getToken());
 				if (serviceTokenStr == null) {
-					log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
+					log.error(callingWorkflow + ": SERVICE TOKEN FETCHED FROM CACHE IS NULL");
 					return qBulkMessage;
 				} else {
 					serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
@@ -433,6 +435,10 @@ public class ShowFrame implements WorkItemHandler {
 					for (String dropdownCode : dropdownCodeSet) {
 						
 						dropdownCode = dropdownCode.replaceAll("\"", "");
+						
+						
+						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown search exists for it...
+						log.info(callingWorkflow + ": dropdownCode:"+dropdownCode+" defBe.code:"+defBe.getCode());
 						
 						
 						Boolean eduProvIntern = false;
@@ -451,6 +457,25 @@ public class ShowFrame implements WorkItemHandler {
 								/*|| dropdownCode.equals("LNK_SELECT_BATCH")*/
 								){
 									log.info("Dropdown code :: " + dropdownCode);
+									
+									
+									// test
+									if (eduProvIntern) {
+										// find the selected edu provider if exists
+										String val = target.getValue(dropdownCode, null);
+										if (val != null) {
+											// TODO Handle a single selection for now...
+											BaseEntity selectionBe = beUtils.getBaseEntityByCode(val);
+											if (selectionBe != null) {
+												
+												BaseEntity[] items = new BaseEntity[1];
+												items[0] = selectionBe;
+												QBulkMessage qb = sendDefSelectionItems(items,defBe,dropdownCode, userToken, serviceToken, cache, targetCode);
+												qBulkMessage.add(qb);
+											}
+										}
+									}
+									
 									continue;
 						}
 
@@ -822,6 +847,67 @@ public class ShowFrame implements WorkItemHandler {
 
 			e.printStackTrace();
 		}
+		return qBulkMessage;
+	}
+	
+	public static QBulkMessage sendDefSelectionItems(BaseEntity[] arrayItems,BaseEntity defBe,String attributeCode, GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget) {
+		QBulkMessage qBulkMessage = new QBulkMessage();
+//		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
+//		try {
+//			// Get Group Code
+//			DataType dt = attribute.getDataType();
+//			// log.info("DATATYPE IS " + dt);
+//			String groupCode = null;
+//			List<Validation> vl = dt.getValidationList();
+//
+//			if ((vl != null) && (!vl.isEmpty()) ) {
+//				Validation val = vl.get(0);
+//				if ((val.getSelectionBaseEntityGroupList() != null)
+//						&& (!val.getSelectionBaseEntityGroupList().isEmpty())) {
+//					groupCode = val.getSelectionBaseEntityGroupList().get(0);
+//				}
+//			} else {
+//				return new QBulkMessage();
+//			}
+//			
+//			Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + attributeCode); // SER_
+//			String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_INTERN\",\"value\":\"true\"}]}";
+//			if (searchAtt.isPresent()) {
+//				serValue = searchAtt.get().getValueString();
+//				
+//				JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "QDB_" + groupCode,
+//						userToken.getToken());
+//				if ("null".equals(json.getString("value"))) {
+//					log.error("ShowFrame: No QDB Question code for groupCode "+groupCode);
+//
+//				} else if ("ok".equalsIgnoreCase(json.getString("status"))) {
+//
+//					qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
+//				}
+//				
+//				QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, groupCode, "LINK", Long.decode(arrayItems.length+""));
+//				msg.setParentCode(groupCode);
+//				msg.setQuestionCode(message.getData().getCode()); 
+//				msg.setToken(userToken.getToken());
+//				msg.setLinkCode("LNK_CORE");
+//				msg.setLinkValue("DROPDOWNITEMS");
+//				msg.setReplace(true);
+//				msg.setShouldDeleteLinkedBaseEntities(false);
+//
+//				/* Linking child baseEntity to the parent baseEntity */
+//				QDataBaseEntityMessage beMessage = DropdownUtils.setDynamicLinksToParentBe(msg, groupCode, "LNK_CORE", "DROPDOWNITEMS", userToken,
+//						false);
+//				qBulkMessage.add(beMessage);
+//			} else {
+//				//return new QDataBaseEntityMessage();
+//			}
+//
+//			
+//
+//		} catch (Exception e) {
+//
+//			e.printStackTrace();
+//		}
 		return qBulkMessage;
 	}
 }
