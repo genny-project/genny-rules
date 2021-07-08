@@ -324,7 +324,9 @@ public class ShowFrame implements WorkItemHandler {
 		String targetCode = null;
 		Boolean enabledSubmit = false ; 
 		BaseEntity defBe = null;
+
 		BaseEntity target = null;
+
 
 		
 		if ((output != null)) {
@@ -350,7 +352,9 @@ public class ShowFrame implements WorkItemHandler {
 						targetCode = taskAsk.getAsk().getTargetCode();
 					}
 				}
+
 				target = beUtils.getBaseEntityByCode(targetCode);
+
 				defBe = beUtils.getDEF(target);
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target,taskAsks);
 
@@ -389,6 +393,7 @@ public class ShowFrame implements WorkItemHandler {
 
 				String jsonStr = updateSourceAndTarget(askMsg, sourceCode, targetCode, output, userToken);
 				QDataAskMessage updated = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
+
 				// Find all the target be's to send
 				Set<String> beCodes = new HashSet<String>();
 				// The user will already be there
@@ -436,18 +441,22 @@ public class ShowFrame implements WorkItemHandler {
 						
 						dropdownCode = dropdownCode.replaceAll("\"", "");
 						
-						
-						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown search exists for it...
-						log.info(callingWorkflow + ": dropdownCode:"+dropdownCode+" defBe.code:"+defBe.getCode());
-						
-						
 						Boolean eduProvIntern = false;
 						if (defBe != null) {
+							log.info(callingWorkflow + " defBe.code:"+defBe.getCode());
 							if ((dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
+								eduProvIntern = true;
+							}
+							if ((dropdownCode.equals("LNK_SELECT_COUNTRY") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
 								eduProvIntern = true;
 							}
  						}
 						
+						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown search exists for it...
+						log.info(callingWorkflow + ": dropdownCode:"+dropdownCode);
+						
+						
+							
 						if( dropdownCode.equals("LNK_OCCUPATION") || 
 								dropdownCode.equals("LNK_HOST_COMPANY_REP") ||
 								dropdownCode.equals("LNK_INTERN_SUPERVISOR") ||
@@ -463,8 +472,10 @@ public class ShowFrame implements WorkItemHandler {
 									if (eduProvIntern) {
 										// find the selected edu provider if exists
 										String val = target.getValue(dropdownCode, null);
-										if (val != null) {
+										if (!StringUtils.isBlank(val)) {
 											// TODO Handle a single selection for now...
+											val = val.replaceAll("\\[\"", "");
+											val = val.replaceAll("\"\\]", "");
 											BaseEntity selectionBe = beUtils.getBaseEntityByCode(val);
 											if (selectionBe != null) {
 												
@@ -497,6 +508,7 @@ public class ShowFrame implements WorkItemHandler {
 		
 		return qBulkMessage;
 	}
+
 
 	private static void updateTargetInAsk(Ask ask, String sourceCode, String targetCode, OutputParam output,
 			GennyToken userToken) {
