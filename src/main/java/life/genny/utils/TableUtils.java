@@ -557,6 +557,8 @@ public class TableUtils {
 
 		Optional<EntityAttribute> associateEa = null;
 
+		System.out.println("calFields Length = " + calFields.length);
+
 		for (int i = 0; i < calFields.length-1; i++) {
 			String attributeCode = calFields[i];
 			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
@@ -573,8 +575,10 @@ public class TableUtils {
 					return null;
 				}
 
+				System.out.println("i = " + i);
 				if (i == (calFields.length-1)) {
 					associateEa = associatedBe.findEntityAttribute(linkBeCode);
+					System.out.println("associateEa = " + associateEa);
 				}
 				be = associatedBe;
 			} else {
