@@ -544,7 +544,7 @@ public class TableUtils {
 	}
 
 	public static Answer getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, EntityAttribute calEA, GennyToken serviceToken) {
-
+		
 		String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); 
 		if (calFields.length == 1) {
 			log.error("CALS length is bad for :" + calEA.getAttributeCode());
@@ -562,7 +562,7 @@ public class TableUtils {
 			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
 			String calBe = be.getValueAsString(attributeCode);
 
-			if (!StringUtils.isBlank(calBe)) {
+			if (calBe != null && !StringUtils.isBlank(calBe)) {
 				calBe = beUtils.cleanUpAttributeValue(calBe);
 				BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
 
