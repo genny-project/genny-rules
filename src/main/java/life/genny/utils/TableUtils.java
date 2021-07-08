@@ -594,15 +594,16 @@ public class TableUtils {
 			finalAttributeCode = finalAttributeCode + "__" + linkBeCode;
 			Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
 			Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), finalAttributeCode, linkedValue);
-			Attribute att = null;
-			if ("PRI_NAME".equals(linkBeCode)) {
-				att = RulesUtils.getAttribute("PRI_NAME", serviceToken);
-				if (att == null) {
-					att = associateEa.get().getAttribute();
-				}
-			} else {
-				att = associateEa.get().getAttribute();
-			}
+//			Attribute att = null;
+//			if ("PRI_NAME".equals(linkBeCode)) {
+//				att = RulesUtils.getAttribute("PRI_NAME", serviceToken);
+//				if (att == null) {
+//					att = associateEa.get().getAttribute();
+//				}
+//			} else {
+//				att = associateEa.get().getAttribute();
+//			}
+			Attribute att = new Attribute(finalAttributeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
 			ans.setAttribute(att);
 
 			return ans;
