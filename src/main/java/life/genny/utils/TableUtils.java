@@ -305,57 +305,14 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
-																												// separates
-																												// the
-																												// indirect
-																												// lnk
-																												// field
-																												// from
-																												// the
-																												// end
-																												// field
-						if (calFields.length != 2) {
-							log.error("SINGLE - CALS length is bad for " + searchBE.getCode() + " :"
-									+ calEA.getAttributeCode());
-							continue;
-						}
-						String attributeCode = calFields[0];
-						String calBe = be.getValueAsString(attributeCode);
-						String linkBeCode = calEA.getValueString();
-						if (!StringUtils.isBlank(calBe)) {
-							if (calBe.startsWith("[")) {
-								calBe = calBe.substring(2, calBe.length() - 2);
-							}
-							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
-							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
-							if (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode))) {
-								String linkedValue = null;
-								if ("PRI_NAME".equals(linkBeCode)) {
-									linkedValue = associatedBe.getName();
-								} else {
-									linkedValue = associatedBe.getValueAsString(linkBeCode);
-								}
-								try {
-									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(),
-											linkedValue);
-									Attribute att = null;
-									if ("PRI_NAME".equals(linkBeCode)) {
-										att = RulesUtils.getAttribute("PRI_NAME", serviceToken);
-										if (att == null) {
-											att = associateEa.get().getAttribute();
-										}
-									} else {
-										att = associateEa.get().getAttribute();
-									}
-									att.setCode("_" + attributeCode + "__" + linkBeCode);
-									ans.setAttribute(att);
-									be.addAnswer(ans);
+						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
 
-								} catch (BadDataException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
+						if (ans != null) {
+							try {
+								be.addAnswer(ans);
+							} catch (BadDataException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
 							}
 						}
 					}
@@ -411,51 +368,15 @@ public class TableUtils {
 					be = VertxUtils.privacyFilter(be, filterArray);
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
-						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); // this
-																												// separates
-																												// the
-																												// indirect
-																												// lnk
-																												// field
-																												// from
-																												// the
-																												// end
-						// field
-						if (calFields.length != 2) {
-							log.error("CALS length is bad for " + searchBE.getCode() + " :" + calEA.getAttributeCode());
-							continue;
-						}
-						String attributeCode = calFields[0];
-						String calBe = be.getValueAsString(attributeCode);
-						String linkBeCode = calFields[1];
-						if (!StringUtils.isBlank(calBe)) {
-							if (calBe.startsWith("[")) {
-								calBe = calBe.substring(2, calBe.length() - 2);
-							}
-							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
-							if (associatedBe != null) {
-								log.info("If associatedBe exists ->" + associatedBe.getCode());
-							} else {
-								log.info("associatedBe DOES NOT exist ->" + calBe);
-								continue;
-							}
-							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
-							if (associateEa.isPresent()) {
-								String linkedValue = associatedBe.getValueAsString(linkBeCode);
-								log.info("CAL SEARCH linkedValue = " + linkedValue);
-								try {
-									Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
-									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
-									Attribute att = new Attribute("_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
-									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
-									/*att.setCode(linkBeCode);*/
-									log.info("The CAL att after is "+att);
-									ans.setAttribute(att);
-									be.addAnswer(ans);
-								} catch (BadDataException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
+
+						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
+
+						if (ans != null) {
+							try {
+								be.addAnswer(ans);
+							} catch (BadDataException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
 							}
 						}
 					}
@@ -522,47 +443,15 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 						
-						// this separates the indirect lnk field from the end field
-						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); 
-						if (calFields.length != 2) {
-							log.error("SINGLE - CALS length is bad for " + searchBE.getCode() + " :"
-									+ calEA.getAttributeCode());
-							continue;
-						}
-						String attributeCode = calFields[0];
-						String calBe = be.getValueAsString(attributeCode);
-						String linkBeCode = calEA.getValueString();
-						if (!StringUtils.isBlank(calBe)) {
-							calBe = beUtils.cleanUpAttributeValue(calBe);
-							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
-							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
-							if (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode))) {
-								String linkedValue = null;
-								if ("PRI_NAME".equals(linkBeCode)) {
-									linkedValue = associatedBe.getName();
-								} else {
-									linkedValue = associatedBe.getValueAsString(linkBeCode);
-								}
-								try {
-									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(),
-											linkedValue);
-									Attribute att = null;
-									if ("PRI_NAME".equals(linkBeCode)) {
-										att = RulesUtils.getAttribute("PRI_NAME", serviceToken);
-										if (att == null) {
-											att = associateEa.get().getAttribute();
-										}
-									} else {
-										att = associateEa.get().getAttribute();
-									}
-									att.setCode("_" + attributeCode + "__" + linkBeCode);
-									ans.setAttribute(att);
-									be.addAnswer(ans);
+						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
 
-								} catch (BadDataException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
+						if (ans != null) {
+
+							try {
+								be.addAnswer(ans);
+							} catch (BadDataException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
 							}
 						}
 					}
@@ -610,43 +499,18 @@ public class TableUtils {
 					be = VertxUtils.privacyFilter(be, filterArray);
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
-						// this separates the indirect lnk field from the end field
-						String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); 
-						if (calFields.length != 2) {
-							log.error("CALS length is bad for " + searchBE.getCode() + " :" + calEA.getAttributeCode());
-							continue;
-						}
-						String attributeCode = calFields[0];
-						String calBe = be.getValueAsString(attributeCode);
-						String linkBeCode = calFields[1];
-						if (!StringUtils.isBlank(calBe)) {
-							calBe = beUtils.cleanUpAttributeValue(calBe);
-							BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
-							if (associatedBe != null) {
-								log.info("If associatedBe exists ->" + associatedBe.getCode());
-							} else {
-								log.info("associatedBe DOES NOT exist ->" + calBe);
-								continue;
-							}
-							Optional<EntityAttribute> associateEa = associatedBe.findEntityAttribute(linkBeCode);
-							if (associateEa.isPresent()) {
-								String linkedValue = associatedBe.getValueAsString(linkBeCode);
-								// log.info("CAL SEARCH linkedValue = " + linkedValue);
-								try {
-									Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
-									Answer ans = new Answer(be.getCode(), be.getCode(), calEA.getAttributeCode(), linkedValue);
-									Attribute att = new Attribute("_" +attributeCode + "__" + linkBeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
-									/*att.setCode("PRI_" +attributeCode + "__" + linkBeCode);*/
-									/*att.setCode(linkBeCode);*/
-									// log.info("The CAL att after is "+att);
-									ans.setAttribute(att);
-									be.addAnswer(ans);
-								} catch (BadDataException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
+
+						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
+
+						if (ans != null) {
+							try {
+								be.addAnswer(ans);
+							} catch (BadDataException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
 							}
 						}
+
 					}
 					be.setIndex(i);
 					beArray[i] = be;
@@ -677,6 +541,76 @@ public class TableUtils {
 		log.info("Time taken to get cached Bes added to list =" + (endtime3 - endtime2) + " ms");
 
 		return msg;
+	}
+
+	public static Answer getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, EntityAttribute calEA, GennyToken serviceToken) {
+		
+		String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); 
+		if (calFields.length == 1) {
+			log.error("CALS length is bad for :" + calEA.getAttributeCode());
+			return null;
+		}
+		String finalAttributeCode = "";
+		String linkBeCode = calFields[calFields.length-1];
+
+		BaseEntity be = baseBE;
+
+		Optional<EntityAttribute> associateEa = null;
+
+		for (int i = 0; i < calFields.length-1; i++) {
+			String attributeCode = calFields[i];
+			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
+			String calBe = be.getValueAsString(attributeCode);
+
+			if (calBe != null && !StringUtils.isBlank(calBe)) {
+				calBe = beUtils.cleanUpAttributeValue(calBe);
+				BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
+
+				if (associatedBe != null) {
+					log.info("associatedBe exists ->" + associatedBe.getCode());
+				} else {
+					log.info("associatedBe DOES NOT exist ->" + calBe);
+					return null;
+				}
+
+				if (i == (calFields.length-2)) {
+					associateEa = associatedBe.findEntityAttribute(linkBeCode);
+				}
+				be = associatedBe;
+			} else {
+				log.info("Could not find attribute value for " + attributeCode);
+				return null;
+			}
+		}
+
+		if (associateEa != null && (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode)))) {
+			String linkedValue = null;
+			if ("PRI_NAME".equals(linkBeCode)) {
+				linkedValue = be.getName();
+			} else {
+				linkedValue = be.getValueAsString(linkBeCode);
+			}
+			// log.info("CAL SEARCH linkedValue = " + linkedValue);
+			finalAttributeCode = finalAttributeCode + "__" + linkBeCode;
+			Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
+			Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), finalAttributeCode, linkedValue);
+			Attribute att = null;
+			if ("PRI_NAME".equals(linkBeCode)) {
+				att = RulesUtils.getAttribute("PRI_NAME", serviceToken);
+				if (att == null) {
+					att = associateEa.get().getAttribute();
+				}
+			} else {
+				att = associateEa.get().getAttribute();
+			}
+			ans.setAttribute(att);
+
+			return ans;
+
+		} else {
+			System.out.println("No attribute present");
+		}
+		return null;
 	}
 
 	private static void updateColIndex(SearchEntity searchBE) {
