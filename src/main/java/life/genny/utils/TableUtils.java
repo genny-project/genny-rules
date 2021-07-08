@@ -583,7 +583,7 @@ public class TableUtils {
 			}
 		}
 
-		if (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode))) {
+		if (associateEa != null && (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode)))) {
 			String linkedValue = null;
 			if ("PRI_NAME".equals(linkBeCode)) {
 				linkedValue = be.getName();
