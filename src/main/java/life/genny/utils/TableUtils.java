@@ -550,7 +550,7 @@ public class TableUtils {
 			log.error("CALS length is bad for :" + calEA.getAttributeCode());
 			return null;
 		}
-		String finalAttributeCode = "_";
+		String finalAttributeCode = "";
 		String linkBeCode = calFields[calFields.length-1];
 
 		BaseEntity be = baseBE;
@@ -559,7 +559,7 @@ public class TableUtils {
 
 		for (int i = 0; i < calFields.length-1; i++) {
 			String attributeCode = calFields[i];
-			finalAttributeCode = finalAttributeCode + ( i == 0 ? "" : "__") + attributeCode;
+			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
 			String calBe = be.getValueAsString(attributeCode);
 
 			if (!StringUtils.isBlank(calBe)) {
