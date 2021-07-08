@@ -557,8 +557,6 @@ public class TableUtils {
 
 		Optional<EntityAttribute> associateEa = null;
 
-		System.out.println("calFields Length = " + calFields.length);
-
 		for (int i = 0; i < calFields.length-1; i++) {
 			String attributeCode = calFields[i];
 			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
@@ -569,16 +567,14 @@ public class TableUtils {
 				BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
 
 				if (associatedBe != null) {
-					log.info("If associatedBe exists ->" + associatedBe.getCode());
+					log.info("associatedBe exists ->" + associatedBe.getCode());
 				} else {
 					log.info("associatedBe DOES NOT exist ->" + calBe);
 					return null;
 				}
 
-				System.out.println("i = " + i);
 				if (i == (calFields.length-2)) {
 					associateEa = associatedBe.findEntityAttribute(linkBeCode);
-					System.out.println("associateEa = " + associateEa);
 				}
 				be = associatedBe;
 			} else {
@@ -597,7 +593,7 @@ public class TableUtils {
 			// log.info("CAL SEARCH linkedValue = " + linkedValue);
 			finalAttributeCode = finalAttributeCode + "__" + linkBeCode;
 			Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
-			Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), calEA.getAttributeCode(), linkedValue);
+			Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), finalAttributeCode, linkedValue);
 			Attribute att = null;
 			if ("PRI_NAME".equals(linkBeCode)) {
 				att = RulesUtils.getAttribute("PRI_NAME", serviceToken);
