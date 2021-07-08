@@ -17,6 +17,7 @@ import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QCmdMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
+import life.genny.qwanda.message.QMessage.MsgOption;
 import life.genny.qwanda.validation.Validation;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
@@ -472,8 +473,10 @@ public class ShowFrame implements WorkItemHandler {
 									if (eduProvIntern) {
 										// find the selected edu provider if exists
 										String val = target.getValue(dropdownCode, null);
-										if (val != null) {
+										if (!StringUtils.isBlank(val)) {
 											// TODO Handle a single selection for now...
+											val = val.replaceAll("\\[\"", "");
+											val = val.replaceAll("\"\\]", "");
 											BaseEntity selectionBe = beUtils.getBaseEntityByCode(val);
 											if (selectionBe != null) {
 												
@@ -861,62 +864,57 @@ public class ShowFrame implements WorkItemHandler {
 	
 	public static QBulkMessage sendDefSelectionItems(BaseEntity[] arrayItems,BaseEntity defBe,String attributeCode, GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
-//		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
-//		try {
-//			// Get Group Code
-//			DataType dt = attribute.getDataType();
-//			// log.info("DATATYPE IS " + dt);
-//			String groupCode = null;
-//			List<Validation> vl = dt.getValidationList();
-//
-//			if ((vl != null) && (!vl.isEmpty()) ) {
-//				Validation val = vl.get(0);
-//				if ((val.getSelectionBaseEntityGroupList() != null)
-//						&& (!val.getSelectionBaseEntityGroupList().isEmpty())) {
-//					groupCode = val.getSelectionBaseEntityGroupList().get(0);
-//				}
-//			} else {
-//				return new QBulkMessage();
-//			}
-//			
-//			Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + attributeCode); // SER_
-//			String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_INTERN\",\"value\":\"true\"}]}";
-//			if (searchAtt.isPresent()) {
-//				serValue = searchAtt.get().getValueString();
-//				
-//				JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "QDB_" + groupCode,
-//						userToken.getToken());
-//				if ("null".equals(json.getString("value"))) {
-//					log.error("ShowFrame: No QDB Question code for groupCode "+groupCode);
-//
-//				} else if ("ok".equalsIgnoreCase(json.getString("status"))) {
-//
-//					qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
-//				}
-//				
-//				QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, groupCode, "LINK", Long.decode(arrayItems.length+""));
-//				msg.setParentCode(groupCode);
-//				msg.setQuestionCode(message.getData().getCode()); 
-//				msg.setToken(userToken.getToken());
-//				msg.setLinkCode("LNK_CORE");
-//				msg.setLinkValue("DROPDOWNITEMS");
-//				msg.setReplace(true);
-//				msg.setShouldDeleteLinkedBaseEntities(false);
-//
-//				/* Linking child baseEntity to the parent baseEntity */
-//				QDataBaseEntityMessage beMessage = DropdownUtils.setDynamicLinksToParentBe(msg, groupCode, "LNK_CORE", "DROPDOWNITEMS", userToken,
-//						false);
-//				qBulkMessage.add(beMessage);
-//			} else {
-//				//return new QDataBaseEntityMessage();
-//			}
-//
-//			
-//
-//		} catch (Exception e) {
-//
-//			e.printStackTrace();
-//		}
+		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
+		try {
+			// Get Group Code
+			DataType dt = attribute.getDataType();
+			// log.info("DATATYPE IS " + dt);
+			String groupCode = null;
+			List<Validation> vl = dt.getValidationList();
+
+			if ((vl != null) && (!vl.isEmpty()) ) {
+				Validation val = vl.get(0);
+				if ((val.getSelectionBaseEntityGroupList() != null)
+						&& (!val.getSelectionBaseEntityGroupList().isEmpty())) {
+					groupCode = val.getSelectionBaseEntityGroupList().get(0);
+				}
+			} else {
+				return new QBulkMessage();
+			}
+			
+			Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + attributeCode); // SER_
+			String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_INTERN\",\"value\":\"true\"}]}";
+			if (searchAtt.isPresent()) {
+				serValue = searchAtt.get().getValueString();
+				
+					
+				QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, groupCode, "LINK", Long.decode(arrayItems.length+""));
+				msg.setParentCode(groupCode);
+				msg.setQuestionCode(null); 
+				msg.setToken(userToken.getToken());
+				msg.setLinkCode("LNK_CORE");
+				msg.setLinkValue("ITEMS");
+				msg.setReplace(true);
+				msg.setData_type("BaseEntity");
+				msg.setDelete(false);
+				msg.setShouldDeleteLinkedBaseEntities(false);
+				msg.setTotal(-1L);
+				msg.setOption(MsgOption.EXEC);
+				msg.setMsg_type("DATA_MSG");
+				msg.setReturnCount(new Long((arrayItems.length))); // TODO handle tags
+				
+
+				qBulkMessage.add(msg);
+			} else {
+				//return new QDataBaseEntityMessage();
+			}
+
+			
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+		}
 		return qBulkMessage;
 	}
 }
