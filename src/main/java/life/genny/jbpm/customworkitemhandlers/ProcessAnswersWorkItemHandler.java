@@ -341,9 +341,11 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				processId = processId.replaceAll("_", " ");
 				BaseEntity tsBe = beUtils.getBaseEntityByCode(taskSummary.getSubject());
 				BaseEntity defBe = beUtils.getDEF(tsBe);
-				String beType = defBe.getName();//.capitalize(processId.toLowerCase());
+				String beType = "";
+				if (defBe != null) {
+					beType = defBe.getName();//.capitalize(processId.toLowerCase());
+				}
 
-				
 				String description = task.getDescription();
 		
 				switch (ask.getAsk().getAttributeCode()) {
