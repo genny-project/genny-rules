@@ -576,7 +576,7 @@ public class TableUtils {
 				}
 
 				System.out.println("i = " + i);
-				if (i == (calFields.length-1)) {
+				if (i == (calFields.length-2)) {
 					associateEa = associatedBe.findEntityAttribute(linkBeCode);
 					System.out.println("associateEa = " + associateEa);
 				}
