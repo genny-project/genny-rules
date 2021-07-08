@@ -443,6 +443,7 @@ public class ShowFrame implements WorkItemHandler {
 						
 						Boolean eduProvIntern = false;
 						if (defBe != null) {
+							log.info(callingWorkflow + " defBe.code:"+defBe.getCode());
 							if ((dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
 								eduProvIntern = true;
 							}
@@ -452,7 +453,7 @@ public class ShowFrame implements WorkItemHandler {
  						}
 						
 						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown search exists for it...
-						log.info(callingWorkflow + ": dropdownCode:"+dropdownCode+" defBe.code:"+defBe.getCode());
+						log.info(callingWorkflow + ": dropdownCode:"+dropdownCode);
 						
 						
 							
