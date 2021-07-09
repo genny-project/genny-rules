@@ -301,7 +301,6 @@ public class ShowFrame implements WorkItemHandler {
 		}
 	}
 	
-
 	/**
 	 * @param rootFrameCode
 	 * @param userToken
@@ -312,7 +311,6 @@ public class ShowFrame implements WorkItemHandler {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 
-		
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
 			return qBulkMessage;
@@ -324,13 +322,11 @@ public class ShowFrame implements WorkItemHandler {
 		Map<String, TaskAsk> attributeTaskAskMap = null;
 		String sourceCode = null;
 		String targetCode = null;
-		Boolean enabledSubmit = false ; 
+		Boolean enabledSubmit = false;
 		BaseEntity defBe = null;
 
 		BaseEntity target = null;
 
-
-		
 		if ((output != null)) {
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
@@ -358,14 +354,14 @@ public class ShowFrame implements WorkItemHandler {
 				target = beUtils.getBaseEntityByCode(targetCode);
 
 				defBe = beUtils.getDEF(target);
-				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target,taskAsks);
+				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
 
 			} else {
 				sourceCode = output.getAskSourceCode();
 				targetCode = output.getAskTargetCode();
 			}
 		}
-		
+
 		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
 
 		// log.info("Sending Asks");
@@ -373,10 +369,10 @@ public class ShowFrame implements WorkItemHandler {
 			for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
 				for (Ask aask : askMsg.getItems()) {
 					log.info(callingWorkflow + ": aask: " + aask);
-					
+
 					/* recursively check validations */
 					checkAskValidation(aask, callingWorkflow);
-					TaskUtils.enableAttribute("PRI_SUBMIT",aask, callingWorkflow,enabledSubmit);
+					TaskUtils.enableAttribute("PRI_SUBMIT", aask, callingWorkflow, enabledSubmit);
 					aask.setId(output.getTaskId());
 				}
 				askMsg.setToken(userToken.getToken());
@@ -387,9 +383,9 @@ public class ShowFrame implements WorkItemHandler {
 				Ask itemZero = askMsg.getItems()[0];
 				itemZero.setTargetCode(targetCode);
 				Ask filteredAsk = getAskFilters(beUtils, itemZero);
-				if(filteredAsk != null){
+				if (filteredAsk != null) {
 					log.info(callingWorkflow + ": filteredAsk is not null. Using filteredAsk");
-					Ask[] filteredAskArr = {filteredAsk};
+					Ask[] filteredAskArr = { filteredAsk };
 					askMsg.setItems(filteredAskArr);
 				}
 
@@ -426,7 +422,7 @@ public class ShowFrame implements WorkItemHandler {
 				// find any select Attributes, find their selection Baseentities and send
 				GennyToken serviceToken = null;
 				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN",
-						String.class,userToken.getToken());
+						String.class, userToken.getToken());
 				if (serviceTokenStr == null) {
 					log.error(callingWorkflow + ": SERVICE TOKEN FETCHED FROM CACHE IS NULL");
 					return qBulkMessage;
@@ -440,69 +436,76 @@ public class ShowFrame implements WorkItemHandler {
 					Set<String> dropdownCodeSet = new HashSet<>(Arrays.asList(dropdownCodes));
 
 					for (String dropdownCode : dropdownCodeSet) {
-						
+
 						dropdownCode = dropdownCode.replaceAll("\"", "");
-						
+
 						Boolean eduProvIntern = false;
-						if (defBe != null) {
-							log.info(callingWorkflow + " defBe.code:"+defBe.getCode());
-							if ((dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
-								eduProvIntern = true;
-							}
-							if ((dropdownCode.equals("LNK_SELECT_COUNTRY") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
-								eduProvIntern = true;
-							}
- 						}
-						
-						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown search exists for it...
-						log.info(callingWorkflow + ": dropdownCode:"+dropdownCode);
-						
-						
-							
-						if( dropdownCode.equals("LNK_OCCUPATION") || 
-								dropdownCode.equals("LNK_HOST_COMPANY_REP") ||
-								dropdownCode.equals("LNK_INTERN_SUPERVISOR") ||
-								dropdownCode.equals("LNK_INTERNSHIP")  ||
-								eduProvIntern
-								/*|| dropdownCode.equals("LNK_SELECT_COUNTRY") */
-								/*|| dropdownCode.equals("LNK_SELECT_BATCH")*/
-								){
-									log.info("Dropdown code :: " + dropdownCode);
-									
-									
-									// test
-									if (eduProvIntern) {
-										// find the selected edu provider if exists
-										String val = target.getValue(dropdownCode, null);
-										if (!StringUtils.isBlank(val)) {
-											Set<BaseEntity> beItems = new HashSet<>();
-											JsonArray jaItems = new JsonArray(val);
-											for (Object jItem : jaItems) {
-												String beCode= (String) jItem;
-//												val = val.replaceAll("\\[\"", "");
-//												val = val.replaceAll("\"\\]", "");
-												BaseEntity selectionBe = beUtils.getBaseEntityByCode(beCode);
-												if (selectionBe != null) {
-													beItems.add(selectionBe);
-												}
-											}
-											// TODO Handle a single selection for now...
-													QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]),defBe,dropdownCode, userToken, serviceToken, cache, targetCode);
-												qBulkMessage.add(qb);
+						Boolean defDropdownExists = false;
+
+						// Determine whether there is a DEF attribute and target type that has a new DEF
+						// search for this combination
+						try {
+							defDropdownExists = beUtils.hasDropdown(dropdownCode, defBe);
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+
+//						if (defBe != null) {
+//							
+//							log.info(callingWorkflow + " defBe.code:"+defBe.getCode());
+//							if ((dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
+//								eduProvIntern = true;
+//							}
+//							if ((dropdownCode.equals("LNK_SELECT_COUNTRY") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
+//								eduProvIntern = true;
+//							}
+// 						}
+
+						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown
+						// search exists for it...
+						log.info(callingWorkflow + ": dropdownCode:" + dropdownCode);
+
+						if (dropdownCode.equals("LNK_OCCUPATION") || dropdownCode.equals("LNK_HOST_COMPANY_REP")
+								|| dropdownCode.equals("LNK_INTERN_SUPERVISOR") || dropdownCode.equals("LNK_INTERNSHIP")
+								||
+//								eduProvIntern ||
+								defDropdownExists
+						/* || dropdownCode.equals("LNK_SELECT_COUNTRY") */
+						/* || dropdownCode.equals("LNK_SELECT_BATCH") */
+						) {
+							log.info("Dropdown code :: " + dropdownCode);
+
+							// test
+							if (defDropdownExists) {
+								// find the selected edu provider if exists
+								String val = target.getValue(dropdownCode, null);
+								if (!StringUtils.isBlank(val)) {
+									Set<BaseEntity> beItems = new HashSet<>();
+									JsonArray jaItems = new JsonArray(val);
+									for (Object jItem : jaItems) {
+										String beCode = (String) jItem;
+										BaseEntity selectionBe = beUtils.getBaseEntityByCode(beCode);
+										if (selectionBe != null) {
+											beItems.add(selectionBe);
 										}
 									}
-									
-									continue;
+									QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
+											dropdownCode, userToken, serviceToken, cache, targetCode);
+									qBulkMessage.add(qb);
+								}
+							}
+
+							continue;
 						}
 
 						log.info("OLD Dropdown code :: " + dropdownCode);
 						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
 						qBulkMessage.add(qb);
-					
+
 					}
 				}
 
-				
 				qBulkMessage.add(updated);
 				if (!cache) {
 					log.info("Sending the Asks Now !!!");
@@ -510,7 +513,7 @@ public class ShowFrame implements WorkItemHandler {
 				}
 			}
 		}
-		
+
 		return qBulkMessage;
 	}
 
