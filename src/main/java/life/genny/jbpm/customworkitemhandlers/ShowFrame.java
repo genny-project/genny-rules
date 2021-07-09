@@ -79,13 +79,13 @@ public class ShowFrame implements WorkItemHandler {
 		callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
 		Boolean cache = false;
-		QBulkMessage qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output,cache);
+		QBulkMessage qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
 
 		if (cache) {
 			qBulkMessage.setToken(userToken.getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
 		}
-		
+
 		// notify manager that work item has been completed
 		if (workItem == null) {
 			log.error(callingWorkflow + ": workItem is null");
@@ -100,15 +100,15 @@ public class ShowFrame implements WorkItemHandler {
 	}
 
 	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
-			String callingWorkflow,Boolean cache) {
+			String callingWorkflow, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
-		
+
 		OutputParam output = new OutputParam();
 
 		output.setTypeOfResult("FORMCODE");
 		output.setResultCode(rootFrameCode);
 		output.setTargetCode(targetFrameCode);
-		qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output,cache);
+		qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
 		return qBulkMessage;
 	}
 
@@ -118,16 +118,16 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param targetFrameCode
 	 * @param callingWorkflow
 	 */
-	
+
 	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output) {
-		return display(userToken, rootFrameCode, targetFrameCode, callingWorkflow,output, false);
+		return display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, false);
 	}
-	
+
 	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
-			String callingWorkflow, OutputParam output,Boolean cache) {
+			String callingWorkflow, OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
-		
+
 		if (userToken == null) {
 			log.error(callingWorkflow + ": Must supply userToken!");
 
@@ -246,11 +246,11 @@ public class ShowFrame implements WorkItemHandler {
 					if (cache) {
 						qBulkMessage.add(FRM_MSG);
 					} else {
-						FRM_MSG.setToken(userToken.getToken());		
-						log.info(callingWorkflow + ": Sending FRM_MSG");			
+						FRM_MSG.setToken(userToken.getToken());
+						log.info(callingWorkflow + ": Sending FRM_MSG");
 						VertxUtils.writeMsg("webcmds", FRM_MSG);
 					}
-					
+
 					// Minify
 //					String payload = JsonUtils.toJson(FRM_MSG);
 //					try {
@@ -266,7 +266,7 @@ public class ShowFrame implements WorkItemHandler {
 //						// TODO Auto-generated catch block
 //						e.printStackTrace();
 //					}
-					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output,cache);
+					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output, cache);
 					qBulkMessage.add(asks);
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
@@ -280,9 +280,9 @@ public class ShowFrame implements WorkItemHandler {
 		VertxUtils.writeMsgEnd(userToken);
 		return qBulkMessage;
 	}
-	
+
 	/**
-	 * @param aask 
+	 * @param aask
 	 * @param callingWorkflow
 	 */
 	private static void checkAskValidation(Ask aask, String callingWorkflow) {
@@ -293,16 +293,15 @@ public class ShowFrame implements WorkItemHandler {
 		} else {
 			for (Validation val : aask.getQuestion().getAttribute().getDataType().getValidationList()) {
 				if (val != null) {
-				if (val.getRegex() == null) {
+					if (val.getRegex() == null) {
 						log.error(callingWorkflow + ": Regex for " + aask.getQuestion().getCode() + " == null");
 					}
 				} else {
-					log.error("Validation is null for "+aask.getQuestion().getAttribute().getCode());
+					log.error("Validation is null for " + aask.getQuestion().getAttribute().getCode());
 				}
 			}
 		}
 	}
-	
 
 	/**
 	 * @param rootFrameCode
@@ -314,7 +313,6 @@ public class ShowFrame implements WorkItemHandler {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 
-		
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
 			return qBulkMessage;
@@ -326,13 +324,11 @@ public class ShowFrame implements WorkItemHandler {
 		Map<String, TaskAsk> attributeTaskAskMap = null;
 		String sourceCode = null;
 		String targetCode = null;
-		Boolean enabledSubmit = false ; 
+		Boolean enabledSubmit = false;
 		BaseEntity defBe = null;
 
 		BaseEntity target = null;
 
-
-		
 		if ((output != null)) {
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
@@ -360,14 +356,14 @@ public class ShowFrame implements WorkItemHandler {
 				target = beUtils.getBaseEntityByCode(targetCode);
 
 				defBe = beUtils.getDEF(target);
-				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target,taskAsks);
+				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
 
 			} else {
 				sourceCode = output.getAskSourceCode();
 				targetCode = output.getAskTargetCode();
 			}
 		}
-		
+
 		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
 
 		// log.info("Sending Asks");
@@ -375,10 +371,10 @@ public class ShowFrame implements WorkItemHandler {
 			for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
 				for (Ask aask : askMsg.getItems()) {
 					log.info(callingWorkflow + ": aask: " + aask);
-					
+
 					/* recursively check validations */
 					checkAskValidation(aask, callingWorkflow);
-					TaskUtils.enableAttribute("PRI_SUBMIT",aask, callingWorkflow,enabledSubmit);
+					TaskUtils.enableAttribute("PRI_SUBMIT", aask, callingWorkflow, enabledSubmit);
 					aask.setId(output.getTaskId());
 				}
 				askMsg.setToken(userToken.getToken());
@@ -389,9 +385,9 @@ public class ShowFrame implements WorkItemHandler {
 				Ask itemZero = askMsg.getItems()[0];
 				itemZero.setTargetCode(targetCode);
 				Ask filteredAsk = getAskFilters(beUtils, itemZero);
-				if(filteredAsk != null){
+				if (filteredAsk != null) {
 					log.info(callingWorkflow + ": filteredAsk is not null. Using filteredAsk");
-					Ask[] filteredAskArr = {filteredAsk};
+					Ask[] filteredAskArr = { filteredAsk };
 					askMsg.setItems(filteredAskArr);
 				}
 
@@ -428,7 +424,7 @@ public class ShowFrame implements WorkItemHandler {
 				// find any select Attributes, find their selection Baseentities and send
 				GennyToken serviceToken = null;
 				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN",
-						String.class,userToken.getToken());
+						String.class, userToken.getToken());
 				if (serviceTokenStr == null) {
 					log.error(callingWorkflow + ": SERVICE TOKEN FETCHED FROM CACHE IS NULL");
 					return qBulkMessage;
@@ -442,69 +438,71 @@ public class ShowFrame implements WorkItemHandler {
 					Set<String> dropdownCodeSet = new HashSet<>(Arrays.asList(dropdownCodes));
 
 					for (String dropdownCode : dropdownCodeSet) {
-						
+
 						dropdownCode = dropdownCode.replaceAll("\"", "");
-						
+
 						Boolean eduProvIntern = false;
-						if (defBe != null) {
-							log.info(callingWorkflow + " defBe.code:"+defBe.getCode());
-							if ((dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
-								eduProvIntern = true;
-							}
-							if ((dropdownCode.equals("LNK_SELECT_COUNTRY") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
-								eduProvIntern = true;
-							}
- 						}
-						
-						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown search exists for it...
-						log.info(callingWorkflow + ": dropdownCode:"+dropdownCode);
-						
-						
-							
-						if( dropdownCode.equals("LNK_OCCUPATION") || 
-								dropdownCode.equals("LNK_HOST_COMPANY_REP") ||
-								dropdownCode.equals("LNK_INTERN_SUPERVISOR") ||
-								dropdownCode.equals("LNK_INTERNSHIP")  ||
-								eduProvIntern
-								/*|| dropdownCode.equals("LNK_SELECT_COUNTRY") */
-								/*|| dropdownCode.equals("LNK_SELECT_BATCH")*/
-								){
-									log.info("Dropdown code :: " + dropdownCode);
-									
-									
-									// test
-									if (eduProvIntern) {
-										// find the selected edu provider if exists
-										String val = target.getValue(dropdownCode, null);
-										if (!StringUtils.isBlank(val)) {
-											Set<BaseEntity> beItems = new HashSet<>();
-											JsonArray jaItems = new JsonArray(val);
-											for (Object jItem : jaItems) {
-												String beCode= (String) jItem;
-//												val = val.replaceAll("\\[\"", "");
-//												val = val.replaceAll("\"\\]", "");
-												BaseEntity selectionBe = beUtils.getBaseEntityByCode(beCode);
-												if (selectionBe != null) {
-													beItems.add(selectionBe);
-												}
-											}
-											// TODO Handle a single selection for now...
-													QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]),defBe,dropdownCode, userToken, serviceToken, cache, targetCode);
-												qBulkMessage.add(qb);
+						Boolean defDropdownExists = false;
+
+						// Determine whether there is a DEF attribute and target type that has a new DEF
+						// search for this combination
+						defDropdownExists = beUtils.hasDropdown(dropdownCode, defBe);
+
+//						if (defBe != null) {
+//							
+//							log.info(callingWorkflow + " defBe.code:"+defBe.getCode());
+//							if ((dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
+//								eduProvIntern = true;
+//							}
+//							if ((dropdownCode.equals("LNK_SELECT_COUNTRY") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
+//								eduProvIntern = true;
+//							}
+// 						}
+
+						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown
+						// search exists for it...
+						log.info(callingWorkflow + ": dropdownCode:" + dropdownCode);
+
+						if (dropdownCode.equals("LNK_OCCUPATION") || dropdownCode.equals("LNK_HOST_COMPANY_REP")
+								|| dropdownCode.equals("LNK_INTERN_SUPERVISOR") || dropdownCode.equals("LNK_INTERNSHIP")
+								||
+//								eduProvIntern ||
+								defDropdownExists
+						/* || dropdownCode.equals("LNK_SELECT_COUNTRY") */
+						/* || dropdownCode.equals("LNK_SELECT_BATCH") */
+						) {
+							log.info("Dropdown code :: " + dropdownCode);
+
+							// test
+							if (defDropdownExists) {
+								// find the selected edu provider if exists
+								String val = target.getValue(dropdownCode, null);
+								if (!StringUtils.isBlank(val)) {
+									Set<BaseEntity> beItems = new HashSet<>();
+									JsonArray jaItems = new JsonArray(val);
+									for (Object jItem : jaItems) {
+										String beCode = (String) jItem;
+										BaseEntity selectionBe = beUtils.getBaseEntityByCode(beCode);
+										if (selectionBe != null) {
+											beItems.add(selectionBe);
 										}
 									}
-									
-									continue;
+									QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
+											dropdownCode, userToken, serviceToken, cache, targetCode);
+									qBulkMessage.add(qb);
+								}
+							}
+
+							continue;
 						}
 
 						log.info("OLD Dropdown code :: " + dropdownCode);
 						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
 						qBulkMessage.add(qb);
-					
+
 					}
 				}
 
-				
 				qBulkMessage.add(updated);
 				if (!cache) {
 					log.info("Sending the Asks Now !!!");
@@ -512,7 +510,7 @@ public class ShowFrame implements WorkItemHandler {
 				}
 			}
 		}
-		
+
 		return qBulkMessage;
 	}
 
@@ -561,15 +559,16 @@ public class ShowFrame implements WorkItemHandler {
 			jsonStr = jsonStr.replaceAll("PER_TARGET", userToken.getUserCode());
 			targetCode = userToken.getUserCode();
 		}
-		//log.info("ShowFrame: Setting outgoing Asks to have " + sourceCode + ":" + targetCode);
+		// log.info("ShowFrame: Setting outgoing Asks to have " + sourceCode + ":" +
+		// targetCode);
 		return jsonStr;
 	}
 
-	private static QDataAskMessage updateSourceAndTargetMsg(QDataAskMessage askMsg, String sourceCode, String targetCode,
-			OutputParam output, GennyToken userToken) {
+	private static QDataAskMessage updateSourceAndTargetMsg(QDataAskMessage askMsg, String sourceCode,
+			String targetCode, OutputParam output, GennyToken userToken) {
 
 		QDataAskMessage ret = askMsg;
-		
+
 		if (!output.getAttributeTargetCodeMap().keySet().isEmpty()) {
 			for (Ask ask : askMsg.getItems()) {
 				updateTargetInAsk(ask, sourceCode, targetCode, output, userToken);
@@ -593,12 +592,12 @@ public class ShowFrame implements WorkItemHandler {
 			jsonStr = jsonStr.replaceAll("PER_TARGET", userToken.getUserCode());
 			targetCode = userToken.getUserCode();
 		}
-		//log.info("ShowFrame: Setting outgoing Asks to have " + sourceCode + ":" + targetCode);
+		// log.info("ShowFrame: Setting outgoing Asks to have " + sourceCode + ":" +
+		// targetCode);
 		ret = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
 		return ret;
 	}
 
-	
 	/**
 	 * @param rootFrameCode
 	 * @param userToken
@@ -628,7 +627,7 @@ public class ShowFrame implements WorkItemHandler {
 //				// TODO Auto-generated catch block
 //				e.printStackTrace();
 //			}
-			
+
 			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS",
 					userToken.getToken());
 
@@ -663,8 +662,9 @@ public class ShowFrame implements WorkItemHandler {
 
 //			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode + "_ASKS",
 //					userToken.getToken());
-			
-			JsonObject askMsgJson = VertxUtils.readCachedJson(userToken.getRealm(), rootFrameCode + "_ASKS",userToken.getToken());
+
+			JsonObject askMsgJson = VertxUtils.readCachedJson(userToken.getRealm(), rootFrameCode + "_ASKS",
+					userToken.getToken());
 			if ("OK".equalsIgnoreCase(askMsgJson.getString("status"))) {
 				askMsgs2Str = askMsgJson.getString("value");
 				if (askMsgs2Str.contains("\"items\": [],")) {
@@ -673,8 +673,8 @@ public class ShowFrame implements WorkItemHandler {
 			} else {
 				askMsgs2Str = null;
 			}
-			
-			//askMsgs2Str = null; //TODO FORCE HACK
+
+			// askMsgs2Str = null; //TODO FORCE HACK
 			if (askMsgs2Str == null) {
 				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl + " with rootFrameCode = " + rootFrameCode);
 				log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode + "_ASKS");
@@ -710,11 +710,11 @@ public class ShowFrame implements WorkItemHandler {
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
 		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
 
-
 		log.debug("About to do deserialization!");
 		askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 		if (askMsgs2 == null) {
-		    // NOTE: Can't convert JSON string to target type, may casued by incorrect replacement
+			// NOTE: Can't convert JSON string to target type, may casued by incorrect
+			// replacement
 			// Don't try to print askMsgs2 as it has 20K lines
 			BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 			BaseEntity rule = beUtils.getBaseEntityByCode("RUL_" + rootFrameCode);
@@ -778,11 +778,12 @@ public class ShowFrame implements WorkItemHandler {
 
 	}
 
-	public static QBulkMessage sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget) {
+	public static QBulkMessage sendSelectionItems(String attributeCode, GennyToken userToken, GennyToken serviceToken,
+			Boolean cache, String dropdownTarget) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		DropdownUtils dropDownUtils = new DropdownUtils(serviceToken);
-		
+
 		try {
 			if (attribute != null) {
 
@@ -791,7 +792,7 @@ public class ShowFrame implements WorkItemHandler {
 
 				List<Validation> vl = dt.getValidationList();
 
-				if ((vl != null) && (!vl.isEmpty()) ) {
+				if ((vl != null) && (!vl.isEmpty())) {
 
 					Validation val = vl.get(0);
 
@@ -813,7 +814,8 @@ public class ShowFrame implements WorkItemHandler {
 								sbe.setDropdownTarget(dropdownTarget);
 							}
 							dropDownUtils.setSearch(sbe);
-							QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResultsUsingAltSearch(groupCode, "LNK_CORE", "ITEMS", userToken, true, false);
+							QDataBaseEntityMessage resultsMsg = dropDownUtils.sendSearchResultsUsingAltSearch(groupCode,
+									"LNK_CORE", "ITEMS", userToken, true, false);
 							if (cache) {
 								qBulkMessage.add(resultsMsg);
 							}
@@ -828,15 +830,13 @@ public class ShowFrame implements WorkItemHandler {
 
 							if ("null".equals(json.getString("value"))) {
 
-								log.error(
-										val.getCode() + " groupCode has Illegal Group Code : [" + groupCode
-												+ "] dataType=[" + dt + "] for attributeCode:[" + attributeCode + "]");
+								log.error(val.getCode() + " groupCode has Illegal Group Code : [" + groupCode
+										+ "] dataType=[" + dt + "] for attributeCode:[" + attributeCode + "]");
 
 							} else if ("ok".equalsIgnoreCase(json.getString("status"))) {
 
 								qdb = JsonUtils.fromJson(json.getString("value"), QDataBaseEntityMessage.class);
-							
-								
+
 								if (cache) {
 									qBulkMessage.add(qdb);
 								} else {
@@ -849,7 +849,8 @@ public class ShowFrame implements WorkItemHandler {
 								dropDownUtils.setNewSearch("Dropdown", "Fetch Dropdown Items").setSourceCode(groupCode)
 										.setPageStart(0).setPageSize(10000);
 
-								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true, cache);
+								qdb = dropDownUtils.sendSearchResults(groupCode, "LNK_CORE", "ITEMS", userToken, true,
+										cache);
 								if (cache) {
 									qBulkMessage.add(qdb);
 								}
@@ -867,8 +868,9 @@ public class ShowFrame implements WorkItemHandler {
 		}
 		return qBulkMessage;
 	}
-	
-	public static QBulkMessage sendDefSelectionItems(BaseEntity[] arrayItems,BaseEntity defBe,String attributeCode, GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget) {
+
+	public static QBulkMessage sendDefSelectionItems(BaseEntity[] arrayItems, BaseEntity defBe, String attributeCode,
+			GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		try {
@@ -878,7 +880,7 @@ public class ShowFrame implements WorkItemHandler {
 			String groupCode = null;
 			List<Validation> vl = dt.getValidationList();
 
-			if ((vl != null) && (!vl.isEmpty()) ) {
+			if ((vl != null) && (!vl.isEmpty())) {
 				Validation val = vl.get(0);
 				if ((val.getSelectionBaseEntityGroupList() != null)
 						&& (!val.getSelectionBaseEntityGroupList().isEmpty())) {
@@ -887,16 +889,16 @@ public class ShowFrame implements WorkItemHandler {
 			} else {
 				return new QBulkMessage();
 			}
-			
+
 			Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + attributeCode); // SER_
 			String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_INTERN\",\"value\":\"true\"}]}";
 			if (searchAtt.isPresent()) {
 				serValue = searchAtt.get().getValueString();
-				
-					
-				QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, groupCode, "LINK", Long.decode(arrayItems.length+""));
+
+				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(arrayItems, groupCode, "LINK",
+						Long.decode(arrayItems.length + ""));
 				msg.setParentCode(groupCode);
-				msg.setQuestionCode(null); 
+				msg.setQuestionCode(null);
 				msg.setToken(userToken.getToken());
 				msg.setLinkCode("LNK_CORE");
 				msg.setLinkValue("ITEMS");
@@ -908,14 +910,11 @@ public class ShowFrame implements WorkItemHandler {
 				msg.setOption(MsgOption.EXEC);
 				msg.setMsg_type("DATA_MSG");
 				msg.setReturnCount(new Long((arrayItems.length))); // TODO handle tags
-				
 
 				qBulkMessage.add(msg);
 			} else {
-				//return new QDataBaseEntityMessage();
+				// return new QDataBaseEntityMessage();
 			}
-
-			
 
 		} catch (Exception e) {
 
