@@ -1,6 +1,8 @@
 package life.genny.jbpm.customworkitemhandlers;
 
 import com.google.gson.reflect.TypeToken;
+
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import life.genny.models.Frame3;
 import life.genny.models.GennyToken;
@@ -473,17 +475,20 @@ public class ShowFrame implements WorkItemHandler {
 										// find the selected edu provider if exists
 										String val = target.getValue(dropdownCode, null);
 										if (!StringUtils.isBlank(val)) {
-											// TODO Handle a single selection for now...
-											val = val.replaceAll("\\[\"", "");
-											val = val.replaceAll("\"\\]", "");
-											BaseEntity selectionBe = beUtils.getBaseEntityByCode(val);
-											if (selectionBe != null) {
-												
-												BaseEntity[] items = new BaseEntity[1];
-												items[0] = selectionBe;
-												QBulkMessage qb = sendDefSelectionItems(items,defBe,dropdownCode, userToken, serviceToken, cache, targetCode);
-												qBulkMessage.add(qb);
+											Set<BaseEntity> beItems = new HashSet<>();
+											JsonArray jaItems = new JsonArray(val);
+											for (Object jItem : jaItems) {
+												String beCode= (String) jItem;
+//												val = val.replaceAll("\\[\"", "");
+//												val = val.replaceAll("\"\\]", "");
+												BaseEntity selectionBe = beUtils.getBaseEntityByCode(beCode);
+												if (selectionBe != null) {
+													beItems.add(selectionBe);
+												}
 											}
+											// TODO Handle a single selection for now...
+													QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]),defBe,dropdownCode, userToken, serviceToken, cache, targetCode);
+												qBulkMessage.add(qb);
 										}
 									}
 									
