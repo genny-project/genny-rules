@@ -442,6 +442,8 @@ public class TableUtils {
 
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
+
+						log.info("Handling CAL with code: " + calEA.getAttributeCode());
 						
 						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
 
@@ -499,6 +501,8 @@ public class TableUtils {
 					be = VertxUtils.privacyFilter(be, filterArray);
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
+
+						log.info("Handling CAL with code: " + calEA.getAttributeCode());
 
 						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
 
@@ -566,9 +570,7 @@ public class TableUtils {
 				calBe = beUtils.cleanUpAttributeValue(calBe);
 				BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
 
-				if (associatedBe != null) {
-					log.info("associatedBe exists ->" + associatedBe.getCode());
-				} else {
+				if (associatedBe == null) {
 					log.info("associatedBe DOES NOT exist ->" + calBe);
 					return null;
 				}
