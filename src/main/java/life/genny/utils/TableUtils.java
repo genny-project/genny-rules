@@ -305,7 +305,7 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
+						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
 
 						if (ans != null) {
 							try {
@@ -369,7 +369,7 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
+						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
 
 						if (ans != null) {
 							try {
@@ -425,6 +425,10 @@ public class TableUtils {
 		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
 		if (cals != null) {
 			log.info("searchUsingSearch25 -> detected " + cals.size() + " CALS");
+
+			for (EntityAttribute calEA : cals) {
+				log.info("Handling CAL with code: " + calEA.getAttributeCode());
+			}
 		}
 
 		String[] filterArray = getSearchColumnFilterArray(searchBE).toArray(new String[0]);
@@ -443,9 +447,7 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						log.info("Handling CAL with code: " + calEA.getAttributeCode());
-						
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
+						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
 
 						if (ans != null) {
 
@@ -502,9 +504,7 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						log.info("Handling CAL with code: " + calEA.getAttributeCode());
-
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA, serviceToken);
+						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
 
 						if (ans != null) {
 							try {
@@ -547,11 +547,11 @@ public class TableUtils {
 		return msg;
 	}
 
-	public static Answer getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, EntityAttribute calEA, GennyToken serviceToken) {
+	public static Answer getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, String calEACode, GennyToken serviceToken) {
 		
-		String[] calFields = calEA.getAttributeCode().substring("COL__".length()).split("__"); 
+		String[] calFields = calEACode.substring("COL__".length()).split("__"); 
 		if (calFields.length == 1) {
-			log.error("CALS length is bad for :" + calEA.getAttributeCode());
+			log.error("CALS length is bad for :" + calEACode);
 			return null;
 		}
 		String finalAttributeCode = "";
