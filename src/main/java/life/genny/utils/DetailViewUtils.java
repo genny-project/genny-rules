@@ -81,6 +81,12 @@ public class DetailViewUtils {
 
 	public DetailViewUtils() {}
 
+	public static void sendDetailView(BaseEntityUtils beUtils, String code, String targetCode)
+	{
+		BaseEntity target = beUtils.getBaseEntityByCode(targetCode);
+		sendDetailView(beUtils, code, target);
+	}
+
 	public static void sendDetailView(BaseEntityUtils beUtils, String code, BaseEntity target)
 	{
 		if (target == null) {
