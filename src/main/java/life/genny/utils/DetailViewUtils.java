@@ -104,24 +104,12 @@ public class DetailViewUtils {
 		// Build the Ask Grp
 		Ask askGrp = recursivelyConfigureAskFromMap(beUtils, map, "QUE_"+code+"_GRP", sourceCode, target.getCode());
 
-		System.out.println(JsonUtils.toJson(askGrp));
-		System.out.println(askGrp.getAttributeCode());
 		// Find the associated values from linked BEs
 		target = recursivelyFindAssociatedValues(beUtils, target, askGrp);
 
-		System.out.println(JsonUtils.toJson(target));
-
-		// Send the Asks
-		QDataAskMessage askMsg = new QDataAskMessage(askGrp);
-		askMsg.setToken(token);
-		askMsg.setReplace(true);
-		VertxUtils.writeMsg("webcmds", askMsg);
-
-		// Send the target BE
-		QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(target);
-		beMsg.setToken(token);
-		beMsg.setReplace(true);
-		VertxUtils.writeMsg("webcmds", beMsg);
+		// Send the Asks and Target BE
+		VertxUtils.sendAskMsg(beUtils, askGrp);
+		VertxUtils.sendBaseEntityMsg(beUtils, target);
 
 	}
 
