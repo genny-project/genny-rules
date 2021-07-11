@@ -396,8 +396,8 @@ public class SearchUtils {
 		msg.setShouldDeleteLinkedBaseEntities(false);
 
 		/* Linking child baseEntity to the parent baseEntity */
-		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
-				false);
+//		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
+//				false);
 
 		return beMessage;
 	}
