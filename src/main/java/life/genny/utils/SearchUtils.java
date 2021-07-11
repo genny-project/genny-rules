@@ -398,8 +398,8 @@ public class SearchUtils {
 		/* Linking child baseEntity to the parent baseEntity */
 //		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
 //				false);
-
-		return beMessage;
+		return msg;
+//		return beMessage;
 	}
 
 	/*
