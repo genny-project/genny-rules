@@ -452,16 +452,14 @@ public class ShowFrame implements WorkItemHandler {
 								log.error("No DEF identified for target "+targetCode);
 							}
 						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+							log.error("Error determining dropdown - "+e.getLocalizedMessage()+" defBecode = "+defBe.getCode());
 						}
 
 						log.info(callingWorkflow + ": dropdownCode:" + dropdownCode);
 
 						if (dropdownCode.equals("LNK_OCCUPATION") || dropdownCode.equals("LNK_HOST_COMPANY_REP")
 								|| dropdownCode.equals("LNK_INTERN_SUPERVISOR") || dropdownCode.equals("LNK_INTERNSHIP")
-								||
-								defDropdownExists
+								|| defDropdownExists
 						) {
 							log.info("Dropdown code :: " + dropdownCode);
 
