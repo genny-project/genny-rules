@@ -441,40 +441,27 @@ public class ShowFrame implements WorkItemHandler {
 
 						dropdownCode = dropdownCode.replaceAll("\"", "");
 
-						Boolean eduProvIntern = false;
 						Boolean defDropdownExists = false;
 
 						// Determine whether there is a DEF attribute and target type that has a new DEF
 						// search for this combination
 						try {
-							defDropdownExists = beUtils.hasDropdown(dropdownCode, defBe);
+							if (defBe != null) {
+								defDropdownExists = beUtils.hasDropdown(dropdownCode, defBe);
+							} else {
+								log.error("No DEF identified for target "+targetCode);
+							}
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 
-//						if (defBe != null) {
-//							
-//							log.info(callingWorkflow + " defBe.code:"+defBe.getCode());
-//							if ((dropdownCode.equals("LNK_EDU_PROVIDER") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
-//								eduProvIntern = true;
-//							}
-//							if ((dropdownCode.equals("LNK_SELECT_COUNTRY") && ("DEF_INTERN".equals(defBe.getCode()))) ) {
-//								eduProvIntern = true;
-//							}
-// 						}
-
-						// TODO , lookup dropdownCode to and defBE to see if any DEF based dropdown
-						// search exists for it...
 						log.info(callingWorkflow + ": dropdownCode:" + dropdownCode);
 
 						if (dropdownCode.equals("LNK_OCCUPATION") || dropdownCode.equals("LNK_HOST_COMPANY_REP")
 								|| dropdownCode.equals("LNK_INTERN_SUPERVISOR") || dropdownCode.equals("LNK_INTERNSHIP")
 								||
-//								eduProvIntern ||
 								defDropdownExists
-						/* || dropdownCode.equals("LNK_SELECT_COUNTRY") */
-						/* || dropdownCode.equals("LNK_SELECT_BATCH") */
 						) {
 							log.info("Dropdown code :: " + dropdownCode);
 
