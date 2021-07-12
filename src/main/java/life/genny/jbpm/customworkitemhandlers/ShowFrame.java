@@ -487,8 +487,10 @@ public class ShowFrame implements WorkItemHandler {
 						}
 
 						log.info("OLD Dropdown code :: " + dropdownCode);
-						QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
-						qBulkMessage.add(qb);
+						if (target != null) { // don't waste time sending stuff for a null target
+							QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
+							qBulkMessage.add(qb);
+						}
 
 					}
 				}
@@ -891,12 +893,12 @@ public class ShowFrame implements WorkItemHandler {
 				msg.setQuestionCode(null);
 				msg.setToken(userToken.getToken());
 				msg.setLinkCode("LNK_CORE");
-				msg.setLinkValue("ITEMS");
+				msg.setLinkValue("DROPDOWNITEMS");
 				msg.setReplace(true);
 				msg.setData_type("BaseEntity");
 				msg.setDelete(false);
 				msg.setShouldDeleteLinkedBaseEntities(false);
-				msg.setTotal(-1L);
+				msg.setTotal(new Long((arrayItems.length)));
 				msg.setOption(MsgOption.EXEC);
 				msg.setMsg_type("DATA_MSG");
 				msg.setReturnCount(new Long((arrayItems.length))); // TODO handle tags
