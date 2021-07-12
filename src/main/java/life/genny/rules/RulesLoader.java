@@ -1071,6 +1071,7 @@ public class RulesLoader {
 		}
 
 		// HACK!!
+		if (msg_code != null) {
 		if (msg_code.startsWith("QUE_SUBMIT")) {
 
 			Answer dataAnswer = new Answer(facts.getUserToken().getUserCode(), msg_data.getTargetCode(),
@@ -1095,6 +1096,9 @@ public class RulesLoader {
 					+ processId);
 			kieSession.signalEvent("data", sessionFactsData, processId);
 		} 
+		} else {
+			log.error("incoming message has a null data.code");
+		}
 		
 	}
 

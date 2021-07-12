@@ -455,7 +455,7 @@ public class ShowFrame implements WorkItemHandler {
 							log.error("Error determining dropdown - "+e.getLocalizedMessage()+" defBecode = "+defBe.getCode());
 						}
 
-						log.info(callingWorkflow + ": dropdownCode:" + dropdownCode);
+						log.info(callingWorkflow + ": dropdownCode:" + dropdownCode+" and an enabled dropdown search was "+(defDropdownExists?"FOUND":"NOT FOUND"));
 
 						if (dropdownCode.equals("LNK_OCCUPATION") || dropdownCode.equals("LNK_HOST_COMPANY_REP")
 								|| dropdownCode.equals("LNK_INTERN_SUPERVISOR") || dropdownCode.equals("LNK_INTERNSHIP")
