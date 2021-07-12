@@ -388,7 +388,7 @@ public class SearchUtils {
 		log.info("DROPDOWN :parentCode = "+message.getData().getParentCode());
 		QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, message.getData().getParentCode(), "LINK", Long.decode(items.size()+""));
 		msg.setParentCode(message.getData().getParentCode());
-		msg.setQuestionCode(message.getData().getCode()); 
+		msg.setQuestionCode(message.getQuestionCode()); 
 		msg.setToken(beUtils.getGennyToken().getToken());
 		msg.setLinkCode("LNK_CORE");
 		msg.setLinkValue("DROPDOWNITEMS");
