@@ -900,12 +900,15 @@ public class ShowFrame implements WorkItemHandler {
 				msg.setData_type("BaseEntity");
 				msg.setDelete(false);
 				msg.setShouldDeleteLinkedBaseEntities(false);
-				msg.setTotal(new Long((arrayItems.length)));
+				msg.setTotal(Long.valueOf(arrayItems.length));
 				msg.setOption(MsgOption.EXEC);
 				msg.setMsg_type("DATA_MSG");
-				msg.setReturnCount(new Long((arrayItems.length))); // TODO handle tags
+				msg.setReturnCount(Long.valueOf(arrayItems.length)); // TODO handle tags
 
 				qBulkMessage.add(msg);
+				if (!cache) {
+					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+				}
 			} else {
 				// return new QDataBaseEntityMessage();
 			}
