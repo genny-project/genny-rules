@@ -444,14 +444,14 @@ public class ShowFrame implements WorkItemHandler {
 
 						// Determine whether there is a DEF attribute and target type that has a new DEF
 						// search for this combination
-						if (defBe != null) {
-							try {
+						try {
+							if (defBe != null) {
 								defDropdownExists = beUtils.hasDropdown(dropdownCode, defBe);
-							} catch (Exception ex) {
-								log.error(ex.getMessage());
+							} else {
+								log.error("No DEF identified for target "+targetCode);
 							}
-						} else {
-							log.error("No DEF identified for target "+targetCode);
+						} catch (Exception e) {
+							log.error("Error determining dropdown - "+e.getLocalizedMessage()+" defBecode = "+defBe.getCode());
 						}
 //						if (defBe != null) {
 //							
