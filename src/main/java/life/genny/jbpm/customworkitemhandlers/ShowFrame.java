@@ -895,7 +895,7 @@ public class ShowFrame implements WorkItemHandler {
 				msg.setQuestionCode(null);
 				msg.setToken(userToken.getToken());
 				msg.setLinkCode("LNK_CORE");
-				msg.setLinkValue("DROPDOWNITEMS");
+				msg.setLinkValue("ITEMS");
 				msg.setReplace(true);
 				msg.setData_type("BaseEntity");
 				msg.setDelete(false);
