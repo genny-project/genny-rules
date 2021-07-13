@@ -467,6 +467,7 @@ public class ShowFrame implements WorkItemHandler {
 							if (defDropdownExists) {
 								// find the selected edu provider if exists
 								String val = target.getValue(dropdownCode, null);
+								System.out.println("val = " + val);
 								if (!StringUtils.isBlank(val)) {
 									Set<BaseEntity> beItems = new HashSet<>();
 									JsonArray jaItems = new JsonArray(val);
@@ -871,6 +872,7 @@ public class ShowFrame implements WorkItemHandler {
 			// log.info("DATATYPE IS " + dt);
 			String groupCode = null;
 			List<Validation> vl = dt.getValidationList();
+			System.out.println("vl = " + vl);
 
 			if ((vl != null) && (!vl.isEmpty())) {
 				Validation val = vl.get(0);
