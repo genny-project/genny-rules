@@ -391,12 +391,12 @@ public class SearchUtils {
 		msg.setQuestionCode(message.getQuestionCode()); 
 		msg.setToken(beUtils.getGennyToken().getToken());
 		msg.setLinkCode("LNK_CORE");
-		msg.setLinkValue("DROPDOWNITEMS");
+		msg.setLinkValue("ITEMS");
 		msg.setReplace(true);
 		msg.setShouldDeleteLinkedBaseEntities(false);
 
 		/* Linking child baseEntity to the parent baseEntity */
-		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
+		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getParentCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
 				false);
 //		return msg;
 		return beMessage;
@@ -412,7 +412,7 @@ public class SearchUtils {
 		if (parentBe != null) {
 			log.error("Found parentBE");
 		} else {
-			log.error("Unable to fetch Parent BaseEntity : parentCode");
+			log.error("Unable to fetch Parent BaseEntity : parentCode->"+parentCode);
 			log.error("Creating entity instead");
 			parentBe = new BaseEntity(parentCode, parentCode);
 		}
@@ -429,7 +429,7 @@ public class SearchUtils {
 					// update links
 					parentBe.setLinks(new LinkedHashSet<>(sortedChildLinks));
 
-					BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentBe.getCode(), sortedChildLinks);
+					BaseEntity[] sortedItems = sortBaseEntityByWeight(beMsg.getItems(), parentCode, sortedChildLinks);
 					beMsg.setItems(sortedItems);
 				}
 				beMsg.add(parentBe);
