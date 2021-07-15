@@ -476,21 +476,6 @@ public class TableUtils {
 				String code = result.getString(i);
 				BaseEntity be = beUtils.getBaseEntityByCode(code);
 				be = VertxUtils.privacyFilter(be, filterArray);
-				// Get any CAL attributes
-				for (EntityAttribute calEA : cals) {
-
-					Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
-
-					if (ans != null) {
-						try {
-							be.addAnswer(ans);
-						} catch (BadDataException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-
-				}
 				be.setIndex(i);
 				beArray[i] = be;
 				total = resultJson.getLong("total");
@@ -514,6 +499,26 @@ public class TableUtils {
 			if (searchAskGrp != null) {
 				log.info("Sending search ask grp");
 				VertxUtils.sendAskMsg(beUtils, searchAskGrp);
+			} else {
+				log.info("searchAskGrp is NULL, not sending!");
+			}
+		} else {
+			// Otherwise handle cals
+			for (BaseEntity be : beArray) {
+				for (EntityAttribute calEA : cals) {
+
+					Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
+
+					if (ans != null) {
+						try {
+							be.addAnswer(ans);
+						} catch (BadDataException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+
+				}
 			}
 		}
  
