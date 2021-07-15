@@ -293,6 +293,8 @@ public class TableUtils {
 		String[] filterArray = data._2.toArray(new String[0]);
 		// Add the associated columns
 
+		QDataBaseEntityMessage lnkMsg = new QDataBaseEntityMessage();
+
 		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
 			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
 				// This means we are searching for a single entity
@@ -305,16 +307,8 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
+						be = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), lnkMsg, serviceToken);
 
-						if (ans != null) {
-							try {
-								be.addAnswer(ans);
-							} catch (BadDataException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
 					}
 
 					msg = new QDataBaseEntityMessage(be);
@@ -369,16 +363,8 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
+						be = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), lnkMsg, serviceToken);
 
-						if (ans != null) {
-							try {
-								be.addAnswer(ans);
-							} catch (BadDataException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
 					}
 					be.setIndex(i);
 					beArray[i] = be;
@@ -408,6 +394,14 @@ public class TableUtils {
 		long endtime3 = System.currentTimeMillis();
 		log.info("Time taken to get cached Bes added to list =" + (endtime3 - endtime2) + " ms");
 
+		// Send linked BEs if we found any
+		if (lnkMsg.getItems().length > 0) {
+			log.info("Sending LnkMsg with " + lnkMsg.getItems().length + " items");
+			lnkMsg.setReplace(true);
+			lnkMsg.setToken(beUtils.getGennyToken().getToken());
+			VertxUtils.writeMsg("webcmds", lnkMsg);
+		}
+
 		return msg;
 	}
 
@@ -435,6 +429,8 @@ public class TableUtils {
 		// log.info("filterArray :: " + Arrays.toString(filterArray));
 		// Add the associated columns
 
+		QDataBaseEntityMessage lnkMsg = new QDataBaseEntityMessage();
+
 		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
 			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
 				// This means we are searching for a single entity
@@ -447,17 +443,8 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
+						be = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), lnkMsg, serviceToken);
 
-						if (ans != null) {
-
-							try {
-								be.addAnswer(ans);
-							} catch (BadDataException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
 					}
 
 					msg = new QDataBaseEntityMessage(be);
@@ -495,6 +482,7 @@ public class TableUtils {
 
 				BaseEntity[] beArray = new BaseEntity[result.size()];
 
+
 				for (int i = 0; i < result.size(); i++) {
 
 					String code = result.getString(i);
@@ -504,16 +492,7 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
-
-						if (ans != null) {
-							try {
-								be.addAnswer(ans);
-							} catch (BadDataException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
+						be = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), lnkMsg, serviceToken);
 
 					}
 					be.setIndex(i);
@@ -544,67 +523,78 @@ public class TableUtils {
 		long endtime3 = System.currentTimeMillis();
 		log.info("Time taken to get cached Bes added to list =" + (endtime3 - endtime2) + " ms");
 
+		// Send linked BEs if we found any
+		if (lnkMsg.getItems().length > 0) {
+			log.info("Sending LnkMsg with " + lnkMsg.getItems().length + " items");
+			lnkMsg.setReplace(true);
+			lnkMsg.setToken(beUtils.getGennyToken().getToken());
+			VertxUtils.writeMsg("webcmds", lnkMsg);
+		}
+
 		return msg;
 	}
 
-	public static Answer getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, String calEACode, GennyToken serviceToken) {
+	public static BaseEntity getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, String calEACode, QDataBaseEntityMessage lnkMsg, GennyToken serviceToken) {
 		
 		String[] calFields = calEACode.substring("COL__".length()).split("__"); 
-		if (calFields.length == 1) {
-			log.error("CALS length is bad for :" + calEACode);
-			return null;
-		}
-		String finalAttributeCode = "";
-		String linkBeCode = calFields[calFields.length-1];
 
-		BaseEntity be = baseBE;
+		String linkedAttributeCode = calFields[calFields.length-1];
 
 		Optional<EntityAttribute> associateEa = null;
+		BaseEntity be = baseBE;
 
 		for (int i = 0; i < calFields.length-1; i++) {
 			String attributeCode = calFields[i];
-			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
-			String calBe = be.getValueAsString(attributeCode);
+			String calBeCode = be.getValueAsString(attributeCode);
 
-			if (calBe != null && !StringUtils.isBlank(calBe)) {
-				calBe = beUtils.cleanUpAttributeValue(calBe);
-				BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
+			if (calBeCode != null && !StringUtils.isBlank(calBeCode)) {
+				BaseEntity associatedBe = beUtils.getBaseEntityByCode(beUtils.cleanUpAttributeValue(calBeCode));
 
 				if (associatedBe == null) {
-					log.info("associatedBe DOES NOT exist ->" + calBe);
-					return null;
+					// If this is the last attr code, we want a value so set associateEa
+					if (i == (calFields.length-1)) {
+						associateEa = be.findEntityAttribute(attributeCode);
+					}
+					// Otherwise we cannot get desired value so return orginal BE
+					log.info("associatedBe DOES NOT exist ->" + calBeCode);
+					return baseBE;
 				}
-
-				if (i == (calFields.length-2)) {
-					associateEa = associatedBe.findEntityAttribute(linkBeCode);
+				if (i == (calFields.length-1)) {
+					// If this is the last attr code, we were looking for a BE so add to msg and return original
+					lnkMsg.add(associatedBe);
+					return baseBE;
 				}
+				// Otherwise, associatedBe becomes our new base
 				be = associatedBe;
-			} else {
-				log.info("Could not find attribute value for " + attributeCode);
-				return null;
 			}
 		}
+		String finalAttributeCode = calEACode.substring("COL__".length());
 
-		if (associateEa != null && (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode)))) {
+		if (associateEa != null && (associateEa.isPresent() || ("PRI_NAME".equals(linkedAttributeCode)))) {
 			String linkedValue = null;
-			if ("PRI_NAME".equals(linkBeCode)) {
+			if ("PRI_NAME".equals(linkedAttributeCode)) {
 				linkedValue = be.getName();
 			} else {
-				linkedValue = be.getValueAsString(linkBeCode);
+				linkedValue = be.getValueAsString(linkedAttributeCode);
 			}
 			// log.info("CAL SEARCH linkedValue = " + linkedValue);
-			finalAttributeCode = finalAttributeCode + "__" + linkBeCode;
-			Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
+			finalAttributeCode = finalAttributeCode + "__" + linkedAttributeCode;
+			Attribute primaryAttribute = RulesUtils.getAttribute(linkedAttributeCode, serviceToken);
 			Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), finalAttributeCode, linkedValue);
 			Attribute att = new Attribute(finalAttributeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
 			ans.setAttribute(att);
 
-			return ans;
+			try {
+				baseBE.addAnswer(ans);
+			} catch (BadDataException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
 		} else {
 			System.out.println("No attribute present");
 		}
-		return null;
+		return baseBE;
 	}
 
 	private static void updateColIndex(SearchEntity searchBE) {

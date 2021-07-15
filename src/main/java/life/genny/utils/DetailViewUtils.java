@@ -111,11 +111,20 @@ public class DetailViewUtils {
 		Ask askGrp = recursivelyConfigureAskFromMap(beUtils, map, "QUE_"+code+"_GRP", sourceCode, target.getCode());
 
 		// Find the associated values from linked BEs
-		target = recursivelyFindAssociatedValues(beUtils, target, askGrp);
+		QDataBaseEntityMessage lnkMsg = new QDataBaseEntityMessage();
+		target = recursivelyFindAssociatedValues(beUtils, target, askGrp, lnkMsg);
 
 		// Send the Asks and Target BE
 		VertxUtils.sendAskMsg(beUtils, askGrp);
 		VertxUtils.sendBaseEntityMsg(beUtils, target);
+
+		// Send linked BEs if we found any
+		if (lnkMsg.getItems().length > 0) {
+			log.info("Sending LnkMsg with " + lnkMsg.getItems().length + " items");
+			lnkMsg.setReplace(true);
+			lnkMsg.setToken(beUtils.getGennyToken().getToken());
+			VertxUtils.writeMsg("webcmds", lnkMsg);
+		}
 
 	}
 
@@ -182,7 +191,7 @@ public class DetailViewUtils {
 	* @param be - The be to find data for
 	* @param ask - The ask to traverse
 	 */
-	public static BaseEntity recursivelyFindAssociatedValues(BaseEntityUtils beUtils, BaseEntity be, Ask ask)
+	public static BaseEntity recursivelyFindAssociatedValues(BaseEntityUtils beUtils, BaseEntity be, Ask ask, QDataBaseEntityMessage lnkMsg)
 	{
 		if (ask == null) {
 			log.error("ask is NULL");
@@ -193,20 +202,12 @@ public class DetailViewUtils {
 		if (attrCode.startsWith("QQQ_QUESTION_GROUP")) {
 
 			for (Ask childAsk : ask.getChildAsks()) {
-				recursivelyFindAssociatedValues(beUtils, be, childAsk);
+				recursivelyFindAssociatedValues(beUtils, be, childAsk, lnkMsg);
 			}
 		// Only fire for assoc values, others should already be in the BE
 		} else if (attrCode.startsWith("_LNK") || attrCode.startsWith("_PRI")) {
 
-			Answer ans = TableUtils.getAssociatedColumnValue(beUtils, be, "COL_"+attrCode, beUtils.getServiceToken());
-
-			if (ans != null) {
-				try {
-					be.addAnswer(ans);
-				} catch (BadDataException e) {
-					e.printStackTrace();
-				}
-			}
+			be = TableUtils.getAssociatedColumnValue(beUtils, be, "COL_"+attrCode, lnkMsg, beUtils.getServiceToken());
 
 		}
 		return be;
