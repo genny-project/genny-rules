@@ -427,7 +427,7 @@ public class TableUtils {
 			log.info("searchUsingSearch25 -> detected " + cals.size() + " CALS");
 
 			for (EntityAttribute calEA : cals) {
-				log.info("Handling CAL with code: " + calEA.getAttributeCode());
+				log.info("Found CAL with code: " + calEA.getAttributeCode());
 			}
 		}
 
