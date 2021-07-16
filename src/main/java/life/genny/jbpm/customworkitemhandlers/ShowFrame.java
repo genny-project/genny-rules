@@ -330,6 +330,7 @@ public class ShowFrame implements WorkItemHandler {
 		BaseEntity target = null;
 
 		if ((output != null)) {
+			log.info("Ouput Task ID = " + output.getTaskId());
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 				task = taskService.getTaskById(output.getTaskId());
