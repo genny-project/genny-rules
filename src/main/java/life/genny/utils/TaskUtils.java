@@ -652,6 +652,7 @@ public class TaskUtils {
 
 			if (Boolean.TRUE.equals(ask.getAsk().getMandatory()) && Boolean.FALSE.equals(ask.getAnswered())
 					&& (!ask.getAsk().getAttributeCode().equals("PRI_SUBMIT"))) {
+				log.info("JASPER LOG: Checking" + ask.getAsk().getAttributeCode());
 				// check if already in Be, shouldn't happen but has! where value in be but not
 				// picked up in form
 				String attributeCode = ask.getAsk().getAttributeCode();
@@ -660,10 +661,12 @@ public class TaskUtils {
 					EntityAttribute ea = optEa.get();
 					if (StringUtils.isBlank(ea.getAsString())) {
 						allMandatoryAnswered = false;
+						log.info("JASPER LOG: " + ask.getAsk().getAttributeCode() + " Not answered");
 						break;
 					}
 				} else {
 					allMandatoryAnswered = false;
+					log.info("JASPER LOG: " + ask.getAsk().getAttributeCode() + " Not present");
 					break;
 				}
 			}

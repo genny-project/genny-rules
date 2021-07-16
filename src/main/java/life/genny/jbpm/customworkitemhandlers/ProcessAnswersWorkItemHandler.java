@@ -417,6 +417,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 			}
 
 			if (hasAnsweredTask) {
+				log.info("Answer has serviced a task... breaking loop!!!");
 				break;
 			}
 
