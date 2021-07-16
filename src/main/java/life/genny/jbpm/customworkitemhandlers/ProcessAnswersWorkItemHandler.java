@@ -205,6 +205,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 		List<TaskAsk> taskAsksProcessed = new CopyOnWriteArrayList<>();
 
 		Boolean primaryFieldDetected = false; // This is set if a PRI_NAME or or PRI_ABN set
+		Boolean hasAnsweredTask = false;
 		// Save all inferred Answers
 
 		for (TaskSummary taskSummary : tasks) {
@@ -319,6 +320,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						} else {
 							ask.setAnswered(true);
 							ask.setValue(ea.getAsString());
+							hasAnsweredTask = true;
 						}
 					} else {
 						mandatoryDoneMap.put(taskSummary.getId(), false);
@@ -412,6 +414,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 			if (primaryFieldDetected) {
 				TaskUtils.sendTaskAskItems(userToken);
+			}
+
+			if (hasAnsweredTask) {
+				break;
 			}
 
 		}
