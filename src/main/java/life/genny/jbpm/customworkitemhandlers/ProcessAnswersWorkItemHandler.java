@@ -416,6 +416,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				TaskUtils.sendTaskAskItems(userToken);
 			}
 
+			// NOTE: This has been put in place because there is an issue with multiple tasks sending submits
 			if (hasAnsweredTask) {
 				log.info("Answer has serviced a task... breaking loop!!!");
 				break;

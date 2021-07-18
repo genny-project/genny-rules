@@ -513,7 +513,6 @@ public class TableUtils {
 						try {
 							be.addAnswer(ans);
 						} catch (BadDataException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}
@@ -538,11 +537,11 @@ public class TableUtils {
 	public static Answer getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, String calEACode, GennyToken serviceToken) {
 		
 		String[] calFields = calEACode.substring("COL__".length()).split("__"); 
+		String finalAttributeCode = calEACode.substring("COL_".length());
 		if (calFields.length == 1) {
 			log.error("CALS length is bad for :" + calEACode);
 			return null;
 		}
-		String finalAttributeCode = "";
 		String linkBeCode = calFields[calFields.length-1];
 
 		BaseEntity be = baseBE;
@@ -551,7 +550,6 @@ public class TableUtils {
 
 		for (int i = 0; i < calFields.length-1; i++) {
 			String attributeCode = calFields[i];
-			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
 			String calBe = be.getValueAsString(attributeCode);
 
 			if (calBe != null && !StringUtils.isBlank(calBe)) {
@@ -580,8 +578,6 @@ public class TableUtils {
 			} else {
 				linkedValue = be.getValueAsString(linkBeCode);
 			}
-			// log.info("CAL SEARCH linkedValue = " + linkedValue);
-			finalAttributeCode = finalAttributeCode + "__" + linkBeCode;
 			Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
 			Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), finalAttributeCode, linkedValue);
 			Attribute att = new Attribute(finalAttributeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
