@@ -469,8 +469,8 @@ public class ShowFrame implements WorkItemHandler {
 								// find the selected edu provider if exists
 								String val = target.getValue(dropdownCode, null);
 								System.out.println("val = " + val);
+								Set<BaseEntity> beItems = new HashSet<>();
 								if (!StringUtils.isBlank(val)) {
-									Set<BaseEntity> beItems = new HashSet<>();
 									JsonArray jaItems = new JsonArray(val);
 									for (Object jItem : jaItems) {
 										String beCode = (String) jItem;
@@ -479,10 +479,10 @@ public class ShowFrame implements WorkItemHandler {
 											beItems.add(selectionBe);
 										}
 									}
-									QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
-											dropdownCode, userToken, serviceToken, cache, targetCode);
-									qBulkMessage.add(qb);
 								}
+								QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
+										dropdownCode, userToken, serviceToken, cache, targetCode);
+								qBulkMessage.add(qb);
 							}
 
 							continue;
