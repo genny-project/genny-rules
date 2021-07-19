@@ -1934,14 +1934,7 @@ public class TableUtils {
 		Ask filterGrpAsk = new Ask(filterGrpQues, sourceCode, targetCode);
 
 		// Add Filter group
-		String askMessageStr = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", 
-				"FRM_QUE_ADD_FILTER_GRP_ASKS", String.class, beUtils.getGennyToken().getToken());
-		askMessageStr = askMessageStr.replaceAll("PER_SOURCE", sourceCode);
-		askMessageStr = askMessageStr.replaceAll("PER_TARGET", targetCode);
-
-		Type type = new TypeToken<Set<QDataAskMessage>>() {}.getType();
-		Set<QDataAskMessage> askMessageSet = JsonUtils.fromJson(askMessageStr, type);
-		QDataAskMessage askMessage = askMessageSet.iterator().next();
+		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, "QUE_ADD_FILTER_GRP", beUtils.getGennyToken().getToken());
 
 		Ask addFilterGrpAsk = askMessage.getItems()[0];
 
