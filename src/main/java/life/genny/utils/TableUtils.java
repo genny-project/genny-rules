@@ -2068,6 +2068,9 @@ public class TableUtils {
 		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", filterGrpAsk.getQuestionCode(), filterGrpAsk,
 				beUtils.getGennyToken().getToken());
 
+		// Init our value array used in collecting filter data
+		VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "", "FLT_"+targetCode, new String[3], beUtils.getGennyToken().getToken());
+
 		// Send Asks to FE
 		QDataAskMessage askMsg = new QDataAskMessage(filterGrpAsk);
 		askMsg.setToken(beUtils.getGennyToken().getToken());
