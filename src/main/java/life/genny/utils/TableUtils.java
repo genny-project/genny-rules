@@ -1929,15 +1929,20 @@ public class TableUtils {
 				true);
 		Ask filterGrpAsk = new Ask(filterGrpQues, sourceCode, targetCode);
 
-		// Add Filter group
-		String askMessageStr = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", 
-				"FRM_QUE_ADD_FILTER_GRP_ASKS", String.class, beUtils.getGennyToken().getToken());
-		askMessageStr = askMessageStr.replaceAll("PER_SOURCE", sourceCode);
-		askMessageStr = askMessageStr.replaceAll("PER_TARGET", targetCode);
+		// Fetch Add Filter group
+		// NOTE: have to pass PER_SOURCE and PER_TARGET or valid BE codes, otherwise we get a null pointer
+		QDataAskMessage askMessage = QuestionUtils.getAsks("PER_SOURCE", "PER_TARGET", "QUE_ADD_FILTER_GRP", beUtils.getGennyToken().getToken());
 
-		Type type = new TypeToken<Set<QDataAskMessage>>() {}.getType();
-		Set<QDataAskMessage> askMessageSet = JsonUtils.fromJson(askMessageStr, type);
-		QDataAskMessage askMessage = askMessageSet.iterator().next();
+		if (askMessage == null) {
+			log.error("AskMessage is null for QUE_ADD_FILTER_GRP");
+		}
+
+		// Replace source and target
+		String json = JsonUtils.toJson(askMessage);
+		json = json.replaceAll("PER_SOURCE", sourceCode);
+		json = json.replaceAll("PER_TARGET", targetCode);
+
+		askMessage = JsonUtils.fromJson(json, QDataAskMessage.class);
 
 		Ask addFilterGrpAsk = askMessage.getItems()[0];
 
