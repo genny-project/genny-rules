@@ -487,18 +487,15 @@ public class TableUtils {
 			beArray = new BaseEntity[]{};
 		}
 
-
 		// Create and send ask grp if necessary
 		EntityAttribute searchQuestionCode = searchBE.findEntityAttribute("SCH_QUESTION_CODE").orElse(null);
 		if (searchQuestionCode != null) {
-			Tuple2<Ask, BaseEntity[]> askEntityData = SearchUtils.getAskEntityData(beUtils, searchQuestionCode.getValue(), beArray);
+			QBulkMessage askEntityData = SearchUtils.getAskEntityData(beUtils, searchBE, beArray);
 
-			Ask searchAskGrp = askEntityData._1;
-			beArray = askEntityData._2;
-
-			if (searchAskGrp != null) {
-				log.info("Sending search ask grp");
-				VertxUtils.sendAskMsg(beUtils, searchAskGrp);
+			if (askEntityData != null) {
+				log.info("Sending bulk message");
+				askEntityData.setToken(beUtils.getGennyToken().getToken());
+				VertxUtils.writeMsg("webcmds", askEntityData);
 			} else {
 				log.info("searchAskGrp is NULL, not sending!");
 			}

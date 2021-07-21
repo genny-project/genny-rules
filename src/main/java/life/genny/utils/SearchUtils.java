@@ -36,12 +36,16 @@ import life.genny.qwanda.Answer;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Link;
 import life.genny.qwanda.Question;
+import life.genny.qwanda.Context;
+import life.genny.qwanda.ContextList;
+import life.genny.qwanda.ContextType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
 import life.genny.qwanda.entity.SearchEntity;
+import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.message.QEventDropdownMessage;
@@ -516,25 +520,42 @@ public class SearchUtils {
 	}
 
 
-	public static Tuple2<Ask, BaseEntity[]> getAskEntityData(BaseEntityUtils beUtils, String code, String targetCode)
+	public static QBulkMessage getAskEntityData(BaseEntityUtils beUtils, SearchEntity searchBE, String targetCode)
 	{
 		BaseEntity target = beUtils.getBaseEntityByCode(targetCode);
-		return getAskEntityData(beUtils, code, target);
+		return getAskEntityData(beUtils, searchBE, target);
 	}
 
-	public static Tuple2<Ask, BaseEntity[]> getAskEntityData(BaseEntityUtils beUtils, String code, BaseEntity target)
+	public static QBulkMessage getAskEntityData(BaseEntityUtils beUtils, SearchEntity searchBE, BaseEntity target)
 	{
 		BaseEntity[] targets = { target };
-		return getAskEntityData(beUtils, code, targets);
+		return getAskEntityData(beUtils, searchBE, targets);
 	}
 
-	public static Tuple2<Ask, BaseEntity[]> getAskEntityData(BaseEntityUtils beUtils, String code, BaseEntity[] targets)
+	public static QBulkMessage getAskEntityData(BaseEntityUtils beUtils, SearchEntity searchBE, BaseEntity[] targets)
 	{
 		if (targets == null) {
 			log.error("Target array is NULL");
 			return null;
 		}
-		log.info("Handling search asks for " + code + " with " + targets.length + " items!");
+		if (searchBE == null) {
+			log.error("SearchBE is NULL");
+			return null;
+		}
+
+		EntityAttribute searchQuestionCodeEA = searchBE.findEntityAttribute("SCH_QUESTION_CODE").orElse(null);
+		if (searchQuestionCodeEA == null) {
+			log.error("QuestionCode EntityAttribute is NULL for " + searchBE.getCode());
+			return null;
+		}
+
+		String questionCode = searchQuestionCodeEA.getValue();
+
+		if (questionCode == null) {
+			log.error("QuestionCode is NULL for " + searchBE.getCode());
+			return null;
+		}
+		log.info("Handling search asks for " + questionCode + " with " + targets.length + " items!");
 
 		String token = beUtils.getGennyToken().getToken();
 
@@ -546,10 +567,11 @@ public class SearchUtils {
 			targetCode = targets[0].getCode();
 		}
 
-		QDataAskMessage askMsg = QuestionUtils.getAsks(sourceCode, targetCode, code, token);
+		// Fetch the asks using the SBE's questionCode
+		QDataAskMessage askMsg = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, token);
 
 		if (askMsg == null) {
-			log.error("NULL in DB for " + code);
+			log.error("NULL in DB for " + questionCode);
 			return null;
 		}
 
@@ -557,16 +579,47 @@ public class SearchUtils {
 		Ask askGrp = askMsg.getItems()[0];
 		recursivelyConfigureAsks(beUtils, askGrp);
 
+		// Fetch all columns for the SBE
+		List<EntityAttribute> columns = searchBE.findPrefixEntityAttributes("COL__");
+
+		// Find defined alias relationships for the SBE
+		HashMap<String, String> aliasMap = new HashMap<>();
+		columns.stream().forEach(item -> {aliasMap.put(item.getAttributeName(), item.getAttributeCode().substring("COL__".length()));});
+
+		QBulkMessage askEntityData = new QBulkMessage(askMsg);
+
 		// Find the associated values from linked BEs
 		for (int i = 0; i < targets.length; i++) {
 			BaseEntity target = targets[i];
+
+			for (String alias : aliasMap.keySet()) {
+				// Fetch the BE from this relationship
+				BaseEntity associatedBE = beUtils.getBaseEntityFromLNKAttr(target, aliasMap.get(alias));
+
+				if (associatedBE != null) {
+
+					// TODO: MAKE THIS WORK FOR BUCKETS TOO
+
+
+					// TODO: IMPLEMENT PRIVACY FILTER HERE
+
+
+					// Set the alias
+					QDataBaseEntityMessage entityMsg = new QDataBaseEntityMessage(associatedBE, alias);
+					entityMsg.setParentCode(searchBE.getCode());
+
+					// Add to entities for sending
+					askEntityData.add(entityMsg);
+				}
+			}
+
 			BaseEntity updated = recursivelyFindAssociatedValues(beUtils, target, askGrp);
 			if (updated != null) {
 				targets[i] = updated;
 			}
 		}
 
-		return new Tuple2(askGrp, targets);
+		return askEntityData;
 
 	}
 
@@ -591,6 +644,19 @@ public class SearchUtils {
 				for (Ask childAsk : ask.getChildAsks()) {
 					recursivelyConfigureAsks(beUtils, childAsk);
 				}
+			} else if (attrCode.contains(".")) {
+				// Grab the alias from the attribute code
+				String[] attributeFields = attrCode.split(".");
+				String alias = attributeFields[0];
+				// Create a context for this alias
+				Context ctx = new Context(ContextType.ALIAS, alias);
+				// Add context to ask
+				List<Context> ctxList = new ArrayList<>(Arrays.asList(ctx));
+				ContextList contextList = new ContextList(ctxList);
+				ask.setContextList(contextList);
+				// Remove alias from attributeCode
+				// NOTE: may have to do this for question too
+				ask.setAttributeCode(attributeFields[1]);
 			}
 		}
 
