@@ -588,6 +588,10 @@ public class SearchUtils {
 
 		QBulkMessage askEntityData = new QBulkMessage(askMsg);
 
+		askMsg.setToken(token);
+		askMsg.setReplace(true);
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
+
 		// Find the associated values from linked BEs
 		for (int i = 0; i < targets.length; i++) {
 			BaseEntity target = targets[i];
@@ -607,6 +611,7 @@ public class SearchUtils {
 					// Set the alias
 					QDataBaseEntityMessage entityMsg = new QDataBaseEntityMessage(associatedBE, alias);
 					entityMsg.setParentCode(searchBE.getCode());
+					entityMsg.setReplace(true);
 
 					// Add to entities for sending
 					askEntityData.add(entityMsg);
