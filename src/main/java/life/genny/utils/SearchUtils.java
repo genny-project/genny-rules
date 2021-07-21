@@ -570,7 +570,7 @@ public class SearchUtils {
 		// Fetch the asks using the SBE's questionCode
 		QDataAskMessage askMsg = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, token);
 
-		if (askMsg == null) {
+		if (askMsg == null || askMsg.getItems().length == 0) {
 			log.error("NULL in DB for " + questionCode);
 			return null;
 		}
@@ -646,7 +646,7 @@ public class SearchUtils {
 				}
 			} else if (attrCode.contains(".")) {
 				// Grab the alias from the attribute code
-				String[] attributeFields = attrCode.split(".");
+				String[] attributeFields = attrCode.split("\\.");
 				String alias = attributeFields[0];
 				// Create a context for this alias
 				Context ctx = new Context(ContextType.ALIAS, alias);
@@ -657,6 +657,7 @@ public class SearchUtils {
 				// Remove alias from attributeCode
 				// NOTE: may have to do this for question too
 				ask.setAttributeCode(attributeFields[1]);
+				ask.getQuestion().setAttributeCode(attributeFields[1]);
 			}
 		}
 
