@@ -1991,9 +1991,14 @@ public class TableUtils {
 					flcName = attr.getName();
 				}
 				// String replacement
-				String filtOptionString = filt.getAttributeName().replaceAll("_GT_", "GREATER THAN ")
-						.replaceAll("_GTE_", "GREATER THAN OR EQUAL TO ").replaceAll("_LT_", "LESS THAN ")
-						.replaceAll("_LTE_", "LESS THAN OR EQUAL TO ").replaceAll("_NOT_", "NOT ")
+				String filtOptionString = filt.getAttributeName()
+						.replaceAll("_GT__EQ_", "GREATER THAN OR EQUAL TO ")
+						.replaceAll("_GTE_", "GREATER THAN OR EQUAL TO ")
+						.replaceAll("_LT__EQ_", "LESS THAN OR EQUAL TO ")
+						.replaceAll("_LTE_", "LESS THAN OR EQUAL TO ")
+						.replaceAll("_GT_", "GREATER THAN ")
+						.replaceAll("_LT_", "LESS THAN ")
+						.replaceAll("_NOT_", "NOT ")
 						.replaceAll("_EQ_", "EQUAL TO ");
 				// Question name is format: Sort Name - Comparison - Value
 				String questionName = flcName + " " + filtOptionString + "\""
