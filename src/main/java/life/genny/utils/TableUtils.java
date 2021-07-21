@@ -461,11 +461,14 @@ public class TableUtils {
 
 				resultJson = new JsonObject(resultJsonStr);
 				result = resultJson.getJsonArray("codes");
+				total = resultJson.getLong("total");
 
 			} catch (Exception e1) {
 				e1.printStackTrace();
 				beArray = new BaseEntity[]{};
 			}
+		} else {
+			total = Long.valueOf(1);
 		}
 
 		try {
@@ -478,7 +481,6 @@ public class TableUtils {
 				be = VertxUtils.privacyFilter(be, filterArray);
 				be.setIndex(i);
 				beArray[i] = be;
-				total = resultJson.getLong("total");
 			}
 
 		} catch (Exception e1) {
@@ -495,7 +497,7 @@ public class TableUtils {
 			if (askEntityData != null) {
 				log.info("Sending bulk message");
 				askEntityData.setToken(beUtils.getGennyToken().getToken());
-				VertxUtils.writeMsg("webcmds", askEntityData);
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askEntityData));
 			} else {
 				log.info("searchAskGrp is NULL, not sending!");
 			}
