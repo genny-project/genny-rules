@@ -577,7 +577,8 @@ public class SearchUtils {
 
 		// Build the Ask Grp
 		Ask askGrp = askMsg.getItems()[0];
-		recursivelyConfigureAsks(beUtils, askGrp);
+		askGrp = recursivelyConfigureAsks(beUtils, askGrp);
+		askMsg = new QDataAskMessage(askGrp);
 
 		// Fetch all columns for the SBE
 		List<EntityAttribute> columns = searchBE.findPrefixEntityAttributes("COL__");
@@ -633,7 +634,7 @@ public class SearchUtils {
 	* @param beUtils - The beUtils to help assist
 	* @param ask - The ask to traverse
 	 */
-	public static void recursivelyConfigureAsks(BaseEntityUtils beUtils, Ask ask)
+	public static Ask recursivelyConfigureAsks(BaseEntityUtils beUtils, Ask ask)
 	{
 		if (ask == null) {
 			log.error("ask is NULL");
@@ -647,7 +648,7 @@ public class SearchUtils {
 			if (attrCode.startsWith("QQQ_QUESTION_GROUP")) {
 
 				for (Ask childAsk : ask.getChildAsks()) {
-					recursivelyConfigureAsks(beUtils, childAsk);
+					childAsk = recursivelyConfigureAsks(beUtils, childAsk);
 				}
 			} else if (attrCode.contains(".")) {
 				// Grab the alias from the attribute code
@@ -665,6 +666,8 @@ public class SearchUtils {
 				ask.getQuestion().setAttributeCode(attributeFields[1]);
 			}
 		}
+		
+		return ask;
 
 	}
 
