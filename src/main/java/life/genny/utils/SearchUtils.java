@@ -603,14 +603,11 @@ public class SearchUtils {
 
 				if (associatedBE != null) {
 
-					// TODO: MAKE THIS WORK FOR BUCKETS TOO
-
-
 					// TODO: IMPLEMENT PRIVACY FILTER HERE
 
 
 					// Set the alias
-					QDataBaseEntityMessage entityMsg = new QDataBaseEntityMessage(associatedBE, alias);
+					QDataBaseEntityMessage entityMsg = new QDataBaseEntityMessage(associatedBE, target.getCode()+"."+alias);
 					entityMsg.setParentCode(searchBE.getCode());
 					entityMsg.setReplace(true);
 
