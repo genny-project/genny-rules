@@ -575,8 +575,13 @@ public class SearchUtils {
 			return null;
 		}
 
-		// Build the Ask Grp
 		Ask askGrp = askMsg.getItems()[0];
+
+		// Build a map of allowed attributes for each aliased BE
+		HashMap<String, String[]> filterArrayMap = new HashMap<>();
+		filterArrayMap = recursivelyFindPrivacyFilters(filterArrayMap, askGrp);
+
+		// Build the Ask Grp
 		askGrp = recursivelyConfigureAsks(beUtils, askGrp);
 		askMsg = new QDataAskMessage(askGrp);
 
@@ -597,9 +602,14 @@ public class SearchUtils {
 		for (int i = 0; i < targets.length; i++) {
 			BaseEntity target = targets[i];
 
+			// Filter unwanted attributes
+			target = VertxUtils.privacyFilter(target, filterArrayMap.get("SELF"));
+
 			for (String alias : aliasMap.keySet()) {
 				// Fetch the BE from this relationship
 				BaseEntity associatedBE = beUtils.getBaseEntityFromLNKAttr(target, aliasMap.get(alias));
+
+				associatedBE = VertxUtils.privacyFilter(target, filterArrayMap.get(alias));
 
 				if (associatedBE != null) {
 
@@ -635,37 +645,73 @@ public class SearchUtils {
 	{
 		if (ask == null) {
 			log.error("ask is NULL");
-		} else {
+			return null;
+		}
 
-			// For now, just set readonly TRUE
-			ask.setReadonly(true);
+		// For now, just set readonly TRUE
+		ask.setReadonly(true);
 
-			String attrCode = ask.getAttributeCode();
+		String attrCode = ask.getAttributeCode();
 
-			if (attrCode.startsWith("QQQ_QUESTION_GROUP")) {
+		if (attrCode.startsWith("QQQ_QUESTION_GROUP")) {
 
-				for (Ask childAsk : ask.getChildAsks()) {
-					childAsk = recursivelyConfigureAsks(beUtils, childAsk);
-				}
-			} else if (attrCode.contains(".")) {
-				// Grab the alias from the attribute code
-				String[] attributeFields = attrCode.split("\\.");
-				String alias = attributeFields[0];
-				// Create a context for this alias
-				Context ctx = new Context(ContextType.ALIAS, alias);
-				// Add context to ask
-				List<Context> ctxList = new ArrayList<>(Arrays.asList(ctx));
-				ContextList contextList = new ContextList(ctxList);
-				ask.setContextList(contextList);
-				// Remove alias from attributeCode
-				// NOTE: may have to do this for question too
-				ask.setAttributeCode(attributeFields[1]);
-				ask.getQuestion().setAttributeCode(attributeFields[1]);
+			for (Ask childAsk : ask.getChildAsks()) {
+				childAsk = recursivelyConfigureAsks(beUtils, childAsk);
 			}
+		} else if (attrCode.contains(".")) {
+			// Grab the alias from the attribute code
+			String[] attributeFields = attrCode.split("\\.");
+			String alias = attributeFields[0];
+			// Create a context for this alias
+			Context ctx = new Context(ContextType.ALIAS, alias);
+			// Add context to ask
+			List<Context> ctxList = new ArrayList<>(Arrays.asList(ctx));
+			ContextList contextList = new ContextList(ctxList);
+			ask.setContextList(contextList);
+			// Remove alias from attributeCode
+			// NOTE: may have to do this for question too
+			ask.setAttributeCode(attributeFields[1]);
+			ask.getQuestion().setAttributeCode(attributeFields[1]);
 		}
 		
 		return ask;
 
+	}
+
+	public static HashMap<String, String[]> recursivelyFindPrivacyFilters(HashMap<String, String[]> filterArrayMap, Ask ask)
+	{
+		if (ask == null) {
+			log.error("ask is NULL");
+			return null;
+		}
+
+		String attrCode = ask.getAttributeCode();
+		String alias = "SELF";
+
+		if (attrCode.startsWith("QQQ_QUESTION_GROUP")) {
+
+			for (Ask childAsk : ask.getChildAsks()) {
+				filterArrayMap = recursivelyFindPrivacyFilters(filterArrayMap, childAsk);
+			}
+
+		} else if (attrCode.contains(".")) {
+			// Grab the alias from the attribute code
+			String[] attributeFields = attrCode.split("\\.");
+			alias = attributeFields[0];
+			attrCode = attributeFields[1];
+		}
+
+		List<String> list = Arrays.asList(filterArrayMap.get(alias));
+		if (list == null) {
+			list = new ArrayList<>();
+		}
+		list.add(attrCode);
+
+		String[] array = list.toArray(new String[list.size()]); 
+
+		filterArrayMap.put(alias, array);
+
+		return filterArrayMap;
 	}
 
 	/**

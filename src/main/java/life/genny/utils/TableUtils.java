@@ -478,7 +478,6 @@ public class TableUtils {
 
 				String code = result.getString(i);
 				BaseEntity be = beUtils.getBaseEntityByCode(code);
-				be = VertxUtils.privacyFilter(be, filterArray);
 				be.setIndex(i);
 				beArray[i] = be;
 			}
@@ -504,6 +503,9 @@ public class TableUtils {
 		} else {
 			// Otherwise handle cals
 			for (BaseEntity be : beArray) {
+
+				be = VertxUtils.privacyFilter(be, filterArray);
+
 				for (EntityAttribute calEA : cals) {
 
 					Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
