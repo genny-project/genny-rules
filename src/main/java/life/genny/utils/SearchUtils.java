@@ -586,11 +586,11 @@ public class SearchUtils {
 		askMsg = new QDataAskMessage(askGrp);
 
 		// Fetch all columns for the SBE
-		List<EntityAttribute> columns = searchBE.findPrefixEntityAttributes("COL__");
+		List<EntityAttribute> columns = searchBE.findPrefixEntityAttributes("ALS_");
 
 		// Find defined alias relationships for the SBE
 		HashMap<String, String> aliasMap = new HashMap<>();
-		columns.stream().forEach(item -> {aliasMap.put(item.getAttributeName(), item.getAttributeCode().substring("COL__".length()));});
+		columns.stream().forEach(item -> {aliasMap.put(item.getAttributeName(), item.getAttributeCode().substring("ALS_".length()));});
 
 		QBulkMessage askEntityData = new QBulkMessage(askMsg);
 
@@ -599,23 +599,22 @@ public class SearchUtils {
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
 
 		// Find the associated values from linked BEs
-		for (int i = 0; i < targets.length; i++) {
-			BaseEntity target = targets[i];
-
+		for (BaseEntity target : targets) {
 			// Filter unwanted attributes
 			target = VertxUtils.privacyFilter(target, filterArrayMap.get("SELF"));
 
 			for (String alias : aliasMap.keySet()) {
+				String[] alsFields = aliasMap.get(alias).split("\\.");
+				BaseEntity associatedBE = null;
+				BaseEntity be = target;
 				// Fetch the BE from this relationship
-				BaseEntity associatedBE = beUtils.getBaseEntityFromLNKAttr(target, aliasMap.get(alias));
-
-				associatedBE = VertxUtils.privacyFilter(target, filterArrayMap.get(alias));
-
+				for (int i = 0; i < alsFields.length; i++) {
+					associatedBE = beUtils.getBaseEntityFromLNKAttr(be, alsFields[i]);
+					be = associatedBE;
+				}
 				if (associatedBE != null) {
-
-					// TODO: IMPLEMENT PRIVACY FILTER HERE
-
-
+					// Privacy filter for BE
+					associatedBE = VertxUtils.privacyFilter(target, filterArrayMap.get(alias));
 					// Set the alias
 					QDataBaseEntityMessage entityMsg = new QDataBaseEntityMessage(associatedBE, target.getCode()+"."+alias);
 					entityMsg.setParentCode(searchBE.getCode());
@@ -623,12 +622,14 @@ public class SearchUtils {
 
 					// Add to entities for sending
 					askEntityData.add(entityMsg);
+				} else {
+					log.info("Could not find BE for relationship " + aliasMap.get(alias));
 				}
 			}
 
 			BaseEntity updated = recursivelyFindAssociatedValues(beUtils, target, askGrp);
 			if (updated != null) {
-				targets[i] = updated;
+				target = updated;
 			}
 		}
 
@@ -701,14 +702,18 @@ public class SearchUtils {
 			attrCode = attributeFields[1];
 		}
 
-		List<String> list = Arrays.asList(filterArrayMap.get(alias));
-		if (list == null) {
+		List<String> list = null;
+		String[] array = filterArrayMap.get(alias);
+		// Init new list if one doesn't exist for this alias
+		if (array == null) {
 			list = new ArrayList<>();
+		} else {
+			list = Arrays.asList(array);
 		}
+		// Add our new attribute code to list of allowed codearray is nulls
 		list.add(attrCode);
-
-		String[] array = list.toArray(new String[list.size()]); 
-
+		// Convert back to array for saving
+		array = list.toArray(new String[list.size()]); 
 		filterArrayMap.put(alias, array);
 
 		return filterArrayMap;

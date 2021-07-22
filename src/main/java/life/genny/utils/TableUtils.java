@@ -501,10 +501,16 @@ public class TableUtils {
 				log.info("searchAskGrp is NULL, not sending!");
 			}
 		} else {
+			// Used to disable the column privacy
+			EntityAttribute columnWildcard = searchBE.findEntityAttribute("COL_*").orElse(null);
+
 			// Otherwise handle cals
 			for (BaseEntity be : beArray) {
 
-				be = VertxUtils.privacyFilter(be, filterArray);
+				// Filter unwanted attributes
+				if (columnWildcard == null) {
+					be = VertxUtils.privacyFilter(be, filterArray);
+				}
 
 				for (EntityAttribute calEA : cals) {
 
