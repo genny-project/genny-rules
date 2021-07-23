@@ -179,6 +179,23 @@ public class TableUtils {
 			// VertxUtils.writeMsgEnd(beUtils.getGennyToken());
 
 		}
+
+		// PERFORM NESTED SEARCHES
+		List<EntityAttribute> nestedSearches = searchBE.findPrefixEntityAttributes("SBE_");
+
+		for (EntityAttribute search : nestedSearches) {
+			String[] fields = search.getAttributeCode().split("\\.");
+
+			if (fields == null || fields.length < 2) {
+				continue;
+			}
+
+			for (BaseEntity target : msg.getItems()) {
+				searchTable(beUtils, fields[0], true, fields[1], target.getCode());
+			}
+		}
+
+
 		// long endtime4 = System.currentTimeMillis();
 		// log.info("Time taken to send Results =" + (endtime4 - endtime3) + " ms");
 
