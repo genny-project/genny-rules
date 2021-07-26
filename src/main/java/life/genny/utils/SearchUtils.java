@@ -28,6 +28,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.Logger;
 import life.genny.qwanda.exception.BadDataException;
 import io.vavr.Tuple2;
+import java.util.regex.Matcher;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -52,6 +53,7 @@ import life.genny.qwanda.message.QEventDropdownMessage;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
+import life.genny.qwandautils.MergeUtil;
 
 public class SearchUtils {
 
@@ -281,6 +283,20 @@ public class SearchUtils {
 					filter = SearchEntity.convertOperatorToFilter(valSplit[0]);
 					val = valSplit[1];
 				}
+
+				// Find any embedded variables, eg. "{{LNK_HOST_COMPANY}}"
+				Matcher matchVariables = MergeUtil.PATTERN_VARIABLE.matcher(val);
+
+				while(matchVariables.find()) {
+					
+					Object mergedText = targetBe.getValue(matchVariables.group(1), null);
+					if(mergedText != null) {
+						val = val.replace(MergeUtil.VARIABLE_REGEX_START + matchVariables.group(1) + MergeUtil.VARIABLE_REGEX_END, mergedText.toString());
+					} else {
+						val = val.replace(MergeUtil.VARIABLE_REGEX_START + matchVariables.group(1) + MergeUtil.VARIABLE_REGEX_END, "");
+					}	
+				}
+				log.info("val = " + val);
 
 				final String dataType = att.getDataType().getClassName();
 				switch (dataType) {
