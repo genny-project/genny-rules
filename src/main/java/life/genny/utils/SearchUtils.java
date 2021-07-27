@@ -225,6 +225,7 @@ public class SearchUtils {
 		// firstly work out what the DEF isThe Nott
 
 		BaseEntity targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode());
+		BaseEntity sourceBe = beUtils.getBaseEntityByCode(message.getData().getSourceCode());
 		//BaseEntity internBe = beUtils.getBaseEntityByCode("DEF_INTERN");
 		BaseEntity defBe = beUtils.getDEF(targetBe);
 		log.info("DROPDOWN :identified Dropdown Target Baseentity as "+defBe.getCode()+" : "+defBe.getName());
@@ -289,7 +290,22 @@ public class SearchUtils {
 
 				while(matchVariables.find()) {
 					
-					Object mergedText = targetBe.getValue(matchVariables.group(1), null);
+					String[] variableCodes = matchVariables.group(1).split("\\.");
+					
+					Object mergedText = null;
+					
+					if (variableCodes.length > 1) {
+						if (variableCodes[0].equals("TARGET")) {
+							mergedText = targetBe.getValue(variableCodes[1], null);
+						} else if (variableCodes[0].equals("SOURCE")) {
+							mergedText = sourceBe.getValue(variableCodes[1], null);
+						}
+						// TODO: add support for other ALIAS' here
+					} else {
+						// Default to target
+						mergedText = targetBe.getValue(variableCodes[0], null);
+					}
+					
 					if(mergedText != null) {
 						val = val.replace(MergeUtil.VARIABLE_REGEX_START + matchVariables.group(1) + MergeUtil.VARIABLE_REGEX_END, mergedText.toString());
 					} else {
