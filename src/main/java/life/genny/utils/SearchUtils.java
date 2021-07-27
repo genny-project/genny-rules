@@ -297,6 +297,7 @@ public class SearchUtils {
 				sourceCode = MergeUtil.merge(sourceCode, ctxMap);
 				targetCode = MergeUtil.merge(targetCode, ctxMap);
 
+				log.info("attributeCode = " + json.getString("attributeCode"));
 				log.info("val = " + val);
 				log.info("link sourceCode = " + sourceCode);
 				log.info("link targetCode = " + targetCode);
@@ -363,7 +364,7 @@ public class SearchUtils {
 					// TODO handle multiples
 					if (att.getCode().startsWith("LNK_")) {
 						// oldschool
-						searchBE.setLinkCode(json.getString("attributeCode"));
+						searchBE.setLinkCode(att.getCode());
 						searchBE.setLinkValue(val);
 						if (sourceCode != null) {
 							searchBE.setSourceCode(sourceCode);
