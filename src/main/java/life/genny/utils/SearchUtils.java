@@ -293,9 +293,9 @@ public class SearchUtils {
 				ctxMap.put("TARGET", targetBe);
 
 				// replace our vars using the context map of BEs
-				val = findAndReplaceVariables(val, ctxMap);
-				sourceCode = findAndReplaceVariables(sourceCode, ctxMap);
-				targetCode = findAndReplaceVariables(targetCode, ctxMap);
+				val = MergeUtil.merge(val, ctxMap);
+				sourceCode = MergeUtil.merge(sourceCode, ctxMap);
+				targetCode = MergeUtil.merge(targetCode, ctxMap);
 
 				log.info("val = " + val);
 				log.info("link sourceCode = " + sourceCode);
@@ -434,37 +434,6 @@ public class SearchUtils {
 				false);
 //		return msg;
 		return beMessage;
-	}
-
-	public static String findAndReplaceVariables(String str, HashMap<String, Object> contextMap) 
-	{
-		if (str != null) {
-			// Find any embedded variables, eg. "{{LNK_HOST_COMPANY}}"
-			Matcher matchVariables = MergeUtil.PATTERN_VARIABLE.matcher(str);
-
-			while(matchVariables.find()) {
-				
-				String[] variableCodes = matchVariables.group(1).split("\\.");
-				
-				Object mergedText = null;
-				
-				if (variableCodes.length < 1) {
-					log.error("Must Specify an ALIAS for " + matchVariables.group(1) + ", eg. TARGET.LNK_SOME_ATTR");
-				} else {
-					Object obj = contextMap.get(variableCodes[0]);
-					if (obj.getClass().equals(BaseEntity.class)) {
-						BaseEntity be = (BaseEntity) obj;
-						mergedText = be.getValue(variableCodes[1], null);
-					}
-				}
-				
-				if(mergedText != null) {
-					return str.replace(MergeUtil.VARIABLE_REGEX_START + matchVariables.group(1) + MergeUtil.VARIABLE_REGEX_END, mergedText.toString());
-				}	
-			}
-		}
-		// Return original string if nothing changed
-		return str;
 	}
 
 	/*
