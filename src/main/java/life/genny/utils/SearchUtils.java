@@ -294,10 +294,12 @@ public class SearchUtils {
 
 				// replace our vars using the context map of BEs
 				val = findAndReplaceVariables(val, ctxMap);
-				targetCode = findAndReplaceVariables(targetCode, ctxMap);
 				sourceCode = findAndReplaceVariables(sourceCode, ctxMap);
+				targetCode = findAndReplaceVariables(targetCode, ctxMap);
 
 				log.info("val = " + val);
+				log.info("link sourceCode = " + sourceCode);
+				log.info("link targetCode = " + targetCode);
 
 				final String dataType = att.getDataType().getClassName();
 				switch (dataType) {
@@ -359,7 +361,7 @@ public class SearchUtils {
 				case "life.genny.qwanda.entity.BaseEntity":
 					// The LNK means that a baseentitycode is being searched for
 					// TODO handle multiples
-					if ("LNK_CORE".equals(att.getCode())) {
+					if (att.getCode().startsWith("LNK_")) {
 						// oldschool
 						searchBE.setLinkCode(json.getString("attributeCode"));
 						searchBE.setLinkValue(val);
