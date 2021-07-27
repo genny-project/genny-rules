@@ -284,34 +284,19 @@ public class SearchUtils {
 					filter = SearchEntity.convertOperatorToFilter(valSplit[0]);
 					val = valSplit[1];
 				}
+				// For using the search source and target
+				String sourceCode = json.getString("sourceCode");
+				String targetCode = json.getString("targetCode");
 
-				// Find any embedded variables, eg. "{{LNK_HOST_COMPANY}}"
-				Matcher matchVariables = MergeUtil.PATTERN_VARIABLE.matcher(val);
+				HashMap<String, Object> ctxMap = new HashMap<>();
+				ctxMap.put("SOURCE", sourceBe);
+				ctxMap.put("TARGET", targetBe);
 
-				while(matchVariables.find()) {
-					
-					String[] variableCodes = matchVariables.group(1).split("\\.");
-					
-					Object mergedText = null;
-					
-					if (variableCodes.length > 1) {
-						if (variableCodes[0].equals("TARGET")) {
-							mergedText = targetBe.getValue(variableCodes[1], null);
-						} else if (variableCodes[0].equals("SOURCE")) {
-							mergedText = sourceBe.getValue(variableCodes[1], null);
-						}
-						// TODO: add support for other ALIAS' here
-					} else {
-						// Default to target
-						mergedText = targetBe.getValue(variableCodes[0], null);
-					}
-					
-					if(mergedText != null) {
-						val = val.replace(MergeUtil.VARIABLE_REGEX_START + matchVariables.group(1) + MergeUtil.VARIABLE_REGEX_END, mergedText.toString());
-					} else {
-						val = val.replace(MergeUtil.VARIABLE_REGEX_START + matchVariables.group(1) + MergeUtil.VARIABLE_REGEX_END, "");
-					}	
-				}
+				// replace our vars using the context map of BEs
+				val = findAndReplaceVariables(val, ctxMap);
+				targetCode = findAndReplaceVariables(targetCode, ctxMap);
+				sourceCode = findAndReplaceVariables(sourceCode, ctxMap);
+
 				log.info("val = " + val);
 
 				final String dataType = att.getDataType().getClassName();
@@ -378,6 +363,12 @@ public class SearchUtils {
 						// oldschool
 						searchBE.setLinkCode(json.getString("attributeCode"));
 						searchBE.setLinkValue(val);
+						if (sourceCode != null) {
+							searchBE.setSourceCode(sourceCode);
+						}
+						if (targetCode != null) {
+							searchBE.setTargetCode(targetCode);
+						}
 					} else {
 						val = "\""+val+"\"";
 						searchBE.addFilter(json.getString("attributeCode"), SearchEntity.StringFilter.LIKE, val);
@@ -441,6 +432,37 @@ public class SearchUtils {
 				false);
 //		return msg;
 		return beMessage;
+	}
+
+	public static String findAndReplaceVariables(String str, HashMap<String, Object> contextMap) 
+	{
+		if (str != null) {
+			// Find any embedded variables, eg. "{{LNK_HOST_COMPANY}}"
+			Matcher matchVariables = MergeUtil.PATTERN_VARIABLE.matcher(str);
+
+			while(matchVariables.find()) {
+				
+				String[] variableCodes = matchVariables.group(1).split("\\.");
+				
+				Object mergedText = null;
+				
+				if (variableCodes.length < 1) {
+					log.error("Must Specify an ALIAS for " + matchVariables.group(1) + ", eg. TARGET.LNK_SOME_ATTR");
+				} else {
+					Object obj = contextMap.get(variableCodes[0]);
+					if (obj instanceof BaseEntity) {
+						BaseEntity be = (BaseEntity) obj;
+						mergedText = be.getValue(variableCodes[1], null);
+					}
+				}
+				
+				if(mergedText != null) {
+					return str.replace(MergeUtil.VARIABLE_REGEX_START + matchVariables.group(1) + MergeUtil.VARIABLE_REGEX_END, mergedText.toString());
+				}	
+			}
+		}
+		// Return original string if nothing changed
+		return str;
 	}
 
 	/*
