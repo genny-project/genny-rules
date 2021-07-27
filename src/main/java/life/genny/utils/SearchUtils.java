@@ -450,7 +450,7 @@ public class SearchUtils {
 					log.error("Must Specify an ALIAS for " + matchVariables.group(1) + ", eg. TARGET.LNK_SOME_ATTR");
 				} else {
 					Object obj = contextMap.get(variableCodes[0]);
-					if (obj instanceof BaseEntity) {
+					if (obj.getClass().equals(BaseEntity.class)) {
 						BaseEntity be = (BaseEntity) obj;
 						mergedText = be.getValue(variableCodes[1], null);
 					}
