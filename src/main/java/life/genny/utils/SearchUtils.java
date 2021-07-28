@@ -380,11 +380,9 @@ public class SearchUtils {
 				case "org.javamoney.moneta.Money":
 				case "java.lang.String":
 				default:
+					// NOTE: The percent sign is now required in the search string definition. This allows more flexibility.
 					SearchEntity.StringFilter stringFilter = SearchEntity.convertOperatorToStringFilter(valSplit[0]);
-					if (valSplit[0].contains("LIKE")) {
-						val = val + "%";// just keep the front bit
-					}
-					searchBE.addFilter(json.getString("attributeCode"), SearchEntity.StringFilter.LIKE, val);
+					searchBE.addFilter(json.getString("attributeCode"), stringFilter, val);
 
 				}
 
