@@ -354,6 +354,7 @@ public class ShowFrame implements WorkItemHandler {
 					}
 				}
 
+				log.info("JASPER TEST LOG:  tagetCode = " + targetCode);
 				target = beUtils.getBaseEntityByCode(targetCode);
 
 				defBe = beUtils.getDEF(target);
