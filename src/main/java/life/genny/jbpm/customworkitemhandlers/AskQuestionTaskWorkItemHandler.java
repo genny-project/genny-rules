@@ -134,6 +134,9 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			baseEntityTargetCode = baseEntityTarget.getCode();
 		}
 
+		log.info("baseEntityTargetCode = " + baseEntityTargetCode);
+		log.info("baseEntitySourceCode = " + baseEntitySourceCode);
+
 		String formCode = (String) workItem.getParameter("formCode");
 		String targetCode = (String) workItem.getParameter("targetCode");
 
