@@ -2023,7 +2023,8 @@ public class TableUtils {
 						.replaceAll("_GT_", "GREATER THAN ")
 						.replaceAll("_LT_", "LESS THAN ")
 						.replaceAll("_NOT_", "NOT ")
-						.replaceAll("_EQ_", "EQUAL TO ");
+						.replaceAll("_EQ_", "EQUAL TO ")
+						.replaceAll("LIKE", "LIKE ");
 				// Question name is format: Sort Name - Comparison - Value
 				String questionName = flcName + " " + filtOptionString + "\""
 						+ filt.getValue().toString().replace("%", "") + "\"";

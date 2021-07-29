@@ -126,7 +126,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 				user = VertxUtils.readFromDDT(userToken.getRealm(), userToken.getUserCode(), userToken.getToken());
 				if (user == null) {
 					beUtils.setServiceToken(serviceToken);
-					BaseEntity serviceUser = beUtils.create(userToken.getUserCode(), "Service User");
+					BaseEntity defBE = beUtils.getDEFByCode("DEF_USER");
+					BaseEntity serviceUser = beUtils.create(defBE, "Service User", userToken.getUserCode());
 					Attribute roleAttribute = RulesUtils.getAttribute("PRI_IS_ADMIN", serviceToken);
 
 					beUtils.saveAnswer(new Answer(serviceUser, serviceUser, roleAttribute, "TRUE"));

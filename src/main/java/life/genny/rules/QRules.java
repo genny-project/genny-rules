@@ -5396,7 +5396,14 @@ public class QRules implements Serializable {
 	public BaseEntity createNote(String contextCode, String content, String noteType) {
 
 		/* we create the note baseEntity */
-		BaseEntity note = this.baseEntity.create(this.getUser().getCode(), "NOT", "NOTE");
+		BaseEntity note = null;
+		try {
+			// note = this.baseEntity.create(this.getUser().getCode(), "NOT", "NOTE");
+			BaseEntity defBE = this.baseEntity.getDEFByCode("DEF_NOTE");
+			note = this.baseEntity.create(defBE, "NOTE", "NOT_"+this.getUser().getCode());
+		} catch (Exception e) {
+			log.error(e.getStackTrace());
+		}
 
 		/* we save the note attributes */
 		List<Answer> answers = new CopyOnWriteArrayList<>();

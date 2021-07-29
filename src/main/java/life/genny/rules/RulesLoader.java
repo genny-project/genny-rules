@@ -1952,7 +1952,12 @@ public class RulesLoader {
 			if ("FRM_QUE_GRP_PLACED_GRP".contentEquals(ruleCode)) {
 				log.info("got to here:");
 			}
-			existingRuleBe = beUtils.create(ruleCode, rule.getName());
+			try {
+				BaseEntity defBE = beUtils.getDEFByCode("DEF_RULE");
+				existingRuleBe = beUtils.create(defBE, rule.getName(), ruleCode);
+			} catch (Exception e) {
+				log.error(e.getStackTrace());
+			}
 		}
 
 		if ((!hashcode.equals(existingHashCode)) && (existingRuleBe != null)) {
@@ -2036,7 +2041,8 @@ public class RulesLoader {
 		String kieType = ext.toUpperCase();
 
 		// Get rule filename
-		String ruleCode = "BPM_" + filename.replaceAll("\\.[^.]*$", "");
+		// NOTE: Changed from BPM_ (28/07/2021)
+		String ruleCode = "RUL_BPM_" + filename.replaceAll("\\.[^.]*$", "");
 
 		// get existing rule from cache
 
@@ -2054,7 +2060,12 @@ public class RulesLoader {
 			beUtils = realmBeUtilsMap.get(realm);
 		}
 		if (existingRuleBe == null) {
-			existingRuleBe = beUtils.create(ruleCode, name);
+			try {
+				BaseEntity defBE = beUtils.getDEFByCode("DEF_RULE");
+				existingRuleBe = beUtils.create(defBE, name, ruleCode);
+			} catch (Exception e) {
+				log.error(e.getStackTrace());
+			}
 		}
 
 		if ((!hashcode.equals(existingHashCode)) && (existingRuleBe != null)) {
