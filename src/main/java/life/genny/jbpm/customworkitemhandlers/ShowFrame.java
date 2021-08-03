@@ -486,6 +486,7 @@ public class ShowFrame implements WorkItemHandler {
 
 								// Check Dependencies, and disable if not met
 								Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, target, defBe);
+								log.info("dependenciesMet = " + dependenciesMet);
 								if (dependenciesMet != null && !dependenciesMet) {
 									if (updated.getItems() != null && updated.getItems().length > 0 && updated.getItems()[0] != null) {
 										for (Ask childAsk : updated.getItems()[0].getChildAsks()) {
