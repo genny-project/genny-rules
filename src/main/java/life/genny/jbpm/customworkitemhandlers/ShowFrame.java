@@ -489,11 +489,13 @@ public class ShowFrame implements WorkItemHandler {
 								log.info("dependenciesMet = " + dependenciesMet);
 								if (dependenciesMet != null && !dependenciesMet) {
 									if (updated.getItems() != null && updated.getItems().length > 0 && updated.getItems()[0] != null) {
-										for (Ask childAsk : updated.getItems()[0].getChildAsks()) {
+										Ask[] newAsk = { updated.getItems()[0] };
+										for (Ask childAsk : newAsk[0].getChildAsks()) {
 											if (childAsk.getAttributeCode().equals(dropdownCode)) {
 												childAsk.setDisabled(true);
 											}
 										}
+										askMsg.setItems(newAsk);
 									}
 								}
 							}
