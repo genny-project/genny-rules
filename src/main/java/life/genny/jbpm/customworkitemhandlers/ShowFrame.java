@@ -493,6 +493,7 @@ public class ShowFrame implements WorkItemHandler {
 										for (Ask childAsk : newAsk[0].getChildAsks()) {
 											if (childAsk.getAttributeCode().equals(dropdownCode)) {
 												childAsk.setDisabled(true);
+												log.info("Setting " + dropdownCode + " to DISABLED!");
 											}
 										}
 										askMsg.setItems(newAsk);
