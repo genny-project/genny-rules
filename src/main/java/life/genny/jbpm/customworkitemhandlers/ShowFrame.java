@@ -483,6 +483,22 @@ public class ShowFrame implements WorkItemHandler {
 								QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
 										dropdownCode, userToken, serviceToken, cache, targetCode);
 								qBulkMessage.add(qb);
+
+								// Check Dependencies, and disable if not met
+								Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target, defBe);
+								log.info("dependenciesMet = " + dependenciesMet);
+								if (dependenciesMet != null && !dependenciesMet) {
+									if (updated.getItems() != null && updated.getItems().length > 0 && updated.getItems()[0] != null) {
+										Ask[] newAsk = { updated.getItems()[0] };
+										for (Ask childAsk : newAsk[0].getChildAsks()) {
+											if (childAsk.getAttributeCode().equals(dropdownCode)) {
+												childAsk.setDisabled(true);
+												log.info("Setting " + dropdownCode + " to DISABLED!");
+											}
+										}
+										askMsg.setItems(newAsk);
+									}
+								}
 							}
 
 							continue;
