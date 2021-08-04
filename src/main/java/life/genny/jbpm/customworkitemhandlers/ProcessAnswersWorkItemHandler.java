@@ -276,6 +276,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						// be expected in the task list */
 						validAnswers.add(answer);
 					}
+
 				} else {
 					log.error(callingWorkflow+" Not a valid ASK! %s", key);
 				}
@@ -362,6 +363,12 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					break;
 				default:
 
+				}
+
+				// Enable if Dependencies have been met
+				Boolean dependenciesMet = beUtils.dependenciesMet(ask.getAsk().getAttributeCode(), originalTarget, defBe);
+				if (dependenciesMet != null && dependenciesMet) {
+					TaskUtils.enableTaskQuestion(ask.getAsk(), true, userToken);
 				}
 
 				log.info("TASK-ASK: " + ask);
