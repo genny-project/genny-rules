@@ -485,7 +485,7 @@ public class ShowFrame implements WorkItemHandler {
 								qBulkMessage.add(qb);
 
 								// Check Dependencies, and disable if not met
-								Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, target, defBe);
+								Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target, defBe);
 								log.info("dependenciesMet = " + dependenciesMet);
 								if (dependenciesMet != null && !dependenciesMet) {
 									if (updated.getItems() != null && updated.getItems().length > 0 && updated.getItems()[0] != null) {
