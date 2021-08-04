@@ -516,7 +516,7 @@ public class ShowFrame implements WorkItemHandler {
 				qBulkMessage.add(updated);
 				if (!cache) {
 					log.info("Sending the Asks Now !!!");
-					VertxUtils.writeMsg("webcmds", jsonStr); // QDataAskMessage
+					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
 				}
 			}
 		}
