@@ -744,63 +744,6 @@ public class SearchUtils {
 	}
 
 	/**
-	* Used to configure the ask group recursively.
-	* @param beUtils - The beUtils to help assist
-	* @param map - The map to traverse
-	* @param sourceCode - The source entity code
-	* @param targetCode - The target entity code
-	* NOTE: unused for now
-	 */
-	public static Ask recursivelyConfigureAskFromMap(BaseEntityUtils beUtils, Map<String, Object> map, String rootCode, String sourceCode, String targetCode)
-	{
-		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", beUtils.getServiceToken());
-		Question grpQuestion = new Question(rootCode, questionAttribute.getName(), questionAttribute);
-		Ask ask = new Ask(grpQuestion, sourceCode, targetCode);
-		// Set ReadOnly True
-		ask.setReadonly(true);
-
-		List<Ask> children = new ArrayList<>();
-
-		for (String key : map.keySet()) {
-			Object value = map.get(key);
-
-			Ask childAsk = null;
-
-			if (value instanceof LinkedHashMap || value instanceof LinkedTreeMap) {
-
-				Map<String, Object> nestedMap = (Map) value;
-
-				childAsk = recursivelyConfigureAskFromMap(beUtils, nestedMap, key, sourceCode, targetCode);
-
-			} else if (value instanceof String) {
-
-				String attrCode = (String) value;
-
-				String[] fields = attrCode.split("__"); 
-				String linkBeCode = fields[fields.length-1];
-
-				Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, beUtils.getServiceToken());
-				Attribute att = new Attribute(attrCode, primaryAttribute.getName(), primaryAttribute.getDataType());
-
-				Question question = new Question(key, att.getName(), att);
-
-				childAsk = new Ask(question, sourceCode, targetCode);
-				childAsk.setReadonly(true);
-
-			}
-
-			if (childAsk != null) {
-				children.add(childAsk);
-			}
-		}
-
-		ask.setChildAsks(children.toArray(new Ask[children.size()]));
-
-		return ask;
-
-	}
-
-	/**
 	* Used to find the associated values
 	* for the asks in a recursive fashion
 	* @param beUtils - The beUtils to help assist
