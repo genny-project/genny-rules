@@ -54,6 +54,7 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.qwandautils.MergeUtil;
+import life.genny.qwandautils.ANSIColour;
 
 public class SearchUtils {
 
@@ -291,6 +292,14 @@ public class SearchUtils {
 				HashMap<String, Object> ctxMap = new HashMap<>();
 				ctxMap.put("SOURCE", sourceBe);
 				ctxMap.put("TARGET", targetBe);
+
+				if (!MergeUtil.contextsArePresent(val, ctxMap) ||
+					!MergeUtil.contextsArePresent(sourceCode, ctxMap) ||
+					!MergeUtil.contextsArePresent(targetCode, ctxMap)) 
+				{
+					log.error(ANSIColour.RED+"A Parent value is missing, Not sending dropdown results"+ANSIColour.RESET);
+					return null;
+				}
 
 				// replace our vars using the context map of BEs
 				val = MergeUtil.merge(val, ctxMap);
