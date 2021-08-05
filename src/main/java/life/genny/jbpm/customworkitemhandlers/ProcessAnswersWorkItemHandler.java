@@ -366,8 +366,8 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 				// Enable if Dependencies have been met
 				Boolean dependenciesMet = beUtils.dependenciesMet(ask.getAsk().getAttributeCode(), validAnswers, originalTarget, defBe);
-				if (dependenciesMet != null && dependenciesMet) {
-					TaskUtils.enableTaskQuestion(ask.getAsk(), true, userToken);
+				if (dependenciesMet != null) {
+					TaskUtils.enableTaskQuestion(ask.getAsk(), dependenciesMet, userToken);
 				}
 
 				log.info("TASK-ASK: " + ask);
