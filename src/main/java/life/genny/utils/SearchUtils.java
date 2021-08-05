@@ -54,6 +54,7 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.qwandautils.MergeUtil;
+import life.genny.qwandautils.ANSIColour;
 
 public class SearchUtils {
 
@@ -292,6 +293,14 @@ public class SearchUtils {
 				ctxMap.put("SOURCE", sourceBe);
 				ctxMap.put("TARGET", targetBe);
 
+				if (!MergeUtil.contextsArePresent(val, ctxMap) ||
+					!MergeUtil.contextsArePresent(sourceCode, ctxMap) ||
+					!MergeUtil.contextsArePresent(targetCode, ctxMap)) 
+				{
+					log.error(ANSIColour.RED+"A Parent value is missing, Not sending dropdown results"+ANSIColour.RESET);
+					return null;
+				}
+
 				// replace our vars using the context map of BEs
 				val = MergeUtil.merge(val, ctxMap);
 				sourceCode = MergeUtil.merge(sourceCode, ctxMap);
@@ -429,10 +438,10 @@ public class SearchUtils {
 		msg.setShouldDeleteLinkedBaseEntities(false);
 
 		/* Linking child baseEntity to the parent baseEntity */
-		QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getParentCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
-				false);
-//		return msg;
-		return beMessage;
+		// QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getParentCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
+		// 		false);
+		return msg;
+		// return beMessage;
 	}
 
 	/*
@@ -741,63 +750,6 @@ public class SearchUtils {
 		filterArrayMap.put(alias, array);
 
 		return filterArrayMap;
-	}
-
-	/**
-	* Used to configure the ask group recursively.
-	* @param beUtils - The beUtils to help assist
-	* @param map - The map to traverse
-	* @param sourceCode - The source entity code
-	* @param targetCode - The target entity code
-	* NOTE: unused for now
-	 */
-	public static Ask recursivelyConfigureAskFromMap(BaseEntityUtils beUtils, Map<String, Object> map, String rootCode, String sourceCode, String targetCode)
-	{
-		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", beUtils.getServiceToken());
-		Question grpQuestion = new Question(rootCode, questionAttribute.getName(), questionAttribute);
-		Ask ask = new Ask(grpQuestion, sourceCode, targetCode);
-		// Set ReadOnly True
-		ask.setReadonly(true);
-
-		List<Ask> children = new ArrayList<>();
-
-		for (String key : map.keySet()) {
-			Object value = map.get(key);
-
-			Ask childAsk = null;
-
-			if (value instanceof LinkedHashMap || value instanceof LinkedTreeMap) {
-
-				Map<String, Object> nestedMap = (Map) value;
-
-				childAsk = recursivelyConfigureAskFromMap(beUtils, nestedMap, key, sourceCode, targetCode);
-
-			} else if (value instanceof String) {
-
-				String attrCode = (String) value;
-
-				String[] fields = attrCode.split("__"); 
-				String linkBeCode = fields[fields.length-1];
-
-				Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, beUtils.getServiceToken());
-				Attribute att = new Attribute(attrCode, primaryAttribute.getName(), primaryAttribute.getDataType());
-
-				Question question = new Question(key, att.getName(), att);
-
-				childAsk = new Ask(question, sourceCode, targetCode);
-				childAsk.setReadonly(true);
-
-			}
-
-			if (childAsk != null) {
-				children.add(childAsk);
-			}
-		}
-
-		ask.setChildAsks(children.toArray(new Ask[children.size()]));
-
-		return ask;
-
 	}
 
 	/**
