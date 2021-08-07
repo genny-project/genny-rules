@@ -917,8 +917,12 @@ public class ShowFrame implements WorkItemHandler {
 
 				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(arrayItems, groupCode, "LINK",
 						Long.decode(arrayItems.length + ""));
+// Correct spec 
 				msg.setParentCode(groupCode);
-				msg.setQuestionCode(questionCode);
+				msg.setQuestionCode(questionCode); // TODO this needs to be the attrivbute code
+//				msg.setParentCode(questionCode);
+//				msg.setQuestionCode(null);
+
 				msg.setToken(userToken.getToken());
 				msg.setLinkCode("LNK_CORE");
 				msg.setLinkValue("ITEMS");
