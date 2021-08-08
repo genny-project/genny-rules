@@ -480,8 +480,18 @@ public class ShowFrame implements WorkItemHandler {
 										}
 									}
 								}
+								
+								String groupCode = askMsg.getItems()[0].getQuestionCode();
+								// find the questioncode associated with this lnkcode (ideally the actually attributecode is sent instead TODO)
+								String questionCode = "";
+								for (Ask childAsk : askMsg.getItems()[0].getChildAsks()) {
+									if (childAsk.getAttributeCode().equals(dropdownCode)) {
+										questionCode = childAsk.getQuestionCode();
+										break;
+									}
+								}
 								QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
-										dropdownCode, userToken, serviceToken, cache, targetCode);
+										dropdownCode, userToken, serviceToken, cache, targetCode,groupCode, questionCode);
 								qBulkMessage.add(qb);
 
 								// Check Dependencies, and disable if not met
@@ -880,26 +890,26 @@ public class ShowFrame implements WorkItemHandler {
 	}
 
 	public static QBulkMessage sendDefSelectionItems(BaseEntity[] arrayItems, BaseEntity defBe, String attributeCode,
-			GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget) {
+			GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget, String groupCode, String questionCode) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		try {
 			// Get Group Code
-			DataType dt = attribute.getDataType();
-			// log.info("DATATYPE IS " + dt);
-			String groupCode = null;
-			List<Validation> vl = dt.getValidationList();
-			System.out.println("vl = " + vl);
-
-			if ((vl != null) && (!vl.isEmpty())) {
-				Validation val = vl.get(0);
-				if ((val.getSelectionBaseEntityGroupList() != null)
-						&& (!val.getSelectionBaseEntityGroupList().isEmpty())) {
-					groupCode = val.getSelectionBaseEntityGroupList().get(0);
-				}
-			} else {
-				return new QBulkMessage();
-			}
+//			DataType dt = attribute.getDataType();
+//			// log.info("DATATYPE IS " + dt);
+//			String groupCode = null;
+//			List<Validation> vl = dt.getValidationList();
+//			System.out.println("vl = " + vl);
+//
+//			if ((vl != null) && (!vl.isEmpty())) {
+//				Validation val = vl.get(0);
+//				if ((val.getSelectionBaseEntityGroupList() != null)
+//						&& (!val.getSelectionBaseEntityGroupList().isEmpty())) {
+//					groupCode = val.getSelectionBaseEntityGroupList().get(0);
+//				}
+//			} else {
+//				return new QBulkMessage();
+//			}
 
 			Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + attributeCode); // SER_
 			String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_INTERN\",\"value\":\"true\"}]}";
@@ -909,7 +919,7 @@ public class ShowFrame implements WorkItemHandler {
 				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(arrayItems, groupCode, "LINK",
 						Long.decode(arrayItems.length + ""));
 				msg.setParentCode(groupCode);
-				msg.setQuestionCode(null);
+				msg.setQuestionCode(questionCode);
 				msg.setToken(userToken.getToken());
 				msg.setLinkCode("LNK_CORE");
 				msg.setLinkValue("ITEMS");
