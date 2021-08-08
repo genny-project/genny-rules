@@ -70,6 +70,10 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.jbpm.customworkitemhandlers.RuleFlowGroupWorkItemHandler;
+import life.genny.qwanda.datatype.CapabilityMode;
+import life.genny.utils.SearchUtils;
+import life.genny.qwandautils.MergeUtil;
+import life.genny.qwandautils.ANSIColour;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -89,7 +93,7 @@ public class TableUtils {
 		this.beUtils = beUtils;
 	}
 
-	public QBulkMessage performSearch(GennyToken serviceToken, final SearchEntity searchBE, Answer answer,
+	public QBulkMessage performSearch(GennyToken serviceToken, SearchEntity searchBE, Answer answer,
 			final String filterCode, final String filterValue, Boolean cache, Boolean replace) {
 		QBulkMessage ret = new QBulkMessage();
 		long starttime = System.currentTimeMillis();
@@ -116,7 +120,22 @@ public class TableUtils {
 		if (searchAlt && (GennySettings.searchAlt)) {
 			log.info("searchCode   ::   " + searchBE.getCode());
 			// msg = searchUsingHql(serviceToken, searchBE, msg);
-			msg = searchUsingSearch25(serviceToken, searchBE, msg);
+
+			// Capability Based Conditional Filters
+			searchBE = SearchUtils.evaluateConditionalFilters(beUtils, searchBE);
+
+			HashMap<String, Object> ctxMap = new HashMap<>();
+			BaseEntity sourceBE = beUtils.getBaseEntityByCode(beUtils.getGennyToken().getUserCode());
+			ctxMap.put("SOURCE", sourceBE);
+
+			// Merge required attribute values
+			searchBE = SearchUtils.mergeFilterValueVariables(this.beUtils, searchBE, ctxMap);
+			if (searchBE == null) {
+				log.error(ANSIColour.RED + "Cannot Perform Search!!!" + ANSIColour.RESET);
+				return null;
+			}
+
+			msg = searchUsingSearch25(serviceToken, searchBE);
 		} else {
 			log.info("Old Search");
 			msg = fetchSearchResults(searchBE);
@@ -264,6 +283,7 @@ public class TableUtils {
 
 	}
 
+
 	public List<String> getSearchColumnFilterArray(SearchEntity searchBE) 
 	{
 		List<String> attributeFilter = new ArrayList<String>();
@@ -293,7 +313,10 @@ public class TableUtils {
 	 * @param searchBE
 	 * @param msg
 	 * @return
+	 *
+	 * No longer in use.
 	 */
+	@Deprecated
 	public QDataBaseEntityMessage searchUsingHql(GennyToken serviceToken, final SearchEntity searchBE,
 			QDataBaseEntityMessage msg) {
 		long starttime = System.currentTimeMillis();
@@ -434,8 +457,7 @@ public class TableUtils {
 	 * @param msg
 	 * @return
 	 */
-	public QDataBaseEntityMessage searchUsingSearch25(GennyToken serviceToken, final SearchEntity searchBE,
-			QDataBaseEntityMessage msg) {
+	public QDataBaseEntityMessage searchUsingSearch25(GennyToken serviceToken, SearchEntity searchBE) {
 		long starttime = System.currentTimeMillis();
 		long endtime2 = starttime;
 
@@ -547,7 +569,7 @@ public class TableUtils {
 		}
  
 		// Create BE msg from array
-		msg = new QDataBaseEntityMessage(beArray);
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArray);
 		msg.setTotal(total);
 		msg.setReplace(true);
 		msg.setParentCode(searchBE.getCode());
