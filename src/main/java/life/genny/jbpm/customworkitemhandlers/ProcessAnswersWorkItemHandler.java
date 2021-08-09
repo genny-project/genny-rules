@@ -263,6 +263,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				// check answer
 				String key = answer.getUniqueCode();
 				TaskAsk ask = (TaskAsk) taskAsks.get(key);
+
 				if (ask != null) {
 					ask.setValue(answer.getValue());
 					if (StringUtils.isBlank(ask.getValue())) {
@@ -272,6 +273,22 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 					}
 					taskAsksProcessed.add(ask); // save for later updating
 					validAnswers.add(answer);
+
+					BaseEntity answerTarget = beUtils.getBaseEntityByCode(answer.getTargetCode());
+					BaseEntity defBe = beUtils.getDEF(answerTarget);
+
+					log.info("Target DEF identified as "+defBe.getCode()+"!! "+defBe.getName());
+					List<String> dependants = beUtils.getDependants(answer.getAttributeCode(), defBe);
+
+					if (dependants != null) {
+						for (String dep : dependants) {
+							/* Clear Dependant Attributes */
+							Answer ans = new Answer(userToken.getUserCode(), answerTarget.getCode(), dep, "");
+							validAnswers.add(ans);
+							VertxUtils.sendToFrontEnd(userToken, ans);
+						}
+					}
+
 					if (Boolean.TRUE.equals(answer.getInferred())) {
 						// This is a valid answer but has not come from the frondend and is not going to
 						// be expected in the task list */
@@ -370,6 +387,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				Boolean dependenciesMet = beUtils.dependenciesMet(ask.getAsk().getAttributeCode(), validAnswers, originalTarget, defBe);
 				if (dependenciesMet != null) {
 					TaskUtils.enableTaskQuestion(ask.getAsk(), dependenciesMet, userToken);
+
+					// NOTE: Should be passing a parentCode but don't have access to it
+					ShowFrame.sendDefSelectionItems(new BaseEntity[0], defBe, ask.getAsk().getAttributeCode(), userToken, serviceToken, 
+							false, originalTarget.getCode(), ask.getAsk().getQuestionCode(), ask.getAsk().getQuestionCode());
 				}
 
 				log.info("TASK-ASK: " + ask);
