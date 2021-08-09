@@ -221,28 +221,25 @@ public class SearchUtils {
 		List<String> shouldRemove = new ArrayList<>();
 
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
-			if (ea.getAttributeCode().startsWith("PRI_") || ea.getAttributeCode().startsWith("LNK_")) {
+			// Find Conditional Filters
+			EntityAttribute cnd = searchBE.findEntityAttribute("CND_"+ea.getAttributeCode()).orElse(null);
 
-				// Find Conditional Filters
-				EntityAttribute cnd = searchBE.findEntityAttribute("CND_"+ea.getAttributeCode()).orElse(null);
+			if (cnd != null) {
+				String[] condition = cnd.getValue().toString().split(":");
 
-				if (cnd != null) {
-					String[] condition = cnd.getValue().toString().split(":");
+				String capability = condition[0];
+				String mode = condition[1];
 
-					String capability = condition[0];
-					String mode = condition[1];
+				// Check for NOT operator
+				Boolean not = capability.startsWith("!");
+				capability = not ? capability.substring(1) : capability;
 
-					// Check for NOT operator
-					Boolean not = capability.startsWith("!");
-					capability = not ? capability.substring(1) : capability;
+				// Check for Capability
+				Boolean hasCap = capabilityUtils.hasCapabilityThroughPriIs(capability, CapabilityMode.valueOf(mode));
 
-					// Check for Capability
-					Boolean hasCap = capabilityUtils.hasCapabilityThroughPriIs(capability, CapabilityMode.valueOf(mode));
-
-					// XNOR operator
-					if (!(hasCap ^ not)) {
-						shouldRemove.add(ea.getAttributeCode());
-					}
+				// XNOR operator
+				if (!(hasCap ^ not)) {
+					shouldRemove.add(ea.getAttributeCode());
 				}
 			}
 		}
