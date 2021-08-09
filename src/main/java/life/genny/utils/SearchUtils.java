@@ -221,25 +221,27 @@ public class SearchUtils {
 		List<String> shouldRemove = new ArrayList<>();
 
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
-			// Find Conditional Filters
-			EntityAttribute cnd = searchBE.findEntityAttribute("CND_"+ea.getAttributeCode()).orElse(null);
+			if (!ea.getAttributeCode().startsWith("CND_")) {
+				// Find Conditional Filters
+				EntityAttribute cnd = searchBE.findEntityAttribute("CND_"+ea.getAttributeCode()).orElse(null);
 
-			if (cnd != null) {
-				String[] condition = cnd.getValue().toString().split(":");
+				if (cnd != null) {
+					String[] condition = cnd.getValue().toString().split(":");
 
-				String capability = condition[0];
-				String mode = condition[1];
+					String capability = condition[0];
+					String mode = condition[1];
 
-				// Check for NOT operator
-				Boolean not = capability.startsWith("!");
-				capability = not ? capability.substring(1) : capability;
+					// Check for NOT operator
+					Boolean not = capability.startsWith("!");
+					capability = not ? capability.substring(1) : capability;
 
-				// Check for Capability
-				Boolean hasCap = capabilityUtils.hasCapabilityThroughPriIs(capability, CapabilityMode.valueOf(mode));
+					// Check for Capability
+					Boolean hasCap = capabilityUtils.hasCapabilityThroughPriIs(capability, CapabilityMode.valueOf(mode));
 
-				// XNOR operator
-				if (!(hasCap ^ not)) {
-					shouldRemove.add(ea.getAttributeCode());
+					// XNOR operator
+					if (!(hasCap ^ not)) {
+						shouldRemove.add(ea.getAttributeCode());
+					}
 				}
 			}
 		}
@@ -274,7 +276,7 @@ public class SearchUtils {
 					if (requiresMerging != null && requiresMerging) {
 						// Check if contexts are present
 						if (MergeUtil.contextsArePresent(attrValStr, ctxMap)) {
-							// NOTE: HACK, mergeUtil should take care of this bracket replacement - Jasper (6/08/2021)
+							// NOTE: HACK, mergeUtil should be taking care of this bracket replacement - Jasper (6/08/2021)
 							Object mergedObj = MergeUtil.wordMerge(attrValStr.replace("[[", "").replace("]]", ""), ctxMap);
 							// Ensure Dataype is Correct, then set Value
 							ea.setValue(mergedObj);
@@ -341,12 +343,13 @@ public class SearchUtils {
 		JsonObject searchValueJson =new JsonObject(serValue);
 		Integer pageStart = 0;
 		Integer pageSize = dropdownSize;
+		Boolean searchingOnLinks = false;
 
 		String searchBeCode = "SBE_DROPDOWN";
 
 		SearchEntity searchBE = new SearchEntity("SBE_DROPDOWN",
 				project.getValue("PRI_NAME", project.getCode()) + " Search")
-						.addSort("PRI_NAME", "Name", SearchEntity.Sort.ASC).addColumn("PRI_CODE", "Code")
+						.addColumn("PRI_CODE", "Code")
 						.addColumn("PRI_NAME", "Name");
 
 		HashMap<String, Object> ctxMap = new HashMap<>();
@@ -359,83 +362,106 @@ public class SearchUtils {
 			try {
 				JsonObject json = (JsonObject) parmValue;
 				String attributeCode = json.getString("attributeCode");
-				Attribute att = RulesUtils.getAttribute(attributeCode, beUtils.getServiceToken());
 
-				String val = json.getString("value");
+				// Filters
+				if (attributeCode != null) {
 
-				String filterStr = null;
-				if (val.contains(":")) {
-					String[] valSplit = val.split(":");
-					filterStr = valSplit[0];
-					val = valSplit[1];
+					Attribute att = RulesUtils.getAttribute(attributeCode, beUtils.getServiceToken());
+					String val = json.getString("value");
+
+					String filterStr = null;
+					if (val.contains(":")) {
+						String[] valSplit = val.split(":");
+						filterStr = valSplit[0];
+						val = valSplit[1];
+					}
+
+					DataType dataType = att.getDataType();
+
+					if (dataType.getClassName().equals("life.genny.qwanda.entity.BaseEntity")) {
+
+						// This is used for the sort defaults
+						searchingOnLinks = true;
+
+						// For using the search source and target
+						String sourceCode = json.getString("sourceCode");
+						String targetCode = json.getString("targetCode");
+
+						// These will return True by default if source or target are null
+						if (!MergeUtil.contextsArePresent(sourceCode, ctxMap)) {
+							log.error(ANSIColour.RED+"A Parent value is missing for " + sourceCode + ", Not sending dropdown results"+ANSIColour.RESET);
+							return null;
+						}
+						if (!MergeUtil.contextsArePresent(targetCode, ctxMap)) {
+							log.error(ANSIColour.RED+"A Parent value is missing for " + targetCode + ", Not sending dropdown results"+ANSIColour.RESET);
+							return null;
+						}
+
+						// Merge any data for aource and target
+						sourceCode = MergeUtil.merge(sourceCode, ctxMap);
+						targetCode = MergeUtil.merge(targetCode, ctxMap);
+
+						log.info("attributeCode = " + json.getString("attributeCode"));
+						log.info("val = " + val);
+						log.info("link sourceCode = " + sourceCode);
+						log.info("link targetCode = " + targetCode);
+
+						// Set Source and Target if found it parameter
+						if (sourceCode != null) {
+							searchBE.setSourceCode(sourceCode);
+						}
+						if (targetCode != null) {
+							searchBE.setTargetCode(targetCode);
+						}
+
+						// Set LinkCode and LinkValue
+						searchBE.setLinkCode(att.getCode());
+						searchBE.setLinkValue(val);
+
+					} else if (dataType.getClassName().equals("java.lang.String")) {
+						SearchEntity.StringFilter stringFilter = SearchEntity.StringFilter.LIKE;
+						if (filterStr != null) {
+							stringFilter = SearchEntity.convertOperatorToStringFilter(filterStr);
+						}
+						searchBE.addFilter(attributeCode, stringFilter, val);
+					} else {
+						SearchEntity.Filter filter = SearchEntity.Filter.EQUALS;
+						if (filterStr != null) {
+							filter = SearchEntity.convertOperatorToFilter(filterStr);
+						}
+						searchBE.addFilterAsString(attributeCode, filter, val);
+					}
 				}
 
-				DataType dataType = att.getDataType();
-
-				if (dataType.getClassName().equals("life.genny.qwanda.entity.BaseEntity")) {
-
-					// For using the search source and target
-					String sourceCode = json.getString("sourceCode");
-					String targetCode = json.getString("targetCode");
-
-					// These will return True by default if source or target are null
-					if (!MergeUtil.contextsArePresent(sourceCode, ctxMap)) {
-						log.error(ANSIColour.RED+"A Parent value is missing for " + sourceCode + ", Not sending dropdown results"+ANSIColour.RESET);
-						return null;
-					}
-					if (!MergeUtil.contextsArePresent(targetCode, ctxMap)) {
-						log.error(ANSIColour.RED+"A Parent value is missing for " + targetCode + ", Not sending dropdown results"+ANSIColour.RESET);
-						return null;
-					}
-
-					// Merge any data for aource and target
-					sourceCode = MergeUtil.merge(sourceCode, ctxMap);
-					targetCode = MergeUtil.merge(targetCode, ctxMap);
-
-					log.info("attributeCode = " + json.getString("attributeCode"));
-					log.info("val = " + val);
-					log.info("link sourceCode = " + sourceCode);
-					log.info("link targetCode = " + targetCode);
-
-					// Set Source and Target if found it parameter
-					if (sourceCode != null) {
-						searchBE.setSourceCode(sourceCode);
-					}
-					if (targetCode != null) {
-						searchBE.setTargetCode(targetCode);
-					}
-
-					// Set LinkCode and LinkValue
-					searchBE.setLinkCode(att.getCode());
-					searchBE.setLinkValue(val);
-
-				} else if (dataType.getClassName().equals("java.lang.String")) {
-					SearchEntity.StringFilter stringFilter = SearchEntity.StringFilter.LIKE;
-					if (filterStr != null) {
-						stringFilter = SearchEntity.convertOperatorToStringFilter(filterStr);
-					}
-					searchBE.addFilter(attributeCode, stringFilter, val);
-				} else {
-					SearchEntity.Filter filter = SearchEntity.Filter.EQUALS;
-					if (filterStr != null) {
-						filter = SearchEntity.convertOperatorToFilter(filterStr);
-					}
-					searchBE.addFilterAsString(attributeCode, filter, val);
+				// Sorts
+				String sortBy = json.getString("sortBy");
+				if (sortBy != null) {
+					String order = json.getString("order");
+					SearchEntity.Sort sortOrder = order.equals("DESC") ? SearchEntity.Sort.DESC : SearchEntity.Sort.ASC;
+					searchBE.addSort(sortBy, sortBy, sortOrder);
 				}
+
+				// Conditionals
 				if (json.containsKey("conditions")) {
 					JsonArray conditions = json.getJsonArray("conditions");
 					for (Object cond : conditions) {
 						searchBE.addConditional(attributeCode, cond.toString());
 					}
 				}
-
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				log.error("DROPDOWN :Bad Json Value ---> " + parmValue.toString());
 				continue;
 			}
 		}
+
+		// Default to sorting by name if no sorts were specified and if not searching for EntityEntitys
+		Boolean hasSort = searchBE.getBaseEntityAttributes().stream().anyMatch(item -> item.getAttributeCode().startsWith("SRT_"));
+		if (!hasSort && !searchingOnLinks) {
+			searchBE.addSort("PRI_NAME", "Name", SearchEntity.Sort.ASC);
+		}
 		
+		// Filter by name wildcard provided by user
 		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE,message.getData().getValue()+"%")
 		.addOr("PRI_NAME", SearchEntity.StringFilter.LIKE, "% "+message.getData().getValue()+"%");
 
@@ -455,10 +481,10 @@ public class SearchUtils {
 			return null;
 		}
 
+		// Perform search and evaluate columns
 		TableUtils tableUtils = new TableUtils(beUtils);
 		QDataBaseEntityMessage msg = tableUtils.searchUsingSearch25(beUtils.getServiceToken(), searchBE);
 		
-		// List<BaseEntity> items = beUtils.getBaseEntitys(searchBE);
 		if (msg == null) {
 			log.error(ANSIColour.RED + "Dropdown search returned NULL!" + ANSIColour.RESET);
 			return null;
