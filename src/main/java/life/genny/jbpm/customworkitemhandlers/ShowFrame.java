@@ -450,18 +450,17 @@ public class ShowFrame implements WorkItemHandler {
 							if (defBe != null) {
 								defDropdownExists = beUtils.hasDropdown(dropdownCode, defBe);
 							} else {
-								log.error("No DEF identified for target "+targetCode);
+								log.error("No DEF identified for target " + targetCode);
 							}
 						} catch (Exception e) {
-							log.error("Error determining dropdown - "+e.getLocalizedMessage()+" defBecode = "+defBe.getCode());
+							log.error("Error determining dropdown - " + e.getLocalizedMessage() + " defBecode = "
+									+ defBe.getCode());
 						}
 
-						log.info(callingWorkflow + ": dropdownCode:" + dropdownCode+" and an enabled dropdown search was "+(defDropdownExists?"FOUND":"NOT FOUND"));
+						log.info(callingWorkflow + ": dropdownCode:" + dropdownCode
+								+ " and an enabled dropdown search was " + (defDropdownExists ? "FOUND" : "NOT FOUND"));
 
-						if (dropdownCode.equals("LNK_OCCUPATION") || dropdownCode.equals("LNK_HOST_COMPANY_REP")
-								|| dropdownCode.equals("LNK_INTERN_SUPERVISOR") || dropdownCode.equals("LNK_INTERNSHIP")
-								|| defDropdownExists
-						) {
+						if (defDropdownExists) {
 							log.info("Dropdown code :: " + dropdownCode);
 
 							// test
@@ -480,57 +479,63 @@ public class ShowFrame implements WorkItemHandler {
 										}
 									}
 								}
-								
+
 								String groupCode = askMsg.getItems()[0].getQuestionCode();
-								// find the questioncode associated with this lnkcode (ideally the actually attributecode is sent instead TODO)
+								// find the questioncode associated with this lnkcode (ideally the actually
+								// attributecode is sent instead TODO)
 								String questionCode = "";
 								for (Ask childAsk : askMsg.getItems()[0].getChildAsks()) {
 									if (childAsk.getAttributeCode().equals(dropdownCode)) {
 										questionCode = childAsk.getQuestionCode();
 										break;
 									}
-								}
-								QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
-										dropdownCode, userToken, serviceToken, cache, targetCode,groupCode, questionCode);
-								qBulkMessage.add(qb);
 
-								// Check Dependencies, and disable if not met
-								Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target, defBe);
-								log.info("dependenciesMet = " + dependenciesMet);
-								if (dependenciesMet != null && !dependenciesMet) {
-									if (updated.getItems() != null && updated.getItems().length > 0 && updated.getItems()[0] != null) {
-										Ask[] newAsk = { updated.getItems()[0] };
-										for (Ask childAsk : newAsk[0].getChildAsks()) {
-											if (childAsk.getAttributeCode().equals(dropdownCode)) {
-												childAsk.setDisabled(true);
-												log.info("Setting " + dropdownCode + " to DISABLED!");
+									QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
+											dropdownCode, userToken, serviceToken, cache, targetCode, groupCode,
+											questionCode);
+
+									qBulkMessage.add(qb);
+
+									// Check Dependencies, and disable if not met
+									Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target,
+											defBe);
+									log.info("dependenciesMet = " + dependenciesMet);
+									if (dependenciesMet != null && !dependenciesMet) {
+										if (updated.getItems() != null && updated.getItems().length > 0
+												&& updated.getItems()[0] != null) {
+											Ask[] newAsk = { updated.getItems()[0] };
+											for (Ask childAsk2 : newAsk[0].getChildAsks()) {
+												if (childAsk2.getAttributeCode().equals(dropdownCode)) {
+													childAsk2.setDisabled(true);
+													log.info("Setting " + dropdownCode + " to DISABLED!");
+												}
 											}
+											askMsg.setItems(newAsk);
 										}
-										askMsg.setItems(newAsk);
 									}
 								}
+
+								continue;
 							}
 
-							continue;
-						}
+							log.info("OLD Dropdown code :: " + dropdownCode);
+							if (target != null) { // don't waste time sending stuff for a null target
+								QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache,
+										targetCode);
+								qBulkMessage.add(qb);
+							}
 
-						log.info("OLD Dropdown code :: " + dropdownCode);
-						if (target != null) { // don't waste time sending stuff for a null target
-							QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
-							qBulkMessage.add(qb);
 						}
-
 					}
-				}
 
-				qBulkMessage.add(updated);
-				if (!cache) {
-					log.info("Sending the Asks Now !!!");
-					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
+					qBulkMessage.add(updated);
+					if (!cache) {
+						log.info("Sending the Asks Now !!!");
+						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
+					}
 				}
 			}
 		}
-
 		return qBulkMessage;
 	}
 
@@ -890,13 +895,18 @@ public class ShowFrame implements WorkItemHandler {
 	}
 
 	public static QBulkMessage sendDefSelectionItems(BaseEntity[] arrayItems, BaseEntity defBe, String attributeCode,
-			GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget, String groupCode, String questionCode) {
+			GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget, String groupCode,
+			String questionCode) {
+
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
+		log.info("Sending dropdown items for " + groupCode + " and question " + questionCode);
 		try {
 			// Get Group Code
+
 //			DataType dt = attribute.getDataType();
 //			// log.info("DATATYPE IS " + dt);
+
 //			String groupCode = null;
 //			List<Validation> vl = dt.getValidationList();
 //			System.out.println("vl = " + vl);
@@ -918,8 +928,11 @@ public class ShowFrame implements WorkItemHandler {
 
 				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(arrayItems, groupCode, "LINK",
 						Long.decode(arrayItems.length + ""));
+// Correct spec 
 				msg.setParentCode(groupCode);
+
 				msg.setQuestionCode(questionCode);
+
 				msg.setToken(userToken.getToken());
 				msg.setLinkCode("LNK_CORE");
 				msg.setLinkValue("ITEMS");
