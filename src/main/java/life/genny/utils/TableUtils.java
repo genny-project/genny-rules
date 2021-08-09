@@ -2132,8 +2132,10 @@ public class TableUtils {
 
 		// Send column dropdown items
 		QDataBaseEntityMessage columnItems = new QDataBaseEntityMessage(columnFilterArray);
-		columnItems.setParentCode("QUE_ADD_FILTER_GRP");
+		columnItems.setParentCode(targetCode);
 		columnItems.setQuestionCode("QUE_FILTER_COLUMN");
+		columnItems.setLinkCode("LNK_CORE");
+		columnItems.setLinkValue("LNK_ITEMS");
 		columnItems.setToken(beUtils.getGennyToken().getToken());
 		columnItems.setReplace(true);
 		VertxUtils.writeMsg("webcmds", columnItems);
