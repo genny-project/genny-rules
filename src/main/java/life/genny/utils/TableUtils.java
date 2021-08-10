@@ -284,7 +284,7 @@ public class TableUtils {
 	}
 
 
-	public List<String> getSearchColumnFilterArray(SearchEntity searchBE) 
+	public List<String> getSearchColumnFilterArray(SearchEntity searchBE)
 	{
 		List<String> attributeFilter = new ArrayList<String>();
 		List<String> assocAttributeFilter = new ArrayList<String>();
@@ -567,7 +567,7 @@ public class TableUtils {
 				}
 			}
 		}
- 
+
 		// Create BE msg from array
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArray);
 		msg.setTotal(total);
@@ -582,8 +582,8 @@ public class TableUtils {
 	}
 
 	public static Answer getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, String calEACode, GennyToken serviceToken) {
-		
-		String[] calFields = calEACode.substring("COL__".length()).split("__"); 
+
+		String[] calFields = calEACode.substring("COL__".length()).split("__");
 		if (calFields.length == 1) {
 			log.error("CALS length is bad for :" + calEACode);
 			return null;
@@ -600,17 +600,20 @@ public class TableUtils {
 			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
 			String calBe = be.getValueAsString(attributeCode);
 
+			log.info("test: inside  i < calFields.length-1 " + calBe);
 			if (calBe != null && !StringUtils.isBlank(calBe)) {
 				calBe = beUtils.cleanUpAttributeValue(calBe);
 				BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
-
+				log.info("test: inside  calBe != null && !StringUtils.isBlank(calBe) " + associatedBe);
 				if (associatedBe == null) {
 					log.info("associatedBe DOES NOT exist ->" + calBe);
 					return null;
 				}
 
 				if (i == (calFields.length-2)) {
+					log.info("test: inside  calFields.length-2 " + linkBeCode);
 					associateEa = associatedBe.findEntityAttribute(linkBeCode);
+					log.info("test: inside  calFields.length-2 associateEa  " + associateEa);
 				}
 				be = associatedBe;
 			} else {
@@ -789,38 +792,38 @@ public class TableUtils {
 	/*
 	 * private QDataAskMessage showTableHeader( SearchEntity searchBE, Map<String,
 	 * String> columns, QDataBaseEntityMessage msg) {
-	 * 
+	 *
 	 * GennyToken userToken = beUtils.getGennyToken();
-	 * 
+	 *
 	 * // Now Send out Table Header Ask and Question TableData tableData =
 	 * generateTableAsks(searchBE); Ask headerAsk = tableData.getAsk(); Ask[]
 	 * askArray = new Ask[1]; askArray[0] = headerAsk; QDataAskMessage headerAskMsg
 	 * = new QDataAskMessage(askArray); headerAskMsg.setToken(userToken.getToken());
 	 * headerAskMsg.setReplace(true);
-	 * 
+	 *
 	 * // create virtual context
-	 * 
+	 *
 	 * // Now link the FRM_TABLE_HEADER to that new Question Set<QDataAskMessage>
 	 * askMsgs = new HashSet<QDataAskMessage>();
-	 * 
+	 *
 	 * QDataBaseEntityMessage msg2 = changeQuestion(searchBE, "FRM_TABLE_HEADER",
 	 * headerAsk, beUtils.getGennyToken(), userToken, askMsgs);
 	 * msg2.setToken(userToken.getToken()); msg2.setReplace(true);
-	 * 
+	 *
 	 * QDataAskMessage[] askMsgArr = askMsgs.toArray(new QDataAskMessage[0]); if
 	 * ((askMsgArr.length > 0) && (askMsgArr[0].getItems().length > 0)) {
 	 * ContextList contextList = askMsgArr[0].getItems()[0].getContextList();
 	 * headerAskMsg.getItems()[0].setContextList(contextList);
 	 * headerAskMsg.getItems()[0].setRealm(userToken.getRealm()); }
-	 * 
+	 *
 	 * VertxUtils.writeMsg("webcmds", JsonUtils.toJson(headerAskMsg));
-	 * 
+	 *
 	 * VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg2));
-	 * 
+	 *
 	 * // Set the table title sendQuestion("QUE_TABLE_TITLE_TEST",
 	 * beUtils.getGennyToken().getUserCode(), searchBE.getCode(), "SCH_TITLE",
 	 * beUtils.getGennyToken());
-	 * 
+	 *
 	 * return headerAskMsg; }
 	 */
 
@@ -1707,11 +1710,11 @@ public class TableUtils {
 			 * "SCH_PAGE_START", "0"); Answer pageNumberAnswer = new
 			 * Answer(beUtils.getGennyToken().getUserCode(), searchBE.getCode(),
 			 * "PRI_INDEX", "1");
-			 * 
+			 *
 			 * searchBE = beUtils.updateBaseEntity(searchBE, pageAnswer,
 			 * SearchEntity.class); searchBE = beUtils.updateBaseEntity(searchBE,
 			 * pageNumberAnswer, SearchEntity.class);
-			 * 
+			 *
 			 * VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "",
 			 * searchBE.getCode(), searchBE, beUtils.getGennyToken().getToken()); }
 			 */
@@ -1880,7 +1883,7 @@ public class TableUtils {
 		// In case it needs to be changed back to hql quickly
 		Boolean useHql = false;
 		if (useHql) {
-				
+
 			Tuple2<String, List<String>> data = this.beUtils.getHql(searchBE);
 			String hql = data._1;
 			String hql2 = Base64.getUrlEncoder().encodeToString(hql.getBytes());
@@ -1973,7 +1976,7 @@ public class TableUtils {
 		// Define Attributes
 		Attribute questionAttribute = new Attribute("QQQ_QUESTION_GROUP", "link", new DataType(String.class));
 		Attribute eventAttribute = new Attribute("PRI_EVENT", "link", new DataType(String.class));
-		
+
 		// Search Filter group
 		Question filterGrpQues = new Question("QUE_FILTER_GRP_" + searchBE.getCode(), "Filters", questionAttribute,
 				true);
@@ -2004,7 +2007,7 @@ public class TableUtils {
 		// 		childAsk.setDisabled(true);
 		// 	}
 		// }
-		
+
 		// Existing Filters group
 		Question existingFilterGrpQues = new Question("QUE_EXISTING_FILTERS_GRP", "Existing Filters", questionAttribute,
 				true);
