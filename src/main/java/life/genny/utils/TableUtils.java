@@ -2132,7 +2132,7 @@ public class TableUtils {
 
 		// Send column dropdown items
 		QDataBaseEntityMessage columnItems = new QDataBaseEntityMessage(columnFilterArray);
-		columnItems.setParentCode(targetCode);
+		columnItems.setParentCode("QUE_ADD_FILTER_GRP");
 		columnItems.setQuestionCode("QUE_FILTER_COLUMN");
 		columnItems.setLinkCode("LNK_CORE");
 		columnItems.setLinkValue("LNK_ITEMS");
