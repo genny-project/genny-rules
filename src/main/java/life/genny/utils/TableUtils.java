@@ -602,20 +602,16 @@ public class TableUtils {
 			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
 			String calBe = be.getValueAsString(attributeCode);
 
-			log.info("test: inside  i < calFields.length-1 " + calBe);
 			if (calBe != null && !StringUtils.isBlank(calBe)) {
 				calBe = beUtils.cleanUpAttributeValue(calBe);
 				BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
-				log.info("test: inside  calBe != null && !StringUtils.isBlank(calBe) " + associatedBe);
 				if (associatedBe == null) {
 					log.info("associatedBe DOES NOT exist ->" + calBe);
 					return null;
 				}
 
 				if (i == (calFields.length-2)) {
-					log.info("test: inside  calFields.length-2 " + linkBeCode);
 					associateEa = associatedBe.findEntityAttribute(linkBeCode);
-					log.info("test: inside  calFields.length-2 associateEa  " + associateEa);
 				}
 				be = associatedBe;
 			} else {
