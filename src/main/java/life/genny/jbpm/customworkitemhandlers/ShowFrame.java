@@ -435,100 +435,96 @@ public class ShowFrame implements WorkItemHandler {
 
 				String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
 
-				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
-					Set<String> dropdownCodeSet = new HashSet<>(Arrays.asList(dropdownCodes));
+				// Iterate child asks
+					if (updated.getItems() != null && updated.getItems().length > 0) {
+						for (Ask childAsk : updated.getItems()[0].getChildAsks()) {
 
-					for (String dropdownCode : dropdownCodeSet) {
+							// Only Attempt if it is a dropdown
+							if (childAsk.getAttributeCode().startsWith("LNK_")) {
+								// Grab attribute and quesiotn code
+								String dropdownCode = childAsk.getAttributeCode();
+								String questionCode = childAsk.getQuestionCode();
 
-						dropdownCode = dropdownCode.replaceAll("\"", "");
+								Boolean defDropdownExists = false;
 
-						Boolean defDropdownExists = false;
-
-						// Determine whether there is a DEF attribute and target type that has a new DEF
-						// search for this combination
-						try {
-							if (defBe != null) {
-								defDropdownExists = beUtils.hasDropdown(dropdownCode, defBe);
-							} else {
-								log.error("No DEF identified for target "+targetCode);
-							}
-						} catch (Exception e) {
-							log.error("Error determining dropdown - "+e.getLocalizedMessage()+" defBecode = "+defBe.getCode());
-						}
-
-						log.info(callingWorkflow + ": dropdownCode:" + dropdownCode+" and an enabled dropdown search was "+(defDropdownExists?"FOUND":"NOT FOUND"));
-
-						if (defDropdownExists) {
-							log.info("Dropdown code :: " + dropdownCode);
-
-							// test
-							if (defDropdownExists) {
-								// find the selected edu provider if exists
-								String val = target.getValue(dropdownCode, null);
-								System.out.println("val = " + val);
-								Set<BaseEntity> beItems = new HashSet<>();
-								if (!StringUtils.isBlank(val)) {
-									JsonArray jaItems = new JsonArray(val);
-									for (Object jItem : jaItems) {
-										String beCode = (String) jItem;
-										BaseEntity selectionBe = beUtils.getBaseEntityByCode(beCode);
-										if (selectionBe != null) {
-											beItems.add(selectionBe);
-										}
+								// Determine whether there is a DEF attribute and target type that has a new DEF
+								// search for this combination
+								try {
+									if (defBe != null) {
+										defDropdownExists = beUtils.hasDropdown(dropdownCode, defBe);
+									} else {
+										log.error("No DEF identified for target "+targetCode);
 									}
+								} catch (Exception e) {
+									log.error("Error determining dropdown - "+e.getLocalizedMessage()+" defBecode = "+defBe.getCode());
 								}
-								
-								String groupCode = askMsg.getItems()[0].getQuestionCode();
-								// find the questioncode associated with this lnkcode (ideally the actually attributecode is sent instead TODO)
-								String questionCode = "";
-								for (Ask childAsk : askMsg.getItems()[0].getChildAsks()) {
-									if (childAsk.getAttributeCode().equals(dropdownCode)) {
-										questionCode = childAsk.getQuestionCode();
-										break;
-									}
-								}
-								
-								QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
-										dropdownCode, userToken, serviceToken, cache, targetCode,groupCode,questionCode);
-								qBulkMessage.add(qb);
 
-								// Check Dependencies, and disable if not met
-								Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target, defBe);
-								log.info("dependenciesMet = " + dependenciesMet);
-								if (dependenciesMet != null && !dependenciesMet) {
-									if (updated.getItems() != null && updated.getItems().length > 0 && updated.getItems()[0] != null) {
-										Ask[] newAsk = { updated.getItems()[0] };
-										for (Ask childAsk : newAsk[0].getChildAsks()) {
-											if (childAsk.getAttributeCode().equals(dropdownCode)) {
-												childAsk.setDisabled(true);
-												log.info("Setting " + dropdownCode + " to DISABLED!");
+								log.info(callingWorkflow + ": dropdownCode:" + dropdownCode+" and an enabled dropdown search was "+(defDropdownExists?"FOUND":"NOT FOUND"));
+
+								if (defDropdownExists) {
+									log.info("Dropdown code :: " + dropdownCode);
+
+									// test
+									if (defDropdownExists) {
+										// find the selected edu provider if exists
+										String val = target.getValue(dropdownCode, null);
+										System.out.println("val = " + val);
+										Set<BaseEntity> beItems = new HashSet<>();
+										if (!StringUtils.isBlank(val)) {
+											JsonArray jaItems = new JsonArray(val);
+											for (Object jItem : jaItems) {
+												String beCode = (String) jItem;
+												BaseEntity selectionBe = beUtils.getBaseEntityByCode(beCode);
+												if (selectionBe != null) {
+													beItems.add(selectionBe);
+												}
 											}
 										}
-										askMsg.setItems(newAsk);
+
+										String groupCode = askMsg.getItems()[0].getQuestionCode();
+
+										QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
+												dropdownCode, userToken, serviceToken, cache, targetCode, groupCode, questionCode);
+										qBulkMessage.add(qb);
+
+										// Check Dependencies, and disable if not met
+										Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target, defBe);
+										if (dependenciesMet != null && !dependenciesMet) {
+											if (updated.getItems() != null && updated.getItems().length > 0 && updated.getItems()[0] != null) {
+												Ask[] newAsk = { updated.getItems()[0] };
+												for (Ask childAskDep : newAsk[0].getChildAsks()) {
+													if (childAskDep.getAttributeCode().equals(dropdownCode)) {
+														childAskDep.setDisabled(true);
+														log.info("Setting " + dropdownCode + " to DISABLED!");
+													}
+												}
+												askMsg.setItems(newAsk);
+											}
+										}
 									}
+
+									continue;
 								}
+
+								log.info("OLD Dropdown code :: " + dropdownCode);
+								// don't waste time sending stuff for a null target
+								if (target != null) { 
+									QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
+									qBulkMessage.add(qb);
+								}
+
 							}
-
-							continue;
 						}
-
-						log.info("OLD Dropdown code :: " + dropdownCode);
-						if (target != null) { // don't waste time sending stuff for a null target
-							QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
-							qBulkMessage.add(qb);
-						}
-
 					}
-				}
 
-				qBulkMessage.add(updated);
-				if (!cache) {
-					log.info("Sending the Asks Now !!!");
-					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
-				}
+					qBulkMessage.add(updated);
+					if (!cache) {
+						log.info("Sending the Asks Now !!!");
+						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
+					}
+			
 			}
 		}
-
 		return qBulkMessage;
 	}
 
