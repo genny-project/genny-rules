@@ -594,6 +594,8 @@ public class TableUtils {
 		BaseEntity be = baseBE;
 
 		Optional<EntityAttribute> associateEa = null;
+		log.info("calFields value " + calEACode);
+		log.info("linkBeCode value " + linkBeCode);
 
 		for (int i = 0; i < calFields.length-1; i++) {
 			String attributeCode = calFields[i];
