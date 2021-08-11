@@ -2104,7 +2104,7 @@ public class TableUtils {
 
 		// Set child links and add parent BE to list
 		columnGrp.setLinks(childLinks);
-		columnFilterArray.add(columnGrp);
+		// columnFilterArray.add(columnGrp);
 		// Sort them by weight
 		Comparator<Ask> compareByWeight = (Ask a, Ask b) -> a.getWeight().compareTo(b.getWeight());
 		Collections.sort(askList, compareByWeight);
