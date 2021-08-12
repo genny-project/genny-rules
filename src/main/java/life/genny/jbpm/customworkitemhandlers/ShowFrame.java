@@ -437,7 +437,7 @@ public class ShowFrame implements WorkItemHandler {
 				log.info("This is the 9.4.0 version of ShowFrame , and update is "+updated);
 
 				// Iterate child asks
-					if (updated != null && updated.getItems() != null && updated.getItems().length > 0) {
+					if (updated != null && updated.getItems() != null && (updated.getItems().length > 0) && (updated.getItems()[0].getChildAsks()!=null)) {
 						for (Ask childAsk : updated.getItems()[0].getChildAsks()) {
 
 							// Only Attempt if it is a dropdown
