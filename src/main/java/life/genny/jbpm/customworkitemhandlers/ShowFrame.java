@@ -433,7 +433,8 @@ public class ShowFrame implements WorkItemHandler {
 					serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
 				}
 
-				String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
+				//String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
+				log.info("This is the 9.4.0 version of ShowFrame , and update is "+updated);
 
 				// Iterate child asks
 					if (updated != null && updated.getItems() != null && updated.getItems().length > 0) {
