@@ -436,7 +436,7 @@ public class ShowFrame implements WorkItemHandler {
 				String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
 
 				// Iterate child asks
-					if (updated.getItems() != null && updated.getItems().length > 0) {
+					if (updated != null && updated.getItems() != null && updated.getItems().length > 0) {
 						for (Ask childAsk : updated.getItems()[0].getChildAsks()) {
 
 							// Only Attempt if it is a dropdown
