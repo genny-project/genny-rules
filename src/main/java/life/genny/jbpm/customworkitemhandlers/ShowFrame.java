@@ -437,7 +437,7 @@ public class ShowFrame implements WorkItemHandler {
 
 				// Iterate child asks
 				if ((dropdownCodes != null) && (dropdownCodes.length > 0)) {
-					if (updated.getItems() != null && updated.getItems().length > 0) {
+					if (updated != null && updated.getItems() != null && updated.getItems().length > 0) {
 						for (Ask childAsk : updated.getItems()[0].getChildAsks()) {
 
 							// Only Attempt if it is a dropdown
