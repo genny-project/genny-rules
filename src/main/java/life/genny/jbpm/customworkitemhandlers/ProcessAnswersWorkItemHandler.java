@@ -390,7 +390,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 					// NOTE: Should be passing a parentCode but don't have access to it
 					ShowFrame.sendDefSelectionItems(new BaseEntity[0], defBe, ask.getAsk().getAttributeCode(), userToken, serviceToken, 
-							false, originalTarget.getCode(), ask.getAsk().getQuestionCode(), ask.getAsk().getQuestionCode());
+							false, originalTarget.getCode(), task.getName(), ask.getAsk().getQuestionCode());
 				}
 
 				log.info("TASK-ASK: " + ask);
