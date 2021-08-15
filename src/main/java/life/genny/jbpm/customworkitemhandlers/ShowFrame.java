@@ -333,6 +333,10 @@ public class ShowFrame implements WorkItemHandler {
 			log.info("Ouput Task ID = " + output.getTaskId());
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
+				if (taskService == null) {
+					log.error("ShowFrame -> taskService  fetched from taskServiceMap is null!");
+					return qBulkMessage;
+				}
 				task = taskService.getTaskById(output.getTaskId());
 				// Now get the TaskAsk that relates to this specific Ask
 				// assume that all attributes have the same source and target
