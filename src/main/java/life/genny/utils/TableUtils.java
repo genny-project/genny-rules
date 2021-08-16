@@ -503,6 +503,7 @@ public class TableUtils {
 				total = resultJson.getLong("total");
 
 			} catch (Exception e1) {
+				log.error("Exception:"  +  e1.getMessage() + " occurred, resultJsonStr:" + resultJsonStr);
 				e1.printStackTrace();
 				beArray = new BaseEntity[]{};
 			}
