@@ -283,31 +283,6 @@ public class TableUtils {
 
 	}
 
-
-	public List<String> getSearchColumnFilterArray(SearchEntity searchBE)
-	{
-		List<String> attributeFilter = new ArrayList<String>();
-		List<String> assocAttributeFilter = new ArrayList<String>();
-
-		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
-			String attributeCode = ea.getAttributeCode();
-			if (attributeCode.startsWith("COL_") || attributeCode.startsWith("CAL_")) {
-				if (attributeCode.equals("COL_PRI_ADDRESS_FULL")) {
-					attributeFilter.add("PRI_ADDRESS_LATITUDE");
-					attributeFilter.add("PRI_ADDRESS_LONGITUDE");
-				}
-				if (attributeCode.startsWith("COL__")) {
-					String[] splitCode = attributeCode.substring("COL__".length()).split("__");
-					assocAttributeFilter.add(splitCode[0]);
-				} else {
-				attributeFilter.add(attributeCode.substring("COL_".length()));
-				}
-			}
-		}
-		attributeFilter.addAll(assocAttributeFilter);
-		return attributeFilter;
-	}
-
 	/**
 	 * @param serviceToken
 	 * @param searchBE
@@ -470,8 +445,6 @@ public class TableUtils {
 			}
 		}
 
-		String[] filterArray = getSearchColumnFilterArray(searchBE).toArray(new String[0]);
-
 		BaseEntity[] beArray = null;
 		JsonArray result = null;
 		Long total = Long.valueOf(0);
@@ -543,12 +516,15 @@ public class TableUtils {
 		} else {
 			// Used to disable the column privacy
 			EntityAttribute columnWildcard = searchBE.findEntityAttribute("COL_*").orElse(null);
+			// Find Alowed Columns
+			String[] filterArray = VertxUtils.getSearchColumnFilterArray(searchBE).toArray(new String[0]);
 
 			// Otherwise handle cals
 			for (BaseEntity be : beArray) {
 
 				// Filter unwanted attributes
 				if (columnWildcard == null) {
+
 					be = VertxUtils.privacyFilter(be, filterArray);
 				}
 
