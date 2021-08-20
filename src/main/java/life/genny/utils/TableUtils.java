@@ -571,7 +571,7 @@ public class TableUtils {
 
 		Optional<EntityAttribute> associateEa = null;
 		log.info("calFields value " + calEACode);
-		log.info("linkBeCode value " + linkBeCode);
+		// log.info("linkBeCode value " + linkBeCode);
 
 		String finalAttributeCode = calEACode.substring("COL_".length());
 		// Fetch The Attribute of the last code 
@@ -615,10 +615,10 @@ public class TableUtils {
 							System.out.println("No attribute present");
 						}
 					}
-					// be = associatedBe;
+					be = associatedBe;
 				}
 			} else {
-				log.info("Could not find attribute value for " + attributeCode);
+				log.info("Could not find attribute value for " + attributeCode + " for entity " + be.getCode());
 				return null;
 			}
 		}
