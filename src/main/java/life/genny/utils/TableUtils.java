@@ -589,7 +589,6 @@ public class TableUtils {
 			log.error("CALS length is bad for :" + calEACode);
 			return null;
 		}
-		String finalAttributeCode = "";
 		String linkBeCode = calFields[calFields.length-1];
 
 		BaseEntity be = baseBE;
@@ -598,49 +597,57 @@ public class TableUtils {
 		log.info("calFields value " + calEACode);
 		log.info("linkBeCode value " + linkBeCode);
 
+		String finalAttributeCode = calEACode.substring("COL_".length());
+		// Fetch The Attribute of the last code 
+		String primaryAttrCode = calFields[calFields.length-1];
+		Attribute primaryAttribute = RulesUtils.getAttribute(primaryAttrCode, serviceToken);
+
+		Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), finalAttributeCode, "");
+		Attribute att = new Attribute(finalAttributeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
+		ans.setAttribute(att);
+
 		for (int i = 0; i < calFields.length-1; i++) {
 			String attributeCode = calFields[i];
-			finalAttributeCode = finalAttributeCode + ( i == 0 ? "_" : "__") + attributeCode;
 			String calBe = be.getValueAsString(attributeCode);
 
 			if (calBe != null && !StringUtils.isBlank(calBe)) {
-				calBe = beUtils.cleanUpAttributeValue(calBe);
-				BaseEntity associatedBe = beUtils.getBaseEntityByCode(calBe);
-				if (associatedBe == null) {
-					log.info("associatedBe DOES NOT exist ->" + calBe);
-					return null;
-				}
+				String calVal = beUtils.cleanUpAttributeValue(calBe);
+				String[] codeArr = calVal.split(",");
+				for (String code : codeArr) {
 
-				if (i == (calFields.length-2)) {
-					associateEa = associatedBe.findEntityAttribute(linkBeCode);
+					BaseEntity associatedBe = beUtils.getBaseEntityByCode(code);
+					if (associatedBe == null) {
+						log.info("associatedBe DOES NOT exist ->" + code);
+						return null;
+					}
+
+					if (i == (calFields.length-2)) {
+						associateEa = associatedBe.findEntityAttribute(linkBeCode);
+
+						if (associateEa != null && (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode)))) {
+							String linkedValue = null;
+							if ("PRI_NAME".equals(linkBeCode)) {
+								linkedValue = associatedBe.getName();
+							} else {
+								linkedValue = associatedBe.getValueAsString(linkBeCode);
+							}
+							if (!ans.getValue().isEmpty()) {
+								linkedValue = ans.getValue() + "," + linkedValue;
+							}
+							ans.setValue(linkedValue);
+						} else {
+							System.out.println("No attribute present");
+						}
+					}
+					// be = associatedBe;
 				}
-				be = associatedBe;
 			} else {
 				log.info("Could not find attribute value for " + attributeCode);
 				return null;
 			}
 		}
 
-		if (associateEa != null && (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode)))) {
-			String linkedValue = null;
-			if ("PRI_NAME".equals(linkBeCode)) {
-				linkedValue = be.getName();
-			} else {
-				linkedValue = be.getValueAsString(linkBeCode);
-			}
-			// log.info("CAL SEARCH linkedValue = " + linkedValue);
-			finalAttributeCode = finalAttributeCode + "__" + linkBeCode;
-			Attribute primaryAttribute = RulesUtils.getAttribute(linkBeCode, serviceToken);
-			Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), finalAttributeCode, linkedValue);
-			Attribute att = new Attribute(finalAttributeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
-			ans.setAttribute(att);
-
-			return ans;
-
-		} else {
-			System.out.println("No attribute present");
-		}
-		return null;
+		return ans;
 	}
 
 	private static void updateColIndex(SearchEntity searchBE) {
@@ -2134,8 +2141,8 @@ public class TableUtils {
 
 		// Send column dropdown items
 		QDataBaseEntityMessage columnItems = new QDataBaseEntityMessage(columnFilterArray);
-		columnItems.setParentCode("QUE_ADD_FILTER_GRP");
 		columnItems.setQuestionCode("QUE_FILTER_COLUMN");
+		columnItems.setParentCode("QUE_ADD_FILTER_GRP");
 		columnItems.setLinkCode("LNK_CORE");
 		columnItems.setLinkValue("LNK_ITEMS");
 		columnItems.setToken(beUtils.getGennyToken().getToken());
