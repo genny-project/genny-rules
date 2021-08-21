@@ -144,6 +144,7 @@ import life.genny.rules.listeners.NodeStatusLog;
 import life.genny.rules.processor.RequestProcessor;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
+import life.genny.utils.DefUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.NodeStatusQueryMapper;
 import life.genny.utils.OutputParam;
@@ -393,7 +394,7 @@ public class RulesLoader {
 		
 		for (String realm : activeRealms) {
 			
-			loadDEFS(realm);
+			DefUtils.loadDEFS(realm);
 			
 			log.info("LOADING " + realm + " RULES");
 			Integer rulesCount = setupKieRules(realm, rules);
