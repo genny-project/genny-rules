@@ -127,6 +127,8 @@ public class ShowFrame implements WorkItemHandler {
 	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
+		BaseEntity defBe = null;
+		
 
 		if (userToken == null) {
 			log.error(callingWorkflow + ": Must supply userToken!");
@@ -278,6 +280,8 @@ public class ShowFrame implements WorkItemHandler {
 		}
 		log.info("Sending the EndMsg Now !!!");
 		VertxUtils.writeMsgEnd(userToken);
+		
+		
 		return qBulkMessage;
 	}
 
@@ -303,6 +307,231 @@ public class ShowFrame implements WorkItemHandler {
 		}
 	}
 
+	/**
+	 * @param rootFrameCode
+	 * @param userToken
+	 * @param callingWorkflow
+	 */
+	private static QBulkMessage sendSmallDropdowns(BaseEntity defBe,String rootFrameCode, GennyToken userToken, String callingWorkflow,
+			OutputParam output, Boolean cache) {
+		QBulkMessage qBulkMessage = new QBulkMessage();
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+
+		if (VertxUtils.cachedEnabled) {
+			// No point sending asks
+			return qBulkMessage;
+		}
+
+		TaskService taskService;
+		Task task = null;
+		Map<String, Object> taskAsks = null;
+		Map<String, TaskAsk> attributeTaskAskMap = null;
+		String sourceCode = null;
+		String targetCode = null;
+		Boolean enabledSubmit = false;
+
+		BaseEntity target = null;
+
+		if ((output != null)) {
+			log.info("Ouput Task ID = " + output.getTaskId());
+			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
+				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
+				task = taskService.getTaskById(output.getTaskId());
+				// Now get the TaskAsk that relates to this specific Ask
+				// assume that all attributes have the same source and target
+				Long docId = task.getTaskData().getDocumentContentId();
+				Content c = taskService.getContentById(docId);
+				if (c == null) {
+					log.error(callingWorkflow + ": *************** Task content is NULL *********** ABORTING");
+					return qBulkMessage;
+				}
+				taskAsks = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
+				for (String key : taskAsks.keySet()) {
+					Object obj = taskAsks.get(key);
+					if (obj instanceof TaskAsk) { // This gets around my awful formcode values
+						TaskAsk taskAsk = (TaskAsk) taskAsks.get(key);
+						String attributeStr = taskAsk.getAsk().getAttributeCode();
+						// attributeTaskAskMap.put(attributeStr,taskAsk);
+						sourceCode = taskAsk.getAsk().getSourceCode();
+						targetCode = taskAsk.getAsk().getTargetCode();
+					}
+				}
+
+				target = beUtils.getBaseEntityByCode(targetCode);
+
+				defBe = beUtils.getDEF(target);
+				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
+
+			} else {
+				sourceCode = output.getAskSourceCode();
+				targetCode = output.getAskTargetCode();
+			}
+		}
+
+		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
+
+		// log.info("Sending Asks");
+		if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
+			for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
+				for (Ask aask : askMsg.getItems()) {
+					log.info(callingWorkflow + ": aask: " + aask);
+
+					/* recursively check validations */
+					checkAskValidation(aask, callingWorkflow);
+					TaskUtils.enableAttribute("PRI_SUBMIT", aask, callingWorkflow, enabledSubmit);
+					aask.setId(output.getTaskId());
+				}
+				askMsg.setToken(userToken.getToken());
+
+				/* call the ask filters */
+				log.info(callingWorkflow + ": Calling getAskFilters");
+				// HACK, because setting source and target first isnt working for some reason
+				Ask itemZero = askMsg.getItems()[0];
+				itemZero.setTargetCode(targetCode);
+				Ask filteredAsk = getAskFilters(beUtils, itemZero);
+				if (filteredAsk != null) {
+					log.info(callingWorkflow + ": filteredAsk is not null. Using filteredAsk");
+					Ask[] filteredAskArr = { filteredAsk };
+					askMsg.setItems(filteredAskArr);
+				}
+
+				String jsonStr = updateSourceAndTarget(askMsg, sourceCode, targetCode, output, userToken);
+				QDataAskMessage updated = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
+
+				// Find all the target be's to send
+				Set<String> beCodes = new HashSet<String>();
+				// The user will already be there
+				if ((targetCode != null)) {
+					beCodes.add(targetCode);
+				}
+				if (!output.getAttributeTargetCodeMap().keySet().isEmpty()) {
+					beCodes.addAll(output.getAttributeTargetCodeMap().values());
+				}
+				beCodes.remove(userToken.getUserCode()); // no need to send the user
+				if (!beCodes.isEmpty()) {
+					List<BaseEntity> besToSend = new ArrayList<BaseEntity>();
+					for (String tCode : beCodes) {
+						BaseEntity be = beUtils.getBaseEntityByCode(tCode);
+						besToSend.add(be);
+					}
+					QDataBaseEntityMessage beMsg = new QDataBaseEntityMessage(besToSend);
+					beMsg.setReplace(true);
+					if (cache) {
+						qBulkMessage.add(beMsg);
+					} else {
+						beMsg.setToken(userToken.getToken());
+						VertxUtils.writeMsg("webdata", beMsg);
+					}
+
+				}
+
+				// find any select Attributes, find their selection Baseentities and send
+				GennyToken serviceToken = null;
+				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN",
+						String.class, userToken.getToken());
+				if (serviceTokenStr == null) {
+					log.error(callingWorkflow + ": SERVICE TOKEN FETCHED FROM CACHE IS NULL");
+					return qBulkMessage;
+				} else {
+					serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
+				}
+
+				//String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
+				log.info("This is the 9.4.0 version of ShowFrame , and update is "+updated);
+
+				// Iterate child asks
+					if (updated != null && updated.getItems() != null && (updated.getItems().length > 0) && (updated.getItems()[0].getChildAsks()!=null)) {
+						for (Ask childAsk : updated.getItems()[0].getChildAsks()) {
+
+							// Only Attempt if it is a dropdown
+							if (childAsk.getAttributeCode().startsWith("LNK_")) {
+								// Grab attribute and quesiotn code
+								String dropdownCode = childAsk.getAttributeCode();
+								String questionCode = childAsk.getQuestionCode();
+
+								Boolean defDropdownExists = false;
+
+								// Determine whether there is a DEF attribute and target type that has a new DEF
+								// search for this combination
+								try {
+									if (defBe != null) {
+										defDropdownExists = beUtils.hasDropdown(dropdownCode, defBe);
+									} else {
+										log.error("No DEF identified for target "+targetCode);
+									}
+								} catch (Exception e) {
+									log.error("Error determining dropdown - "+e.getLocalizedMessage()+" defBecode = "+defBe.getCode());
+								}
+
+								log.info(callingWorkflow + ": dropdownCode:" + dropdownCode+" and an enabled dropdown search was "+(defDropdownExists?"FOUND":"NOT FOUND"));
+
+								if (defDropdownExists) {
+									log.info("Dropdown code :: " + dropdownCode);
+
+									// test
+									if (defDropdownExists) {
+										// find the selected edu provider if exists
+										String val = target.getValue(dropdownCode, null);
+										System.out.println("val = " + val);
+										Set<BaseEntity> beItems = new HashSet<>();
+										if (!StringUtils.isBlank(val)) {
+											JsonArray jaItems = new JsonArray(val);
+											for (Object jItem : jaItems) {
+												String beCode = (String) jItem;
+												BaseEntity selectionBe = beUtils.getBaseEntityByCode(beCode);
+												if (selectionBe != null) {
+													beItems.add(selectionBe);
+												}
+											}
+										}
+
+										String groupCode = askMsg.getItems()[0].getQuestionCode();
+
+										QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe,
+												dropdownCode, userToken, serviceToken, cache, targetCode, groupCode, questionCode);
+										qBulkMessage.add(qb);
+
+										// Check Dependencies, and disable if not met
+										Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target, defBe);
+										if (dependenciesMet != null && !dependenciesMet) {
+											if (updated.getItems() != null && updated.getItems().length > 0 && updated.getItems()[0] != null) {
+												Ask[] newAsk = { updated.getItems()[0] };
+												for (Ask childAskDep : newAsk[0].getChildAsks()) {
+													if (childAskDep.getAttributeCode().equals(dropdownCode)) {
+														childAskDep.setDisabled(true);
+														log.info("Setting " + dropdownCode + " to DISABLED!");
+													}
+												}
+												askMsg.setItems(newAsk);
+											}
+										}
+									}
+
+									continue;
+								}
+
+								log.info("OLD Dropdown code :: " + dropdownCode);
+								// don't waste time sending stuff for a null target
+								if (target != null) { 
+									QBulkMessage qb = sendSelectionItems(dropdownCode, userToken, serviceToken, cache, targetCode);
+									qBulkMessage.add(qb);
+								}
+
+							}
+						}
+					}
+
+					qBulkMessage.add(updated);
+					if (!cache) {
+						log.info("Sending the Asks Now !!!");
+						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
+					}
+			
+			}
+		}
+		return qBulkMessage;
+	}
+	
 	/**
 	 * @param rootFrameCode
 	 * @param userToken
