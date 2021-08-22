@@ -1,9 +1,13 @@
 package life.genny.utils;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +39,6 @@ public class DefUtils {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
-    static public Map<String,Map<String,BaseEntity>> defs = new ConcurrentHashMap<>();  // realm and DEF lookup
 
 	/**
 	 * @param realm
@@ -64,38 +67,56 @@ public class DefUtils {
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,serviceToken);
 
-		List<BaseEntity> items = beUtils.getBaseEntitys(searchBE);
+		List<BaseEntity> items = Collections.synchronizedList(beUtils.getBaseEntitys(searchBE));
 			log.info("Loaded "+items.size()+" DEF baseentitys");
 
-		defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());	
+		RulesUtils.defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());	
 			
 		for (BaseEntity item : items) {
 			
 			// Now go through all the searches and see what the total is of the searches.
 			// if less than or equal to dropdown size then generate the dropdown items message and save into an attribute called "DDI_<attributeCode>"
-						
-			for (EntityAttribute defEa : item.getBaseEntityAttributes()) {
+			
+			Iterator<EntityAttribute> eaIterator = item.getBaseEntityAttributes().iterator();
+			Set<EntityAttribute> newEas = new HashSet<>();
+			
+			while (eaIterator.hasNext()) {
+				EntityAttribute defEa = eaIterator.next();
+		//	for (EntityAttribute defEa : item.getBaseEntityAttributes()) {
 				if (defEa.getAttributeCode().startsWith("SER_")) {
+					log.info("DEF Processing "+defEa.getAttributeCode());
 					// This is a dropdown attribute!
 					// Now if this search has a parental dependency then we cannot do anything so we skip
 					String searchValue = defEa.getValueString();
-					if (StringUtils.isBlank(searchValue) || (searchValue.contains("[["))) { // could be faster with finding firt index
+					JsonObject json = null;
+					try {
+						json = new JsonObject(searchValue);
+					} catch (Exception e1) {
+						log.error("Bad Search DEF json "+defEa.getAttributeCode());
+						continue;
+					}
+					Boolean cached = false;
+					if (json.containsKey("cached")) {
+						cached = json.getBoolean("cached");
+					} else {
+						cached = true;
+					}
+					if (StringUtils.isBlank(searchValue) || (searchValue.contains("[[")) || !cached) { // could be faster with finding firt index
 						continue;
 					}
 					// If the json of the search has "cache" set to true then immediately create a cached version
-					
+					log.info("Adding Cached Dropdown Data for "+defEa.getAttributeCode());
 					QDataBaseEntityMessage cachedMessage =  DefUtils.getDropdownDataMessage(beUtils, defEa.getAttributeCode().substring("SER_".length()), "@@PARENTCODE@@", "@@QUESTIONCODE@@",searchValue, null, null, "", "@@TOKEN@@");
-					Attribute cacheAttribute = new AttributeText("DDC_"+defEa.getAttributeCode(),"DDC_"+defEa.getAttributeCode().substring("SER_".length()));
-					try {
-						item.addAnswer(new Answer(item,item,cacheAttribute,JsonUtils.toJson(cachedMessage)));
-					} catch (BadDataException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					Attribute cacheAttribute = new AttributeText("DDC_"+defEa.getAttributeCode().substring("SER_".length()),"DDC_"+defEa.getAttributeCode().substring("SER_".length()));
+					
+					EntityAttribute newDdcEa = new EntityAttribute(item, cacheAttribute, 1.0, JsonUtils.toJson(cachedMessage));
+					newEas.add(newDdcEa);
+//	item.addAnswer(new Answer(item,item,cacheAttribute,JsonUtils.toJson(cachedMessage)));
 				}
 			}
 			
-			defs.get(realm).put(item.getCode(),item);
+			item.getBaseEntityAttributes().addAll(newEas);
+			RulesUtils.defs.get(realm).put(item.getCode(),item);
 			item.setFastAttributes(true); // make fast
 
 			log.info("Saving ("+realm+") DEF "+item.getCode());
@@ -115,9 +136,13 @@ public class DefUtils {
 						.addColumn("PRI_CODE", "Code")
 						.addColumn("PRI_NAME", "Name");
 
-		HashMap<String, Object> ctxMap = new HashMap<>();
-		ctxMap.put("SOURCE", sourceBe);
-		ctxMap.put("TARGET", targetBe);
+		Map<String, Object> ctxMap = new ConcurrentHashMap<>();
+		if (sourceBe!=null) {
+			ctxMap.put("SOURCE", sourceBe);
+		}
+		if (targetBe!=null) {
+			ctxMap.put("TARGET", targetBe);
+		}
 		
 		
 

@@ -252,7 +252,7 @@ public class SearchUtils {
 		return searchBE;
 	}
 
-	public static SearchEntity mergeFilterValueVariables(BaseEntityUtils beUtils, SearchEntity searchBE, HashMap<String, Object> ctxMap) {
+	public static SearchEntity mergeFilterValueVariables(BaseEntityUtils beUtils, SearchEntity searchBE, Map<String, Object> ctxMap) {
 
 		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
 			// Iterate all Filters
