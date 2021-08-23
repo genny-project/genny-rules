@@ -197,11 +197,11 @@ public class DefUtils {
 						log.info("link targetCode = " + targetCode);
 
 						// Set Source and Target if found it parameter
-						if (sourceCode != null) {
-							searchBE.setSourceCode(sourceCode);
+						if (sourceBe != null) {
+							searchBE.setSourceCode(sourceBe.getCode());
 						}
-						if (targetCode != null) {
-							searchBE.setTargetCode(targetCode);
+						if (targetBe != null) {
+							searchBE.setTargetCode(targetBe.getCode());
 						}
 
 						// Set LinkCode and LinkValue
