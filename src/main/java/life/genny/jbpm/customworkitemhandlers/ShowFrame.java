@@ -1162,6 +1162,7 @@ public class ShowFrame implements WorkItemHandler {
 					jsonMsg = jsonMsg.replaceAll("@@QUESTIONCODE@@", questionCode);
 
 					msg = JsonUtils.fromJson(jsonMsg, QDataBaseEntityMessage.class);
+					msg.setAttributeCode(attributeCode);
 					qBulkMessage.add(msg);
 					if (!cache) {
 						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
