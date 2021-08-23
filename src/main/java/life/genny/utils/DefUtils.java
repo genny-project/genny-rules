@@ -169,7 +169,7 @@ public class DefUtils {
 					DataType dataType = att.getDataType();
 
 					if (dataType.getClassName().equals("life.genny.qwanda.entity.BaseEntity")) {
-
+						if (attributeCode.equals("LNK_CORE") || attributeCode.equals("LNK_IND")) {  // These represent EntityEntity
 						// This is used for the sort defaults
 						searchingOnLinks = true;
 
@@ -197,17 +197,29 @@ public class DefUtils {
 						log.info("link targetCode = " + targetCode);
 
 						// Set Source and Target if found it parameter
-						if (sourceBe != null) {
-							searchBE.setSourceCode(sourceBe.getCode());
+						if (sourceCode != null) {
+							searchBE.setSourceCode(sourceCode);
 						}
-						if (targetBe != null) {
-							searchBE.setTargetCode(targetBe.getCode());
+						if (targetCode != null) {
+							searchBE.setTargetCode(targetCode);
 						}
 
 						// Set LinkCode and LinkValue
 						searchBE.setLinkCode(att.getCode());
 						searchBE.setLinkValue(val);
-
+						} else {
+							// This is a DTT_LINK style that has class = baseentity --> Baseentity_Attribute
+							SearchEntity.StringFilter stringFilter = SearchEntity.StringFilter.LIKE;  // TODO equals?
+							if (filterStr != null) {
+								stringFilter = SearchEntity.convertOperatorToStringFilter(filterStr);
+							}
+							searchBE.addFilter(attributeCode, stringFilter, val);
+							
+						}
+						
+						
+						
+						
 					} else if (dataType.getClassName().equals("java.lang.String")) {
 						SearchEntity.StringFilter stringFilter = SearchEntity.StringFilter.LIKE;
 						if (filterStr != null) {
