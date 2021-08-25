@@ -897,8 +897,7 @@ public class ShowFrame implements WorkItemHandler {
 					userToken.getToken());
 
 			if (askMsgs2Str == null) {
-				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl + " with rootFrameCode = " + rootFrameCode);
-				log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode + "_ASKS");
+				log.error("No Asks: " + rootFrameCode + "_ASKS in cache, search cache for " + rootFrameCode);
 				String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 						userToken.getToken());
 				Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
@@ -941,8 +940,7 @@ public class ShowFrame implements WorkItemHandler {
 
 			// askMsgs2Str = null; //TODO FORCE HACK
 			if (askMsgs2Str == null) {
-				log.info("ShowFrame 455 DDT = " + GennySettings.ddtUrl + " with rootFrameCode = " + rootFrameCode);
-				log.error("No Asks in cache - asking api to generate and refresh cache for " + rootFrameCode + "_ASKS");
+				log.error("No Asks: " + rootFrameCode + "_ASKS in cache, search cache for " + rootFrameCode);
 				String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 						userToken.getToken());
 				Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
