@@ -386,7 +386,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 				// Enable if Dependencies have been met
 				Boolean dependenciesMet = beUtils.dependenciesMet(ask.getAsk().getAttributeCode(), validAnswers, originalTarget, defBe);
 				if (dependenciesMet != null) {
-					TaskUtils.enableTaskQuestion(ask.getAsk(), dependenciesMet, userToken);
+					TaskUtils.hideTaskQuestion(ask.getAsk(), dependenciesMet, userToken);
 
 					// NOTE: Should be passing a parentCode but don't have access to it
 					ShowFrame.sendDefSelectionItems(new BaseEntity[0], defBe, ask.getAsk().getAttributeCode(), userToken, serviceToken, 

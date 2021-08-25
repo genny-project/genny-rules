@@ -633,6 +633,19 @@ public class TaskUtils {
 		VertxUtils.writeMsg("webcmds", sendingMsg);
 	}
 
+	public static void hideTaskQuestion(Ask ask, Boolean hidden, GennyToken userToken) {
+
+		// Hide and Disable
+		ask.setHidden(!hidden);
+		ask.setDisabled(!hidden);
+
+		QDataAskMessage askMsg = new QDataAskMessage(ask);
+		askMsg.setToken(userToken.getToken());
+		askMsg.setReplace(true);
+		String sendingMsg = JsonUtils.toJson(askMsg);
+		VertxUtils.writeMsg("webcmds", sendingMsg);
+	}
+
 	public static Boolean areAllMandatoryQuestionsAnswered(BaseEntity target, Map<String, Object> taskAsks) {
 
 		Boolean allMandatoryAnswered = true;
