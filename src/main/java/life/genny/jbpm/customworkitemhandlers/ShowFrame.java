@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import life.genny.models.FramePosition;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jbpm.services.task.utils.ContentMarshallerHelper;
@@ -900,6 +901,26 @@ public class ShowFrame implements WorkItemHandler {
 				log.error("No Asks: " + rootFrameCode + "_ASKS in cache, search cache for " + rootFrameCode);
 				String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 						userToken.getToken());
+				if (StringUtils.isBlank(frameStr)) {
+					String questionCode = rootFrameCode.substring("FRM_".length());
+					String realm = userToken.getRealm();
+					Frame3 frame2 = Frame3.builder("FRM_CONTENT_" +  questionCode)
+							.question(questionCode).end()
+							.build();
+
+					frame2.setRealm(realm);
+
+					Frame3 frame = Frame3.builder("FRM_" +  questionCode)
+							.addFrame(frame2, FramePosition.CENTRE)
+							.end()
+							.build();
+
+					frame.setRealm(realm);
+					System.out.println(frame.getCode());
+					FrameUtils2.toMessage(frame, userToken);
+					frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
+							userToken.getToken());
+				}
 				Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
 				if (rootFrame != null) {
 					if (rootFrame.getCode().startsWith("FRM_QUE_")) {
@@ -943,6 +964,26 @@ public class ShowFrame implements WorkItemHandler {
 				log.error("No Asks: " + rootFrameCode + "_ASKS in cache, search cache for " + rootFrameCode);
 				String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 						userToken.getToken());
+				if (StringUtils.isBlank(frameStr)) {
+					String questionCode = rootFrameCode.substring("FRM_".length());
+					String realm = userToken.getRealm();
+					Frame3 frame2 = Frame3.builder("FRM_CONTENT_" +  questionCode)
+							.question(questionCode).end()
+							.build();
+
+					frame2.setRealm(realm);
+
+					Frame3 frame = Frame3.builder("FRM_" +  questionCode)
+							.addFrame(frame2, FramePosition.CENTRE)
+							.end()
+							.build();
+
+					frame.setRealm(realm);
+					System.out.println(frame.getCode());
+					FrameUtils2.toMessage(frame, userToken);
+					frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
+							userToken.getToken());
+				}
 				Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
 				if (rootFrame != null) {
 					if (rootFrame.getCode().startsWith("FRM_QUE_")) {
