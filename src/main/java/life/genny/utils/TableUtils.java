@@ -570,7 +570,7 @@ public class TableUtils {
 		BaseEntity be = baseBE;
 
 		Optional<EntityAttribute> associateEa = null;
-		log.info("calFields value " + calEACode);
+		// log.info("calFields value " + calEACode);
 		// log.info("linkBeCode value " + linkBeCode);
 
 		String finalAttributeCode = calEACode.substring("COL_".length());
