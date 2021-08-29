@@ -618,7 +618,7 @@ public class TableUtils {
 					be = associatedBe;
 				}
 			} else {
-				log.info("Could not find attribute value for " + attributeCode + " for entity " + be.getCode());
+				log.info("TableUtils: Could not find attribute value for " + attributeCode + " for entity " + be.getCode());
 				return null;
 			}
 		}
