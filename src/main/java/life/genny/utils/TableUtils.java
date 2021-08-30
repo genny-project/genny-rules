@@ -471,9 +471,17 @@ public class TableUtils {
 				endtime2 = System.currentTimeMillis();
 				log.info("NOT SINGLE - Time taken to fetch Data =" + (endtime2 - starttime) + " ms");
 
-				resultJson = new JsonObject(resultJsonStr);
-				result = resultJson.getJsonArray("codes");
-				total = resultJson.getLong("total");
+				try {
+					resultJson = new JsonObject(resultJsonStr);
+					result = resultJson.getJsonArray("codes");
+					total = resultJson.getLong("total");
+				} catch (Exception e) {
+					log.error("TableUtils: SearchUsingSearch25 -> Bad Json ("+resultJsonStr+") , returning empty search");
+					beArray = new BaseEntity[]{};
+					result = new JsonArray();
+					total = 0L;
+				}
+				
 
 			} catch (Exception e1) {
 				log.error("Exception:"  +  e1.getMessage() + " occurred, resultJsonStr:" + resultJsonStr);
