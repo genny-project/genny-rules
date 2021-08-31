@@ -30,6 +30,7 @@ import life.genny.qwanda.exception.BadDataException;
 import io.vavr.Tuple2;
 import java.util.regex.Matcher;
 
+import org.apache.commons.lang3.StringUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import life.genny.models.GennyToken;
@@ -256,6 +257,75 @@ public class SearchUtils {
 
 		return msg;
 	}
+
+	public static Answer getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, String calEACode, GennyToken serviceToken) {
+
+		String[] calFields = calEACode.substring("COL__".length()).split("__");
+		if (calFields.length == 1) {
+			log.error("CALS length is bad for :" + calEACode);
+			return null;
+		}
+		String linkBeCode = calFields[calFields.length-1];
+
+		BaseEntity be = baseBE;
+
+		Optional<EntityAttribute> associateEa = null;
+		// log.info("calFields value " + calEACode);
+		// log.info("linkBeCode value " + linkBeCode);
+
+		String finalAttributeCode = calEACode.substring("COL_".length());
+		// Fetch The Attribute of the last code 
+		String primaryAttrCode = calFields[calFields.length-1];
+		Attribute primaryAttribute = RulesUtils.getAttribute(primaryAttrCode, serviceToken);
+
+		Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), finalAttributeCode, "");
+		Attribute att = new Attribute(finalAttributeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
+		ans.setAttribute(att);
+
+		for (int i = 0; i < calFields.length-1; i++) {
+			String attributeCode = calFields[i];
+			String calBe = be.getValueAsString(attributeCode);
+
+			if (calBe != null && !StringUtils.isBlank(calBe)) {
+				String calVal = beUtils.cleanUpAttributeValue(calBe);
+				String[] codeArr = calVal.split(",");
+				for (String code : codeArr) {
+
+					BaseEntity associatedBe = beUtils.getBaseEntityByCode(code);
+					if (associatedBe == null) {
+						log.info("associatedBe DOES NOT exist ->" + code);
+						return null;
+					}
+
+					if (i == (calFields.length-2)) {
+						associateEa = associatedBe.findEntityAttribute(linkBeCode);
+
+						if (associateEa != null && (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode)))) {
+							String linkedValue = null;
+							if ("PRI_NAME".equals(linkBeCode)) {
+								linkedValue = associatedBe.getName();
+							} else {
+								linkedValue = associatedBe.getValueAsString(linkBeCode);
+							}
+							if (!ans.getValue().isEmpty()) {
+								linkedValue = ans.getValue() + "," + linkedValue;
+							}
+							ans.setValue(linkedValue);
+						} else {
+							System.out.println("No attribute present");
+						}
+					}
+					be = associatedBe;
+				}
+			} else {
+				log.info("TableUtils: Could not find attribute value for " + attributeCode + " for entity " + be.getCode());
+				return null;
+			}
+		}
+
+		return ans;
+	}
+
 	
 	/* Generate List of asks from a SearchEntity */
 	public static List<Ask> generateQuestions(GennyToken userToken, BaseEntityUtils beUtils, List<BaseEntity> bes,
@@ -819,7 +889,7 @@ public class SearchUtils {
 		// Only fire for assoc values, others should already be in the BE
 		} else if (attrCode.startsWith("_LNK") || attrCode.startsWith("_PRI")) {
 
-			Answer ans = TableUtils.getAssociatedColumnValue(beUtils, be, "COL_"+attrCode, beUtils.getServiceToken());
+			Answer ans = new SearchUtils(beUtils).getAssociatedColumnValue(beUtils, be, "COL_"+attrCode, beUtils.getServiceToken());
 
 			if (ans != null) {
 				try {
