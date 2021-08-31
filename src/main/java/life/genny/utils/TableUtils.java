@@ -135,7 +135,8 @@ public class TableUtils {
 				return null;
 			}
 
-			msg = searchUsingSearch25(serviceToken, searchBE);
+			SearchUtils searchUtils = new SearchUtils(beUtils);
+			msg = searchUtils.searchUsingSearch25(serviceToken, searchBE);
 		} else {
 			log.info("Old Search");
 			msg = fetchSearchResults(searchBE);
@@ -420,146 +421,6 @@ public class TableUtils {
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
-		long endtime3 = System.currentTimeMillis();
-		log.info("Time taken to get cached Bes added to list =" + (endtime3 - endtime2) + " ms");
-
-		return msg;
-	}
-
-	/**
-	 * @param serviceToken
-	 * @param searchBE
-	 * @param msg
-	 * @return
-	 */
-	public QDataBaseEntityMessage searchUsingSearch25(GennyToken serviceToken, SearchEntity searchBE) {
-		long starttime = System.currentTimeMillis();
-		long endtime2 = starttime;
-
-		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
-		if (cals != null) {
-			log.info("searchUsingSearch25 -> detected " + cals.size() + " CALS");
-
-			for (EntityAttribute calEA : cals) {
-				log.info("Found CAL with code: " + calEA.getAttributeCode());
-			}
-		}
-
-		BaseEntity[] beArray = null;
-		JsonArray result = null;
-		Long total = Long.valueOf(0);
-
-		// Check for a specific item search
-		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
-			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
-				log.info("SINGLE BASE ENTITY SEARCH DETECTED");
-				result = new JsonArray("[\""+attr.getValue()+"\"]");
-				break;
-			}
-		}
-
-		String resultJsonStr = null;
-		JsonObject resultJson = null;
-
-		// Perform the search if specific item not found
-		if (beArray == null) {
-			try {
-				resultJsonStr = QwandaUtils.apiPostEntity2(
-						GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
-						JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
-
-				endtime2 = System.currentTimeMillis();
-				log.info("NOT SINGLE - Time taken to fetch Data =" + (endtime2 - starttime) + " ms");
-
-				try {
-					resultJson = new JsonObject(resultJsonStr);
-					result = resultJson.getJsonArray("codes");
-					total = resultJson.getLong("total");
-				} catch (Exception e) {
-					log.error("TableUtils: SearchUsingSearch25 -> Bad Json ("+resultJsonStr+") , returning empty search");
-					beArray = new BaseEntity[]{};
-					result = new JsonArray();
-					total = 0L;
-				}
-				
-
-			} catch (Exception e1) {
-				log.error("Exception:"  +  e1.getMessage() + " occurred, resultJsonStr:" + resultJsonStr);
-				e1.printStackTrace();
-				beArray = new BaseEntity[]{};
-			}
-		} else {
-			total = Long.valueOf(1);
-		}
-
-		try {
-			beArray = new BaseEntity[result.size()];
-
-			for (int i = 0; i < result.size(); i++) {
-
-				String code = result.getString(i);
-				BaseEntity be = beUtils.getBaseEntityByCode(code);
-				be.setIndex(i);
-				beArray[i] = be;
-			}
-
-		} catch (Exception e1) {
-			log.error("Possible Bad Json -> " + resultJsonStr);
-			log.error("Exception -> " + e1.getLocalizedMessage());
-			beArray = new BaseEntity[]{};
-		}
-
-		// Create and send ask grp if necessary
-		EntityAttribute searchQuestionCode = searchBE.findEntityAttribute("SCH_QUESTION_CODE").orElse(null);
-		if (searchQuestionCode != null) {
-			QBulkMessage askEntityData = SearchUtils.getAskEntityData(beUtils, searchBE, beArray);
-
-			if (askEntityData != null) {
-				log.info("Sending bulk message");
-				askEntityData.setToken(beUtils.getGennyToken().getToken());
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askEntityData));
-			} else {
-				log.info("searchAskGrp is NULL, not sending!");
-			}
-		} else {
-			// Used to disable the column privacy
-			EntityAttribute columnWildcard = searchBE.findEntityAttribute("COL_*").orElse(null);
-			// Find Alowed Columns
-			String[] filterArray = VertxUtils.getSearchColumnFilterArray(searchBE).toArray(new String[0]);
-
-			// Otherwise handle cals
-			for (BaseEntity be : beArray) {
-
-				// Filter unwanted attributes
-				if (columnWildcard == null) {
-
-					be = VertxUtils.privacyFilter(be, filterArray);
-				}
-
-				for (EntityAttribute calEA : cals) {
-
-					Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
-
-					if (ans != null) {
-						try {
-							be.addAnswer(ans);
-						} catch (BadDataException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-
-				}
-			}
-		}
-
-		// Create BE msg from array
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArray);
-		msg.setTotal(total);
-		msg.setReplace(true);
-		msg.setParentCode(searchBE.getCode());
-		log.info("Search Results = " + beArray.length + " out of total " + total);
-
 		long endtime3 = System.currentTimeMillis();
 		log.info("Time taken to get cached Bes added to list =" + (endtime3 - endtime2) + " ms");
 

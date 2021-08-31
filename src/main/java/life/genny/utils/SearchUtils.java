@@ -116,6 +116,146 @@ public class SearchUtils {
 		return msg;
 
 	}
+
+	/**
+	 * @param serviceToken
+	 * @param searchBE
+	 * @param msg
+	 * @return
+	 */
+	public QDataBaseEntityMessage searchUsingSearch25(GennyToken serviceToken, SearchEntity searchBE) {
+		long starttime = System.currentTimeMillis();
+		long endtime2 = starttime;
+
+		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
+		if (cals != null) {
+			log.info("searchUsingSearch25 -> detected " + cals.size() + " CALS");
+
+			for (EntityAttribute calEA : cals) {
+				log.info("Found CAL with code: " + calEA.getAttributeCode());
+			}
+		}
+
+		BaseEntity[] beArray = null;
+		JsonArray result = null;
+		Long total = Long.valueOf(0);
+
+		// Check for a specific item search
+		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
+			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
+				log.info("SINGLE BASE ENTITY SEARCH DETECTED");
+				result = new JsonArray("[\""+attr.getValue()+"\"]");
+				break;
+			}
+		}
+
+		String resultJsonStr = null;
+		JsonObject resultJson = null;
+
+		// Perform the search if specific item not found
+		if (beArray == null) {
+			try {
+				resultJsonStr = QwandaUtils.apiPostEntity2(
+						GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
+						JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
+
+				endtime2 = System.currentTimeMillis();
+				log.info("NOT SINGLE - Time taken to fetch Data =" + (endtime2 - starttime) + " ms");
+
+				try {
+					resultJson = new JsonObject(resultJsonStr);
+					result = resultJson.getJsonArray("codes");
+					total = resultJson.getLong("total");
+				} catch (Exception e) {
+					log.error("TableUtils: SearchUsingSearch25 -> Bad Json ("+resultJsonStr+") , returning empty search");
+					beArray = new BaseEntity[]{};
+					result = new JsonArray();
+					total = 0L;
+				}
+				
+
+			} catch (Exception e1) {
+				log.error("Exception:"  +  e1.getMessage() + " occurred, resultJsonStr:" + resultJsonStr);
+				e1.printStackTrace();
+				beArray = new BaseEntity[]{};
+			}
+		} else {
+			total = Long.valueOf(1);
+		}
+
+		try {
+			beArray = new BaseEntity[result.size()];
+
+			for (int i = 0; i < result.size(); i++) {
+
+				String code = result.getString(i);
+				BaseEntity be = beUtils.getBaseEntityByCode(code);
+				be.setIndex(i);
+				beArray[i] = be;
+			}
+
+		} catch (Exception e1) {
+			log.error("Possible Bad Json -> " + resultJsonStr);
+			log.error("Exception -> " + e1.getLocalizedMessage());
+			beArray = new BaseEntity[]{};
+		}
+
+		// Create and send ask grp if necessary
+		EntityAttribute searchQuestionCode = searchBE.findEntityAttribute("SCH_QUESTION_CODE").orElse(null);
+		if (searchQuestionCode != null) {
+			QBulkMessage askEntityData = SearchUtils.getAskEntityData(beUtils, searchBE, beArray);
+
+			if (askEntityData != null) {
+				log.info("Sending bulk message");
+				askEntityData.setToken(beUtils.getGennyToken().getToken());
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askEntityData));
+			} else {
+				log.info("searchAskGrp is NULL, not sending!");
+			}
+		} else {
+			// Used to disable the column privacy
+			EntityAttribute columnWildcard = searchBE.findEntityAttribute("COL_*").orElse(null);
+			// Find Alowed Columns
+			String[] filterArray = VertxUtils.getSearchColumnFilterArray(searchBE).toArray(new String[0]);
+
+			// Otherwise handle cals
+			for (BaseEntity be : beArray) {
+
+				// Filter unwanted attributes
+				if (columnWildcard == null) {
+
+					be = VertxUtils.privacyFilter(be, filterArray);
+				}
+
+				for (EntityAttribute calEA : cals) {
+
+					Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
+
+					if (ans != null) {
+						try {
+							be.addAnswer(ans);
+						} catch (BadDataException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+
+				}
+			}
+		}
+
+		// Create BE msg from array
+		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArray);
+		msg.setTotal(total);
+		msg.setReplace(true);
+		msg.setParentCode(searchBE.getCode());
+		log.info("Search Results = " + beArray.length + " out of total " + total);
+
+		long endtime3 = System.currentTimeMillis();
+		log.info("Time taken to get cached Bes added to list =" + (endtime3 - endtime2) + " ms");
+
+		return msg;
+	}
 	
 	/* Generate List of asks from a SearchEntity */
 	public static List<Ask> generateQuestions(GennyToken userToken, BaseEntityUtils beUtils, List<BaseEntity> bes,
@@ -346,185 +486,6 @@ public class SearchUtils {
 		
 		return DefUtils.getDropdownDataMessage(beUtils, message.getAttributeCode(), parentCode, questionCode,serValue, sourceBe, targetBe, searchText, beUtils.getServiceToken().getToken());
 
-		
-//
-//		JsonObject searchValueJson =new JsonObject(serValue);
-//		Integer pageStart = 0;
-//		Integer pageSize = dropdownSize;
-//		Boolean searchingOnLinks = false;
-//
-//		String searchBeCode = "SBE_DROPDOWN";
-//
-//		SearchEntity searchBE = new SearchEntity("SBE_DROPDOWN",
-//				project.getValue("PRI_NAME", project.getCode()) + " Search")
-//						.addColumn("PRI_CODE", "Code")
-//						.addColumn("PRI_NAME", "Name");
-//
-//		HashMap<String, Object> ctxMap = new HashMap<>();
-//		ctxMap.put("SOURCE", sourceBe);
-//		ctxMap.put("TARGET", targetBe);
-//
-//		JsonArray jsonParms = searchValueJson.getJsonArray("parms");
-//		for (Object parmValue : jsonParms) {
-//
-//			try {
-//				JsonObject json = (JsonObject) parmValue;
-//				String attributeCode = json.getString("attributeCode");
-//
-//				// Filters
-//				if (attributeCode != null) {
-//
-//					Attribute att = RulesUtils.getAttribute(attributeCode, beUtils.getServiceToken());
-//					String val = json.getString("value");
-//
-//					String filterStr = null;
-//					if (val.contains(":")) {
-//						String[] valSplit = val.split(":");
-//						filterStr = valSplit[0];
-//						val = valSplit[1];
-//					}
-//
-//					DataType dataType = att.getDataType();
-//
-//					if (dataType.getClassName().equals("life.genny.qwanda.entity.BaseEntity")) {
-//
-//						// This is used for the sort defaults
-//						searchingOnLinks = true;
-//
-//						// For using the search source and target
-//						String sourceCode = json.getString("sourceCode");
-//						String targetCode = json.getString("targetCode");
-//
-//						// These will return True by default if source or target are null
-//						if (!MergeUtil.contextsArePresent(sourceCode, ctxMap)) {
-//							log.error(ANSIColour.RED+"A Parent value is missing for " + sourceCode + ", Not sending dropdown results"+ANSIColour.RESET);
-//							return null;
-//						}
-//						if (!MergeUtil.contextsArePresent(targetCode, ctxMap)) {
-//							log.error(ANSIColour.RED+"A Parent value is missing for " + targetCode + ", Not sending dropdown results"+ANSIColour.RESET);
-//							return null;
-//						}
-//
-//						// Merge any data for aource and target
-//						sourceCode = MergeUtil.merge(sourceCode, ctxMap);
-//						targetCode = MergeUtil.merge(targetCode, ctxMap);
-//
-//						log.info("attributeCode = " + json.getString("attributeCode"));
-//						log.info("val = " + val);
-//						log.info("link sourceCode = " + sourceCode);
-//						log.info("link targetCode = " + targetCode);
-//
-//						// Set Source and Target if found it parameter
-//						if (sourceCode != null) {
-//							searchBE.setSourceCode(sourceCode);
-//						}
-//						if (targetCode != null) {
-//							searchBE.setTargetCode(targetCode);
-//						}
-//
-//						// Set LinkCode and LinkValue
-//						searchBE.setLinkCode(att.getCode());
-//						searchBE.setLinkValue(val);
-//
-//					} else if (dataType.getClassName().equals("java.lang.String")) {
-//						SearchEntity.StringFilter stringFilter = SearchEntity.StringFilter.LIKE;
-//						if (filterStr != null) {
-//							stringFilter = SearchEntity.convertOperatorToStringFilter(filterStr);
-//						}
-//						searchBE.addFilter(attributeCode, stringFilter, val);
-//					} else {
-//						SearchEntity.Filter filter = SearchEntity.Filter.EQUALS;
-//						if (filterStr != null) {
-//							filter = SearchEntity.convertOperatorToFilter(filterStr);
-//						}
-//						searchBE.addFilterAsString(attributeCode, filter, val);
-//					}
-//				}
-//
-//				// Sorts
-//				String sortBy = json.getString("sortBy");
-//				if (sortBy != null) {
-//					String order = json.getString("order");
-//					SearchEntity.Sort sortOrder = order.equals("DESC") ? SearchEntity.Sort.DESC : SearchEntity.Sort.ASC;
-//					searchBE.addSort(sortBy, sortBy, sortOrder);
-//				}
-//
-//				// Conditionals
-//				if (json.containsKey("conditions")) {
-//					JsonArray conditions = json.getJsonArray("conditions");
-//					for (Object cond : conditions) {
-//						searchBE.addConditional(attributeCode, cond.toString());
-//					}
-//				}
-//			} catch (Exception e) {
-//				// TODO Auto-generated catch block
-//				log.error("DROPDOWN :Bad Json Value ---> " + parmValue.toString());
-//				continue;
-//			}
-//		}
-//
-//		// Default to sorting by name if no sorts were specified and if not searching for EntityEntitys
-//		Boolean hasSort = searchBE.getBaseEntityAttributes().stream().anyMatch(item -> item.getAttributeCode().startsWith("SRT_"));
-//		if (!hasSort && !searchingOnLinks) {
-//			searchBE.addSort("PRI_NAME", "Name", SearchEntity.Sort.ASC);
-//		}
-//		
-//		// Filter by name wildcard provided by user
-//		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE,message.getData().getValue()+"%")
-//		.addOr("PRI_NAME", SearchEntity.StringFilter.LIKE, "% "+message.getData().getValue()+"%");
-//
-//		searchBE.setRealm(beUtils.getServiceToken().getRealm());
-//		searchBE.setPageStart(pageStart);
-//		searchBE.setPageSize(pageSize);
-//		pageStart += pageSize;
-//
-//		// Capability Based Conditional Filters
-//		searchBE = SearchUtils.evaluateConditionalFilters(beUtils, searchBE);
-//
-//		// Merge required attribute values
-//		// NOTE: This should correct any wrong datatypes too
-//		searchBE = SearchUtils.mergeFilterValueVariables(beUtils, searchBE, ctxMap);
-//		if (searchBE == null) {
-//			log.error(ANSIColour.RED + "Cannot Perform Search!!!" + ANSIColour.RESET);
-//			return null;
-//		}
-//
-//		// Perform search and evaluate columns
-//		TableUtils tableUtils = new TableUtils(beUtils);
-//		QDataBaseEntityMessage msg = tableUtils.searchUsingSearch25(beUtils.getServiceToken(), searchBE);
-//		
-//		if (msg == null) {
-//			log.error(ANSIColour.RED + "Dropdown search returned NULL!" + ANSIColour.RESET);
-//			return null;
-//
-//		} else if (msg.getItems().length > 0) {
-//			log.info("DROPDOWN :Loaded " + msg.getItems().length + " baseentitys");
-//
-//			for (BaseEntity item : msg.getItems()) {
-//				log.info("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
-//			}
-//
-//		} else {
-//			log.info("DROPDOWN :Loaded NO baseentitys");
-//		}
-//
-//		// BaseEntity[] arrayItems = items.toArray(new BaseEntity[0]);
-//		// QDataBaseEntityMessage msg =  new QDataBaseEntityMessage(arrayItems, message.getData().getParentCode(), "LINK", Long.decode(items.size()+""));
-//		log.info("DROPDOWN :code = "+message.getData().getCode()+" with "+Long.decode(msg.getItems().length+"")+" Items");
-//		log.info("DROPDOWN :parentCode = "+message.getData().getParentCode());
-//		msg.setParentCode(message.getData().getParentCode());
-//		msg.setQuestionCode(message.getQuestionCode()); 
-//		msg.setToken(beUtils.getGennyToken().getToken());
-//		msg.setLinkCode("LNK_CORE");
-//		msg.setLinkValue("ITEMS");
-//		msg.setReplace(true);
-//		msg.setShouldDeleteLinkedBaseEntities(false);
-//
-//		/* Linking child baseEntity to the parent baseEntity */
-//		// QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, message.getData().getParentCode(), "LNK_CORE", "DROPDOWNITEMS", beUtils.getGennyToken(),
-//		// 		false);
-//		return msg;
-//		// return beMessage;
 	}
 
 	/*
