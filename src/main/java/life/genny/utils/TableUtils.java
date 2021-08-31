@@ -102,7 +102,7 @@ public class TableUtils {
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
-
+		// Add any necessary extra filters
 		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
 
 		if (!filters.isEmpty()) {
@@ -111,8 +111,6 @@ public class TableUtils {
 			for (EntityAttribute filter : filters) {
 				searchBE.getBaseEntityAttributes().add(filter);// ????
 			}
-			/* log.info("searchBE after adding filters"); */
-			// log.info(searchBE);
 		} else {
 			log.info("User Filters are empty");
 		}
@@ -135,7 +133,8 @@ public class TableUtils {
 				return null;
 			}
 
-			msg = searchUsingSearch25(serviceToken, searchBE);
+			SearchUtils searchUtils = new SearchUtils(beUtils);
+			msg = searchUtils.searchUsingSearch25(serviceToken, searchBE);
 		} else {
 			log.info("Old Search");
 			msg = fetchSearchResults(searchBE);
@@ -146,8 +145,8 @@ public class TableUtils {
 
 		msg.setReplace(replace);
 
+		// Add BE MSG if cache, else send to FE
 		if (cache) {
-			/* Add baseentity msg after search is done */
 			ret.add(msg);
 		} else {
 			msg.setToken(beUtils.getGennyToken().getToken());
@@ -171,17 +170,11 @@ public class TableUtils {
 			}
 		}
 
-		/* publishing the searchBE to frontEnd */
+		/* Publishing the searchBE to FrontEnd */
 		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", totalResultCount + ""); // if result
 		long endtime3 = System.currentTimeMillis();
 		log.info("Time taken to updateBE =" + (endtime3 - endtime2) + " ms");
 
-		// count = 0
-		// then
-		// frontend
-		// not
-		// showing
-		// anything
 		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
 
 		if (cache) {
@@ -191,15 +184,14 @@ public class TableUtils {
 			searchBeMsg.setToken(beUtils.getGennyToken().getToken());
 			/* searchBeMsg.setReplace(true); */
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
-			// Now send the end_process msg
-			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 
-			// COMMENTED BECAUSE IT IS ANNOYING
+			// COMMENTED BECAUSE IT IS ANNOYING AND NOT USED
+			// QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 			// VertxUtils.writeMsgEnd(beUtils.getGennyToken());
 
 		}
 
-		// PERFORM NESTED SEARCHES
+		// Perform Nested Searches
 		List<EntityAttribute> nestedSearches = searchBE.findPrefixEntityAttributes("SBE_");
 
 		for (EntityAttribute search : nestedSearches) {
@@ -213,32 +205,6 @@ public class TableUtils {
 				searchTable(beUtils, fields[0], true, fields[1], target.getCode());
 			}
 		}
-
-
-		// long endtime4 = System.currentTimeMillis();
-		// log.info("Time taken to send Results =" + (endtime4 - endtime3) + " ms");
-
-		// Map<String, String> columns = getTableColumns(searchBE);
-
-		// long endtime5 = System.currentTimeMillis();
-		// log.info("Time taken to getTableColumns =" + (endtime5 - endtime4) + " ms");
-
-		// /*
-		// * Display the table header
-		// */
-
-		// /* QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg); */
-		// log.info("calling showTableContent");
-		// QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns,
-		// cache);
-		// /* Adds the rowAsk and table title ask message */
-		// ret.add(qb);
-		// log.info("calling sendTableContexts");
-
-		/*
-		 * QDataBaseEntityMessage qm = sendTableContexts(cache); ret.add(qm);
-		 */
-		/* showTableFooter(searchBE); */
 
 		return ret;
 	}
@@ -297,6 +263,8 @@ public class TableUtils {
 		long starttime = System.currentTimeMillis();
 		long endtime2 = starttime;
 
+		SearchUtils searchUtils = new SearchUtils(beUtils);
+
 		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
 		if (cals != null) {
 			log.info("searchUsingHql -> detected " + cals.size() + " CALS");
@@ -320,7 +288,7 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
+						Answer ans = searchUtils.getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
 
 						if (ans != null) {
 							try {
@@ -384,7 +352,7 @@ public class TableUtils {
 					// Get any CAL attributes
 					for (EntityAttribute calEA : cals) {
 
-						Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
+						Answer ans = searchUtils.getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
 
 						if (ans != null) {
 							try {
@@ -424,214 +392,6 @@ public class TableUtils {
 		log.info("Time taken to get cached Bes added to list =" + (endtime3 - endtime2) + " ms");
 
 		return msg;
-	}
-
-	/**
-	 * @param serviceToken
-	 * @param searchBE
-	 * @param msg
-	 * @return
-	 */
-	public QDataBaseEntityMessage searchUsingSearch25(GennyToken serviceToken, SearchEntity searchBE) {
-		long starttime = System.currentTimeMillis();
-		long endtime2 = starttime;
-
-		List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
-		if (cals != null) {
-			log.info("searchUsingSearch25 -> detected " + cals.size() + " CALS");
-
-			for (EntityAttribute calEA : cals) {
-				log.info("Found CAL with code: " + calEA.getAttributeCode());
-			}
-		}
-
-		BaseEntity[] beArray = null;
-		JsonArray result = null;
-		Long total = Long.valueOf(0);
-
-		// Check for a specific item search
-		for (EntityAttribute attr : searchBE.getBaseEntityAttributes()) {
-			if (attr.getAttributeCode().equals("PRI_CODE") && attr.getAttributeName().equals("_EQ_")) {
-				log.info("SINGLE BASE ENTITY SEARCH DETECTED");
-				result = new JsonArray("[\""+attr.getValue()+"\"]");
-				break;
-			}
-		}
-
-		String resultJsonStr = null;
-		JsonObject resultJson = null;
-
-		// Perform the search if specific item not found
-		if (beArray == null) {
-			try {
-				resultJsonStr = QwandaUtils.apiPostEntity2(
-						GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
-						JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
-
-				endtime2 = System.currentTimeMillis();
-				log.info("NOT SINGLE - Time taken to fetch Data =" + (endtime2 - starttime) + " ms");
-
-				try {
-					resultJson = new JsonObject(resultJsonStr);
-					result = resultJson.getJsonArray("codes");
-					total = resultJson.getLong("total");
-				} catch (Exception e) {
-					log.error("TableUtils: SearchUsingSearch25 -> Bad Json ("+resultJsonStr+") , returning empty search");
-					beArray = new BaseEntity[]{};
-					result = new JsonArray();
-					total = 0L;
-				}
-				
-
-			} catch (Exception e1) {
-				log.error("Exception:"  +  e1.getMessage() + " occurred, resultJsonStr:" + resultJsonStr);
-				e1.printStackTrace();
-				beArray = new BaseEntity[]{};
-			}
-		} else {
-			total = Long.valueOf(1);
-		}
-
-		try {
-			beArray = new BaseEntity[result.size()];
-
-			for (int i = 0; i < result.size(); i++) {
-
-				String code = result.getString(i);
-				BaseEntity be = beUtils.getBaseEntityByCode(code);
-				be.setIndex(i);
-				beArray[i] = be;
-			}
-
-		} catch (Exception e1) {
-			log.error("Possible Bad Json -> " + resultJsonStr);
-			log.error("Exception -> " + e1.getLocalizedMessage());
-			beArray = new BaseEntity[]{};
-		}
-
-		// Create and send ask grp if necessary
-		EntityAttribute searchQuestionCode = searchBE.findEntityAttribute("SCH_QUESTION_CODE").orElse(null);
-		if (searchQuestionCode != null) {
-			QBulkMessage askEntityData = SearchUtils.getAskEntityData(beUtils, searchBE, beArray);
-
-			if (askEntityData != null) {
-				log.info("Sending bulk message");
-				askEntityData.setToken(beUtils.getGennyToken().getToken());
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askEntityData));
-			} else {
-				log.info("searchAskGrp is NULL, not sending!");
-			}
-		} else {
-			// Used to disable the column privacy
-			EntityAttribute columnWildcard = searchBE.findEntityAttribute("COL_*").orElse(null);
-			// Find Alowed Columns
-			String[] filterArray = VertxUtils.getSearchColumnFilterArray(searchBE).toArray(new String[0]);
-
-			// Otherwise handle cals
-			for (BaseEntity be : beArray) {
-
-				// Filter unwanted attributes
-				if (columnWildcard == null) {
-
-					be = VertxUtils.privacyFilter(be, filterArray);
-				}
-
-				for (EntityAttribute calEA : cals) {
-
-					Answer ans = getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), serviceToken);
-
-					if (ans != null) {
-						try {
-							be.addAnswer(ans);
-						} catch (BadDataException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-
-				}
-			}
-		}
-
-		// Create BE msg from array
-		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArray);
-		msg.setTotal(total);
-		msg.setReplace(true);
-		msg.setParentCode(searchBE.getCode());
-		log.info("Search Results = " + beArray.length + " out of total " + total);
-
-		long endtime3 = System.currentTimeMillis();
-		log.info("Time taken to get cached Bes added to list =" + (endtime3 - endtime2) + " ms");
-
-		return msg;
-	}
-
-	public static Answer getAssociatedColumnValue(BaseEntityUtils beUtils, BaseEntity baseBE, String calEACode, GennyToken serviceToken) {
-
-		String[] calFields = calEACode.substring("COL__".length()).split("__");
-		if (calFields.length == 1) {
-			log.error("CALS length is bad for :" + calEACode);
-			return null;
-		}
-		String linkBeCode = calFields[calFields.length-1];
-
-		BaseEntity be = baseBE;
-
-		Optional<EntityAttribute> associateEa = null;
-		// log.info("calFields value " + calEACode);
-		// log.info("linkBeCode value " + linkBeCode);
-
-		String finalAttributeCode = calEACode.substring("COL_".length());
-		// Fetch The Attribute of the last code 
-		String primaryAttrCode = calFields[calFields.length-1];
-		Attribute primaryAttribute = RulesUtils.getAttribute(primaryAttrCode, serviceToken);
-
-		Answer ans = new Answer(baseBE.getCode(), baseBE.getCode(), finalAttributeCode, "");
-		Attribute att = new Attribute(finalAttributeCode, primaryAttribute.getName(), primaryAttribute.getDataType());
-		ans.setAttribute(att);
-
-		for (int i = 0; i < calFields.length-1; i++) {
-			String attributeCode = calFields[i];
-			String calBe = be.getValueAsString(attributeCode);
-
-			if (calBe != null && !StringUtils.isBlank(calBe)) {
-				String calVal = beUtils.cleanUpAttributeValue(calBe);
-				String[] codeArr = calVal.split(",");
-				for (String code : codeArr) {
-
-					BaseEntity associatedBe = beUtils.getBaseEntityByCode(code);
-					if (associatedBe == null) {
-						log.info("associatedBe DOES NOT exist ->" + code);
-						return null;
-					}
-
-					if (i == (calFields.length-2)) {
-						associateEa = associatedBe.findEntityAttribute(linkBeCode);
-
-						if (associateEa != null && (associateEa.isPresent() || ("PRI_NAME".equals(linkBeCode)))) {
-							String linkedValue = null;
-							if ("PRI_NAME".equals(linkBeCode)) {
-								linkedValue = associatedBe.getName();
-							} else {
-								linkedValue = associatedBe.getValueAsString(linkBeCode);
-							}
-							if (!ans.getValue().isEmpty()) {
-								linkedValue = ans.getValue() + "," + linkedValue;
-							}
-							ans.setValue(linkedValue);
-						} else {
-							System.out.println("No attribute present");
-						}
-					}
-					be = associatedBe;
-				}
-			} else {
-				log.info("TableUtils: Could not find attribute value for " + attributeCode + " for entity " + be.getCode());
-				return null;
-			}
-		}
-
-		return ans;
 	}
 
 	private static void updateColIndex(SearchEntity searchBE) {

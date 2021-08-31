@@ -284,8 +284,8 @@ public class DefUtils {
 		}
 
 		// Perform search and evaluate columns
-		TableUtils tableUtils = new TableUtils(beUtils);
-		QDataBaseEntityMessage msg = tableUtils.searchUsingSearch25(beUtils.getServiceToken(), searchBE);
+		SearchUtils searchUtils = new SearchUtils(beUtils);
+		QDataBaseEntityMessage msg = searchUtils.searchUsingSearch25(beUtils.getServiceToken(), searchBE);
 		
 		if (msg == null) {
 			log.error(ANSIColour.RED + "Dropdown search returned NULL!" + ANSIColour.RESET);

@@ -114,6 +114,7 @@ public class DropdownUtils implements Serializable {
 		
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken, userToken);
 		TableUtils tableUtils = new TableUtils(beUtils);
+		SearchUtils searchUtils = new SearchUtils(beUtils);
 		
 		List<EntityAttribute> filters = tableUtils.getUserFilters(serviceToken, searchBE);
 
@@ -137,7 +138,7 @@ public class DropdownUtils implements Serializable {
 			if (GennySettings.searchAlt && useSearchAlt) {
 				System.out.println("Using alt search for dropdown");
 				// msg = tableUtils.searchUsingHql(serviceToken, searchBE, msg);
-				msg = tableUtils.searchUsingSearch25(serviceToken, searchBE);
+				msg = searchUtils.searchUsingSearch25(serviceToken, searchBE);
 
 			} else {
 				System.out.println("Using standard search for dropdown");
