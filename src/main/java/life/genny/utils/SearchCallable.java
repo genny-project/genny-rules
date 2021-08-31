@@ -64,17 +64,34 @@ public class SearchCallable implements Callable<QBulkMessage> {
 
         log.info("Starting Search! " + searchBE.getCode());
 
-        QBulkMessage qbm1 = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(),
-                QBulkMessage.class);
+        QBulkMessage qbm1 = null;
+        Boolean noCachePresent = true;
+      
+        Integer pageStart = -1;
+        
+        if (searchBE.getFromCache()) {
+        	 
+        	  pageStart = searchBE.getValue("SCH_PAGE_START",0);
+        	  log.info("Fetching Table Search from Cache with pageStart = "+pageStart);
+        	  if (pageStart == 0) {
+        		  // only do caching if the searchsession matches the original
+        		  String templateSearchCode  = searchBE.getCode().replaceFirst(beUtils.getGennyToken().getSessionCode().toUpperCase()+"_", "");     		  
+         		  qbm1 = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", templateSearchCode,
+                     QBulkMessage.class);
+        		  if (qbm1==null) {
+        			  noCachePresent = false;
+        		  }
+        	  }
+        }
 
-        if ((qbm1 == null) || true) {
+        if (noCachePresent) {
             qbm1 = tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, filterCode, filterValue, cache,
                     replace);
-            VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(), qbm1,
+            if (pageStart == 0) {
+            	VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(), qbm1,
                     beUtils.getGennyToken().getToken());
-        } else {
-            log.info("Fetching Table Search from Cache");
-        }
+            }
+        } 
         ret.add(qbm1);
 
         log.info("Finished Search with " + qbm1.getMessages().length + " items");
