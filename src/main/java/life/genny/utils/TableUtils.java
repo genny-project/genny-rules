@@ -102,7 +102,7 @@ public class TableUtils {
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
-
+		// Add any necessary extra filters
 		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
 
 		if (!filters.isEmpty()) {
@@ -111,8 +111,6 @@ public class TableUtils {
 			for (EntityAttribute filter : filters) {
 				searchBE.getBaseEntityAttributes().add(filter);// ????
 			}
-			/* log.info("searchBE after adding filters"); */
-			// log.info(searchBE);
 		} else {
 			log.info("User Filters are empty");
 		}
@@ -147,8 +145,8 @@ public class TableUtils {
 
 		msg.setReplace(replace);
 
+		// Add BE MSG if cache, else send to FE
 		if (cache) {
-			/* Add baseentity msg after search is done */
 			ret.add(msg);
 		} else {
 			msg.setToken(beUtils.getGennyToken().getToken());
@@ -172,17 +170,11 @@ public class TableUtils {
 			}
 		}
 
-		/* publishing the searchBE to frontEnd */
+		/* Publishing the searchBE to FrontEnd */
 		updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", totalResultCount + ""); // if result
 		long endtime3 = System.currentTimeMillis();
 		log.info("Time taken to updateBE =" + (endtime3 - endtime2) + " ms");
 
-		// count = 0
-		// then
-		// frontend
-		// not
-		// showing
-		// anything
 		QDataBaseEntityMessage searchBeMsg = new QDataBaseEntityMessage(searchBE);
 
 		if (cache) {
@@ -192,15 +184,14 @@ public class TableUtils {
 			searchBeMsg.setToken(beUtils.getGennyToken().getToken());
 			/* searchBeMsg.setReplace(true); */
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson((searchBeMsg)));
-			// Now send the end_process msg
-			QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 
-			// COMMENTED BECAUSE IT IS ANNOYING
+			// COMMENTED BECAUSE IT IS ANNOYING AND NOT USED
+			// QCmdMessage msgend = new QCmdMessage("END_PROCESS", "END_PROCESS");
 			// VertxUtils.writeMsgEnd(beUtils.getGennyToken());
 
 		}
 
-		// PERFORM NESTED SEARCHES
+		// Perform Nested Searches
 		List<EntityAttribute> nestedSearches = searchBE.findPrefixEntityAttributes("SBE_");
 
 		for (EntityAttribute search : nestedSearches) {
@@ -214,32 +205,6 @@ public class TableUtils {
 				searchTable(beUtils, fields[0], true, fields[1], target.getCode());
 			}
 		}
-
-
-		// long endtime4 = System.currentTimeMillis();
-		// log.info("Time taken to send Results =" + (endtime4 - endtime3) + " ms");
-
-		// Map<String, String> columns = getTableColumns(searchBE);
-
-		// long endtime5 = System.currentTimeMillis();
-		// log.info("Time taken to getTableColumns =" + (endtime5 - endtime4) + " ms");
-
-		// /*
-		// * Display the table header
-		// */
-
-		// /* QDataAskMessage headerAskMsg = showTableHeader(searchBE, columns, msg); */
-		// log.info("calling showTableContent");
-		// QBulkMessage qb = showTableContent(serviceToken, searchBE, msg, columns,
-		// cache);
-		// /* Adds the rowAsk and table title ask message */
-		// ret.add(qb);
-		// log.info("calling sendTableContexts");
-
-		/*
-		 * QDataBaseEntityMessage qm = sendTableContexts(cache); ret.add(qm);
-		 */
-		/* showTableFooter(searchBE); */
 
 		return ret;
 	}
