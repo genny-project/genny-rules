@@ -724,6 +724,7 @@ public class ShowFrame implements WorkItemHandler {
 											BaseEntity selectionBe = beUtils.getBaseEntityByCode(beCode);
 											if (selectionBe != null) {
 												beItems.add(selectionBe);
+												log.info("Addng BE " + selectionBe.getCode() + " to Items");
 											}
 										}
 									}
@@ -732,6 +733,7 @@ public class ShowFrame implements WorkItemHandler {
 
 									QBulkMessage qb = null;
 
+									log.info("Items Length is " + beItems.size());
 									qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe, dropdownCode,
 											userToken, serviceToken, cache, targetCode, groupCode, questionCode);
 									qBulkMessage.add(qb);

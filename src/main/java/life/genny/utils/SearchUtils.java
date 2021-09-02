@@ -889,7 +889,7 @@ public class SearchUtils {
 		// Only fire for assoc values, others should already be in the BE
 		} else if (attrCode.startsWith("_LNK") || attrCode.startsWith("_PRI")) {
 
-			Answer ans = new SearchUtils(beUtils).getAssociatedColumnValue(beUtils, be, "COL_"+attrCode, beUtils.getServiceToken());
+			Answer ans = getAssociatedColumnValue(beUtils, be, "COL_"+attrCode, beUtils.getServiceToken());
 
 			if (ans != null) {
 				try {
