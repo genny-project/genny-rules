@@ -676,8 +676,6 @@ public class ShowFrame implements WorkItemHandler {
 					serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
 				}
 
-				// String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
-
 				// Iterate child asks
 				if (updated != null && updated.getItems() != null && (updated.getItems().length > 0)
 						&& (updated.getItems()[0].getChildAsks() != null)) {
@@ -730,11 +728,28 @@ public class ShowFrame implements WorkItemHandler {
 
 									String groupCode = askMsg.getItems()[0].getQuestionCode();
 
-									QBulkMessage qb = null;
+									// Only check for DDC if not items are selected already
+									if (beItems.size() == 0) {
+										Optional<EntityAttribute> cacheAtt = defBe.findEntityAttribute("DDC_" + dropdownCode);
+										if (cacheAtt.isPresent()) {
+											String jsonMsg = cacheAtt.get().getValueString();
+											// Replacement for @@TOKEN@@,  @@PARENTCODE@@, @@QUESTIONCODE@@
+											jsonMsg = jsonMsg.replaceAll("@@TOKEN@@", userToken.getToken());
+											jsonMsg = jsonMsg.replaceAll("@@PARENTCODE@@", groupCode);
+											jsonMsg = jsonMsg.replaceAll("@@QUESTIONCODE@@", questionCode);
 
-									qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe, dropdownCode,
-											userToken, serviceToken, cache, targetCode, groupCode, questionCode);
-									qBulkMessage.add(qb);
+											QDataBaseEntityMessage msg = JsonUtils.fromJson(jsonMsg, QDataBaseEntityMessage.class);
+											msg.setAttributeCode(dropdownCode);
+											qBulkMessage.add(msg);
+											if (!cache) {
+												VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+											}
+										}
+									} else {
+										QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe, dropdownCode,
+												userToken, serviceToken, cache, targetCode, groupCode, questionCode);
+										qBulkMessage.add(qb);
+									}
 
 									// Check Dependencies, and disable if not met
 									Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target,
@@ -1179,62 +1194,33 @@ public class ShowFrame implements WorkItemHandler {
 			GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget, String groupCode,
 			String questionCode) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
-//		Attribute attribute = RulesUtils.getAttribute(attributeCode, userToken);
 		log.info("Sending dropdown items for " + groupCode + " and question " + questionCode);
 		try {
-			//
 
-			Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + attributeCode); // SER_
-			String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_INTERN\",\"value\":\"true\"}]}";
+			Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + attributeCode);
 			if (searchAtt.isPresent()) {
-				serValue = searchAtt.get().getValueString();
 
-				QDataBaseEntityMessage msg = null;
-				Optional<EntityAttribute> cacheAtt = defBe.findEntityAttribute("DDC_" + attributeCode);
-				if (cacheAtt.isPresent()) {
-					String jsonMsg = cacheAtt.get().getValueString();
-					// Now do a replacement for
-					// @@TOKEN@@
-					// @@PARENTCODE@@", "@@QUESTIONCODE@@
-					jsonMsg = jsonMsg.replaceAll("@@TOKEN@@", userToken.getToken());
-					jsonMsg = jsonMsg.replaceAll("@@PARENTCODE@@", groupCode);
-					jsonMsg = jsonMsg.replaceAll("@@QUESTIONCODE@@", questionCode);
+				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(arrayItems, groupCode, "LINK", Long.decode(arrayItems.length + ""));
+				// TODO this needs to include the attribbute code
+				msg.setParentCode(groupCode);
+				msg.setQuestionCode(questionCode); 
+				msg.setToken(userToken.getToken());
+				msg.setLinkCode("LNK_CORE");
+				msg.setLinkValue("ITEMS");
+				msg.setReplace(true);
+				msg.setData_type("BaseEntity");
+				msg.setDelete(false);
+				msg.setShouldDeleteLinkedBaseEntities(false);
+				msg.setTotal(Long.valueOf(arrayItems.length));
+				msg.setOption(MsgOption.EXEC);
+				msg.setMsg_type("DATA_MSG");
+				// TODO handle tags
+				msg.setReturnCount(Long.valueOf(arrayItems.length));
 
-					msg = JsonUtils.fromJson(jsonMsg, QDataBaseEntityMessage.class);
-					msg.setAttributeCode(attributeCode);
-					qBulkMessage.add(msg);
-					if (!cache) {
-						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-					}
-				} else {
-
-					msg = new QDataBaseEntityMessage(arrayItems, groupCode, "LINK",
-							Long.decode(arrayItems.length + ""));
-// Correct spec 
-					msg.setParentCode(groupCode);
-					msg.setQuestionCode(questionCode); // TODO this needs to be the attrivbute code
-//				msg.setParentCode(questionCode);
-//				msg.setQuestionCode(null);
-
-					msg.setToken(userToken.getToken());
-					msg.setLinkCode("LNK_CORE");
-					msg.setLinkValue("ITEMS");
-					msg.setReplace(true);
-					msg.setData_type("BaseEntity");
-					msg.setDelete(false);
-					msg.setShouldDeleteLinkedBaseEntities(false);
-					msg.setTotal(Long.valueOf(arrayItems.length));
-					msg.setOption(MsgOption.EXEC);
-					msg.setMsg_type("DATA_MSG");
-					msg.setReturnCount(Long.valueOf(arrayItems.length)); // TODO handle tags
-
-					qBulkMessage.add(msg);
-					if (!cache) {
-						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-					}
+				qBulkMessage.add(msg);
+				if (!cache) {
+					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 				}
-			} else {
-				// return new QDataBaseEntityMessage();
 			}
 
 		} catch (Exception e) {
