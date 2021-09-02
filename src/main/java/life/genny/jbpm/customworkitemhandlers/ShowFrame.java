@@ -1206,7 +1206,7 @@ public class ShowFrame implements WorkItemHandler {
 					msg.setAttributeCode(attributeCode);
 					qBulkMessage.add(msg);
 					if (!cache) {
-						log.info("Sending From DCC Block");
+						log.info("Sending From DCC Block, total = " + msg.getTotal());
 						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 					}
 				} else {
@@ -1233,7 +1233,7 @@ public class ShowFrame implements WorkItemHandler {
 
 					qBulkMessage.add(msg);
 					if (!cache) {
-						log.info("Sending From Regular Block");
+						log.info("Sending From Regular Block, total = " + msg.getTotal());
 						VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 					}
 				}
