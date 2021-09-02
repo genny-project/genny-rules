@@ -69,7 +69,7 @@ public class SearchCallable implements Callable<QBulkMessage> {
       
         Integer pageStart = -1;
         
-        if (searchBE.getFromCache()) {
+        if (searchBE.is("SCH_CACHABLE")) {
         	 
         	  pageStart = searchBE.getValue("SCH_PAGE_START",0);
         	  log.info("Fetching Table Search from Cache with pageStart = "+pageStart);
