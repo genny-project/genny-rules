@@ -66,10 +66,10 @@ public class SearchCallable implements Callable<QBulkMessage> {
 
         QBulkMessage qbm1 = null;
         Boolean noCachePresent = true;
-      
+        Boolean usingCache = searchBE.is("SCH_CACHABLE");      
         Integer pageStart = -1;
         
-        if (searchBE.is("SCH_CACHABLE")) {
+        if (usingCache) {
         	 
         	  pageStart = searchBE.getValue("SCH_PAGE_START",0);
         	  log.info("Fetching Table Search from Cache with pageStart = "+pageStart);
@@ -79,6 +79,8 @@ public class SearchCallable implements Callable<QBulkMessage> {
          		  qbm1 = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", templateSearchCode,
                      QBulkMessage.class);
         		  if (qbm1==null) {
+        			  noCachePresent = true;
+        		  }else {
         			  noCachePresent = false;
         		  }
         	  }
@@ -87,14 +89,15 @@ public class SearchCallable implements Callable<QBulkMessage> {
         if (noCachePresent) {
             qbm1 = tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, filterCode, filterValue, cache,
                     replace);
-            if (pageStart == 0) {
-            	VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(), qbm1,
+            if ((pageStart == 0)&&usingCache) {
+            	 String templateSearchCode  = searchBE.getCode().replaceFirst("_"+beUtils.getGennyToken().getSessionCode().toUpperCase(), "");  
+            	VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", templateSearchCode, qbm1,
                     beUtils.getGennyToken().getToken());
             }
         } 
         ret.add(qbm1);
 
-        log.info("Finished Search with " + qbm1.getMessages().length + " items");
+        log.info("Finished "+(usingCache?"Using cache ":"with no caching ")+" - Search with " + qbm1.getMessages().length + " items ");
         return ret;
     }
 }
