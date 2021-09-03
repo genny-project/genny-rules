@@ -75,7 +75,7 @@ public class SearchCallable implements Callable<QBulkMessage> {
         	  log.info("Fetching Table Search from Cache with pageStart = "+pageStart);
         	  if (pageStart == 0) {
         		  // only do caching if the searchsession matches the original
-        		  String templateSearchCode  = searchBE.getCode().replaceFirst(beUtils.getGennyToken().getSessionCode().toUpperCase()+"_", "");     		  
+        		  String templateSearchCode  = searchBE.getCode().replaceFirst("_"+beUtils.getGennyToken().getSessionCode().toUpperCase(), "");     		  
          		  qbm1 = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", templateSearchCode,
                      QBulkMessage.class);
         		  if (qbm1==null) {
