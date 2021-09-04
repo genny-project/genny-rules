@@ -78,9 +78,11 @@ public class SearchCallable implements Callable<QBulkMessage> {
         		  String templateSearchCode  = searchBE.getCode().replaceFirst("_"+beUtils.getGennyToken().getSessionCode().toUpperCase(), "");     		  
          		  qbm1 = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", templateSearchCode,
                      QBulkMessage.class);
+         		
         		  if (qbm1==null) {
         			  noCachePresent = true;
         		  }else {
+        			  qbm1.setToken(beUtils.getGennyToken().getToken());  // update with latest user token
         			  noCachePresent = false;
         		  }
         	  }
