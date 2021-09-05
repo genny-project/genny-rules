@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
 import life.genny.qwanda.entity.SearchEntity;
@@ -73,6 +74,10 @@ public class SearchCallable implements Callable<QBulkMessage> {
         
         // Check if a filter is being used
         final String templateSearchCode  = searchBE.getCode().replaceFirst("_"+beUtils.getGennyToken().getSessionCode().toUpperCase(), "");
+        String wildcard = searchBE.getValueAsString("SCH_WILDCARD");
+        if (!StringUtils.isBlank(wildcard)) {
+        	usingCache = false;
+        }
         
         if (usingCache) {
         	 
@@ -86,9 +91,7 @@ public class SearchCallable implements Callable<QBulkMessage> {
         		  if (qbm1==null) {
         			  noCachePresent = true;
         		  }else {
-//        			  for (QDataBaseEntityMessage msg : qbm1.getMessages()) {
-//        				  msg.setParentCode(searchBE.getCode());
-//        			  }
+       		
         			  if (qbm1.getMessages()[0].getParentCode()!=null) {
         				  qbm1.getMessages()[0].setParentCode(templateSearchCode+"_"+beUtils.getGennyToken().getSessionCode().toUpperCase());  // fix to current session
         			  } else {
