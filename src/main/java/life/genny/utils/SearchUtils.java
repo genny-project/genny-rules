@@ -956,7 +956,7 @@ public class SearchUtils {
 						// TODO
 					} else {
 						Integer maxPages = Integer.parseInt(split[1]);
-						for (Integer pageIndex=0;pageIndex<maxPages;pageIndex++) { // oldschool for-loop
+						for (Integer pageIndex=0;pageIndex<=maxPages;pageIndex++) { // oldschool for-loop
 							setupSearchCache(beUtils, split[0], pageIndex);  // just search for the asked page
 							log.info("SearchUtils: regenerateCaches - setup "+split[0]);
 						}
