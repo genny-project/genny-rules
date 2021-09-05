@@ -71,13 +71,15 @@ public class SearchCallable implements Callable<QBulkMessage> {
         Boolean usingCache = searchBE.is("SCH_CACHABLE");      
         Integer pageStart = -1;
         
+        // Check if a filter is being used
+        final String templateSearchCode  = searchBE.getCode().replaceFirst("_"+beUtils.getGennyToken().getSessionCode().toUpperCase(), "");
+        
         if (usingCache) {
         	 
         	  pageStart = searchBE.getValue("SCH_PAGE_START",0);
         	  log.info("Fetching Table Search from Cache with pageStart = "+pageStart);
         	  if (pageStart == 0) {
         		  // only do caching if the searchsession matches the original
-        		  String templateSearchCode  = searchBE.getCode().replaceFirst("_"+beUtils.getGennyToken().getSessionCode().toUpperCase(), "");     		  
          		  qbm1 = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", templateSearchCode,
                      QBulkMessage.class);
          		  
@@ -109,7 +111,6 @@ public class SearchCallable implements Callable<QBulkMessage> {
             qbm1 = tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, filterCode, filterValue, cache,
                     replace);
             if ((pageStart == 0)&&usingCache) {
-            	 String templateSearchCode  = searchBE.getCode().replaceFirst("_"+beUtils.getGennyToken().getSessionCode().toUpperCase(), "");  
             	VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", templateSearchCode, qbm1,
                     beUtils.getGennyToken().getToken());
             }

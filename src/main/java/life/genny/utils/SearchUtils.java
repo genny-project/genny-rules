@@ -904,4 +904,69 @@ public class SearchUtils {
 
 	}
 
+	
+	public static void setupSearchCache(BaseEntityUtils beUtils, final String searchCode, final Integer pageIndex) {
+		SearchEntity searchBE = beUtils.getSearchEntityByCode(searchCode);
+		setupSearchCache(beUtils,searchBE,pageIndex);
+	}
+	
+	public static void setupSearchCache(BaseEntityUtils beUtils, final SearchEntity searchBE, final Integer pageIndex)
+	{
+		/* Set up resultant intern be to be sent out */ 	     
+		long startProcessingTime = System.currentTimeMillis();
+		long totalProcessingTime = 0L;
+
+		TableUtils tableUtils = new TableUtils(beUtils);
+		
+		searchBE.setPageStart(pageIndex); 
+		QBulkMessage qbm1   = tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, null,null, true, true);			
+        VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(), qbm1,beUtils.getGennyToken().getToken());
+		
+        totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
+
+	    log.info("Search Cache finished after: " + totalProcessingTime + " milliseconds");
+
+	}
+	
+	public static void regenerateCaches(BaseEntityUtils beUtils, BaseEntity targetBe) {
+		// determine the def for the targetBe
+		
+		BaseEntity defBe = beUtils.getDEF(targetBe);
+		
+		// Now get the list of searches that need to be regenerated
+		
+		String linkedCachedSearchCodes = defBe.getValue("LNK_CACHED_SEARCHES", "[]");
+		
+		JsonArray linkedCacheSearchCodeJsonArray = new JsonArray(linkedCachedSearchCodes);
+		
+		for (int i = 0; i < linkedCacheSearchCodeJsonArray.size(); i++) {
+
+			String searchCodePage = linkedCacheSearchCodeJsonArray.getString(i);
+
+			/* we try to fetch the base entity */
+			if (searchCodePage != null) {
+				
+				String[] split = searchCodePage.split(":");
+				if (split.length==1) {
+					setupSearchCache(beUtils, split[0], 0);  // just search for the first page
+				} else {
+					if (split[1].equalsIgnoreCase("*")) {
+						// cache all pages
+						// Find total count, divide into pages 
+						// TODO
+					} else {
+						Integer maxPages = Integer.parseInt(split[1]);
+						for (Integer pageIndex=0;pageIndex<maxPages;pageIndex++) { // oldschool for-loop
+							setupSearchCache(beUtils, split[0], pageIndex);  // just search for the asked page
+						}
+					}
+				}
+				
+				
+				
+			}
+		}
+		
+	}
+	
 }
