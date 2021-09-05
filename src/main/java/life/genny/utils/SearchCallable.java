@@ -1,6 +1,7 @@
 package life.genny.utils;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
@@ -8,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.message.QBulkMessage;
+import life.genny.qwanda.message.QDataBaseEntityMessage;
 
 public class SearchCallable implements Callable<QBulkMessage> {
 
@@ -78,10 +80,25 @@ public class SearchCallable implements Callable<QBulkMessage> {
         		  String templateSearchCode  = searchBE.getCode().replaceFirst("_"+beUtils.getGennyToken().getSessionCode().toUpperCase(), "");     		  
          		  qbm1 = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", templateSearchCode,
                      QBulkMessage.class);
-         		
+         		  
         		  if (qbm1==null) {
         			  noCachePresent = true;
         		  }else {
+//        			  for (QDataBaseEntityMessage msg : qbm1.getMessages()) {
+//        				  msg.setParentCode(searchBE.getCode());
+//        			  }
+        			  if (qbm1.getMessages()[0].getParentCode()!=null) {
+        				  qbm1.getMessages()[0].setParentCode(templateSearchCode+"_"+beUtils.getGennyToken().getSessionCode().toUpperCase());  // fix to current session
+        			  } else {
+        				 Arrays.stream(qbm1.getMessages()[0].getItems()).forEach(i -> i.setCode(templateSearchCode+"_"+beUtils.getGennyToken().getSessionCode().toUpperCase()));        				  
+        			  }
+        			  if (qbm1.getMessages().length>0) {
+               			  if (qbm1.getMessages()[1].getParentCode()!=null) {
+            				  qbm1.getMessages()[1].setParentCode(templateSearchCode+"_"+beUtils.getGennyToken().getSessionCode().toUpperCase());  // fix to current session
+            			  } else {
+             				 Arrays.stream(qbm1.getMessages()[1].getItems()).forEach(i -> i.setCode(templateSearchCode+"_"+beUtils.getGennyToken().getSessionCode().toUpperCase()));        				  
+           			  }
+             			  }
         			  qbm1.setToken(beUtils.getGennyToken().getToken());  // update with latest user token
         			  noCachePresent = false;
         		  }
