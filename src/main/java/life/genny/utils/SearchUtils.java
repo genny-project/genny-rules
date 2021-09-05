@@ -930,13 +930,13 @@ public class SearchUtils {
 	
 	public static void regenerateCaches(BaseEntityUtils beUtils, BaseEntity targetBe) {
 		// determine the def for the targetBe
-		
+		log.info("SearchUtils: regenerateCaches - > "+targetBe);
 		BaseEntity defBe = beUtils.getDEF(targetBe);
 		
 		// Now get the list of searches that need to be regenerated
 		
 		String linkedCachedSearchCodes = defBe.getValue("LNK_CACHED_SEARCHES", "[]");
-		
+		log.info("SearchUtils: regenerateCaches -> LNK_CACHED_SEARCHES="+linkedCachedSearchCodes);
 		JsonArray linkedCacheSearchCodeJsonArray = new JsonArray(linkedCachedSearchCodes);
 		
 		for (int i = 0; i < linkedCacheSearchCodeJsonArray.size(); i++) {
@@ -958,6 +958,7 @@ public class SearchUtils {
 						Integer maxPages = Integer.parseInt(split[1]);
 						for (Integer pageIndex=0;pageIndex<maxPages;pageIndex++) { // oldschool for-loop
 							setupSearchCache(beUtils, split[0], pageIndex);  // just search for the asked page
+							log.info("SearchUtils: regenerateCaches - setup "+split[0]);
 						}
 					}
 				}
