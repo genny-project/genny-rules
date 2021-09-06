@@ -8,6 +8,7 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 
+import life.genny.qwanda.datatype.CapabilityMode;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
@@ -74,8 +75,12 @@ public class SearchCallable implements Callable<QBulkMessage> {
         
         // Check if a filter is being used
         final String templateSearchCode  = searchBE.getCode().replaceFirst("_"+beUtils.getGennyToken().getSessionCode().toUpperCase(), "");
+        
+        CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
+        Boolean isAllowedToUseCache = capabilityUtils.hasCapability("USE_CACHE", CapabilityMode.VIEW);
+        
         String wildcard = searchBE.getValueAsString("SCH_WILDCARD");
-        if (!StringUtils.isBlank(wildcard)) {
+        if (!StringUtils.isBlank(wildcard) || !isAllowedToUseCache) {
         	usingCache = false;
         }
         
