@@ -934,7 +934,7 @@ public class SearchUtils {
 		BaseEntity defBe = beUtils.getDEF(targetBe);
 		
 		// Now get the list of searches that need to be regenerated
-		
+		 
 		String linkedCachedSearchCodes = defBe.getValue("LNK_CACHED_SEARCHES", "[]");
 		log.info("SearchUtils: regenerateCaches -> LNK_CACHED_SEARCHES="+linkedCachedSearchCodes);
 		JsonArray linkedCacheSearchCodeJsonArray = new JsonArray(linkedCachedSearchCodes);
