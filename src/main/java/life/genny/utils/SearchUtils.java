@@ -514,19 +514,24 @@ public class SearchUtils {
 		return getDropdownData(beUtils,message,GennySettings.defaultDropDownPageSize);
 	}
 
-	
 	static public QDataBaseEntityMessage getDropdownData(BaseEntityUtils beUtils, QEventDropdownMessage message, Integer dropdownSize) {
+		BaseEntity targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode());
+		BaseEntity sourceBe = beUtils.getBaseEntityByCode(message.getData().getSourceCode());
+		String searchText = message.getData().getValue();
+		String parentCode = message.getData().getParentCode();
+		String questionCode = message.getQuestionCode();
+
+		return getDropdownData(beUtils, sourceBe,targetBe, message.getAttributeCode(),parentCode, questionCode, searchText, dropdownSize);
+	}
+	
+	static public QDataBaseEntityMessage getDropdownData(BaseEntityUtils beUtils, BaseEntity sourceBe,BaseEntity targetBe, final String attributeCode, final String parentCode, final String questionCode, final String searchText, Integer dropdownSize) {
 
 		BaseEntity project = beUtils.getBaseEntityByCode("PRJ_" + beUtils.getServiceToken().getRealm().toUpperCase());
 
-		// firstly work out what the DEF isThe Nott
-
-		BaseEntity targetBe = beUtils.getBaseEntityByCode(message.getData().getTargetCode());
-		BaseEntity sourceBe = beUtils.getBaseEntityByCode(message.getData().getSourceCode());
 		//BaseEntity internBe = beUtils.getBaseEntityByCode("DEF_INTERN");
 		BaseEntity defBe = beUtils.getDEF(targetBe);
 		log.info("DROPDOWN :identified Dropdown Target Baseentity as "+defBe.getCode()+" : "+defBe.getName());
-		log.info("DROPDOWN :identified Dropdown Attribute as "+message.getAttributeCode());
+		log.info("DROPDOWN :identified Dropdown Attribute as "+attributeCode);
 
 		/*
 		 * Now check if this attribute is ok if
@@ -540,7 +545,7 @@ public class SearchUtils {
 		 * because it is a drop down event we will search the DEF for the search
 		 * attribute
 		 */
-		Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + message.getAttributeCode()); // SER_LNK_EDU_PROVIDER
+		Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + attributeCode); // SER_LNK_EDU_PROVIDER
 		// String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_EDU_PROVIDER\",\"value\":\"true\"}]}";
 		String serValue = "{\"search\":\"SBE_DROPDOWN\",\"parms\":[{\"attributeCode\":\"PRI_IS_INTERN\",\"value\":\"true\"}]}";
 		if (searchAtt.isPresent()) {
@@ -550,11 +555,8 @@ public class SearchUtils {
 			//return new QDataBaseEntityMessage();
 		}
 		
-		String searchText = message.getData().getValue();
-		String parentCode = message.getData().getParentCode();
-		String questionCode = message.getQuestionCode();
 		
-		return DefUtils.getDropdownDataMessage(beUtils, message.getAttributeCode(), parentCode, questionCode,serValue, sourceBe, targetBe, searchText, beUtils.getServiceToken().getToken());
+		return DefUtils.getDropdownDataMessage(beUtils, attributeCode, parentCode, questionCode,serValue, sourceBe, targetBe, searchText, beUtils.getServiceToken().getToken());
 
 	}
 

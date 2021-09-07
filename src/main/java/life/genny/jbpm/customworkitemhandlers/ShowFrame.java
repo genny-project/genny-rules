@@ -53,6 +53,7 @@ import life.genny.utils.DropdownUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.OutputParam;
 import life.genny.utils.RulesUtils;
+import life.genny.utils.SearchUtils;
 import life.genny.utils.TaskUtils;
 import life.genny.utils.VertxUtils;
 
@@ -337,6 +338,7 @@ public class ShowFrame implements WorkItemHandler {
 		Boolean enabledSubmit = false;
 
 		BaseEntity target = null;
+		BaseEntity source = null;
 
 		if ((output != null)) {
 			log.info("Ouput Task ID = " + output.getTaskId());
@@ -364,6 +366,7 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				target = beUtils.getBaseEntityByCode(targetCode);
+				source = beUtils.getBaseEntityByCode(sourceCode);
 
 				defBe = beUtils.getDEF(target);
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
@@ -371,6 +374,9 @@ public class ShowFrame implements WorkItemHandler {
 			} else {
 				sourceCode = output.getAskSourceCode();
 				targetCode = output.getAskTargetCode();
+				target = beUtils.getBaseEntityByCode(targetCode);
+				source = beUtils.getBaseEntityByCode(sourceCode);
+
 			}
 		}
 
@@ -443,7 +449,7 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				// String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
-				log.info("This is the 9.4.0 version of ShowFrame , and update is " + updated);
+				log.info("This is the 9.6.0 version of ShowFrame , and update is " + updated);
 
 				// Iterate child asks
 				if (updated != null && updated.getItems() != null && (updated.getItems().length > 0)
@@ -476,13 +482,13 @@ public class ShowFrame implements WorkItemHandler {
 									+ (defDropdownExists ? "FOUND" : "NOT FOUND"));
 
 							if (defDropdownExists) {
-								log.info("Dropdown code :: " + dropdownCode);
+								log.info("Dropdown code that exists :: " + dropdownCode);
 
 								// test
 								if (defDropdownExists) {
 									// find the selected edu provider if exists
 									String val = target.getValue(dropdownCode, null);
-									System.out.println("val = " + val);
+									log.info("Selected Existing val for "+dropdownCode+" = " + val);
 									Set<BaseEntity> beItems = new HashSet<>();
 									if (!StringUtils.isBlank(val)) {
 										JsonArray jaItems = new JsonArray(val);
@@ -501,7 +507,13 @@ public class ShowFrame implements WorkItemHandler {
 											dropdownCode, userToken, serviceToken, cache, targetCode, groupCode,
 											questionCode);
 									qBulkMessage.add(qb);
-
+									
+									// Now send all the cached dropdown items IF RADIO 
+									Attribute dropdownAttribute = RulesUtils.getAttribute(dropdownCode, beUtils.getGennyToken());
+									if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))) {
+										QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
+										qBulkMessage.add(listItems);
+									}
 									// Check Dependencies, and disable if not met
 									Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target,
 											defBe);
