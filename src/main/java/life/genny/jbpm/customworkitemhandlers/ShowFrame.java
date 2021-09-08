@@ -516,6 +516,9 @@ public class ShowFrame implements WorkItemHandler {
 									if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))) {
 										QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
 										qBulkMessage.add(listItems);
+										if (!cache) {
+											VertxUtils.writeMsg("webcmds", JsonUtils.toJson(listItems));
+										}
 									}
 									// Check Dependencies, and disable if not met
 									Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target,
@@ -781,6 +784,9 @@ public class ShowFrame implements WorkItemHandler {
 										if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))) {
 											QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
 											qBulkMessage.add(listItems);
+											if (!cache) {
+												VertxUtils.writeMsg("webcmds", JsonUtils.toJson(listItems));
+											}
 										}
 
 									}
