@@ -583,6 +583,7 @@ public class ShowFrame implements WorkItemHandler {
 		BaseEntity defBe = null;
 
 		BaseEntity target = null;
+		BaseEntity source = null;
 
 		if ((output != null)) {
 			log.info("Ouput Task ID = " + output.getTaskId());
@@ -610,6 +611,7 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				target = beUtils.getBaseEntityByCode(targetCode);
+				source = beUtils.getBaseEntityByCode(sourceCode);
 
 				defBe = beUtils.getDEF(target);
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
@@ -617,8 +619,16 @@ public class ShowFrame implements WorkItemHandler {
 			} else {
 				sourceCode = output.getAskSourceCode();
 				targetCode = output.getAskTargetCode();
+				target = beUtils.getBaseEntityByCode(targetCode);
+				source = beUtils.getBaseEntityByCode(sourceCode);
+				
+				defBe = beUtils.getDEF(target);
+				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
+
 			}
 		}
+		
+		
 
 		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
 
@@ -725,7 +735,7 @@ public class ShowFrame implements WorkItemHandler {
 								if (defDropdownExists) {
 
 									String val = target.getValue(dropdownCode, null);
-									System.out.println("val = " + val);
+									log.info("val = " + val);
 									Set<BaseEntity> beItems = new HashSet<>();
 									if (!StringUtils.isBlank(val)) {
 										JsonArray jaItems = new JsonArray(val);
@@ -761,6 +771,13 @@ public class ShowFrame implements WorkItemHandler {
 										QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe, dropdownCode,
 												userToken, serviceToken, cache, targetCode, groupCode, questionCode);
 										qBulkMessage.add(qb);
+										// Now send all the cached dropdown items IF RADIO 
+										Attribute dropdownAttribute = RulesUtils.getAttribute(dropdownCode, beUtils.getGennyToken());
+										if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))) {
+											QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
+											qBulkMessage.add(listItems);
+										}
+
 									}
 
 									// Check Dependencies, and disable if not met
