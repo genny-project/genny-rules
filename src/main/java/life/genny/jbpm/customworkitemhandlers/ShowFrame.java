@@ -767,7 +767,9 @@ public class ShowFrame implements WorkItemHandler {
 									String groupCode = askMsg.getItems()[0].getQuestionCode();
 
 									// Only check for DDC if not items are selected already
-									if (beItems.size() == 0) {
+									Attribute dropdownAttribute = RulesUtils.getAttribute(dropdownCode, beUtils.getGennyToken());
+
+									if ((beItems.size() == 0)||(("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent())))) {
 										Optional<EntityAttribute> cacheAtt = defBe.findEntityAttribute("DDC_" + dropdownCode);
 										if (cacheAtt.isPresent()) {
 											String jsonMsg = cacheAtt.get().getValueString();
@@ -789,7 +791,6 @@ public class ShowFrame implements WorkItemHandler {
 												userToken, serviceToken, cache, targetCode, groupCode, questionCode);
 										qBulkMessage.add(qb);
 										// Now send all the cached dropdown items IF RADIO 
-										Attribute dropdownAttribute = RulesUtils.getAttribute(dropdownCode, beUtils.getGennyToken());
 										if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))) {
 											QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
 											qBulkMessage.add(listItems);
@@ -1045,7 +1046,7 @@ public class ShowFrame implements WorkItemHandler {
 							.build();
 
 					frame.setRealm(realm);
-					System.out.println(frame.getCode());
+					log.info(frame.getCode());
 					FrameUtils2.toMessage(frame, userToken);
 					frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 							userToken.getToken());
