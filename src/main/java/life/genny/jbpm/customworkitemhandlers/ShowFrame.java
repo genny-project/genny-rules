@@ -93,9 +93,9 @@ public class ShowFrame implements WorkItemHandler {
 
 		if (cache) {
 			qBulkMessage.setToken(userToken.getToken());
-			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
+			
 		}
-
+		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
 		// notify manager that work item has been completed
 		if (workItem == null) {
 			log.error(callingWorkflow + ": workItem is null");
@@ -281,6 +281,11 @@ public class ShowFrame implements WorkItemHandler {
 //					}
 					QBulkMessage asks = sendAsks(rootFrameCode, beUtils, callingWorkflow, output, cache);
 					qBulkMessage.add(asks);
+					if (!cache) {
+						qBulkMessage.setToken(userToken.getToken());
+						log.info(callingWorkflow + ": Sending ShowFrame qBulkMessage not cached");
+						VertxUtils.writeMsg("webcmds", qBulkMessage);
+					}
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
 							+ " DOES NOT EXIST IN CACHE - cannot display frame");
@@ -290,7 +295,7 @@ public class ShowFrame implements WorkItemHandler {
 
 		}
 		log.info("Sending the EndMsg Now !!!");
-		VertxUtils.writeMsgEnd(userToken);
+	//	VertxUtils.writeMsgEnd(userToken);
 
 		return qBulkMessage;
 	}
