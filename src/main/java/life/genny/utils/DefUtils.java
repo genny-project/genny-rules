@@ -308,7 +308,7 @@ public class DefUtils {
 //		log.info("DROPDOWN :parentCode = "+message.getData().getParentCode());
 		msg.setParentCode(parentCode);
 		msg.setQuestionCode(questionCode); 
-		msg.setToken(token);
+		msg.setToken(beUtils.getGennyToken().getToken());
 		msg.setLinkCode("LNK_CORE");
 		msg.setLinkValue("ITEMS");
 		msg.setReplace(true);
