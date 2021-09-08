@@ -281,11 +281,6 @@ public class ShowFrame implements WorkItemHandler {
 //					}
 					QBulkMessage asks = sendAsks(rootFrameCode, beUtils, callingWorkflow, output, cache);
 					qBulkMessage.add(asks);
-					if (!cache) {
-						qBulkMessage.setToken(userToken.getToken());
-						log.info(callingWorkflow + ": Sending ShowFrame qBulkMessage not cached");
-						VertxUtils.writeMsg("webcmds", qBulkMessage);
-					}
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
 							+ " DOES NOT EXIST IN CACHE - cannot display frame");
