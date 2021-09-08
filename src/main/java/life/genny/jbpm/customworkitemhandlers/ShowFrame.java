@@ -93,9 +93,11 @@ public class ShowFrame implements WorkItemHandler {
 
 		if (cache) {
 			qBulkMessage.setToken(userToken.getToken());
-			
+			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
 		}
-		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
+		
+		VertxUtils.writeMsgEnd(userToken);
+		
 		// notify manager that work item has been completed
 		if (workItem == null) {
 			log.error(callingWorkflow + ": workItem is null");
@@ -137,7 +139,7 @@ public class ShowFrame implements WorkItemHandler {
 	public static QBulkMessage display(BaseEntityUtils beUtils, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
-		BaseEntity defBe = null;
+
 		
 		GennyToken userToken = beUtils.getGennyToken();
 
@@ -153,6 +155,7 @@ public class ShowFrame implements WorkItemHandler {
 				// log.info(callingWorkflow+": root Frame Code sent to display = " +
 				// rootFrameCode);
 
+				
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
 						QDataBaseEntityMessage.class, userToken.getToken());
 
@@ -290,7 +293,7 @@ public class ShowFrame implements WorkItemHandler {
 
 		}
 		log.info("Sending the EndMsg Now !!!");
-	//	VertxUtils.writeMsgEnd(userToken);
+	
 
 		return qBulkMessage;
 	}
@@ -517,6 +520,7 @@ public class ShowFrame implements WorkItemHandler {
 										QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
 										qBulkMessage.add(listItems);
 										if (!cache) {
+											listItems.setToken(userToken.getToken());
 											VertxUtils.writeMsg("webcmds", JsonUtils.toJson(listItems));
 										}
 									}
@@ -776,6 +780,7 @@ public class ShowFrame implements WorkItemHandler {
 											msg.setAttributeCode(dropdownCode);
 											qBulkMessage.add(msg);
 											if (!cache) {
+												msg.setToken(userToken.getToken());
 												VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 											}
 										}
@@ -789,6 +794,7 @@ public class ShowFrame implements WorkItemHandler {
 											QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
 											qBulkMessage.add(listItems);
 											if (!cache) {
+												listItems.setToken(userToken.getToken());
 												VertxUtils.writeMsg("webcmds", JsonUtils.toJson(listItems));
 											}
 										}
@@ -831,6 +837,7 @@ public class ShowFrame implements WorkItemHandler {
 				qBulkMessage.add(updated);
 				if (!cache) {
 					log.info("Sending the Asks Now !!!");
+					updated.setToken(userToken.getToken());
 					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
 				}
 
@@ -975,7 +982,7 @@ public class ShowFrame implements WorkItemHandler {
 							.build();
 
 					frame.setRealm(realm);
-					System.out.println(frame.getCode());
+					log.info(frame.getCode());
 					FrameUtils2.toMessage(frame, userToken);
 					frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 							userToken.getToken());
