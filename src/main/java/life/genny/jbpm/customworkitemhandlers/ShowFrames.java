@@ -46,6 +46,10 @@ public class ShowFrames implements WorkItemHandler {
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 		/* items used to save the extracted input parameters from the custom task */
+		if (workItem == null) {
+			log.error("ShowFrames has null workItem -  aborting");
+			return;
+		}
 		Map<String, Object> items = workItem.getParameters();
 
 		// extract parameters
