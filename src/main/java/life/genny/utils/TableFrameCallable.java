@@ -31,8 +31,8 @@ public class TableFrameCallable implements Callable<QBulkMessage> {
 		QBulkMessage qbm2 = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "SPEEDUP",
 				"FRM_TABLE_VIEW-FRM_TAB_CONTENT", QBulkMessage.class);
 		if ((qbm1 == null) || (qbm2 == null)) {
-			qbm1 = ShowFrame.display(beUtils.getGennyToken(), "FRM_QUE_TAB_VIEW", "FRM_CONTENT", "Test", cache);
-			qbm2 = ShowFrame.display(beUtils.getGennyToken(), "FRM_TABLE_VIEW", "FRM_TAB_CONTENT", "Test", cache);
+			qbm1 = ShowFrame.display(beUtils, "FRM_QUE_TAB_VIEW", "FRM_CONTENT", "Test", cache);
+			qbm2 = ShowFrame.display(beUtils, "FRM_TABLE_VIEW", "FRM_TAB_CONTENT", "Test", cache);
 
 			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", "FRM_QUE_TAB_VIEW-FRM_CONTENT", qbm1,
 					beUtils.getGennyToken().getToken());

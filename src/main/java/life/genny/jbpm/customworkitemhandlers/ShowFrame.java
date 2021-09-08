@@ -71,11 +71,12 @@ public class ShowFrame implements WorkItemHandler {
 
 		// extract parameters
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
+		GennyToken serviceToken = (GennyToken) workItem.getParameter("serviceToken");
 		String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
 		OutputParam output = (OutputParam) workItem.getParameter("output");
 
-		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,userToken);
 
 		if (rootFrameCode.equals("NONE")) { // Do not change anything
 			return;
@@ -88,7 +89,7 @@ public class ShowFrame implements WorkItemHandler {
 		callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
 		Boolean cache = false;
-		QBulkMessage qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
+		QBulkMessage qBulkMessage = display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
 
 		if (cache) {
 			qBulkMessage.setToken(userToken.getToken());
@@ -103,12 +104,12 @@ public class ShowFrame implements WorkItemHandler {
 
 	}
 
-	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+	public static QBulkMessage display(BaseEntityUtils beUtils, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow) {
-		return display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, false);
+		return display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, false);
 	}
 
-	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+	public static QBulkMessage display(BaseEntityUtils beUtils, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 
@@ -117,7 +118,7 @@ public class ShowFrame implements WorkItemHandler {
 		output.setTypeOfResult("FORMCODE");
 		output.setResultCode(rootFrameCode);
 		output.setTargetCode(targetFrameCode);
-		qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
+		qBulkMessage = display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
 		return qBulkMessage;
 	}
 
@@ -128,17 +129,19 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param callingWorkflow
 	 */
 
-	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+	public static QBulkMessage display(BaseEntityUtils beUtils, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output) {
-		return display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, false);
+		return display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, false);
 	}
 
-	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+	public static QBulkMessage display(BaseEntityUtils beUtils, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		BaseEntity defBe = null;
+		
+		GennyToken userToken = beUtils.getGennyToken();
 
-		if (userToken == null) {
+		if (beUtils.getGennyToken() == null) {
 			log.error(callingWorkflow + ": Must supply userToken!");
 
 		} else {
@@ -164,7 +167,7 @@ public class ShowFrame implements WorkItemHandler {
 						}
 						log.error(callingWorkflow + ": FRAME IS NOT IN CACHE  - " + rootFrameCode);
 						// ok, grab frame from rules
-						BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+
 						BaseEntity rule = beUtils.getBaseEntityByCode("RUL_" + rootFrameCode);
 						if (rule != null) {
 							Optional<String> optionFrameStr = rule.getValue("PRI_FRM"); // assume always
@@ -276,7 +279,7 @@ public class ShowFrame implements WorkItemHandler {
 //						// TODO Auto-generated catch block
 //						e.printStackTrace();
 //					}
-					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output, cache);
+					QBulkMessage asks = sendAsks(rootFrameCode, beUtils, callingWorkflow, output, cache);
 					qBulkMessage.add(asks);
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
@@ -563,10 +566,12 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param userToken
 	 * @param callingWorkflow
 	 */
-	private static QBulkMessage sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow,
+	private static QBulkMessage sendAsks(String rootFrameCode, BaseEntityUtils beUtils, String callingWorkflow,
 			OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
-		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		GennyToken userToken = beUtils.getGennyToken();
+		GennyToken serviceToken = beUtils.getServiceToken();
+		
 
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
@@ -688,15 +693,15 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				// find any select Attributes, find their selection Baseentities and send
-				GennyToken serviceToken = null;
-				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN",
-						String.class, userToken.getToken());
-				if (serviceTokenStr == null) {
-					log.error(callingWorkflow + ": SERVICE TOKEN FETCHED FROM CACHE IS NULL");
-					return qBulkMessage;
-				} else {
-					serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
-				}
+//				GennyToken serviceToken = null;
+//				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN",
+//						String.class, userToken.getToken());
+//				if (serviceTokenStr == null) {
+//					log.error(callingWorkflow + ": SERVICE TOKEN FETCHED FROM CACHE IS NULL");
+//					return qBulkMessage;
+//				} else {
+//					serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
+//				}
 
 				// Iterate child asks
 				if (updated != null && updated.getItems() != null && (updated.getItems().length > 0)
