@@ -649,6 +649,10 @@ public class TaskUtils {
 	public static Boolean areAllMandatoryQuestionsAnswered(BaseEntity target, Map<String, Object> taskAsks) {
 
 		Boolean allMandatoryAnswered = true;
+		if (taskAsks == null) {
+			log.error("TaskUtils -> are all MandatoryQuestionedAnswered? - No taskAsks!");
+			return false;
+		}
 
 		for (Map.Entry<String, Object> entry : taskAsks.entrySet()) {
 			String key = entry.getKey();
