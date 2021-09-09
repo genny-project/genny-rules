@@ -1075,11 +1075,11 @@ public class ShowFrame implements WorkItemHandler {
 			}
 		}
 
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
+//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
+//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
+//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
+//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
+//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
 
 		log.debug("About to do deserialization!");
 		askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
