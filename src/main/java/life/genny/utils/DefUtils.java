@@ -92,7 +92,8 @@ public class DefUtils {
 					try {
 						json = new JsonObject(searchValue);
 					} catch (Exception e1) {
-						log.error("Bad Search DEF json "+defEa.getAttributeCode());
+						log.error("Bad Search DEF json found, baseentityCode: " + defEa.getBaseEntityCode()
+						+ ", attributeCode:" + defEa.getAttributeCode() + ", valueString:" + searchValue);
 						continue;
 					}
 					Boolean cached = false;
