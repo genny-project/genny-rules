@@ -154,7 +154,7 @@ public class SearchUtils {
 		JsonObject resultJson = null;
 
 		// Perform the search if specific item not found
-		if (beArray == null) {
+		if (result == null) {
 			try {
 				resultJsonStr = QwandaUtils.apiPostEntity2(
 						GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
@@ -236,7 +236,6 @@ public class SearchUtils {
 						try {
 							be.addAnswer(ans);
 						} catch (BadDataException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}

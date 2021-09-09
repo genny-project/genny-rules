@@ -54,6 +54,7 @@ import life.genny.qwanda.ContextType;
 import life.genny.qwanda.Question;
 import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.attribute.AttributeBoolean;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
@@ -1886,6 +1887,205 @@ public class TableUtils {
 		System.out.println("Dropdown items sent to FE");
 
 	}
+
+	static public void sendFilterOptions(BaseEntityUtils beUtils, SearchEntity searchBE) {
+
+		GennyToken serviceToken = beUtils.getServiceToken();
+		GennyToken userToken = beUtils.getGennyToken();
+		String token = serviceToken.getToken();
+		String realm = serviceToken.getRealm();
+
+		String filterAttributeCode = searchBE.findEntityAttribute("SCH_FILTER_COLUMN").orElse(null).getValue();
+		String filterOptionCode = searchBE.findEntityAttribute("SCH_FILTER_OPTION").orElse(null).getValue();
+
+		Attribute attr = RulesUtils.getAttribute(filterAttributeCode, serviceToken);
+		if (attr != null) {
+
+			Ask filterGrpAsk = VertxUtils.getObject(realm, "", "QUE_FILTER_GRP_"+searchBE.getCode(), Ask.class, token);
+
+			if (attr.getCode().startsWith("LNK_")) {
+
+				// EntityAttribute targetPrefix = searchBE.findEntityAttribute("PRI_CODE").orElse(null);
+				// List<EntityAttribute> targetPriIs = searchBE.findPrefixEntityAttributes("PRI_IS_");
+
+				// BaseEntity dummyTarget = new BaseEntity("", "");
+				// if (targetPrefix != null) {
+				// 	dummyTarget.setCode(targetPrefix.getValue());
+				// }
+				// if (targetPriIs.size() > 0) {
+				// 	AttributeBoolean priIsAttr = new AttributeBoolean(targetPriIs.get(0).getAttributeCode(), "Pri Is");
+				// 	searchBE.addAttribute(priIsAttr, 5.0, targetPriIs.get(0).getValue());
+				// }
+				// BaseEntity defBE = beUtils.getDEF(dummyTarget);
+
+				Question selectQues = new Question("QUE_FILTER_SELECT_"+attr.getCode(), "Select Item", attr, true);
+				Ask selectAsk = new Ask(selectQues, userToken.getUserCode(), searchBE.getCode());
+
+				Ask[] childAsks = filterGrpAsk.getChildAsks()[0].getChildAsks();
+
+				Ask[] updatedAsks = Arrays.copyOf(childAsks, childAsks.length + 1);
+				updatedAsks[updatedAsks.length-1] = selectAsk;
+
+				filterGrpAsk.getChildAsks()[0].setChildAsks(updatedAsks);
+
+				/* Init Blank Search */
+				// SearchEntity itemSearch = new SearchEntity("SBE_FILTER_ITEMS", "Filter Items")
+				// 	.addColumn("PRI_CODE", "Code")
+				// 	.addColumn("PRI_NAME", "Name")
+				// 	.setLinkCode("LNK_CORE")
+				// 	.setPageSize(250);
+
+				// Boolean searchTrigger = false;
+
+				// if (unhidden.equals("QUE_FILTER_VALUE_COUNTRY")) {
+				// 	itemSearch.setLinkValue("COUNTRY");
+				// 	searchTrigger = true;
+
+				// } else if (unhidden.equals("QUE_FILTER_VALUE_STATE")) {
+				// 	itemSearch.setLinkValue("AUS_STATE");
+				// 	searchTrigger = true;
+
+				// }
+
+				// /* Basically, don't search if no linkVal is set */
+				// if (searchTrigger) {
+				// 	/* Fetch Countries */
+				// 	List<BaseEntity> items = beUtils.getBaseEntitys(itemSearch);
+				// 	/* Package and send */
+				// 	QDataBaseEntityMessage itemMsg = new QDataBaseEntityMessage(items);
+				// 	itemMsg.setQuestionCode(unhidden);
+				// 	itemMsg.setParentCode("QUE_ADD_FILTER_GRP");
+				// 	itemMsg.setLinkCode("LNK_CORE");
+				// 	itemMsg.setLinkValue("LNK_ITEMS");
+				// 	itemMsg.setToken(beUtils.getGennyToken().getToken());
+				// 	itemMsg.setReplace(true);
+				// 	itemMsg.setToken(token);
+				// 	VertxUtils.writeMsg("webcmds", itemMsg);
+				// }
+
+			} else {
+
+				/* Check the datatype */
+				String dtt = attr.getDataType().getClassName();
+				System.out.println("dtt = " + dtt);
+				if (dtt != null) {
+
+					List<BaseEntity> filterOptionsArray = new ArrayList<>();
+					/* Grab Ask group from cache */
+					BaseEntity equalTo = beUtils.getBaseEntityByCode("SEL_EQUAL_TO");
+					BaseEntity notEqualTo = beUtils.getBaseEntityByCode("SEL_NOT_EQUAL_TO");
+					BaseEntity like = beUtils.getBaseEntityByCode("SEL_LIKE");
+					BaseEntity notLike = beUtils.getBaseEntityByCode("SEL_NOT_LIKE");
+					BaseEntity isTrue = beUtils.getBaseEntityByCode("SEL_IS_TRUE");
+					BaseEntity isFalse = beUtils.getBaseEntityByCode("SEL_IS_FALSE");
+					BaseEntity greaterThan = beUtils.getBaseEntityByCode("SEL_GREATER_THAN");
+					BaseEntity greaterThanOrEqualTo = beUtils.getBaseEntityByCode("SEL_GREATER_THAN_OR_EQUAL_TO");
+					BaseEntity lessThan = beUtils.getBaseEntityByCode("SEL_LESS_THAN");
+					BaseEntity lessThanOrEqualTo = beUtils.getBaseEntityByCode("SEL_LESS_THAN_OR_EQUAL_TO");
+
+					BaseEntity[] booleanSelection = { isTrue, isFalse };
+					BaseEntity[] equalSelection = { equalTo, notEqualTo };
+					BaseEntity[] stringSelection = { equalTo, notEqualTo, like, notLike };
+					BaseEntity[] numSelection = { greaterThan, greaterThanOrEqualTo, lessThan, lessThanOrEqualTo, equalTo, notEqualTo };
+
+					if (attr.getCode().equals("PRI_ADDRESS_COUNTRY")) {
+						filterOptionsArray = Arrays.asList(equalSelection);
+						showFilterChildAsk(filterGrpAsk, "QUE_FILTER_VALUE_COUNTRY");
+
+					} else if (attr.getCode().equals("PRI_ADDRESS_STATE")) {
+						filterOptionsArray = Arrays.asList(equalSelection);
+						showFilterChildAsk(filterGrpAsk, "QUE_FILTER_VALUE_STATE");
+
+					} else if (dtt.equals("java.lang.String") || dtt.equals("String") || dtt.equalsIgnoreCase("Text")) {
+						filterOptionsArray = Arrays.asList(stringSelection);
+						showFilterChildAsk(filterGrpAsk, "QUE_FILTER_VALUE_TEXT");
+
+					} else if (dtt.equals("java.lang.Boolean") || dtt.equalsIgnoreCase("Boolean")) {
+						filterOptionsArray = Arrays.asList(booleanSelection);
+
+					} else if (dtt.equals("java.lang.Double") || dtt.equalsIgnoreCase("Double")
+							|| dtt.equals("java.lang.Integer") || dtt.equalsIgnoreCase("Integer")
+							|| dtt.equals("java.lang.Long") || dtt.equalsIgnoreCase("Long")) {
+						filterOptionsArray = Arrays.asList(numSelection);
+						showFilterChildAsk(filterGrpAsk, "QUE_FILTER_VALUE_TEXT");
+
+					} else if (dtt.equals("java.time.LocalDate") || dtt.equalsIgnoreCase("LocalDate")) {
+						filterOptionsArray = Arrays.asList(numSelection);
+						showFilterChildAsk(filterGrpAsk, "QUE_FILTER_VALUE_DATE");
+
+					} else if (dtt.equals("java.time.LocalDateTime") || dtt.equalsIgnoreCase("LocalDateTime")) {
+						filterOptionsArray = Arrays.asList(numSelection);
+						showFilterChildAsk(filterGrpAsk, "QUE_FILTER_VALUE_DATETIME");
+
+					} else if (dtt.equals("java.time.LocalTime") || dtt.equalsIgnoreCase("LocalTime")) {
+						filterOptionsArray = Arrays.asList(numSelection);
+						showFilterChildAsk(filterGrpAsk, "QUE_FILTER_VALUE_TIME");
+					}
+
+
+					filterOptionsArray = new ArrayList<>(filterOptionsArray);
+
+					BaseEntity optionGrp = new BaseEntity("GRP_FILTER_OPTIONS", "Filter Options");
+					Attribute attributeLink = new Attribute("LNK_CORE", "LNK_CORE", new DataType(String.class));
+					Set<EntityEntity> childLinks = new HashSet<>();
+
+					Double index = 0.0;
+					for (BaseEntity option : filterOptionsArray) {
+						/* Create a link between GRP and BE */
+						EntityEntity ee = new EntityEntity(optionGrp, option, attributeLink, index);
+						Link link = new Link(optionGrp.getCode(), option.getCode(), attributeLink.getCode(), "ITEMS", index);
+						ee.setLink(link);
+						childLinks.add(ee);
+						index += 1.0;
+					}
+					optionGrp.setLinks(childLinks);
+					/* filterOptionsArray.add(optionGrp); */
+
+					/* Send filter option dropdown items */
+					QDataBaseEntityMessage filterOptionsMsg = new QDataBaseEntityMessage(filterOptionsArray);
+					filterOptionsMsg.setParentCode("QUE_ADD_FILTER_GRP");
+					filterOptionsMsg.setQuestionCode("QUE_FILTER_OPTION");
+					filterOptionsMsg.setLinkCode("LNK_CORE");
+					filterOptionsMsg.setLinkValue("LNK_ITEMS");
+					filterOptionsMsg.setToken(beUtils.getGennyToken().getToken());
+					filterOptionsMsg.setReplace(true);
+					VertxUtils.writeMsg("webcmds", filterOptionsMsg);
+					System.out.println("Filter Options sent to FE");
+				}
+
+			}
+
+			/* Send Asks to FE */
+			QDataAskMessage askMsg = new QDataAskMessage(filterGrpAsk);
+			askMsg.setToken(token);
+			askMsg.setReplace(true);
+			VertxUtils.writeMsg("webcmds", askMsg);
+			System.out.println("Asks sent to FE");
+
+			/* Cache changes to filter grp */
+			VertxUtils.putObject(realm, "", filterGrpAsk.getQuestionCode(), filterGrpAsk, token);
+
+		} else {
+			System.out.println("attr is NULL");
+		}
+
+	}
+
+	public static void showFilterChildAsk(Ask ask, String code)
+	{
+		for (Ask childAsk : ask.getChildAsks()[0].getChildAsks()) {
+
+			if (childAsk.getQuestionCode().contains("QUE_FILTER_VALUE")) {
+				if (childAsk.getQuestionCode().equals(code)) {
+					System.out.println("Unhiding " + code);
+					childAsk.setHidden(false);
+				} else {
+					childAsk.setHidden(true);
+				}
+			}
+		}
+	}
+
 
 	public SearchEntity copySearch(final String oldSearchCode, final String newSearchCode) {
 		SearchEntity searchBE = VertxUtils.getObject(beUtils.getGennyToken().getRealm(), "", oldSearchCode,
