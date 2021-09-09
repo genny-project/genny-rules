@@ -1075,14 +1075,20 @@ public class ShowFrame implements WorkItemHandler {
 			}
 		}
 
-//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
-//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
-//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
-//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
-//		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
-
 		log.debug("About to do deserialization!");
-		askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+		// try first time, don't print log if failed
+		askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType, true);
+
+		if (askMsgs2 == null) {
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
+			// try again , print error log
+			askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+		}
+
 		if (askMsgs2 == null) {
 			// NOTE: Can't convert JSON string to target type, may casued by incorrect
 			// replacement
