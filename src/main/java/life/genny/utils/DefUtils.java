@@ -92,7 +92,8 @@ public class DefUtils {
 					try {
 						json = new JsonObject(searchValue);
 					} catch (Exception e1) {
-						log.error("Bad Search DEF json "+defEa.getAttributeCode());
+						log.error("Bad Search DEF json found, baseentityCode: " + defEa.getBaseEntityCode()
+						+ ", attributeCode:" + defEa.getAttributeCode() + ", valueString:" + searchValue);
 						continue;
 					}
 					Boolean cached = false;
@@ -285,7 +286,9 @@ public class DefUtils {
 
 		// Perform search and evaluate columns
 		SearchUtils searchUtils = new SearchUtils(beUtils);
-		QDataBaseEntityMessage msg = searchUtils.searchUsingSearch25(beUtils.getServiceToken(), searchBE);
+		QDataBaseEntityMessage msg = null;
+		
+		msg = searchUtils.searchUsingSearch25(beUtils.getServiceToken(), searchBE);
 		
 		if (msg == null) {
 			log.error(ANSIColour.RED + "Dropdown search returned NULL!" + ANSIColour.RESET);
@@ -308,7 +311,7 @@ public class DefUtils {
 //		log.info("DROPDOWN :parentCode = "+message.getData().getParentCode());
 		msg.setParentCode(parentCode);
 		msg.setQuestionCode(questionCode); 
-		msg.setToken(token);
+		msg.setToken(beUtils.getGennyToken().getToken());
 		msg.setLinkCode("LNK_CORE");
 		msg.setLinkValue("ITEMS");
 		msg.setReplace(true);

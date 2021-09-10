@@ -30,6 +30,7 @@ import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.QRules;
+import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.OutputParam;
 import life.genny.utils.VertxUtils;
@@ -46,10 +47,15 @@ public class ShowFrames implements WorkItemHandler {
 
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 		/* items used to save the extracted input parameters from the custom task */
+		if (workItem == null) {
+			log.error("ShowFrames has null workItem -  aborting");
+			return;
+		}
 		Map<String, Object> items = workItem.getParameters();
 
 		// extract parameters
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
+		GennyToken serviceToken = (GennyToken) workItem.getParameter("serviceToken");
 		OutputParamTreeSet dom = (OutputParamTreeSet) workItem.getParameter("dom");
 		
 		String callingWorkflow = (String)items.get("callingWorkflow");
@@ -74,8 +80,8 @@ public class ShowFrames implements WorkItemHandler {
 				
 					String rootFrameCode = outputParam.getResultCode();
 					String targetFrameCode = outputParam.getTargetCode();
-					
-					ShowFrame.display(userToken, rootFrameCode, targetFrameCode, callingWorkflow,outputParam);
+					BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,userToken);
+					ShowFrame.display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow,outputParam);
 				}
 			}
 

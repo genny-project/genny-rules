@@ -71,11 +71,12 @@ public class ShowFrame implements WorkItemHandler {
 
 		// extract parameters
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
+		GennyToken serviceToken = (GennyToken) workItem.getParameter("serviceToken");
 		String rootFrameCode = (String) workItem.getParameter("rootFrameCode");
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
 		OutputParam output = (OutputParam) workItem.getParameter("output");
 
-		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,userToken);
 
 		if (rootFrameCode.equals("NONE")) { // Do not change anything
 			return;
@@ -88,13 +89,15 @@ public class ShowFrame implements WorkItemHandler {
 		callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
 		Boolean cache = false;
-		QBulkMessage qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
+		QBulkMessage qBulkMessage = display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
 
 		if (cache) {
 			qBulkMessage.setToken(userToken.getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
 		}
-
+		
+		VertxUtils.writeMsgEnd(userToken);
+		
 		// notify manager that work item has been completed
 		if (workItem == null) {
 			log.error(callingWorkflow + ": workItem is null");
@@ -103,12 +106,12 @@ public class ShowFrame implements WorkItemHandler {
 
 	}
 
-	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+	public static QBulkMessage display(BaseEntityUtils beUtils, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow) {
-		return display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, false);
+		return display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, false);
 	}
 
-	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+	public static QBulkMessage display(BaseEntityUtils beUtils, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 
@@ -117,7 +120,7 @@ public class ShowFrame implements WorkItemHandler {
 		output.setTypeOfResult("FORMCODE");
 		output.setResultCode(rootFrameCode);
 		output.setTargetCode(targetFrameCode);
-		qBulkMessage = display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
+		qBulkMessage = display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
 		return qBulkMessage;
 	}
 
@@ -128,17 +131,19 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param callingWorkflow
 	 */
 
-	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+	public static QBulkMessage display(BaseEntityUtils beUtils, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output) {
-		return display(userToken, rootFrameCode, targetFrameCode, callingWorkflow, output, false);
+		return display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, false);
 	}
 
-	public static QBulkMessage display(GennyToken userToken, String rootFrameCode, String targetFrameCode,
+	public static QBulkMessage display(BaseEntityUtils beUtils, String rootFrameCode, String targetFrameCode,
 			String callingWorkflow, OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
-		BaseEntity defBe = null;
 
-		if (userToken == null) {
+		
+		GennyToken userToken = beUtils.getGennyToken();
+
+		if (beUtils.getGennyToken() == null) {
 			log.error(callingWorkflow + ": Must supply userToken!");
 
 		} else {
@@ -150,6 +155,7 @@ public class ShowFrame implements WorkItemHandler {
 				// log.info(callingWorkflow+": root Frame Code sent to display = " +
 				// rootFrameCode);
 
+				
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
 						QDataBaseEntityMessage.class, userToken.getToken());
 
@@ -164,7 +170,7 @@ public class ShowFrame implements WorkItemHandler {
 						}
 						log.error(callingWorkflow + ": FRAME IS NOT IN CACHE  - " + rootFrameCode);
 						// ok, grab frame from rules
-						BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+
 						BaseEntity rule = beUtils.getBaseEntityByCode("RUL_" + rootFrameCode);
 						if (rule != null) {
 							Optional<String> optionFrameStr = rule.getValue("PRI_FRM"); // assume always
@@ -276,7 +282,7 @@ public class ShowFrame implements WorkItemHandler {
 //						// TODO Auto-generated catch block
 //						e.printStackTrace();
 //					}
-					QBulkMessage asks = sendAsks(rootFrameCode, userToken, callingWorkflow, output, cache);
+					QBulkMessage asks = sendAsks(rootFrameCode, beUtils, callingWorkflow, output, cache);
 					qBulkMessage.add(asks);
 				} else {
 					log.error(callingWorkflow + ": " + rootFrameCode + "_MSG"
@@ -287,7 +293,7 @@ public class ShowFrame implements WorkItemHandler {
 
 		}
 		log.info("Sending the EndMsg Now !!!");
-		VertxUtils.writeMsgEnd(userToken);
+	
 
 		return qBulkMessage;
 	}
@@ -513,6 +519,10 @@ public class ShowFrame implements WorkItemHandler {
 									if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))) {
 										QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
 										qBulkMessage.add(listItems);
+										if (!cache) {
+											listItems.setToken(userToken.getToken());
+											VertxUtils.writeMsg("webcmds", JsonUtils.toJson(listItems));
+										}
 									}
 									// Check Dependencies, and disable if not met
 									Boolean dependenciesMet = beUtils.dependenciesMet(dropdownCode, null, target,
@@ -563,10 +573,12 @@ public class ShowFrame implements WorkItemHandler {
 	 * @param userToken
 	 * @param callingWorkflow
 	 */
-	private static QBulkMessage sendAsks(String rootFrameCode, GennyToken userToken, String callingWorkflow,
+	private static QBulkMessage sendAsks(String rootFrameCode, BaseEntityUtils beUtils, String callingWorkflow,
 			OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
-		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		GennyToken userToken = beUtils.getGennyToken();
+		GennyToken serviceToken = beUtils.getServiceToken();
+		
 
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
@@ -583,11 +595,16 @@ public class ShowFrame implements WorkItemHandler {
 		BaseEntity defBe = null;
 
 		BaseEntity target = null;
+		BaseEntity source = null;
 
 		if ((output != null)) {
 			log.info("Ouput Task ID = " + output.getTaskId());
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
+				if (taskService == null) {
+					log.error("taskService is NULL for sessioncode "+userToken.getSessionCode());
+					return qBulkMessage; // cannot do anything
+				}
 				task = taskService.getTaskById(output.getTaskId());
 				// Now get the TaskAsk that relates to this specific Ask
 				// assume that all attributes have the same source and target
@@ -610,6 +627,7 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				target = beUtils.getBaseEntityByCode(targetCode);
+				source = beUtils.getBaseEntityByCode(sourceCode);
 
 				defBe = beUtils.getDEF(target);
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
@@ -617,8 +635,16 @@ public class ShowFrame implements WorkItemHandler {
 			} else {
 				sourceCode = output.getAskSourceCode();
 				targetCode = output.getAskTargetCode();
+				target = beUtils.getBaseEntityByCode(targetCode);
+				source = beUtils.getBaseEntityByCode(sourceCode);
+				
+				defBe = beUtils.getDEF(target);
+				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
+
 			}
 		}
+		
+		
 
 		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
 
@@ -678,15 +704,15 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				// find any select Attributes, find their selection Baseentities and send
-				GennyToken serviceToken = null;
-				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN",
-						String.class, userToken.getToken());
-				if (serviceTokenStr == null) {
-					log.error(callingWorkflow + ": SERVICE TOKEN FETCHED FROM CACHE IS NULL");
-					return qBulkMessage;
-				} else {
-					serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
-				}
+//				GennyToken serviceToken = null;
+//				String serviceTokenStr = VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN",
+//						String.class, userToken.getToken());
+//				if (serviceTokenStr == null) {
+//					log.error(callingWorkflow + ": SERVICE TOKEN FETCHED FROM CACHE IS NULL");
+//					return qBulkMessage;
+//				} else {
+//					serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
+//				}
 
 				// Iterate child asks
 				if (updated != null && updated.getItems() != null && (updated.getItems().length > 0)
@@ -725,7 +751,7 @@ public class ShowFrame implements WorkItemHandler {
 								if (defDropdownExists) {
 
 									String val = target.getValue(dropdownCode, null);
-									System.out.println("val = " + val);
+									log.info("val = " + val);
 									Set<BaseEntity> beItems = new HashSet<>();
 									if (!StringUtils.isBlank(val)) {
 										JsonArray jaItems = new JsonArray(val);
@@ -741,7 +767,9 @@ public class ShowFrame implements WorkItemHandler {
 									String groupCode = askMsg.getItems()[0].getQuestionCode();
 
 									// Only check for DDC if not items are selected already
-									if (beItems.size() == 0) {
+									Attribute dropdownAttribute = RulesUtils.getAttribute(dropdownCode, beUtils.getGennyToken());
+
+									if ((beItems.size() == 0)||(("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent())))) {
 										Optional<EntityAttribute> cacheAtt = defBe.findEntityAttribute("DDC_" + dropdownCode);
 										if (cacheAtt.isPresent()) {
 											String jsonMsg = cacheAtt.get().getValueString();
@@ -754,6 +782,7 @@ public class ShowFrame implements WorkItemHandler {
 											msg.setAttributeCode(dropdownCode);
 											qBulkMessage.add(msg);
 											if (!cache) {
+												msg.setToken(userToken.getToken());
 												VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 											}
 										}
@@ -761,6 +790,16 @@ public class ShowFrame implements WorkItemHandler {
 										QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe, dropdownCode,
 												userToken, serviceToken, cache, targetCode, groupCode, questionCode);
 										qBulkMessage.add(qb);
+										// Now send all the cached dropdown items IF RADIO 
+										if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))) {
+											QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
+											qBulkMessage.add(listItems);
+											if (!cache) {
+												listItems.setToken(userToken.getToken());
+												VertxUtils.writeMsg("webcmds", JsonUtils.toJson(listItems));
+											}
+										}
+
 									}
 
 									// Check Dependencies, and disable if not met
@@ -799,6 +838,7 @@ public class ShowFrame implements WorkItemHandler {
 				qBulkMessage.add(updated);
 				if (!cache) {
 					log.info("Sending the Asks Now !!!");
+					updated.setToken(userToken.getToken());
 					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
 				}
 
@@ -943,7 +983,7 @@ public class ShowFrame implements WorkItemHandler {
 							.build();
 
 					frame.setRealm(realm);
-					System.out.println(frame.getCode());
+					log.info(frame.getCode());
 					FrameUtils2.toMessage(frame, userToken);
 					frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 							userToken.getToken());
@@ -1006,7 +1046,7 @@ public class ShowFrame implements WorkItemHandler {
 							.build();
 
 					frame.setRealm(realm);
-					System.out.println(frame.getCode());
+					log.info(frame.getCode());
 					FrameUtils2.toMessage(frame, userToken);
 					frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode,
 							userToken.getToken());
@@ -1035,14 +1075,20 @@ public class ShowFrame implements WorkItemHandler {
 			}
 		}
 
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
-		askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
-
 		log.debug("About to do deserialization!");
-		askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+		// try first time, don't print log if failed
+		askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType, true);
+
+		if (askMsgs2 == null) {
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
+			askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
+			// try again , print error log
+			askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+		}
+
 		if (askMsgs2 == null) {
 			// NOTE: Can't convert JSON string to target type, may casued by incorrect
 			// replacement

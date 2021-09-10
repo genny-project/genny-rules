@@ -84,6 +84,7 @@ public class SearchCallable implements Callable<QBulkMessage> {
         	usingCache = false;
         }
         
+        usingCache = false;
         if (usingCache) {
         	 
         	  pageStart = searchBE.getValue("SCH_PAGE_START",0);
