@@ -920,7 +920,12 @@ public class SearchUtils {
 		TableUtils tableUtils = new TableUtils(beUtils);
 		
 		searchBE.setPageStart(pageIndex); 
-		QBulkMessage qbm1   = tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, null,null, true, true);			
+		QBulkMessage qbm1   = tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, null,null, true, true);
+		for(QDataAskMessage msg: qbm1.getAsks()) {
+			for(Ask ask: msg.getItems()) {
+				ask.getQuestion().setHtml("");
+			}
+		}
         VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(), qbm1,beUtils.getGennyToken().getToken());
 		
         totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
@@ -963,9 +968,9 @@ public class SearchUtils {
 						}
 					}
 				}
-				
-				
-				
+
+
+
 			}
 		}
 		
