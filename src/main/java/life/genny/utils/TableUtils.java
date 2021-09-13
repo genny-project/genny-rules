@@ -103,6 +103,14 @@ public class TableUtils {
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
+
+		for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
+			if (ea.getAttributeCode().startsWith("ACT")) {
+				log.info("Adam & Rahul Test:: " + ea);
+				
+			}
+		}
+
 		// Add any necessary extra filters
 		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
 
