@@ -68,12 +68,12 @@ public class SearchUtils {
 	public SearchUtils(BaseEntityUtils beUtils) {
 		this.beUtils = beUtils;
 	}
-	
+
 	public QDataBaseEntityMessage fetchSearchResults(SearchEntity searchBE, GennyToken gennyToken) {
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(new ArrayList<BaseEntity>());
 
 		log.error("This should be changed to use the search24");
-		
+
 		if (gennyToken == null) {
 			log.error("GENNY TOKEN IS NULL!!! in getSearchResults");
 			return msg;
@@ -173,7 +173,7 @@ public class SearchUtils {
 					result = new JsonArray();
 					total = 0L;
 				}
-				
+
 
 			} catch (Exception e1) {
 				log.error("Exception:"  +  e1.getMessage() + " occurred, resultJsonStr:" + resultJsonStr);
@@ -274,7 +274,7 @@ public class SearchUtils {
 		// log.info("linkBeCode value " + linkBeCode);
 
 		String finalAttributeCode = calEACode.substring("COL_".length());
-		// Fetch The Attribute of the last code 
+		// Fetch The Attribute of the last code
 		String primaryAttrCode = calFields[calFields.length-1];
 		Attribute primaryAttribute = RulesUtils.getAttribute(primaryAttrCode, serviceToken);
 
@@ -326,7 +326,7 @@ public class SearchUtils {
 		return ans;
 	}
 
-	
+
 	/* Generate List of asks from a SearchEntity */
 	public static List<Ask> generateQuestions(GennyToken userToken, BaseEntityUtils beUtils, List<BaseEntity> bes,
 			Map<String, String> columns, String targetCode) {
@@ -352,13 +352,13 @@ public class SearchUtils {
 						String attributeCode = column.getKey();
 						String attributeName = column.getValue();
 						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
-						
+
 						if(attr!=null) {
-							
+
 							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(), attributeName, attr,
 									true);
 							Ask childAsk = new Ask(childQuestion, targetCode, be.getCode());
-							
+
 							/* add the entityAttribute ask to list */
 							childAskList.add(childAsk);
 						}else {
@@ -510,7 +510,7 @@ public class SearchUtils {
 
 
 	static public QDataBaseEntityMessage getDropdownData(BaseEntityUtils beUtils, QEventDropdownMessage message) {
-		
+
 		return getDropdownData(beUtils,message,GennySettings.defaultDropDownPageSize);
 	}
 
@@ -523,7 +523,7 @@ public class SearchUtils {
 
 		return getDropdownData(beUtils, sourceBe,targetBe, message.getAttributeCode(),parentCode, questionCode, searchText, dropdownSize);
 	}
-	
+
 	static public QDataBaseEntityMessage getDropdownData(BaseEntityUtils beUtils, BaseEntity sourceBe,BaseEntity targetBe, final String attributeCode, final String parentCode, final String questionCode, final String searchText, Integer dropdownSize) {
 
 		BaseEntity project = beUtils.getBaseEntityByCode("PRJ_" + beUtils.getServiceToken().getRealm().toUpperCase());
@@ -554,8 +554,8 @@ public class SearchUtils {
 		} else {
 			//return new QDataBaseEntityMessage();
 		}
-		
-		
+
+
 		return DefUtils.getDropdownDataMessage(beUtils, attributeCode, parentCode, questionCode,serValue, sourceBe, targetBe, searchText, beUtils.getServiceToken().getToken());
 
 	}
@@ -823,7 +823,7 @@ public class SearchUtils {
 			ask.setAttributeCode(attributeFields[1]);
 			ask.getQuestion().setAttributeCode(attributeFields[1]);
 		}
-		
+
 		return ask;
 
 	}
@@ -862,7 +862,7 @@ public class SearchUtils {
 		// Add our new attribute code to list of allowed codearray is nulls
 		list.add(attrCode);
 		// Convert back to array for saving
-		array = list.toArray(new String[list.size()]); 
+		array = list.toArray(new String[list.size()]);
 		filterArrayMap.put(alias, array);
 
 		return filterArrayMap;
@@ -906,21 +906,21 @@ public class SearchUtils {
 
 	}
 
-	
+
 	public static void setupSearchCache(BaseEntityUtils beUtils, final String searchCode, final Integer pageIndex) {
 		SearchEntity searchBE = beUtils.getSearchEntityByCode(searchCode);
 		setupSearchCache(beUtils,searchBE,pageIndex);
 	}
-	
+
 	public static void setupSearchCache(BaseEntityUtils beUtils, final SearchEntity searchBE, final Integer pageIndex)
 	{
-		/* Set up resultant intern be to be sent out */ 	     
+		/* Set up resultant intern be to be sent out */
 		long startProcessingTime = System.currentTimeMillis();
 		long totalProcessingTime = 0L;
 
 		TableUtils tableUtils = new TableUtils(beUtils);
-		
-		searchBE.setPageStart(pageIndex); 
+
+		searchBE.setPageStart(pageIndex);
 		QBulkMessage qbm1   = tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, null,null, true, true);
 		for(QDataAskMessage msg: qbm1.getAsks()) {
 			for(Ask ask: msg.getItems()) {
@@ -928,53 +928,53 @@ public class SearchUtils {
 			}
 		}
         VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(), qbm1,beUtils.getGennyToken().getToken());
-		
+
         totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 
 	    log.info("Search Cache finished after: " + totalProcessingTime + " milliseconds");
 
 	}
-	
+
 	public static void regenerateCaches(BaseEntityUtils beUtils, BaseEntity targetBe) {
 		// determine the def for the targetBe
 		log.info("SearchUtils: regenerateCaches - > "+targetBe);
-		BaseEntity defBe = beUtils.getDEF(targetBe);
-		
-		// Now get the list of searches that need to be regenerated
+		// BaseEntity defBe = beUtils.getDEF(targetBe);
+
+		// // Now get the list of searches that need to be regenerated
 		 
-		String linkedCachedSearchCodes = defBe.getValue("LNK_CACHED_SEARCHES", "[]");
-		log.info("SearchUtils: regenerateCaches -> LNK_CACHED_SEARCHES="+linkedCachedSearchCodes);
-		JsonArray linkedCacheSearchCodeJsonArray = new JsonArray(linkedCachedSearchCodes);
-		
-		for (int i = 0; i < linkedCacheSearchCodeJsonArray.size(); i++) {
+		// String linkedCachedSearchCodes = defBe.getValue("LNK_CACHED_SEARCHES", "[]");
+		// log.info("SearchUtils: regenerateCaches -> LNK_CACHED_SEARCHES="+linkedCachedSearchCodes);
+		// JsonArray linkedCacheSearchCodeJsonArray = new JsonArray(linkedCachedSearchCodes);
 
-			String searchCodePage = linkedCacheSearchCodeJsonArray.getString(i);
+		// for (int i = 0; i < linkedCacheSearchCodeJsonArray.size(); i++) {
 
-			/* we try to fetch the base entity */
-			if (searchCodePage != null) {
-				
-				String[] split = searchCodePage.split(":");
-				if (split.length==1) {
-					setupSearchCache(beUtils, split[0], 0);  // just search for the first page
-				} else {
-					if (split[1].equalsIgnoreCase("*")) {
-						// cache all pages
-						// Find total count, divide into pages 
-						// TODO
-					} else {
-						Integer maxPages = Integer.parseInt(split[1]);
-						for (Integer pageIndex=0;pageIndex<=maxPages;pageIndex++) { // oldschool for-loop
-							setupSearchCache(beUtils, split[0], pageIndex);  // just search for the asked page
-							log.info("SearchUtils: regenerateCaches - setup "+split[0]);
-						}
-					}
-				}
+		// 	String searchCodePage = linkedCacheSearchCodeJsonArray.getString(i);
+
+		// 	/* we try to fetch the base entity */
+		// 	if (searchCodePage != null) {
+
+		// 		String[] split = searchCodePage.split(":");
+		// 		if (split.length==1) {
+		// 			setupSearchCache(beUtils, split[0], 0);  // just search for the first page
+		// 		} else {
+		// 			if (split[1].equalsIgnoreCase("*")) {
+		// 				// cache all pages
+		// 				// Find total count, divide into pages
+		// 				// TODO
+		// 			} else {
+		// 				Integer maxPages = Integer.parseInt(split[1]);
+		// 				for (Integer pageIndex=0;pageIndex<=maxPages;pageIndex++) { // oldschool for-loop
+		// 					setupSearchCache(beUtils, split[0], pageIndex);  // just search for the asked page
+		// 					log.info("SearchUtils: regenerateCaches - setup "+split[0]);
+		// 				}
+		// 			}
+		// 		}
 
 
 
-			}
-		}
-		
+		// 	}
+		// }
+
 	}
-	
+
 }
