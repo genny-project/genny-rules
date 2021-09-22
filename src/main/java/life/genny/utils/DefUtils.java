@@ -298,9 +298,12 @@ public class DefUtils {
 			log.info("DROPDOWN :Loaded " + msg.getItems().length + " baseentitys");
 
 			for (BaseEntity item : msg.getItems()) {
-				log.info("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
+				if ( item.getValueAsString("PRI_NAME") == null ) {
+					log.warn("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
+				} else {
+					log.info("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
+				}
 			}
-
 		} else {
 			log.info("DROPDOWN :Loaded NO baseentitys");
 		}

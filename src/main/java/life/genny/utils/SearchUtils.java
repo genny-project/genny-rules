@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import com.google.gson.internal.LinkedTreeMap;
 
+import life.genny.qwanda.*;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.logging.log4j.Logger;
 import life.genny.qwanda.exception.BadDataException;
@@ -34,13 +35,6 @@ import org.apache.commons.lang3.StringUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import life.genny.models.GennyToken;
-import life.genny.qwanda.Answer;
-import life.genny.qwanda.Ask;
-import life.genny.qwanda.Link;
-import life.genny.qwanda.Question;
-import life.genny.qwanda.Context;
-import life.genny.qwanda.ContextList;
-import life.genny.qwanda.ContextType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
@@ -483,6 +477,14 @@ public class SearchUtils {
 					Boolean requiresMerging = MergeUtil.requiresMerging(attrValStr);
 
 					if (requiresMerging != null && requiresMerging) {
+					// update Map with latest baseentity
+						ctxMap.keySet().forEach(key -> {
+							Object value = ctxMap.get(key);
+							if (value.getClass().equals(BaseEntity.class)) {
+								BaseEntity baseEntity = (BaseEntity) value;
+								ctxMap.put(key, beUtils.getBaseEntityByCode(baseEntity.getCode()));
+							}
+						});
 						// Check if contexts are present
 						if (MergeUtil.contextsArePresent(attrValStr, ctxMap)) {
 							// NOTE: HACK, mergeUtil should be taking care of this bracket replacement - Jasper (6/08/2021)
