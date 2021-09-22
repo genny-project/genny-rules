@@ -598,7 +598,7 @@ public class ShowFrame implements WorkItemHandler {
 		BaseEntity source = null;
 
 		if ((output != null)) {
-			log.info("Ouput Task ID = " + output.getTaskId());
+			log.info("Output Task ID = " + output.getTaskId());
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 				if (taskService == null) {
@@ -635,12 +635,18 @@ public class ShowFrame implements WorkItemHandler {
 			} else {
 				sourceCode = output.getAskSourceCode();
 				targetCode = output.getAskTargetCode();
-				target = beUtils.getBaseEntityByCode(targetCode);
-				source = beUtils.getBaseEntityByCode(sourceCode);
-				
-				defBe = beUtils.getDEF(target);
-				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
-
+				if (targetCode != null) {
+					target = beUtils.getBaseEntityByCode(targetCode);
+					source = beUtils.getBaseEntityByCode(sourceCode);
+					if (target != null)  {
+						defBe = beUtils.getDEF(target);
+						enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
+					} else {
+						log.error("ShowFrame: sendAsks -> Target is NULL");
+					}
+				} else {
+					log.error("ShowFrame: sendAsks -> TargetCode is NULL");
+				}
 			}
 		}
 		
