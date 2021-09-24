@@ -639,13 +639,15 @@ public class ShowFrame implements WorkItemHandler {
 					return qBulkMessage;
 				}
 
+				
 				target = beUtils.getBaseEntityByCode(targetCode);
 				source = beUtils.getBaseEntityByCode(sourceCode);
-
-				if (targetCode == null) {
+				
+				if (target == null) {
 					log.error(callingWorkflow+" ShowFrame: sendAsks. No Target existing in Task  for "+targetCode+" - returning");
 					return qBulkMessage;
 				}
+
 
 				
 				defBe = beUtils.getDEF(target);
