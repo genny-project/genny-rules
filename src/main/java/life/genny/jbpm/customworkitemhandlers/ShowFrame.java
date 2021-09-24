@@ -615,20 +615,39 @@ public class ShowFrame implements WorkItemHandler {
 					return qBulkMessage;
 				}
 				taskAsks = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
+				if (taskAsks.isEmpty()) {
+					log.error("ShowFrame: sendAsks. No TaskAsks in Task - returning");
+					return qBulkMessage;
+				}
 				for (String key : taskAsks.keySet()) {
 					Object obj = taskAsks.get(key);
 					if (obj instanceof TaskAsk) { // This gets around my awful formcode values
 						TaskAsk taskAsk = (TaskAsk) taskAsks.get(key);
-						String attributeStr = taskAsk.getAsk().getAttributeCode();
+						//String attributeStr = taskAsk.getAsk().getAttributeCode();
 						// attributeTaskAskMap.put(attributeStr,taskAsk);
 						sourceCode = taskAsk.getAsk().getSourceCode();
 						targetCode = taskAsk.getAsk().getTargetCode();
 					}
 				}
 
+				if (StringUtils.isBlank(targetCode)) {
+					log.error("ShowFrame: sendAsks. No TargetCode in Task - returning");
+					return qBulkMessage;
+				}
+				if (StringUtils.isBlank(sourceCode)) {
+					log.error("ShowFrame: sendAsks. No SourceCode in Task - returning");
+					return qBulkMessage;
+				}
+
 				target = beUtils.getBaseEntityByCode(targetCode);
 				source = beUtils.getBaseEntityByCode(sourceCode);
 
+				if (targetCode == null) {
+					log.error(callingWorkflow+" ShowFrame: sendAsks. No Target existing in Task  for "+targetCode+" - returning");
+					return qBulkMessage;
+				}
+
+				
 				defBe = beUtils.getDEF(target);
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
 
@@ -642,10 +661,10 @@ public class ShowFrame implements WorkItemHandler {
 						defBe = beUtils.getDEF(target);
 						enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
 					} else {
-						log.error("ShowFrame: sendAsks -> Target is NULL");
+						log.error(callingWorkflow+" ShowFrame: sendAsks -> Target is NULL");
 					}
 				} else {
-					log.error("ShowFrame: sendAsks -> TargetCode is NULL");
+					log.error(callingWorkflow+" ShowFrame: sendAsks -> TargetCode is NULL");
 				}
 			}
 		}
