@@ -283,7 +283,11 @@ public class SearchUtils {
 				String calVal = beUtils.cleanUpAttributeValue(calBe);
 				String[] codeArr = calVal.split(",");
 				for (String code : codeArr) {
-
+					if (StringUtils.isBlank(code)) {
+						log.error("code from Calfields is empty calVal["+calVal+"] skipping calFields=["+calFields+"] - be:"+baseBE.getCode());
+						
+						continue;
+					}
 					BaseEntity associatedBe = beUtils.getBaseEntityByCode(code);
 					if (associatedBe == null) {
 						log.warn("associatedBe DOES NOT exist ->" + code);
