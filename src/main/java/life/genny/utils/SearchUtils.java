@@ -286,7 +286,7 @@ public class SearchUtils {
 
 					BaseEntity associatedBe = beUtils.getBaseEntityByCode(code);
 					if (associatedBe == null) {
-						log.info("associatedBe DOES NOT exist ->" + code);
+						log.warn("associatedBe DOES NOT exist ->" + code);
 						return null;
 					}
 
@@ -305,13 +305,13 @@ public class SearchUtils {
 							}
 							ans.setValue(linkedValue);
 						} else {
-							System.out.println("No attribute present");
+							log.warn("TableUtils: No attribute present");
 						}
 					}
 					be = associatedBe;
 				}
 			} else {
-				log.info("TableUtils: Could not find attribute value for " + attributeCode + " for entity " + be.getCode());
+				log.warn("TableUtils: Could not find attribute value for " + attributeCode + " for entity " + be.getCode());
 				return null;
 			}
 		}
