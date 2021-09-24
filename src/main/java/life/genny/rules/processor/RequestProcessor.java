@@ -23,11 +23,13 @@ public class RequestProcessor extends Thread {
                 //Retrieves and removes the head of this queue, waiting if necessary until an element becomes
                 //     available.
                 Tuple3<Object, String, UUID> tuple = rulesLoader.getLinkedBlockingQueue().take();
-                log.info("RequestProcessor started. RulesLoader instance:" + rulesLoader.toString()
+                long startTime = System.currentTimeMillis();
+                log.info("~~~~~~~~~~~~~~~~~ REQUEST PROC START .   UUID:"+tuple._3.toString()
                         + ", Linked session state:" + rulesLoader.getLinkedSessionState());
                 rulesLoader.processMsg(tuple._1, tuple._2);
-                log.info("Finished process request uuid:" + tuple._3.toString()
-                        + ", RulesLoader instance:" + rulesLoader.toString()
+                long endTime = System.currentTimeMillis();
+                log.info("~~~~~~~~~~~~~~~~~ REQUEST PROC END "+(endTime-startTime)+" ms  UUID:" + tuple._3.toString()
+                      //  + ", RulesLoader instance:" + rulesLoader.toString()
                         + ", Linked session state:" + rulesLoader.getLinkedSessionState());
                 // Only for debug, disable when in production
                 log.debug("Queue size is:" + rulesLoader.getLinkedBlockingQueue().size());
