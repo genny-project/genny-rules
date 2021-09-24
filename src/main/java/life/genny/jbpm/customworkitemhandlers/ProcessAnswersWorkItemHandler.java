@@ -695,7 +695,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						}
 					}
 					if (ok) {
-						log.error("processAnswers :  OutputParam map is ok");
+						log.info("processAnswers :  OutputParam map is ok");
 					}
 
 					log.info("processAnswers: resultMap OPutputParam seems fine");
