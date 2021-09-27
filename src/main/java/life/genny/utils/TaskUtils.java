@@ -1,5 +1,6 @@
 package life.genny.utils;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
 import org.jbpm.services.task.utils.ContentMarshallerHelper;
 import org.kie.api.runtime.Environment;
@@ -55,7 +57,9 @@ import life.genny.qwanda.message.QDataAskMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.validation.Validation;
 import life.genny.qwanda.validation.ValidationList;
+import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
+import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.RulesLoader;
 
 public class TaskUtils {
@@ -438,26 +442,7 @@ public class TaskUtils {
 
 	static public Question getQuestion(String questionCode, GennyToken userToken) {
 
-		Question q = null;
-		Integer retry = 4;
-		while (retry >= 0) { // Sometimes q is read properly from cache
-			JsonObject jsonQ = VertxUtils.readCachedJson(userToken.getRealm(), questionCode, userToken.getToken());
-			q = JsonUtils.fromJson(jsonQ.getString("value"), Question.class);
-			if (q == null) {
-				retry--;
-
-			} else {
-				break;
-			}
-
-		}
-
-		if (q == null) {
-			log.error("CANNOT READ " + questionCode + " from cache!!! Aborting (after having tried 4 times");
-			return null;
-		} else {
-			return q;
-		}
+		return QuestionUtils.getQuestion(questionCode, userToken);
 	}
 
 	static public InternalTask createTask(final GennyToken userToken, final String questionCode) {
