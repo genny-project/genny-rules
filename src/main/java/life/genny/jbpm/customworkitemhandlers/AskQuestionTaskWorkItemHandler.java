@@ -110,9 +110,13 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	@Override
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
+		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+
 		System.out.println("userToken = " + userToken);
 		System.out.println("userCode = " + userToken.getUserCode());
 
+		BaseEntity targetDefBE = null;
+		
 		if (this.runtimeEngine == null) {
 			this.runtimeEngine = RulesLoader.runtimeManager.getRuntimeEngine(EmptyContext.get());
 		}
@@ -132,6 +136,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		BaseEntity baseEntityTarget = (BaseEntity) workItem.getParameter("baseEntityTarget");
 		if (baseEntityTarget != null) {
 			baseEntityTargetCode = baseEntityTarget.getCode();
+			targetDefBE = beUtils.getDEF(baseEntityTarget);
 		}
 
 		log.info("baseEntityTargetCode = " + baseEntityTargetCode);
@@ -148,7 +153,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			targetCode = "FRM_CONTENT";
 		}
 
-		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 
 		// remove any empty task that matches the type
 		Question q = null;
@@ -178,7 +182,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 					saveFields.add(ans);
 				}
 			}
-			beUtils.saveAnswers(saveFields, true);
+			beUtils.saveAnswers(targetDefBE,saveFields, true);
 			BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
 			target.setRealm(userToken.getToken());
 
@@ -546,7 +550,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			}
 			if (session instanceof KieSession) {
 				taskData.setProcessSessionId(((KieSession) session).getIdentifier());
-				log.info("####### askQuestion! sessionId=" + taskData.getProcessSessionId());
+				log.info("####### askQuestion! "+questionCode+" ,sessionId=" + taskData.getProcessSessionId());
 			}
 			@SuppressWarnings("unchecked")
 			Collection<CaseData> caseFiles = (Collection<CaseData>) session
