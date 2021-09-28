@@ -160,7 +160,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (q != null)
 			TaskUtils.clearTaskType(userToken, q);
 
-		Task task = TaskUtils.getSameTask(q, baseEntityTargetCode, userToken);
+		Task task = null;//TaskUtils.getSameTask(q, baseEntityTargetCode, userToken);
 		if (task == null) {
 			task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
 		}
