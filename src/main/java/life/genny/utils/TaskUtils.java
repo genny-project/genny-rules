@@ -439,6 +439,28 @@ public class TaskUtils {
 		}
 
 	}
+	
+	public static Task getSameTask(Question q, final String targetCode, GennyToken userToken) {
+		TaskService taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
+		Task ret = null;
+		List<TaskSummary> taskSummarys = getUserTaskSummarys(userToken);
+		for (TaskSummary ts : taskSummarys) {
+			Long tsId = ts.getId();
+			Task task = taskService.getTaskById(tsId);
+
+			if (task.getTaskData().getStatus().equals(Status.Reserved)) {
+				if (task.getDescription().equalsIgnoreCase(q.getName())) {
+//					taskService.start(tsId, userToken.getRealm() + "+" + userToken.getUserCode()); // start!
+//					taskService.release(tsId, userToken.getRealm() + "+" + userToken.getUserCode());
+					// sendTaskAskItems(userToken) ;
+					
+					log.info("Found existing Task " + tsId+" for userCode "+userToken.getUserCode()+" and Question Code "+q.getCode()+" and target "+targetCode);
+					return task;
+				}
+			}
+		}
+		return ret;
+	}
 
 	static public Question getQuestion(String questionCode, GennyToken userToken) {
 

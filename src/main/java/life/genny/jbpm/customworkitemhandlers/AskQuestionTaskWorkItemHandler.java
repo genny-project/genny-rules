@@ -116,7 +116,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		System.out.println("userCode = " + userToken.getUserCode());
 
 		BaseEntity targetDefBE = null;
-		
+
 		if (this.runtimeEngine == null) {
 			this.runtimeEngine = RulesLoader.runtimeManager.getRuntimeEngine(EmptyContext.get());
 		}
@@ -153,7 +153,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			targetCode = "FRM_CONTENT";
 		}
 
-
 		// remove any empty task that matches the type
 		Question q = null;
 		String questionCode = (String) workItem.getParameter("questionCode");
@@ -161,7 +160,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (q != null)
 			TaskUtils.clearTaskType(userToken, q);
 
-		Task task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
+		Task task = TaskUtils.getSameTask(q, baseEntityTargetCode, userToken);
+		if (task == null) {
+			task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
+		}
 
 		// Fetch the questions and set in the task for us to tick off as they get done
 		Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
@@ -178,11 +180,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (!newFields.isEmpty()) {
 			List<Answer> saveFields = new CopyOnWriteArrayList<Answer>();
 			for (Answer ans : newFields) {
-				if (!("PRI_SUBMIT".equals(ans.getAttributeCode()) || "QQQ_QUESTION_GROUP".equals(ans.getAttributeCode()))) {
+				if (!("PRI_SUBMIT".equals(ans.getAttributeCode())
+						|| "QQQ_QUESTION_GROUP".equals(ans.getAttributeCode()))) {
 					saveFields.add(ans);
 				}
 			}
-			beUtils.saveAnswers(targetDefBE,saveFields, true);
+			beUtils.saveAnswers(targetDefBE, saveFields, true);
 			BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
 			target.setRealm(userToken.getToken());
 
@@ -412,17 +415,17 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			callingWorkflow = "";
 		}
 		Boolean liveQuestions = false;
-	
-		String liveQuestionsStr = (String)workItem.getParameter("liveQuestions");
+
+		String liveQuestionsStr = (String) workItem.getParameter("liveQuestions");
 		if (!StringUtils.isBlank(liveQuestionsStr)) {
 			liveQuestions = liveQuestionsStr.toLowerCase().contains("true");
-		} 
-		
+		}
+
 		Boolean showInDrafts = true;
-		String showInDraftsStr = (String)workItem.getParameter("showInDrafts");
+		String showInDraftsStr = (String) workItem.getParameter("showInDrafts");
 		if (!StringUtils.isBlank(showInDraftsStr)) {
 			showInDrafts = showInDraftsStr.toLowerCase().contains("true");
-		} 
+		}
 
 		log.info(callingWorkflow + " Live Questions are " + (liveQuestions ? "ON" : "OFF"));
 		log.info(callingWorkflow + " Show In Drafts is " + (showInDrafts ? "ON" : "OFF"));
@@ -485,7 +488,6 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		}
 		baseEntityTarget = beUtils.getBaseEntityByCode(baseEntityTargetCode); // get latest
 
-
 		// Work out tyope of BE
 		String beType = "";
 		List<EntityAttribute> eas = baseEntityTarget.findPrefixEntityAttributes("PRI_IS_");
@@ -509,7 +511,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 				roleName = roleName.substring("PRI_IS_".length());
 				roleName = roleName.replaceAll("_", " ");
 				beType = StringUtils.capitalize(roleName.toLowerCase());
-				
+
 			}
 		}
 
@@ -550,7 +552,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			}
 			if (session instanceof KieSession) {
 				taskData.setProcessSessionId(((KieSession) session).getIdentifier());
-				log.info("####### askQuestion! "+questionCode+" ,sessionId=" + taskData.getProcessSessionId());
+				log.info("####### askQuestion! " + questionCode + " ,sessionId=" + taskData.getProcessSessionId());
 			}
 			@SuppressWarnings("unchecked")
 			Collection<CaseData> caseFiles = (Collection<CaseData>) session
@@ -598,7 +600,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		} else {
 			taskData.setFaultType("ABSORB_INFERRED");
 		}
-		
+
 		if (showInDrafts) {
 			taskData.setFaultName("SHOW_IN_DRAFTS");
 		} else {
