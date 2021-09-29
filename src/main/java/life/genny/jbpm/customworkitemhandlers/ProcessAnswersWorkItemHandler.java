@@ -461,7 +461,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 
 				KieSession taskSession = kieSessionMap.get(iTask.getId());
 				if (taskSession == null) {
-					log.error(callingWorkflow+" NULL kSession when trying to retrieve kSession for kieSesswionId=%s",
+					log.error(callingWorkflow+" NULL kSession when trying to retrieve kSession for kieSesswionId="+
 							iTask.getTaskData().getProcessSessionId());
 				}
 				results.put("taskid", iTask.getId());
@@ -482,8 +482,14 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
 						beUtils.removeEntityAttribute(originalTarget,"PRI_SUBMIT");
 					}
 
-					taskService.complete(iTask.getId(), userToken.getRealmUserCode(), results);
 					TaskUtils.sendTaskAskItems(userToken);
+					try {
+						taskService.complete(iTask.getId(), userToken.getRealmUserCode(), results);
+					} catch (Exception e) {
+						log.error(callingWorkflow +" ProcessAnswers "+ iTask.getFormName() + ":" + iTask.getSubject()
+						+ ":" + userToken.getRealmUserCode()+" Finishing Error "+e.getLocalizedMessage());
+					}
+					
 				}
 			}
 		}

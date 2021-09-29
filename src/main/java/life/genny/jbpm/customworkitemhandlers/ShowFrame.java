@@ -651,6 +651,9 @@ public class ShowFrame implements WorkItemHandler {
 
 				
 				defBe = beUtils.getDEF(target);
+				if ("DEF_PERSON".equals(defBe.getCode())) {
+					log.error("DEF identified as DEF_PERSON! - "+targetCode);
+				}
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
 
 			} else {

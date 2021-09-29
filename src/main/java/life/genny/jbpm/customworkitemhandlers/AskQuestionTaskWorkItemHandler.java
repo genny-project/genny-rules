@@ -137,6 +137,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (baseEntityTarget != null) {
 			baseEntityTargetCode = baseEntityTarget.getCode();
 			targetDefBE = beUtils.getDEF(baseEntityTarget);
+			if ("DEF_PERSON".equals(targetDefBE.getCode())) {
+				log.error("DEF identified as DEF_PERSON! - "+baseEntityTargetCode);
+			}
+
 		}
 
 		log.info("baseEntityTargetCode = " + baseEntityTargetCode);
