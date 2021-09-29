@@ -598,6 +598,10 @@ public class ShowFrame implements WorkItemHandler {
 		BaseEntity source = null;
 
 		if ((output != null)) {
+			if (output.getAskTargetCode()==null) {
+				log.warn("No SendAsks needed to be sent as no targetCode supplied");
+				return qBulkMessage;
+			}
 			log.info("Output Task ID = " + output.getTaskId());
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
