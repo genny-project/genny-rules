@@ -1196,11 +1196,20 @@ public class RulesLoader {
 			}
 		}
 		// Cleanup facts
-		kieSession.delete(beUtilsHandle);
+		try {
+			kieSession.delete(beUtilsHandle);
+		} catch (Exception e) {
+			log.warn("Session error when trying to delete the handle");
+		}
 		if (capabilityUtilsHandle != null) {
 			kieSession.delete(capabilityUtilsHandle);
 			for (FactHandle allow : allowables) {
-				kieSession.delete(allow);
+				try {
+					kieSession.delete(allow);
+				} catch (Exception e) {
+					log.warn("Session error when trying to delete the allow");
+				}
+
 			}
 		}
 		log.debug(debugStr + "Finish sendEventThroughUserSession");

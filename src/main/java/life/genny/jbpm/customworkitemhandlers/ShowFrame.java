@@ -600,7 +600,7 @@ public class ShowFrame implements WorkItemHandler {
 		if ((output != null)) {
 			if (output.getAskTargetCode()==null) {
 				log.warn("No SendAsks needed to be sent as no targetCode supplied");
-				return qBulkMessage;
+				//return qBulkMessage;
 			}
 			log.info("Output Task ID = " + output.getTaskId());
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {

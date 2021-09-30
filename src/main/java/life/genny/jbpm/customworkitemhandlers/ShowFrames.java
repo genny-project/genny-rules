@@ -81,9 +81,9 @@ public class ShowFrames implements WorkItemHandler {
 					String rootFrameCode = outputParam.getResultCode();
 					String targetFrameCode = outputParam.getTargetCode();
 					BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,userToken);
-					if (!StringUtils.isBlank(targetFrameCode)) {
+					//if (!StringUtils.isBlank(targetFrameCode)) {
 						ShowFrame.display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow,outputParam);
-					}
+					//}
 				}
 			}
 
