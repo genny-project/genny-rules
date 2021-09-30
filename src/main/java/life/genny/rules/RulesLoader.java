@@ -1264,7 +1264,11 @@ public class RulesLoader {
 			tx.begin();
 			/* If userToken is not null then send the event through user Session */
 			if (facts.getUserToken() != null) {
-				sendEventThroughUserSession(facts, kieSession);
+				try {
+					sendEventThroughUserSession(facts, kieSession);
+				} catch (Exception e) {
+					log.error("Error in userSession "+e.getLocalizedMessage());
+				}
 			} else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
 				/* When usertoken is null */
 				/* Running init_project workflow */
