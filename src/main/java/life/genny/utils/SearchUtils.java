@@ -348,7 +348,7 @@ public class SearchUtils {
 
 						String attributeCode = column.getKey();
 						String attributeName = column.getValue();
-						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
+						Attribute attr = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get(attributeCode);
 
 						if(attr!=null) {
 

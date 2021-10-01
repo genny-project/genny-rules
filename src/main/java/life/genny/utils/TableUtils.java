@@ -939,10 +939,10 @@ public class TableUtils {
 		ValidationList searchValidationList = new ValidationList();
 		searchValidationList.setValidationList(validations);
 
-		Attribute eventAttribute = RulesUtils.attributeMap.get("PRI_SORT");
-		Attribute questionAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
-		Attribute tableCellAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_CELL");
-		Attribute priEvent = RulesUtils.attributeMap.get("PRI_TEXT");
+		Attribute eventAttribute = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("PRI_SORT");
+		Attribute questionAttribute = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("QQQ_QUESTION_GROUP");
+		Attribute tableCellAttribute = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("QQQ_QUESTION_GROUP_TABLE_CELL");
+		Attribute priEvent = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("PRI_TEXT");
 
 		/* get table columns */
 		Map<String, String> columns = getTableColumns(searchBe);
@@ -1084,7 +1084,7 @@ public class TableUtils {
 	public QDataBaseEntityMessage changeQuestion(SearchEntity searchBE, final String frameCode, final Ask ask,
 			GennyToken serviceToken, GennyToken userToken, Set<QDataAskMessage> askMsgs) {
 		Frame3 frame = null;
-		Attribute priEvent = RulesUtils.attributeMap.get("PRI_EVENT");
+		Attribute priEvent = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("PRI_EVENT");
 
 		try {
 
@@ -1232,7 +1232,7 @@ public class TableUtils {
 
 						String attributeCode = column.getKey();
 						String attributeName = column.getValue();
-						Attribute attr = RulesUtils.attributeMap.get(attributeCode);
+						Attribute attr = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get(attributeCode);
 
 						if (attr != null) {
 							Question childQuestion = new Question("QUE_" + attributeCode + "_" + be.getCode(),
@@ -1256,7 +1256,7 @@ public class TableUtils {
 					// new DataType(String.class));
 
 					/* Get the attribute */
-					Attribute tableRowAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_ROW");
+					Attribute tableRowAttribute = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("QQQ_QUESTION_GROUP_TABLE_ROW");
 
 					/* Generate ask for the baseentity */
 					Question parentQuestion = new Question("QUE_" + be.getCode() + "_GRP", be.getName(),
@@ -1335,8 +1335,8 @@ public class TableUtils {
 		List<Ask> asks = new ArrayList<Ask>();
 
 		/* get the required attributes */
-		Attribute nameAttr = RulesUtils.attributeMap.get("PRI_TEXT_HEADER");
-		Attribute tableHeaderAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP_TABLE_HEADER");
+		Attribute nameAttr = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("PRI_TEXT_HEADER");
+		Attribute tableHeaderAttribute = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("QQQ_QUESTION_GROUP_TABLE_HEADER");
 
 		for (Map.Entry<String, String> column : columns.entrySet()) {
 
@@ -1344,7 +1344,7 @@ public class TableUtils {
 			String attributeName = column.getValue();
 
 			// Attribute headerAttr;
-			// headerAttr = RulesUtils.attributeMap.get(attributeCode + "_HEADER");
+			// headerAttr = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get(attributeCode + "_HEADER");
 			// if (headerAttr == null) {
 			// log.info("Header attribute is null");
 			// log.info(attributeCode + "_HEADER is null");

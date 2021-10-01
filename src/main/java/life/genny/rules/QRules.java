@@ -5238,9 +5238,9 @@ public class QRules implements Serializable {
 
 		/* get all capabilities existing */
 		List<Attribute> existingCapability = new CopyOnWriteArrayList<Attribute>();
-		for (String existingAttributeCode : RulesUtils.attributeMap.keySet()) {
+		for (String existingAttributeCode : RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).keySet()) {
 			if (existingAttributeCode.startsWith("CAP_")) {
-				existingCapability.add(RulesUtils.attributeMap.get(existingAttributeCode));
+				existingCapability.add(RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get(existingAttributeCode));
 			}
 		}
 
@@ -5294,7 +5294,7 @@ public class QRules implements Serializable {
 		 */
 		for (Attribute toBeRemovedCapability : existingCapability) {
 			try {
-				RulesUtils.attributeMap.remove(toBeRemovedCapability.getCode()); // remove from cache
+				RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).remove(toBeRemovedCapability.getCode()); // remove from cache
 				QwandaUtils.apiDelete(
 						getQwandaServiceUrl() + "/qwanda/baseentitys/attributes/" + toBeRemovedCapability.getCode(),
 						token);
@@ -5326,7 +5326,7 @@ public class QRules implements Serializable {
 			final String token) {
 		String fullCapabilityCode = "CAP_" + capabilityCode.toUpperCase();
 		println("Setting Capability : " + fullCapabilityCode + " : " + name);
-		Attribute attribute = RulesUtils.attributeMap.get(fullCapabilityCode);
+		Attribute attribute = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get(fullCapabilityCode);
 		if (attribute != null) {
 			capabilityManifest.add(attribute);
 			return attribute;
@@ -5820,7 +5820,7 @@ public class QRules implements Serializable {
 
 							String attributeCode = column.getKey();
 							String attributeName = column.getValue();
-							Attribute attr = RulesUtils.attributeMap.get(attributeCode);
+							Attribute attr = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get(attributeCode);
 
 							/* if the column is an actions column */
 							if (attributeCode.equals("QUE_TABLE_ACTIONS_GRP")) {
@@ -5831,7 +5831,7 @@ public class QRules implements Serializable {
 								Ask childAsk = new Ask(actionGroupQuestion, targetCode, be.getCode());
 
 								/* creating child ask for actions */
-								Attribute actionAttribute = RulesUtils.attributeMap.get("PRI_EVENT");
+								Attribute actionAttribute = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("PRI_EVENT");
 
 								Question viewQues = new Question("QUE_VIEW_" + be.getCode(), "View", actionAttribute,
 										true);
@@ -5905,14 +5905,14 @@ public class QRules implements Serializable {
 								this.println(cardContainerThemeBe.getCode());
 
 								/* we get the attributes */
-								Attribute quesGrpAttr = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
-								Attribute imgAttr = RulesUtils.attributeMap.get("PRI_IMAGE_URL");
-								Attribute fNameAttr = RulesUtils.attributeMap.get("PRI_FIRSTNAME");
-								Attribute lNameAttr = RulesUtils.attributeMap.get("PRI_LASTNAME");
-								Attribute emailAttr = RulesUtils.attributeMap.get("PRI_EMAIL");
-								Attribute mobileAttr = RulesUtils.attributeMap.get("PRI_MOBILE");
-								Attribute addressAttr = RulesUtils.attributeMap.get("PRI_ADDRESS_FULL");
-								Attribute actionAttribute = RulesUtils.attributeMap.get("PRI_EVENT");
+								Attribute quesGrpAttr = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("QQQ_QUESTION_GROUP");
+								Attribute imgAttr = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("PRI_IMAGE_URL");
+								Attribute fNameAttr = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("PRI_FIRSTNAME");
+								Attribute lNameAttr = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("PRI_LASTNAME");
+								Attribute emailAttr = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("PRI_EMAIL");
+								Attribute mobileAttr = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("PRI_MOBILE");
+								Attribute addressAttr = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("PRI_ADDRESS_FULL");
+								Attribute actionAttribute = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("PRI_EVENT");
 
 								/* creating card group */
 								Question cardGrpQues = new Question("QUE_CARD_GRP", "Card Group", quesGrpAttr, true);
@@ -6261,8 +6261,8 @@ public class QRules implements Serializable {
 		ValidationList searchValidationList = new ValidationList();
 		searchValidationList.setValidationList(validations);
 
-		Attribute eventAttribute = RulesUtils.attributeMap.get("PRI_SORT");
-		Attribute questionAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
+		Attribute eventAttribute = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("PRI_SORT");
+		Attribute questionAttribute = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get("QQQ_QUESTION_GROUP");
 
 		/* get table columns */
 		Map<String, String> columns = this.getTableColumns(searchBe);

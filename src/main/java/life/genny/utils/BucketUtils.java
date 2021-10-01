@@ -1441,9 +1441,9 @@ public class BucketUtils {
 		BaseEntity ICN_ARROW_BACK_IOS = beUtils.getBaseEntityByCode("ICN_ARROW_BACK_IOS");
 
 		/* get the attributes */
-		Attribute questionAttribute = RulesUtils.attributeMap.get("QQQ_QUESTION_GROUP");
-		Attribute nextAttribute = RulesUtils.attributeMap.get("PRI_NEXT_BTN");
-		Attribute prevAttribute = RulesUtils.attributeMap.get("PRI_PREVIOUS_BTN");
+		Attribute questionAttribute = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("QQQ_QUESTION_GROUP");
+		Attribute nextAttribute = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("PRI_NEXT_BTN");
+		Attribute prevAttribute = RulesUtils.realmAttributeMap.get(beUtils.getGennyToken().getRealm()).get("PRI_PREVIOUS_BTN");
 
 		/* we create context here */
 
