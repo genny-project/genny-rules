@@ -67,6 +67,11 @@ public class DefUtils {
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,serviceToken);
 
+		// build map for realm during rule start up
+		if(!RulesUtils.realmAttributeMap.containsKey(serviceToken.getRealm())) {
+			RulesUtils.loadAllAttributesIntoCache(serviceToken);
+		}
+
 		List<BaseEntity> items = Collections.synchronizedList(beUtils.getBaseEntitys(searchBE));
 			log.info("Loaded "+items.size()+" DEF baseentitys");
 
