@@ -455,7 +455,7 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				// String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
-				log.info("This is the 9.6.0 version of ShowFrame , and update is " + updated);
+				log.info("This is the 9.7.0 version of ShowFrame , and update is " + updated);
 
 				// Iterate child asks
 				if (updated != null && updated.getItems() != null && (updated.getItems().length > 0)
