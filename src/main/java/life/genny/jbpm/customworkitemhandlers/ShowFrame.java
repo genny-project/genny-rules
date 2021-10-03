@@ -582,6 +582,7 @@ public class ShowFrame implements WorkItemHandler {
 
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
+			log.info("CacheEnabled = true. Not sending Asks");
 			return qBulkMessage;
 		}
 
