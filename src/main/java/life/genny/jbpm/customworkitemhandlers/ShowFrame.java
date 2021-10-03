@@ -653,7 +653,10 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 
-				
+				log.info("Target BE = "+target);
+				for (EntityAttribute ea : target.getBaseEntityAttributes()) {
+					log.info(target.getCode()+": "+ea.getAttributeCode()+":\t\t"+ea.getValue());
+				}
 				defBe = beUtils.getDEF(target);
 				if ("DEF_PERSON".equals(defBe.getCode())) {
 					log.error("DEF identified as DEF_PERSON! - "+targetCode);
