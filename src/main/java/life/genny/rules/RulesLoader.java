@@ -311,7 +311,7 @@ public class RulesLoader {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		log.info("Add new request, uuid:" + tuple3._3.toString());
+		log.debug("Add new request, uuid:" + tuple3._3.toString());
 	}
 
 	public LinkedBlockingQueue<Tuple3<Object, String, UUID>> getLinkedBlockingQueue() {
@@ -1000,19 +1000,19 @@ public class RulesLoader {
 				kieSessionMap.put(sessionCode, kieSession);
 				kieSession.addEventListener(new JbpmInitListener(facts.getServiceToken()));
 
-				log.info("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
+				log.debug("Using Runtime engine in Singleton Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getIdentifier());
 			} else {
 				kieSession = createNewKieSession(facts, isInitEvent);
 				if (kieSessionMap.get(sessionCode) == null) {
 					// map to current sessionCode
 					kieSessionMap.put(sessionCode, kieSession);
-					log.info("Create new KieSession:" + kieSession.getIdentifier());
+					log.debug("Create new KieSession:" + kieSession.getIdentifier());
 				} else {
 					kieSessionMap.replace(sessionCode, kieSession);
 					log.info(debugStr + "Replace with new KieSession:" + kieSession.getIdentifier());
 				}
-				log.info("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
+				log.debug("Using Runtime engine in Per Request Strategy ::::::: Stateful with kieSession id="
 						+ kieSession.getIdentifier());
 			}
 		}
@@ -1027,7 +1027,7 @@ public class RulesLoader {
 		String bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
 		// Save an associated Bridge IP to the session
-		log.info("saving bridge ip to cache associted with session " + facts.getUserToken().getSessionCode());
+		log.debug("saving bridge ip ("+bridgeSourceAddress+") to cache associated with session " + facts.getUserToken().getSessionCode());
 		VertxUtils.writeCachedJson(facts.getUserToken().getRealm(), facts.getUserToken().getSessionCode(),
 				bridgeSourceAddress, facts.getUserToken().getToken());
 
@@ -1036,7 +1036,6 @@ public class RulesLoader {
 				+ msg_code + " to pid " + processId);
 
 		
-		log.info("SignalEvent -> 'event' for " + facts.getUserToken().getUserCode() + ":" + processId);
 		try {
 			kieSession.signalEvent("event", facts, processId);
 		} catch (Exception e) {
@@ -1053,8 +1052,8 @@ public class RulesLoader {
 			dataAnswer.setChangeEvent(false);
 			QDataAnswerMessage dataMsg = new QDataAnswerMessage(dataAnswer);
 			SessionFacts sessionFactsData = new SessionFacts(facts.getServiceToken(), facts.getUserToken(), dataMsg);
-			log.info("SignalEvent -> QUE_SUBMIT event to 'data' for " + facts.getUserToken().getUserCode() + ":"
-					+ processId);
+//			log.info("SignalEvent -> QUE_SUBMIT event to 'data' for " + facts.getUserToken().getUserCode() + ":"
+//					+ processId);
 			kieSession.signalEvent("data", sessionFactsData, processId);
 		} 
 		if (msg_code.equals("QUE_CANCEL")) {
@@ -1083,7 +1082,7 @@ public class RulesLoader {
 		String bridgeSourceAddress = ((QDataMessage) facts.getMessage()).getSourceAddress();
 
 		// Save an associated Bridge IP to the session
-		log.info("saving bridge ip to cache associted with session " + facts.getUserToken().getSessionCode());
+		log.debug("saving bridge ip to cache associted with session " + facts.getUserToken().getSessionCode());
 		VertxUtils.writeCachedJson(facts.getUserToken().getRealm(), facts.getUserToken().getSessionCode(),
 				bridgeSourceAddress, facts.getUserToken().getToken());
 		log.info("incoming DATA" + " message from " + bridgeSourceAddress + ": " + facts.getUserToken().getRealm() + ":"
@@ -1091,7 +1090,7 @@ public class RulesLoader {
 				+ " to pid " + processId);
 
 		// kieSession.signalEvent("DT_"+session_state, facts);
-		log.info("SignalEvent -> 'data' for " + facts.getUserToken().getUserCode() + ":" + processId);
+	//	log.info("SignalEvent -> 'data' for " + facts.getUserToken().getUserCode() + ":" + processId);
 		try {
 			if (facts.getMessage() == null) {
 				log.error("facts.getMessage() is NULL");
@@ -1121,14 +1120,14 @@ public class RulesLoader {
 	}
 
 	private void sendEventThroughUserSession(SessionFacts facts, KieSession kieSession) throws InterruptedException {
-		log.info("Setting up Capabilities and Alloweds");
-		log.info("facts   ::  " + facts);
-		log.info("facts userCode  ::  " + facts.getUserToken().getUserCode());
+		log.debug("Setting up Capabilities and Alloweds");
+		log.debug("facts   ::  " + facts);
+		log.debug("facts userCode  ::  " + facts.getUserToken().getUserCode());
 		String bridgeSourceAddress = "";
 		GennyToken serviceToken = facts.getServiceToken();
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,facts.getUserToken());
-		log.info("BaseEntity created");
+		log.debug("BaseEntity created");
 
 		FactHandle beUtilsHandle = kieSession.insert(beUtils);
 		FactHandle capabilityUtilsHandle = null;
@@ -1146,20 +1145,20 @@ public class RulesLoader {
 		BaseEntity user = beUtils.getBaseEntityByCode(userCode);
 
 		if (user != null) {
-			log.info("User:" + user.getCode() + " fetched.");
+			log.debug("User:" + user.getCode() + " fetched.");
 
 			List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
-			log.info(allowable.size() + " Alloweds generated ");
+			log.debug(allowable.size() + " Alloweds generated ");
 
 			capabilityUtilsHandle = kieSession.insert(capabilityUtils);
 
-			log.info("Adding Allowed to kiesession");
+			log.debug("Adding Allowed to kiesession");
 			// get each capability from each Role and add to allowables
 			for (Allowed allow : allowable) {
 				allowables.add(kieSession.insert(allow));
 			}
 		}else{
-			log.info("user was null !!!");
+			log.error("user was null !!!");
 		}
 
 		Long processId = null;
@@ -1173,7 +1172,7 @@ public class RulesLoader {
 			processId = processIdBySessionId.get();
 			if (kieSession.getProcessInstance(processId) != null) {
 				shouldProcessMsg = true;
-				log.info("Find ProcessId:" + processId + " for session:" + session_state);
+				log.debug("Find ProcessId:" + processId + " for session:" + session_state);
 			} else {
 				log.error(debugStr + ", ProcessID:" + processId + " can not find in current kieSession");
 			}
@@ -1197,14 +1196,23 @@ public class RulesLoader {
 			}
 		}
 		// Cleanup facts
-		kieSession.delete(beUtilsHandle);
+		try {
+			kieSession.delete(beUtilsHandle);
+		} catch (Exception e) {
+			log.warn("Session error when trying to delete the handle");
+		}
 		if (capabilityUtilsHandle != null) {
 			kieSession.delete(capabilityUtilsHandle);
 			for (FactHandle allow : allowables) {
-				kieSession.delete(allow);
+				try {
+					kieSession.delete(allow);
+				} catch (Exception e) {
+					log.warn("Session error when trying to delete the allow");
+				}
+
 			}
 		}
-		log.info(debugStr + "Finish sendEventThroughUserSession");
+		log.debug(debugStr + "Finish sendEventThroughUserSession");
 	}
 
 	public void executeStatefulForIintEvent(final List<Tuple2<String, Object>> globals, SessionFacts facts) {
@@ -1231,7 +1239,7 @@ public class RulesLoader {
 		} catch (final Throwable t) {
 			log.error(t.getLocalizedMessage());
 		} finally {
-			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
+			log.info("Finished initProjects - Fired " + rulesFired + " rules for " + facts.getUserToken());
 			// commit
 			tx.commit();
 			em.close();
@@ -1256,11 +1264,15 @@ public class RulesLoader {
 			tx.begin();
 			/* If userToken is not null then send the event through user Session */
 			if (facts.getUserToken() != null) {
-				sendEventThroughUserSession(facts, kieSession);
+				try {
+					sendEventThroughUserSession(facts, kieSession);
+				} catch (Exception e) {
+					log.error("Error in userSession "+e.getLocalizedMessage());
+				}
 			} else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
 				/* When usertoken is null */
 				/* Running init_project workflow */
-				log.info("initProject Events! with facts=" + facts);
+				log.debug("initStateful Events! with facts=" + facts);
 				kieSession.signalEvent("initProject", facts);
 			} else {
 				log.info("Invalid Events coming in");
@@ -1275,14 +1287,14 @@ public class RulesLoader {
 			// commit
 			if (tx.isActive()) {
 				tx.commit();
-				log.info("Commit as transcation is active");
+				log.debug("Commit as transaction is active");
 			}
 			if (em.isOpen()) {
 				em.close();
-				log.info("Close entity manager as manager is open");
+				log.debug("Close entity manager as manager is open");
 			}
 			// runtimeManager.disposeRuntimeEngine(runtimeEngine);
-			log.info("Finished Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
+			log.debug("Finished Stateful Message Handling - Fired " + rulesFired + " rules for " + facts.getUserToken());
 		}
 	}
 //		else {

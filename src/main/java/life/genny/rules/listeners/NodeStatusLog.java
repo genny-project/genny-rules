@@ -293,7 +293,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 				
 				// save the end date time to SessionPid
 				
-				logger.info("After Process Completed");
+				logger.debug("After Process Completed");
 				List<SessionPid> result = em.createQuery(
 						"from SessionPid as spid where spid.processInstanceId = :piId")
 						.setParameter("piId", processInstanceId).getResultList();

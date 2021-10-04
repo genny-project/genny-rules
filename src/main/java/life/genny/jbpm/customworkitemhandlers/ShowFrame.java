@@ -455,7 +455,7 @@ public class ShowFrame implements WorkItemHandler {
 				}
 
 				// String[] dropdownCodes = match(jsonStr, "/(\\\"LNK_\\S+\\\")/g");
-				log.info("This is the 9.6.0 version of ShowFrame , and update is " + updated);
+				log.info("This is the 9.7.0 version of ShowFrame , and update is " + updated);
 
 				// Iterate child asks
 				if (updated != null && updated.getItems() != null && (updated.getItems().length > 0)
@@ -582,6 +582,7 @@ public class ShowFrame implements WorkItemHandler {
 
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
+			log.info("CacheEnabled = true. Not sending Asks");
 			return qBulkMessage;
 		}
 
@@ -598,7 +599,11 @@ public class ShowFrame implements WorkItemHandler {
 		BaseEntity source = null;
 
 		if ((output != null)) {
-			log.info("Ouput Task ID = " + output.getTaskId());
+			if (output.getAskTargetCode()==null) {
+				log.warn("No SendAsks needed to be sent as no targetCode supplied");
+				//return qBulkMessage;
+			}
+			log.info("Output Task ID = " + output.getTaskId());
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 				if (taskService == null) {
@@ -615,32 +620,65 @@ public class ShowFrame implements WorkItemHandler {
 					return qBulkMessage;
 				}
 				taskAsks = (HashMap<String, Object>) ContentMarshallerHelper.unmarshall(c.getContent(), null);
+				if (taskAsks.isEmpty()) {
+					log.error("ShowFrame: sendAsks. No TaskAsks in Task - returning");
+					return qBulkMessage;
+				}
 				for (String key : taskAsks.keySet()) {
 					Object obj = taskAsks.get(key);
 					if (obj instanceof TaskAsk) { // This gets around my awful formcode values
 						TaskAsk taskAsk = (TaskAsk) taskAsks.get(key);
-						String attributeStr = taskAsk.getAsk().getAttributeCode();
+						//String attributeStr = taskAsk.getAsk().getAttributeCode();
 						// attributeTaskAskMap.put(attributeStr,taskAsk);
 						sourceCode = taskAsk.getAsk().getSourceCode();
 						targetCode = taskAsk.getAsk().getTargetCode();
 					}
 				}
 
+				if (StringUtils.isBlank(targetCode)) {
+					log.error("ShowFrame: sendAsks. No TargetCode in Task - returning");
+					return qBulkMessage;
+				}
+				if (StringUtils.isBlank(sourceCode)) {
+					log.error("ShowFrame: sendAsks. No SourceCode in Task - returning");
+					return qBulkMessage;
+				}
+
+				
 				target = beUtils.getBaseEntityByCode(targetCode);
 				source = beUtils.getBaseEntityByCode(sourceCode);
+				
+				if (target == null) {
+					log.error(callingWorkflow+" ShowFrame: sendAsks. No Target existing in Task  for "+targetCode+" - returning");
+					return qBulkMessage;
+				}
 
+
+				log.info("Target BE = "+target);
+				for (EntityAttribute ea : target.getBaseEntityAttributes()) {
+					log.info(target.getCode()+": "+ea.getAttributeCode()+":\t\t"+ea.getValue());
+				}
 				defBe = beUtils.getDEF(target);
+				if ("DEF_PERSON".equals(defBe.getCode())) {
+					log.error("DEF identified as DEF_PERSON! - "+targetCode);
+				}
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
 
 			} else {
 				sourceCode = output.getAskSourceCode();
 				targetCode = output.getAskTargetCode();
-				target = beUtils.getBaseEntityByCode(targetCode);
-				source = beUtils.getBaseEntityByCode(sourceCode);
-				
-				defBe = beUtils.getDEF(target);
-				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
-
+				if (targetCode != null) {
+					target = beUtils.getBaseEntityByCode(targetCode);
+					source = beUtils.getBaseEntityByCode(sourceCode);
+					if (target != null)  {
+						defBe = beUtils.getDEF(target);
+						enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
+					} else {
+						log.error(callingWorkflow+" ShowFrame: sendAsks -> Target is NULL");
+					}
+				} else {
+					log.error(callingWorkflow+" ShowFrame: sendAsks -> TargetCode is NULL");
+				}
 			}
 		}
 		
