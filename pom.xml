@@ -53,13 +53,13 @@
 		</snapshotRepository>
 	</distributionManagement>
 
-	<repositories>
-		<repository>
-			<id>life.genny</id>
-			<url>https://nexus.outcome-hub.com/repository/life.genny/</url>
-		</repository>
+    <repositories>
+        <repository>
+            <id>jboss</id>
+            <url>https://repository.jboss.org/maven2/</url>
+        </repository>
+    </repositories>
 
-	</repositories>
 
 	<dependencies>
 		<!-- <dependency> <groupId>org.jboss.weld.vertx</groupId> <artifactId>weld-vertx-core</artifactId> 
