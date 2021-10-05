@@ -55,11 +55,6 @@
 
 	<repositories>
 		<repository>
-			<id>repository.jboss.org-public</id>
-			<name>JBoss.org Maven repository</name>
-			<url>https://repository.jboss.org/nexus/content/groups/public</url>
-		</repository>
-		<repository>
 			<id>life.genny</id>
 			<url>https://nexus.outcome-hub.com/repository/life.genny/</url>
 		</repository>
