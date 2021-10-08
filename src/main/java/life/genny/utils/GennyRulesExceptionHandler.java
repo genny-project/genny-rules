@@ -7,6 +7,8 @@ import org.kie.api.runtime.rule.ConsequenceExceptionHandler;
 import org.kie.api.runtime.rule.Match;
 import org.kie.api.runtime.rule.RuleRuntime;
 
+import life.genny.qwandautils.ANSIColour;
+
 public class GennyRulesExceptionHandler implements ConsequenceExceptionHandler {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -15,9 +17,9 @@ public class GennyRulesExceptionHandler implements ConsequenceExceptionHandler {
     @Override
     public void handleException(Match match, RuleRuntime rr, Exception e) {
         //Do whatever you want
-    	log.error("RULES EXCEPTION (1) :match ->  "+match);
-    	log.error("RULES EXCEPTION (2) :RuleRuntime ->  "+rr);
-    	log.error("RULES EXCEPTION (3) : exception ->  "+e);
+    	log.error(ANSIColour.RED+"RULES EXCEPTION (1) :match ->  "+match+ANSIColour.RESET);
+    	log.error(ANSIColour.RED+"RULES EXCEPTION (2) :RuleRuntime ->  "+rr+ANSIColour.RESET);
+    	log.error(ANSIColour.RED+"RULES EXCEPTION (3) : exception ->  "+e+ANSIColour.RESET);
     }
 
 }
