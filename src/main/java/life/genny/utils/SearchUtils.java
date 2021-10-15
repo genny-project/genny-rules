@@ -465,8 +465,10 @@ public class SearchUtils {
 			// Iterate all Filters
 			if (ea.getAttributeCode().startsWith("PRI_") || ea.getAttributeCode().startsWith("LNK_")) {
 
-				// Grab the Attribute for this Code
-				String attributeCode = ea.getAttributeCode();
+				// Grab the Attribute for this Code, using array in case this is an associated filter
+				String[] attributeCodeArray = ea.getAttributeCode().split("\\.");
+				String attributeCode = attributeCodeArray[attributeCodeArray.length-1];
+				// Fetch the corresponding attribute
 				Attribute att = RulesUtils.getAttribute(attributeCode, beUtils.getServiceToken());
 				DataType dataType = att.getDataType();
 
