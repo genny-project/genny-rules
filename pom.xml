@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>life.genny</groupId>
 	<artifactId>genny-rules</artifactId>
-	<version>9.9.0</version>
+	<version>9.10.0</version>
 	<name>genny-rules</name>
 	<licenses>
 		<license>
