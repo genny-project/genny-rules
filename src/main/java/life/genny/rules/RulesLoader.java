@@ -380,6 +380,12 @@ public class RulesLoader {
 
 		for (String realm : activeRealms) {
 			log.info("About to load in DEFs before rules for realm "+realm);
+			JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+			String sToken = tokenObj.getString("value");
+			GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+
+			RulesUtils.loadAllAttributesIntoCache(serviceToken);
+
 			DefUtils.loadDEFS(realm);
 		}
 		
