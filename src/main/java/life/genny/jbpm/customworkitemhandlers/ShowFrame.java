@@ -35,6 +35,7 @@ import life.genny.qwanda.Ask;
 import life.genny.qwanda.ContextList;
 import life.genny.qwanda.TaskAsk;
 import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.attribute.AttributeText;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
@@ -49,6 +50,7 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.DefUtils;
 import life.genny.utils.DropdownUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.OutputParam;
@@ -76,7 +78,7 @@ public class ShowFrame implements WorkItemHandler {
 		String targetFrameCode = (String) workItem.getParameter("targetFrameCode");
 		OutputParam output = (OutputParam) workItem.getParameter("output");
 
-		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,userToken);
+		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken, userToken);
 
 		if (rootFrameCode.equals("NONE")) { // Do not change anything
 			return;
@@ -95,9 +97,9 @@ public class ShowFrame implements WorkItemHandler {
 			qBulkMessage.setToken(userToken.getToken());
 			VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
 		}
-		
+
 		VertxUtils.writeMsgEnd(userToken);
-		
+
 		// notify manager that work item has been completed
 		if (workItem == null) {
 			log.error(callingWorkflow + ": workItem is null");
@@ -140,7 +142,6 @@ public class ShowFrame implements WorkItemHandler {
 			String callingWorkflow, OutputParam output, Boolean cache) {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 
-		
 		GennyToken userToken = beUtils.getGennyToken();
 
 		if (beUtils.getGennyToken() == null) {
@@ -155,7 +156,6 @@ public class ShowFrame implements WorkItemHandler {
 				// log.info(callingWorkflow+": root Frame Code sent to display = " +
 				// rootFrameCode);
 
-				
 				QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_MSG",
 						QDataBaseEntityMessage.class, userToken.getToken());
 
@@ -293,7 +293,6 @@ public class ShowFrame implements WorkItemHandler {
 
 		}
 		log.info("Sending the EndMsg Now !!!");
-	
 
 		return qBulkMessage;
 	}
@@ -494,7 +493,7 @@ public class ShowFrame implements WorkItemHandler {
 								if (defDropdownExists) {
 									// find the selected edu provider if exists
 									String val = target.getValue(dropdownCode, null);
-									log.info("Selected Existing val for "+dropdownCode+" = " + val);
+									log.info("Selected Existing val for " + dropdownCode + " = " + val);
 									Set<BaseEntity> beItems = new HashSet<>();
 									if (!StringUtils.isBlank(val)) {
 										JsonArray jaItems = new JsonArray(val);
@@ -513,11 +512,16 @@ public class ShowFrame implements WorkItemHandler {
 											dropdownCode, userToken, serviceToken, cache, targetCode, groupCode,
 											questionCode);
 									qBulkMessage.add(qb);
-									
-									// Now send all the cached dropdown items IF RADIO 
-									Attribute dropdownAttribute = RulesUtils.getAttribute(dropdownCode, beUtils.getGennyToken());
-									if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))) {
-										QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
+
+									// Now send all the cached dropdown items IF RADIO
+									Attribute dropdownAttribute = RulesUtils.getAttribute(dropdownCode,
+											beUtils.getGennyToken());
+									if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))
+											|| ("checkbox".equalsIgnoreCase(
+													dropdownAttribute.getDataType().getComponent()))) {
+										QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,
+												target, dropdownCode, groupCode, questionCode, "",
+												GennySettings.defaultDropDownPageSize);
 										qBulkMessage.add(listItems);
 										if (!cache) {
 											listItems.setToken(userToken.getToken());
@@ -578,7 +582,6 @@ public class ShowFrame implements WorkItemHandler {
 		QBulkMessage qBulkMessage = new QBulkMessage();
 		GennyToken userToken = beUtils.getGennyToken();
 		GennyToken serviceToken = beUtils.getServiceToken();
-		
 
 		if (VertxUtils.cachedEnabled) {
 			// No point sending asks
@@ -599,15 +602,15 @@ public class ShowFrame implements WorkItemHandler {
 		BaseEntity source = null;
 
 		if ((output != null)) {
-			if (output.getAskTargetCode()==null) {
+			if (output.getAskTargetCode() == null) {
 				log.warn("No SendAsks needed to be sent as no targetCode supplied");
-				//return qBulkMessage;
+				// return qBulkMessage;
 			}
 			log.info("Output Task ID = " + output.getTaskId());
 			if ((output.getTaskId() != null) && (output.getTaskId() > 0L)) {
 				taskService = RulesLoader.taskServiceMap.get(userToken.getSessionCode());
 				if (taskService == null) {
-					log.error("taskService is NULL for sessioncode "+userToken.getSessionCode());
+					log.error("taskService is NULL for sessioncode " + userToken.getSessionCode());
 					return qBulkMessage; // cannot do anything
 				}
 				task = taskService.getTaskById(output.getTaskId());
@@ -628,7 +631,7 @@ public class ShowFrame implements WorkItemHandler {
 					Object obj = taskAsks.get(key);
 					if (obj instanceof TaskAsk) { // This gets around my awful formcode values
 						TaskAsk taskAsk = (TaskAsk) taskAsks.get(key);
-						//String attributeStr = taskAsk.getAsk().getAttributeCode();
+						// String attributeStr = taskAsk.getAsk().getAttributeCode();
 						// attributeTaskAskMap.put(attributeStr,taskAsk);
 						sourceCode = taskAsk.getAsk().getSourceCode();
 						targetCode = taskAsk.getAsk().getTargetCode();
@@ -644,23 +647,22 @@ public class ShowFrame implements WorkItemHandler {
 					return qBulkMessage;
 				}
 
-				
 				target = beUtils.getBaseEntityByCode(targetCode);
 				source = beUtils.getBaseEntityByCode(sourceCode);
-				
+
 				if (target == null) {
-					log.error(callingWorkflow+" ShowFrame: sendAsks. No Target existing in Task  for "+targetCode+" - returning");
+					log.error(callingWorkflow + " ShowFrame: sendAsks. No Target existing in Task  for " + targetCode
+							+ " - returning");
 					return qBulkMessage;
 				}
 
-
-				log.info("Target BE = "+target);
+				log.info("Target BE = " + target);
 				for (EntityAttribute ea : target.getBaseEntityAttributes()) {
-					log.info(target.getCode()+": "+ea.getAttributeCode()+":\t\t"+ea.getValue());
+					log.info(target.getCode() + ": " + ea.getAttributeCode() + ":\t\t" + ea.getValue());
 				}
 				defBe = beUtils.getDEF(target);
 				if ("DEF_PERSON".equals(defBe.getCode())) {
-					log.error("DEF identified as DEF_PERSON! - "+targetCode);
+					log.error("DEF identified as DEF_PERSON! - " + targetCode);
 				}
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
 
@@ -670,19 +672,17 @@ public class ShowFrame implements WorkItemHandler {
 				if (targetCode != null) {
 					target = beUtils.getBaseEntityByCode(targetCode);
 					source = beUtils.getBaseEntityByCode(sourceCode);
-					if (target != null)  {
+					if (target != null) {
 						defBe = beUtils.getDEF(target);
 						enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
 					} else {
-						log.error(callingWorkflow+" ShowFrame: sendAsks -> Target is NULL");
+						log.error(callingWorkflow + " ShowFrame: sendAsks -> Target is NULL");
 					}
 				} else {
-					log.error(callingWorkflow+" ShowFrame: sendAsks -> TargetCode is NULL");
+					log.error(callingWorkflow + " ShowFrame: sendAsks -> TargetCode is NULL");
 				}
 			}
 		}
-		
-		
 
 		Set<QDataAskMessage> askMsgs2 = fetchAskMessages(rootFrameCode, userToken);
 
@@ -805,32 +805,60 @@ public class ShowFrame implements WorkItemHandler {
 									String groupCode = askMsg.getItems()[0].getQuestionCode();
 
 									// Only check for DDC if not items are selected already
-									Attribute dropdownAttribute = RulesUtils.getAttribute(dropdownCode, beUtils.getGennyToken());
+									Attribute dropdownAttribute = RulesUtils.getAttribute(dropdownCode,
+											beUtils.getGennyToken());
 
-									if ((beItems.size() == 0)||(("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent())))) {
-										Optional<EntityAttribute> cacheAtt = defBe.findEntityAttribute("DDC_" + dropdownCode);
+									if ((beItems.size() == 0) || (("radio"
+											.equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))
+											|| ("checkbox".equalsIgnoreCase(
+													dropdownAttribute.getDataType().getComponent())))) {
+										Optional<EntityAttribute> cacheAtt = defBe
+												.findEntityAttribute("DDC_" + dropdownCode);
 										if (cacheAtt.isPresent()) {
 											String jsonMsg = cacheAtt.get().getValueString();
-											// Replacement for @@TOKEN@@,  @@PARENTCODE@@, @@QUESTIONCODE@@
+											// Replacement for @@TOKEN@@, @@PARENTCODE@@, @@QUESTIONCODE@@
 											jsonMsg = jsonMsg.replaceAll("@@TOKEN@@", userToken.getToken());
 											jsonMsg = jsonMsg.replaceAll("@@PARENTCODE@@", groupCode);
 											jsonMsg = jsonMsg.replaceAll("@@QUESTIONCODE@@", questionCode);
 
-											QDataBaseEntityMessage msg = JsonUtils.fromJson(jsonMsg, QDataBaseEntityMessage.class);
+											QDataBaseEntityMessage msg = JsonUtils.fromJson(jsonMsg,
+													QDataBaseEntityMessage.class);
 											msg.setAttributeCode(dropdownCode);
 											qBulkMessage.add(msg);
 											if (!cache) {
 												msg.setToken(userToken.getToken());
 												VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
 											}
+										} else if ((("radio"
+												.equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))
+												|| ("checkbox".equalsIgnoreCase(
+														dropdownAttribute.getDataType().getComponent())))) {
+											String searchLookup = defBe.getValue("SER_" + dropdownCode, null);
+											if (searchLookup != null) {
+												// fetch from database
+												QDataBaseEntityMessage msg = DefUtils.getDropdownDataMessage(beUtils,
+														dropdownCode, groupCode, questionCode, searchLookup, null, null, "",
+														userToken.getToken());
+												msg.setAttributeCode(dropdownCode);
+												qBulkMessage.add(msg);
+												if (!cache) {
+													msg.setToken(userToken.getToken());
+													VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+												}
+											}
 										}
 									} else {
-										QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]), defBe, dropdownCode,
-												userToken, serviceToken, cache, targetCode, groupCode, questionCode);
+										QBulkMessage qb = sendDefSelectionItems(beItems.toArray(new BaseEntity[0]),
+												defBe, dropdownCode, userToken, serviceToken, cache, targetCode,
+												groupCode, questionCode);
 										qBulkMessage.add(qb);
-										// Now send all the cached dropdown items IF RADIO 
-										if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))||("checkbox".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))) {
-											QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils, source,target, dropdownCode, groupCode, questionCode, "", GennySettings.defaultDropDownPageSize);
+										// Now send all the cached dropdown items IF RADIO
+										if (("radio".equalsIgnoreCase(dropdownAttribute.getDataType().getComponent()))
+												|| ("checkbox".equalsIgnoreCase(
+														dropdownAttribute.getDataType().getComponent()))) {
+											QDataBaseEntityMessage listItems = SearchUtils.getDropdownData(beUtils,
+													source, target, dropdownCode, groupCode, questionCode, "",
+													GennySettings.defaultDropDownPageSize);
 											qBulkMessage.add(listItems);
 											if (!cache) {
 												listItems.setToken(userToken.getToken());
@@ -1009,15 +1037,11 @@ public class ShowFrame implements WorkItemHandler {
 				if (StringUtils.isBlank(frameStr)) {
 					String questionCode = rootFrameCode.substring("FRM_".length());
 					String realm = userToken.getRealm();
-					Frame3 frame2 = Frame3.builder("FRM_CONTENT_" +  questionCode)
-							.question(questionCode).end()
-							.build();
+					Frame3 frame2 = Frame3.builder("FRM_CONTENT_" + questionCode).question(questionCode).end().build();
 
 					frame2.setRealm(realm);
 
-					Frame3 frame = Frame3.builder("FRM_" +  questionCode)
-							.addFrame(frame2, FramePosition.CENTRE)
-							.end()
+					Frame3 frame = Frame3.builder("FRM_" + questionCode).addFrame(frame2, FramePosition.CENTRE).end()
 							.build();
 
 					frame.setRealm(realm);
@@ -1072,15 +1096,11 @@ public class ShowFrame implements WorkItemHandler {
 				if (StringUtils.isBlank(frameStr)) {
 					String questionCode = rootFrameCode.substring("FRM_".length());
 					String realm = userToken.getRealm();
-					Frame3 frame2 = Frame3.builder("FRM_CONTENT_" +  questionCode)
-							.question(questionCode).end()
-							.build();
+					Frame3 frame2 = Frame3.builder("FRM_CONTENT_" + questionCode).question(questionCode).end().build();
 
 					frame2.setRealm(realm);
 
-					Frame3 frame = Frame3.builder("FRM_" +  questionCode)
-							.addFrame(frame2, FramePosition.CENTRE)
-							.end()
+					Frame3 frame = Frame3.builder("FRM_" + questionCode).addFrame(frame2, FramePosition.CENTRE).end()
 							.build();
 
 					frame.setRealm(realm);
@@ -1284,8 +1304,6 @@ public class ShowFrame implements WorkItemHandler {
 		return qBulkMessage;
 	}
 
-
-
 	public static QBulkMessage sendDefSelectionItems(BaseEntity[] arrayItems, BaseEntity defBe, String attributeCode,
 			GennyToken userToken, GennyToken serviceToken, Boolean cache, String dropdownTarget, String groupCode,
 			String questionCode) {
@@ -1296,10 +1314,11 @@ public class ShowFrame implements WorkItemHandler {
 			Optional<EntityAttribute> searchAtt = defBe.findEntityAttribute("SER_" + attributeCode);
 			if (searchAtt.isPresent()) {
 
-				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(arrayItems, groupCode, "LINK", Long.decode(arrayItems.length + ""));
+				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(arrayItems, groupCode, "LINK",
+						Long.decode(arrayItems.length + ""));
 				// TODO this needs to include the attribbute code
 				msg.setParentCode(groupCode);
-				msg.setQuestionCode(questionCode); 
+				msg.setQuestionCode(questionCode);
 				msg.setToken(userToken.getToken());
 				msg.setLinkCode("LNK_CORE");
 				msg.setLinkValue("ITEMS");

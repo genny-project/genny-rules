@@ -107,7 +107,8 @@ public class DefUtils {
 					} else {
 						cached = true;
 					}
-					if (StringUtils.isBlank(searchValue) || (searchValue.contains("[[")) || !cached) { // could be faster with finding firt index
+					
+					if (StringUtils.isBlank(searchValue) || (searchValue.contains("[[")) || !cached ) { // could be faster with finding firt index
 						continue;
 					}
 					// If the json of the search has "cache" set to true then immediately create a cached version
