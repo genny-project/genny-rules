@@ -24,6 +24,7 @@ import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.exception.BadDataException;
+import life.genny.qwanda.message.QDataAttributeMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwandautils.ANSIColour;
 import life.genny.qwandautils.GennySettings;
@@ -75,7 +76,9 @@ public class DefUtils {
 		List<BaseEntity> items = Collections.synchronizedList(beUtils.getBaseEntitys(searchBE));
 			log.info("Loaded "+items.size()+" DEF baseentitys");
 
-		RulesUtils.defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());	
+			Map<String,BaseEntity> newDefs = new ConcurrentHashMap<String,BaseEntity>()	;
+			Set<Attribute> newDefAttributes = new HashSet<>()	;
+		//RulesUtils.defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());	
 			
 		for (BaseEntity item : items) {
 			
@@ -118,16 +121,29 @@ public class DefUtils {
 					
 					EntityAttribute newDdcEa = new EntityAttribute(item, cacheAttribute, 1.0, JsonUtils.toJson(cachedMessage));
 					newEas.add(newDdcEa);
-//	item.addAnswer(new Answer(item,item,cacheAttribute,JsonUtils.toJson(cachedMessage)));
+					
+				} else if (defEa.getAttributeCode().startsWith("ATT_")) {
+					String normalAttributeCode = defEa.getAttributeCode().substring("ATT_".length());
+					Attribute normalAttribute = RulesUtils.realmAttributeMap.get(realm).get(normalAttributeCode);
+					newDefAttributes.add(normalAttribute);
 				}
 			}
 			
 			item.getBaseEntityAttributes().addAll(newEas);
-			RulesUtils.defs.get(realm).put(item.getCode(),item);
 			item.setFastAttributes(true); // make fast
+	
+			newDefs.put(item.getCode(),item);
 
 			log.info("Saving ("+realm+") DEF "+item.getCode());
 		}
+		
+		// Now switch in the defs
+			RulesUtils.defs.put(realm, newDefs);
+			
+		// Now switch in the QDataAttributesMessage
+			 QDataAttributeMessage defAttributesMsg = new QDataAttributeMessage(newDefAttributes.toArray(new Attribute[0]));
+			 RulesUtils.defAttributesMap.put(realm, defAttributesMsg);
+		
 		log.info("Saved "+items.size()+" yummy DEFs!");
 	}
 	
