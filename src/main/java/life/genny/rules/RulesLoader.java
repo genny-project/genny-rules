@@ -384,9 +384,8 @@ public class RulesLoader {
 			String sToken = tokenObj.getString("value");
 			GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
 
-			RulesUtils.loadAllAttributesIntoCache(serviceToken);
-
 			DefUtils.loadDEFS(realm);
+
 		}
 		
 		List<Tuple3<String, String, String>> rules = null;
