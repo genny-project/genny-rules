@@ -60,9 +60,13 @@ public class DefUtils {
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken, serviceToken);
 
 		// build map for realm during rule start up
+<<<<<<< HEAD
 		if (!RulesUtils.realmAttributeMap.containsKey(serviceToken.getRealm())) {
+=======
+		//if(!RulesUtils.realmAttributeMap.containsKey(serviceToken.getRealm())) {
+>>>>>>> 9.9.0
 			RulesUtils.loadAllAttributesIntoCache(serviceToken);
-		}
+		//}
 
 		List<BaseEntity> items = Collections.synchronizedList(beUtils.getBaseEntitys(searchBE));
 		log.info("Loaded " + items.size() + " DEF baseentitys");
@@ -71,6 +75,13 @@ public class DefUtils {
 		Set<Attribute> newDefAttributes = new HashSet<>();
 		// RulesUtils.defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());
 
+<<<<<<< HEAD
+=======
+			Map<String,BaseEntity> newDefs = new ConcurrentHashMap<String,BaseEntity>()	;
+			Set<Attribute> newDefAttributes = new HashSet<>()	;
+		//RulesUtils.defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());	
+			
+>>>>>>> 9.9.0
 		for (BaseEntity item : items) {
 
 			// Now go through all the searches and see what the total is of the searches.
@@ -103,11 +114,16 @@ public class DefUtils {
 					} else {
 						cached = true;
 					}
+<<<<<<< HEAD
 
 					if (StringUtils.isBlank(searchValue) || (searchValue.contains("[[")) || !cached) { // could be
 																										// faster with
 																										// finding firt
 																										// index
+=======
+					
+					if (StringUtils.isBlank(searchValue) || (searchValue.contains("[[")) || !cached ) { // could be faster with finding firt index
+>>>>>>> 9.9.0
 						continue;
 					}
 					// If the json of the search has "cache" set to true then immediately create a
@@ -123,7 +139,11 @@ public class DefUtils {
 					EntityAttribute newDdcEa = new EntityAttribute(item, cacheAttribute, 1.0,
 							JsonUtils.toJson(cachedMessage));
 					newEas.add(newDdcEa);
+<<<<<<< HEAD
 
+=======
+					
+>>>>>>> 9.9.0
 				} else if (defEa.getAttributeCode().startsWith("ATT_")) {
 					String normalAttributeCode = defEa.getAttributeCode().substring("ATT_".length());
 					Attribute normalAttribute = RulesUtils.realmAttributeMap.get(realm).get(normalAttributeCode);
@@ -133,6 +153,8 @@ public class DefUtils {
 
 			item.getBaseEntityAttributes().addAll(newEas);
 			item.setFastAttributes(true); // make fast
+	
+			newDefs.put(item.getCode(),item);
 
 			newDefs.put(item.getCode(), item);
 
@@ -161,6 +183,7 @@ public class DefUtils {
 			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
 			return;
 		}
+<<<<<<< HEAD
 		loadDEFS(realm, serviceToken);
 	}
 
@@ -168,6 +191,24 @@ public class DefUtils {
 			final String parentCode, final String questionCode, final String serValue, final BaseEntity sourceBe,
 			final BaseEntity targetBe, final String searchText, final String token) {
 		JsonObject searchValueJson = new JsonObject(serValue);
+=======
+		
+		// Now switch in the defs
+			RulesUtils.defs.put(realm, newDefs);
+			
+		// Now switch in the QDataAttributesMessage
+			 QDataAttributeMessage defAttributesMsg = new QDataAttributeMessage(newDefAttributes.toArray(new Attribute[0]));
+			 RulesUtils.defAttributesMap.put(realm, defAttributesMsg);
+		
+		log.info("Saved "+items.size()+" yummy DEFs!");
+	}
+	
+	
+	
+	static public QDataBaseEntityMessage getDropdownDataMessage(BaseEntityUtils beUtils, final String dropdownCode, final String parentCode, final String questionCode,final String serValue, final BaseEntity sourceBe, final BaseEntity targetBe, final String searchText, final String token)
+	{
+		JsonObject searchValueJson =new JsonObject(serValue);
+>>>>>>> 9.9.0
 		Integer pageStart = 0;
 		Integer pageSize = searchValueJson.containsKey("dropdownSize") ? searchValueJson.getInteger("dropdownSize")
 				: GennySettings.defaultDropDownPageSize;
