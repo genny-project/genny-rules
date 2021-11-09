@@ -60,13 +60,7 @@ public class DefUtils {
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken, serviceToken);
 
 		// build map for realm during rule start up
-<<<<<<< HEAD
-		if (!RulesUtils.realmAttributeMap.containsKey(serviceToken.getRealm())) {
-=======
-		//if(!RulesUtils.realmAttributeMap.containsKey(serviceToken.getRealm())) {
->>>>>>> 9.9.0
 			RulesUtils.loadAllAttributesIntoCache(serviceToken);
-		//}
 
 		List<BaseEntity> items = Collections.synchronizedList(beUtils.getBaseEntitys(searchBE));
 		log.info("Loaded " + items.size() + " DEF baseentitys");
@@ -75,13 +69,10 @@ public class DefUtils {
 		Set<Attribute> newDefAttributes = new HashSet<>();
 		// RulesUtils.defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());
 
-<<<<<<< HEAD
-=======
 			Map<String,BaseEntity> newDefs = new ConcurrentHashMap<String,BaseEntity>()	;
 			Set<Attribute> newDefAttributes = new HashSet<>()	;
 		//RulesUtils.defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());	
 			
->>>>>>> 9.9.0
 		for (BaseEntity item : items) {
 
 			// Now go through all the searches and see what the total is of the searches.
