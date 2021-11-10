@@ -47,6 +47,24 @@ public class DefUtils {
 	public static void loadDEFS(String realm) {
 		log.info("Loading in DEFS for realm "+realm);
 		
+
+		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+		String sToken = tokenObj.getString("value");
+		GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+
+		if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+			return;
+		}
+
+		loadDEFS(realm,serviceToken);
+	}
+	/**
+	 * @param realm
+	 */
+	public static void loadDEFS(String realm,GennyToken serviceToken) {
+		log.info("Loading in DEFS for realm "+realm);
+		
 		SearchEntity searchBE = new SearchEntity("SBE_DEF", "DEF test")
 				.addSort("PRI_NAME", "Created", SearchEntity.Sort.ASC)
 				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "DEF_%")
@@ -57,14 +75,6 @@ public class DefUtils {
 		searchBE.setPageStart(0);
 		searchBE.setPageSize(10000);
 
-		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-		String sToken = tokenObj.getString("value");
-		GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
-
-		if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
-			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
-			return;
-		}
 
 		BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,serviceToken);
 
