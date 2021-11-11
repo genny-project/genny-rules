@@ -304,12 +304,12 @@ public class DefUtils {
 		// Default to sorting by name if no sorts were specified and if not searching for EntityEntitys
 		Boolean hasSort = searchBE.getBaseEntityAttributes().stream().anyMatch(item -> item.getAttributeCode().startsWith("SRT_"));
 		if (!hasSort && !searchingOnLinks) {
-			searchBE.addSort("PRI_NAME", "Name", SearchEntity.Sort.ASC);
+			searchBE.addSort(jsonName, "Name", SearchEntity.Sort.ASC);
 		}
 
 		// Filter by name wildcard provided by user
-		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE,searchText+"%")
-		.addOr("PRI_NAME", SearchEntity.StringFilter.LIKE, "% "+searchText+"%");
+		searchBE.addFilter(jsonName, SearchEntity.StringFilter.LIKE,searchText+"%")
+		.addOr(jsonName, SearchEntity.StringFilter.LIKE, "% "+searchText+"%");
 
 		searchBE.setRealm(beUtils.getServiceToken().getRealm());
 		searchBE.setPageStart(pageStart);
@@ -341,10 +341,10 @@ public class DefUtils {
 			log.info("DROPDOWN :Loaded " + msg.getItems().length + " baseentitys");
 
 			for (BaseEntity item : msg.getItems()) {
-				if ( item.getValueAsString("PRI_NAME") == null ) {
-					log.warn("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
+				if ( item.getValueAsString(jsonName) == null ) {
+					log.warn("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString(jsonName));
 				} else {
-					log.info("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
+					log.info("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString(jsonName));
 				}
 			}
 		} else {
