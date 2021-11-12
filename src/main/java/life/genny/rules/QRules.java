@@ -986,7 +986,7 @@ public class QRules implements Serializable {
 		try {
 			be = QwandaUtils.createUser(GennySettings.qwandaServiceUrl, getToken(), username, firstname, lastname,
 					email, realm, name, keycloakId);
-			VertxUtils.writeCachedJson(this.realm(), be.getCode(), JsonUtils.toJson(be));
+			VertxUtils.writeCachedJson(this.realm(), be.getCode(), JsonUtils.toJson(be),this.serviceToken);
 			be = getUser();
 			set("USER", be);
 			println("New User Created " + be);
@@ -1043,7 +1043,7 @@ public class QRules implements Serializable {
 			/* we create the user in the system */
 			be = QwandaUtils.createUser(getQwandaServiceUrl(), getToken(), username, firstname, lastname, email, realm,
 					name, keycloakId);
-			VertxUtils.writeCachedJson(realm, be.getCode(), JsonUtils.toJson(be));
+			VertxUtils.writeCachedJson(realm, be.getCode(), JsonUtils.toJson(be),this.serviceToken);
 			// be = getUser();
 			set("USER", be);
 			println("New User Created " + be);
@@ -2547,7 +2547,7 @@ public class QRules implements Serializable {
 				itemsArray = beLayouts.toArray(itemsArray);
 				QDataBaseEntityMessage realmV2 = new QDataBaseEntityMessage(itemsArray);
 
-				VertxUtils.writeCachedJson(this.realm(), "V2-LAYOUTS", JsonUtils.toJson(realmV2));
+				VertxUtils.writeCachedJson(this.realm(), "V2-LAYOUTS", JsonUtils.toJson(realmV2),this.serviceToken);
 				publishCmd(realmV2);
 			} else {
 
@@ -3387,7 +3387,7 @@ public class QRules implements Serializable {
 			map = new ConcurrentHashMap<String, String>();
 		}
 		map.put(be.getCode(), JsonUtils.toJson(be));
-		VertxUtils.writeCachedJson(realm(), be.getCode(), JsonUtils.toJson(be));
+		VertxUtils.writeCachedJson(realm(), be.getCode(), JsonUtils.toJson(be),this.serviceToken);
 		VertxUtils.putMap(this.realm(), keyPrefix, parentCode, map);
 	}
 
