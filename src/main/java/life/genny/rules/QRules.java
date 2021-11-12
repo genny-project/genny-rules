@@ -140,6 +140,7 @@ import life.genny.utils.Layout.LayoutPosition;
 import life.genny.utils.Layout.LayoutUtils;
 import life.genny.utils.Layout.LayoutViewData;
 
+@Deprecated
 public class QRules implements Serializable {
 
 	/**
