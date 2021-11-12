@@ -46,7 +46,7 @@ public class DefUtils {
 	 */
 	public static void loadDEFS(String realm) {
 		log.info("Loading in DEFS for realm "+realm);
-		
+
 
 		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
 		String sToken = tokenObj.getString("value");
@@ -64,11 +64,11 @@ public class DefUtils {
 	 */
 	public static void loadDEFS(String realm,GennyToken serviceToken) {
 		log.info("Loading in DEFS for realm "+realm);
-		
+
 		SearchEntity searchBE = new SearchEntity("SBE_DEF", "DEF test")
 				.addSort("PRI_NAME", "Created", SearchEntity.Sort.ASC)
 				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "DEF_%")
-				
+
 				.addColumn("PRI_NAME", "Name");
 
 		searchBE.setRealm(realm);
@@ -88,16 +88,16 @@ public class DefUtils {
 
 			Map<String,BaseEntity> newDefs = new ConcurrentHashMap<String,BaseEntity>()	;
 			Set<Attribute> newDefAttributes = new HashSet<>()	;
-		//RulesUtils.defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());	
-			
+		//RulesUtils.defs.put(realm,new ConcurrentHashMap<String,BaseEntity>());
+
 		for (BaseEntity item : items) {
-			
+
 			// Now go through all the searches and see what the total is of the searches.
 			// if less than or equal to dropdown size then generate the dropdown items message and save into an attribute called "DDI_<attributeCode>"
-			
+
 			Iterator<EntityAttribute> eaIterator = item.getBaseEntityAttributes().iterator();
 			Set<EntityAttribute> newEas = new HashSet<>();
-			
+
 			while (eaIterator.hasNext()) {
 				EntityAttribute defEa = eaIterator.next();
 		//	for (EntityAttribute defEa : item.getBaseEntityAttributes()) {
@@ -120,7 +120,7 @@ public class DefUtils {
 					} else {
 						cached = true;
 					}
-					
+
 					if (StringUtils.isBlank(searchValue) || (searchValue.contains("[[")) || !cached ) { // could be faster with finding firt index
 						continue;
 					}
@@ -128,37 +128,37 @@ public class DefUtils {
 					log.info("Adding Cached Dropdown Data for "+defEa.getAttributeCode());
 					QDataBaseEntityMessage cachedMessage =  DefUtils.getDropdownDataMessage(beUtils, defEa.getAttributeCode().substring("SER_".length()), "@@PARENTCODE@@", "@@QUESTIONCODE@@",searchValue, null, null, "", "@@TOKEN@@");
 					Attribute cacheAttribute = new AttributeText("DDC_"+defEa.getAttributeCode().substring("SER_".length()),"DDC_"+defEa.getAttributeCode().substring("SER_".length()));
-					
+
 					EntityAttribute newDdcEa = new EntityAttribute(item, cacheAttribute, 1.0, JsonUtils.toJson(cachedMessage));
 					newEas.add(newDdcEa);
-					
+
 				} else if (defEa.getAttributeCode().startsWith("ATT_")) {
 					String normalAttributeCode = defEa.getAttributeCode().substring("ATT_".length());
 					Attribute normalAttribute = RulesUtils.realmAttributeMap.get(realm).get(normalAttributeCode);
 					newDefAttributes.add(normalAttribute);
 				}
 			}
-			
+
 			item.getBaseEntityAttributes().addAll(newEas);
 			item.setFastAttributes(true); // make fast
-	
+
 			newDefs.put(item.getCode(),item);
 
 			log.info("Saving ("+realm+") DEF "+item.getCode());
 		}
-		
+
 		// Now switch in the defs
 			RulesUtils.defs.put(realm, newDefs);
-			
+
 		// Now switch in the QDataAttributesMessage
 			 QDataAttributeMessage defAttributesMsg = new QDataAttributeMessage(newDefAttributes.toArray(new Attribute[0]));
 			 RulesUtils.defAttributesMap.put(realm, defAttributesMsg);
-		
+
 		log.info("Saved "+items.size()+" yummy DEFs!");
 	}
-	
-	
-	
+
+
+
 	static public QDataBaseEntityMessage getDropdownDataMessage(BaseEntityUtils beUtils, final String dropdownCode, final String parentCode, final String questionCode,final String serValue, final BaseEntity sourceBe, final BaseEntity targetBe, final String searchText, final String token)
 	{
 		JsonObject searchValueJson =new JsonObject(serValue);
@@ -166,9 +166,18 @@ public class DefUtils {
 		Integer pageSize = searchValueJson.containsKey("dropdownSize")?searchValueJson.getInteger("dropdownSize"):GennySettings.defaultDropDownPageSize;
 		Boolean searchingOnLinks = false;
 
+		String jsonName = "PRI_NAME";
+
+		if (!searchValueJson.getString("name").isEmpty()) {
+			jsonName = searchValueJson.getString("name");
+			log.info("Found name " + jsonName);
+		} else {
+			log.info("Did not find name " + jsonName);
+		}
+
 		SearchEntity searchBE = new SearchEntity("SBE_DROPDOWN", " Search")
 						.addColumn("PRI_CODE", "Code")
-						.addColumn("PRI_NAME", "Name");
+						.addColumn(jsonName, "Name");
 
 		Map<String, Object> ctxMap = new ConcurrentHashMap<>();
 		if (sourceBe!=null) {
@@ -177,10 +186,11 @@ public class DefUtils {
 		if (targetBe!=null) {
 			ctxMap.put("TARGET", targetBe);
 		}
-		
-		
+
+
 
 		JsonArray jsonParms = searchValueJson.getJsonArray("parms");
+
 		for (Object parmValue : jsonParms) {
 
 			try {
@@ -248,12 +258,12 @@ public class DefUtils {
 								stringFilter = SearchEntity.convertOperatorToStringFilter(filterStr);
 							}
 							searchBE.addFilter(attributeCode, stringFilter, val);
-							
+
 						}
-						
-						
-						
-						
+
+
+
+
 					} else if (dataType.getClassName().equals("java.lang.String")) {
 						SearchEntity.StringFilter stringFilter = SearchEntity.StringFilter.LIKE;
 						if (filterStr != null) {
@@ -294,12 +304,12 @@ public class DefUtils {
 		// Default to sorting by name if no sorts were specified and if not searching for EntityEntitys
 		Boolean hasSort = searchBE.getBaseEntityAttributes().stream().anyMatch(item -> item.getAttributeCode().startsWith("SRT_"));
 		if (!hasSort && !searchingOnLinks) {
-			searchBE.addSort("PRI_NAME", "Name", SearchEntity.Sort.ASC);
+			searchBE.addSort(jsonName, "Name", SearchEntity.Sort.ASC);
 		}
-		
+
 		// Filter by name wildcard provided by user
-		searchBE.addFilter("PRI_NAME", SearchEntity.StringFilter.LIKE,searchText+"%")
-		.addOr("PRI_NAME", SearchEntity.StringFilter.LIKE, "% "+searchText+"%");
+		searchBE.addFilter(jsonName, SearchEntity.StringFilter.LIKE,searchText+"%")
+		.addOr(jsonName, SearchEntity.StringFilter.LIKE, "% "+searchText+"%");
 
 		searchBE.setRealm(beUtils.getServiceToken().getRealm());
 		searchBE.setPageStart(pageStart);
@@ -320,9 +330,9 @@ public class DefUtils {
 		// Perform search and evaluate columns
 		SearchUtils searchUtils = new SearchUtils(beUtils);
 		QDataBaseEntityMessage msg = null;
-		
+
 		msg = searchUtils.searchUsingSearch25(beUtils.getServiceToken(), searchBE);
-		
+
 		if (msg == null) {
 			log.error(ANSIColour.RED + "Dropdown search returned NULL!" + ANSIColour.RESET);
 			return null;
@@ -331,10 +341,10 @@ public class DefUtils {
 			log.info("DROPDOWN :Loaded " + msg.getItems().length + " baseentitys");
 
 			for (BaseEntity item : msg.getItems()) {
-				if ( item.getValueAsString("PRI_NAME") == null ) {
-					log.warn("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
+				if ( item.getValueAsString(jsonName) == null ) {
+					log.warn("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString(jsonName));
 				} else {
-					log.info("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString("PRI_NAME"));
+					log.info("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString(jsonName));
 				}
 			}
 		} else {
@@ -346,7 +356,7 @@ public class DefUtils {
 //		log.info("DROPDOWN :code = "+dropdownCode+" with "+Long.decode(msg.getItems().length+"")+" Items");
 //		log.info("DROPDOWN :parentCode = "+message.getData().getParentCode());
 		msg.setParentCode(parentCode);
-		msg.setQuestionCode(questionCode); 
+		msg.setQuestionCode(questionCode);
 		msg.setToken(beUtils.getGennyToken().getToken());
 		msg.setLinkCode("LNK_CORE");
 		msg.setLinkValue("ITEMS");
@@ -359,5 +369,5 @@ public class DefUtils {
 		return msg;
 		// return beMessage;
 	}
-	
+
 }
