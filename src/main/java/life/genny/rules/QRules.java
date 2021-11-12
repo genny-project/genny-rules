@@ -944,11 +944,11 @@ public class QRules implements Serializable {
 		if (recipientArray != null && recipientArray.length > 0) {
 
 			if (attachmentList == null) {
-				message = MessageUtils.prepareMessageTemplate(templateCode, messageType, contextMap, recipientArray,
-						getToken());
+//				message = MessageUtils.prepareMessageTemplate(templateCode, messageType, contextMap, recipientArray,
+//						getToken());
 			} else {
-				message = MessageUtils.prepareMessageTemplateWithAttachments(templateCode, messageType, contextMap,
-						recipientArray, attachmentList, getToken());
+//				message = MessageUtils.prepareMessageTemplateWithAttachments(templateCode, messageType, contextMap,
+//						recipientArray, attachmentList, getToken());
 			}
 
 		} else {
@@ -958,11 +958,11 @@ public class QRules implements Serializable {
 		if (to != null && to.length > 0) {
 
 			if (attachmentList == null) {
-				message = MessageUtils.prepareMessageTemplateForDirectRecipients(templateCode, messageType, contextMap,
-						to, getToken());
+//				message = MessageUtils.prepareMessageTemplateForDirectRecipients(templateCode, messageType, contextMap,
+//						to, getToken());
 			} else {
-				message = MessageUtils.prepareMessageTemplateWithAttachmentForDirectRecipients(templateCode,
-						messageType, contextMap, to, attachmentList, getToken());
+//				message = MessageUtils.prepareMessageTemplateWithAttachmentForDirectRecipients(templateCode,
+//						messageType, contextMap, to, attachmentList, getToken());
 			}
 
 		}
