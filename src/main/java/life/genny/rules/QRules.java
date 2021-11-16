@@ -95,7 +95,7 @@ import life.genny.qwanda.message.QEventLinkChangeMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwanda.message.QMSGMessage;
 import life.genny.qwanda.message.QMessage;
-import life.genny.qwanda.message.QMessageGennyMSG;
+import life.genny.message.QMessageGennyMSG;
 import life.genny.qwanda.payments.QMakePayment;
 import life.genny.qwanda.payments.QPaymentAuthorityForBankAccount;
 import life.genny.qwanda.payments.QPaymentMethod;
