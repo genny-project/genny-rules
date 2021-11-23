@@ -42,7 +42,7 @@ import life.genny.qwanda.Answers;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.TaskAsk;
 import life.genny.utils.BaseEntityUtils;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 
 public class CheckTasksWorkItemHandler implements WorkItemHandler {
 

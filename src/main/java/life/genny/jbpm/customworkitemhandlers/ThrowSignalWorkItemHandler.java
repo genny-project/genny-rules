@@ -38,7 +38,7 @@ import life.genny.qwanda.message.QEventMessage;
 import life.genny.rules.QRules;
 
 import life.genny.rules.RulesLoader;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.VertxUtils;
 import life.genny.utils.WorkflowQueryInterface;

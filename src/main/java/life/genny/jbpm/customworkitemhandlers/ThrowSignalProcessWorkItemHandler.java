@@ -22,7 +22,7 @@ import life.genny.models.GennyToken;
 import life.genny.rules.QRules;
 
 import life.genny.rules.RulesLoader;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 
 public class ThrowSignalProcessWorkItemHandler implements WorkItemHandler {
 

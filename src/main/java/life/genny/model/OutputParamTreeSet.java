@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.github.javaparser.utils.Log;
 
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 
 public class OutputParamTreeSet implements Serializable {
 	

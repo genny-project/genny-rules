@@ -22,7 +22,7 @@ import life.genny.qwanda.DateTimeDeserializer;
 import life.genny.qwanda.MoneyDeserializer;
 import life.genny.qwanda.datatype.LocalDateConverter;
 import life.genny.qwandautils.JsonUtils;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 
 public class OutputParamTest {
 

@@ -147,7 +147,7 @@ import life.genny.utils.CapabilityUtils;
 import life.genny.utils.DefUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.NodeStatusQueryMapper;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.SessionPidQueryMapper;

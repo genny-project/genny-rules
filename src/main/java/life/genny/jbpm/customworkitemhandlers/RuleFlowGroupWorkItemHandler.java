@@ -45,7 +45,7 @@ import life.genny.rules.RulesLoader;
 import life.genny.rules.listeners.GennyRuleTimingListener;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 

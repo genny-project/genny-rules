@@ -53,7 +53,7 @@ import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.DefUtils;
 import life.genny.utils.DropdownUtils;
 import life.genny.utils.FrameUtils2;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SearchUtils;
 import life.genny.utils.TaskUtils;

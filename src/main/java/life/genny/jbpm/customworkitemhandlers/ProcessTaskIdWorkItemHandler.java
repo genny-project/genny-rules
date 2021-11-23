@@ -16,7 +16,7 @@ import org.kie.api.task.TaskService;
 import org.kie.api.task.model.Task;
 
 import life.genny.qwanda.message.QEventMessage;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 
 public class ProcessTaskIdWorkItemHandler implements WorkItemHandler {
 

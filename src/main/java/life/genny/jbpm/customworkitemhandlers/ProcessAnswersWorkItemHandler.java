@@ -68,7 +68,7 @@ import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.TaskUtils;
 import life.genny.utils.VertxUtils;

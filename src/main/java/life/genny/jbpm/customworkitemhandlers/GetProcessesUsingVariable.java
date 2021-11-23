@@ -28,7 +28,7 @@ import org.kie.internal.query.QueryContext;
 import org.kie.internal.task.api.UserGroupCallback;
 
 import life.genny.models.GennyToken;
-import life.genny.utils.OutputParam;
+import life.genny.qwanda.utils.OutputParam;
 
 
 public class GetProcessesUsingVariable implements WorkItemHandler {
