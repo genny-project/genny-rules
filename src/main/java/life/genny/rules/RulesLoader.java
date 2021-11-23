@@ -276,26 +276,31 @@ public class RulesLoader {
 	}
 
 	public static void reloadRules(String realm,String fileName,String body){
-		List<Tuple3<String, String, String>> rules = 
-			processFileRealmsFromFiles("genny",GennySettings.rulesDir, RulesLoader.realms);
-		Map<String, String> distictRulesByName = getOverridenRules(rules);
-		KieFileSystem kfs = ks.newKieFileSystem();
-		String kjarFolerPath ="src/main/resources/life/genny/rules/";
-		writeAllToKieFileSystem(distictRulesByName, kjarFolerPath,kfs);
-		updateFileIfExist(kfs, kjarFolerPath, fileName, body);
-		final KieBuilder kieBuilder = ks.newKieBuilder(kfs).buildAll();
-		ReleaseId releaseId = kieBuilder.getKieModule().getReleaseId();
-		final KieContainer kContainer = ks.newKieContainer(releaseId);
-		final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
-		kbconf.setProperty("name",realm);
-		kbconf.setProperty(ConsequenceExceptionHandlerOption.PROPERTY_NAME, 
-				"life.genny.utils.GennyRulesExceptionHandler");
-		final KieBase kbase = kContainer.newKieBase(kbconf);
-		log.info("Put rules KieBase into Custom Cache");
-		if (getKieBaseCache().containsKey(realm)) {
-			getKieBaseCache().remove(realm);
-		}
-		getKieBaseCache().put(realm, kbase);
+		
+		
+		loadRules(realm, GennySettings.rulesDir);
+		
+		
+//		List<Tuple3<String, String, String>> rules = 
+//			processFileRealmsFromFiles("genny",GennySettings.rulesDir, RulesLoader.realms);
+//		Map<String, String> distictRulesByName = getOverridenRules(rules);
+//		KieFileSystem kfs = ks.newKieFileSystem();
+//		String kjarFolerPath ="src/main/resources/life/genny/rules/";
+//		writeAllToKieFileSystem(distictRulesByName, kjarFolerPath,kfs);
+//		updateFileIfExist(kfs, kjarFolerPath, fileName, body);
+//		final KieBuilder kieBuilder = ks.newKieBuilder(kfs).buildAll();
+//		ReleaseId releaseId = kieBuilder.getKieModule().getReleaseId();
+//		final KieContainer kContainer = ks.newKieContainer(releaseId);
+//		final KieBaseConfiguration kbconf = ks.newKieBaseConfiguration();
+//		kbconf.setProperty("name",realm);
+//		kbconf.setProperty(ConsequenceExceptionHandlerOption.PROPERTY_NAME, 
+//				"life.genny.utils.GennyRulesExceptionHandler");
+//		final KieBase kbase = kContainer.newKieBase(kbconf);
+//		log.info("Put rules KieBase into Custom Cache");
+//		if (getKieBaseCache().containsKey(realm)) {
+//			getKieBaseCache().remove(realm);
+//		}
+//		getKieBaseCache().put(realm, kbase);
 		log.info(realm+ " rules updated\n");
 	}
 
@@ -1643,11 +1648,15 @@ public class RulesLoader {
 		return handlers;
 	}
 
-	/**
-	 * @param rulesDir
-	 */
-	public static void loadRules(final String realm, final String rulesDir) {
+	
+	public static Boolean loadRules(final String realm, final String rulesDir, final Boolean loadDefs) {
 
+		rulesChanged = false;
+		
+		if (loadDefs) {
+			log.info("Load DEFs");		
+			DefUtils.loadDEFS(realm);
+		}
 		log.info("Loading Rules and workflows!!! for realm " + realm);
 		List<String> reloadRealms = new ArrayList<String>();
 		reloadRealms.add(realm);
@@ -1683,7 +1692,16 @@ public class RulesLoader {
 			log.error("NO RULES LOADED FROM API");
 			gNotReady = false;
 		}
-
+		
+		
+		return rulesChanged;
+	}
+	
+	/**
+	 * @param rulesDir
+	 */
+	public static void loadRules(final String realm, final String rulesDir) {
+		loadRules(realm,rulesDir,false);
 	}
 
 	/**
@@ -1875,35 +1893,35 @@ public class RulesLoader {
 		String ruleName = filename.replaceAll("\\.[^.]*$", "");
 		String ruleCode = "RUL_" + ruleName;
 
-		if (ruleCode.startsWith("RUL_FRM_") || ruleCode.startsWith("RUL_THM")) {
-			// Parse rule text to identify child rules
-			Set<String> children = new HashSet<String>();
-			Matcher m = p.matcher(ruleText);
-			while (m.find()) {
-				String child = m.group();
-				children.add(child);
-
-			}
-			if (!children.isEmpty()) {
-				for (String child : children) {
-					FrameUtils2.graphBuilder.connect(ruleName).to(child).withEdge("PARENT");
-					FrameUtils2.graphBuilder.connect(child).to(ruleName).withEdge("CHILD");
-					log.info("Rule : " + ruleName + " --- child -> " + child);
-				}
-			}
-
-		}
-
-		if (ruleCode.startsWith("RUL_FRM_")) {
-			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actually
-
-		}
-		if (ruleCode.startsWith("RUL_THM_")) {
-			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
-			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actuall
-																									// fires
-		}
+//		if (ruleCode.startsWith("RUL_FRM_") || ruleCode.startsWith("RUL_THM")) {
+//			// Parse rule text to identify child rules
+//			Set<String> children = new HashSet<String>();
+//			Matcher m = p.matcher(ruleText);
+//			while (m.find()) {
+//				String child = m.group();
+//				children.add(child);
+//
+//			}
+//			if (!children.isEmpty()) {
+//				for (String child : children) {
+//					FrameUtils2.graphBuilder.connect(ruleName).to(child).withEdge("PARENT");
+//					FrameUtils2.graphBuilder.connect(child).to(ruleName).withEdge("CHILD");
+//					log.info("Rule : " + ruleName + " --- child -> " + child);
+//				}
+//			}
+//
+//		}
+//
+//		if (ruleCode.startsWith("RUL_FRM_")) {
+//			frameCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+//			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actually
+//
+//		}
+//		if (ruleCode.startsWith("RUL_THM_")) {
+//			themeCodes.add(filename.replaceAll("\\.[^.]*$", ""));
+//			FrameUtils2.ruleFires.put(realm + ":" + filename.replaceAll("\\.[^.]*$", ""), false); // check if actuall
+//																									// fires
+//		}
 
 		if (!persistRules) {
 			return false;
@@ -1957,7 +1975,7 @@ public class RulesLoader {
 
 			// If any rules do not match then set the rulesChanged flag
 			// but only for theme and frame rules
-			if (filename.startsWith("THM_") || filename.startsWith("FRM_")) {
+			if (filename.startsWith("GENERATE") || filename.startsWith("RUN_") || filename.startsWith("SBE_")) {
 				rulesChanged = true;
 			}
 
@@ -1999,8 +2017,8 @@ public class RulesLoader {
 			// of those rules, the MSG and ASK
 			// the logic is that a rule can skip loading and generating the cached item if
 			// it already has a cached item
-			if (existingRuleBe.getCode().startsWith("RUL_THM_") || existingRuleBe.getCode().startsWith("RUL_FRM_")
-					|| existingRuleBe.getCode().startsWith("SBE_")) {
+			if (/* existingRuleBe.getCode().startsWith("RUL_THM_") || existingRuleBe.getCode().startsWith("RUL_FRM_")
+					||*/ existingRuleBe.getCode().startsWith("SBE_")) {
 				VertxUtils.writeCachedJson(realm, existingRuleBe.getCode(), null, realmTokenMap.get(realm));
 
 			}
