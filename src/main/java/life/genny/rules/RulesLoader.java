@@ -147,11 +147,11 @@ import life.genny.utils.CapabilityUtils;
 import life.genny.utils.DefUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.NodeStatusQueryMapper;
-import life.genny.qwanda.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.SessionPidQueryMapper;
 import life.genny.utils.VertxUtils;
+import life.genny.qwanda.utils.OutputParam;
 
 public class RulesLoader {
 	protected static final Logger log = org.apache.logging.log4j.LogManager
