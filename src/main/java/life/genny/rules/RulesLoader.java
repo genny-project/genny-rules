@@ -129,6 +129,7 @@ import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.message.MessageData;
 import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QDataAnswerMessage;
+import life.genny.qwanda.message.QDataB2BMessage;
 import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.message.QDataMessage;
 import life.genny.qwanda.message.QEventAttributeValueChangeMessage;
@@ -1602,6 +1603,19 @@ public class RulesLoader {
 //					// SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
 //					// RulesLoader.executeStateful(globals, facts);
 //					RulesLoader.executeStateless(globals, facts, serviceToken, userToken);
+				} else 	if ((msg instanceof QDataB2BMessage) ) {
+					log.info("Executing Stateless for " + msg);
+
+					
+					Map<String, Object> facts = new ConcurrentHashMap<String, Object>();
+					facts.put("serviceToken", serviceToken);
+					facts.put("userToken", userToken);
+					facts.put("msg", msg);
+					RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
+
+					log.info("Executing Change Event Rules ");
+					Map<String,Object> 	results = ruleFlowGroupHandler.executeRules(serviceToken, userToken, facts, "StatelessProcessing",
+								"Stateless:QDataB2BMessage");
 				} else {
 					SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
 					executeStateful(globals, facts);
