@@ -1,2 +1,2 @@
 Genny Rules
-test
+test2
