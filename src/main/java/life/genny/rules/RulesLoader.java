@@ -1613,7 +1613,7 @@ public class RulesLoader {
 					facts.put("msg", msg);
 					RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
 
-					log.info("Executing Change Event Rules ");
+					log.info("Executing Stateless Rules ");
 					Map<String,Object> 	results = ruleFlowGroupHandler.executeRules(serviceToken, userToken, facts, "StatelessProcessing",
 								"Stateless:QDataB2BMessage");
 				} else {
