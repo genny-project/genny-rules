@@ -1614,8 +1614,8 @@ public class RulesLoader {
 					RuleFlowGroupWorkItemHandler ruleFlowGroupHandler = new RuleFlowGroupWorkItemHandler();
 
 					log.info("Executing Stateless Rules ");
-					Map<String,Object> 	results = ruleFlowGroupHandler.executeRules(serviceToken, userToken, facts, "StatelessProcessing",
-								"Stateless:QDataB2BMessage");
+					Map<String,Object> 	results = ruleFlowGroupHandler.executeRules(serviceToken, userToken, facts, "DataProcessing",
+								"Stateless:DataProcessing:QDataB2BMessage");
 				} else {
 					SessionFacts facts = new SessionFacts(serviceToken, userToken, msg);
 					executeStateful(globals, facts);
