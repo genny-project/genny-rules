@@ -2,14 +2,11 @@ package life.genny.jbpm.customworkitemhandlers;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -21,31 +18,27 @@ import org.kie.api.runtime.manager.RuntimeEngine;
 import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
-import org.kie.api.runtime.process.WorkflowProcessInstance;
 import org.kie.api.runtime.rule.FactHandle;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import io.vertx.core.json.JsonObject;
-import life.genny.model.OutputParam2;
 import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
+import life.genny.qwanda.ESessionType;
 import life.genny.qwanda.attribute.Attribute;
-import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.Allowed;
-import life.genny.qwanda.datatype.CapabilityMode;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwanda.rule.RuleDetails;
+import life.genny.qwanda.utils.OutputParam;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.QRules;
-
 import life.genny.rules.RulesLoader;
 import life.genny.rules.listeners.GennyRuleTimingListener;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
-import life.genny.qwanda.utils.OutputParam;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 
@@ -197,7 +190,19 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 					FactHandle beUtilsHandle = newKieSession.insert(beUtils);
 					FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
-
+					
+					ESessionType eSessionType = ESessionType.SESSION;
+					if (callingWorkflow != null) {
+						if (callingWorkflow.contains("userSession")) {
+							eSessionType = ESessionType.SESSION;
+							// This is a userSession rules firing, so indicate that in the rules
+						} else if (callingWorkflow.contains("QDataB2BMessage")){
+							eSessionType = ESessionType.B2B;
+						} 
+					}
+					
+					FactHandle sessionType = newKieSession.insert(eSessionType);
+					
 					QBulkMessage payload = new QBulkMessage();
 					newKieSession.setGlobal("payload", payload);
 					
@@ -242,6 +247,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					newKieSession.retract(answersToSaveHandle);
 					newKieSession.retract(beUtilsHandle);
 					newKieSession.retract(capabilityUtilsHandle);
+					newKieSession.retract(sessionType);
 					newKieSession.retract(kieSessionHandle); // don't dispose
 					/* newKieSession.retract(payloadHandle); */
 
