@@ -162,7 +162,8 @@ public class SearchUtils {
 					result = resultJson.getJsonArray("codes");
 					total = resultJson.getLong("total");
 				} catch (Exception e) {
-					log.error("TableUtils: SearchUsingSearch25 -> Bad Json ("+resultJsonStr+") , returning empty search");
+					log.error("TableUtils: SearchUsingSearch25 -> Bad Json ("+resultJsonStr+") , " +
+					 "returning empty search, token:" + serviceToken.getToken());
 					beArray = new BaseEntity[]{};
 					result = new JsonArray();
 					total = 0L;
