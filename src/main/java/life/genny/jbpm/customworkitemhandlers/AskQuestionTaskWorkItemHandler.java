@@ -110,7 +110,9 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 	@Override
 	public void executeWorkItem(WorkItem workItem, WorkItemManager manager) {
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
+		GennyToken serviceToken = (GennyToken) workItem.getParameter("serviceToken");
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+		beUtils.setServiceToken(serviceToken);
 
 		System.out.println("userToken = " + userToken);
 		System.out.println("userCode = " + userToken.getUserCode());
@@ -156,6 +158,12 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		if (targetCode == null) {
 			targetCode = "FRM_CONTENT";
 		}
+		
+		BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
+		if (target == null) {
+			log.error("TARGET BE DOES NOT EXIST - "+baseEntityTargetCode);
+		}
+		target.setRealm(userToken.getToken());
 
 		// remove any empty task that matches the type
 		Question q = null;
@@ -167,6 +175,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		Task task = null;//TaskUtils.getSameTask(q, baseEntityTargetCode, userToken);
 		if (task == null) {
 			task = createTaskBasedOnWorkItemParams(this.getKsession(), workItem);
+			
 		}
 
 		// Fetch the questions and set in the task for us to tick off as they get done
@@ -190,8 +199,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 				}
 			}
 			beUtils.saveAnswers(targetDefBE, saveFields, true);
-			BaseEntity target = beUtils.getBaseEntityByCode(baseEntityTargetCode);
-			target.setRealm(userToken.getToken());
+			
 
 //			for (Answer ans : newFields) {
 //				String attributeCode = ans.getAttributeCode();
@@ -491,6 +499,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 			log.error("No BaseEntityTarget supplied to Ask in AskQuestionWIH");
 		}
 		baseEntityTarget = beUtils.getBaseEntityByCode(baseEntityTargetCode); // get latest
+		if (baseEntityTarget == null) {
+			log.error("The Target BaseEntity DOES NOT EXIST - "+baseEntityTargetCode);
+			return null;
+		}
 
 		// Work out tyope of BE
 		String beType = "";
