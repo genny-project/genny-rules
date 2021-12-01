@@ -112,7 +112,11 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
 		GennyToken userToken = (GennyToken) workItem.getParameter("userToken");
 		GennyToken serviceToken = (GennyToken) workItem.getParameter("serviceToken");
 		BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-		beUtils.setServiceToken(serviceToken);
+		if (serviceToken == null) {
+			beUtils.setServiceToken(userToken);
+		} else {
+			beUtils.setServiceToken(serviceToken);
+		}
 
 		System.out.println("userToken = " + userToken);
 		System.out.println("userCode = " + userToken.getUserCode());
