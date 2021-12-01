@@ -647,22 +647,35 @@ public class ShowFrame implements WorkItemHandler {
 					return qBulkMessage;
 				}
 
-				target = beUtils.getBaseEntityByCode(targetCode);
-				source = beUtils.getBaseEntityByCode(sourceCode);
+				Boolean waitForNonPerson = true;
+				while (waitForNonPerson) {
+					target = beUtils.getBaseEntityByCode(targetCode);
+					source = beUtils.getBaseEntityByCode(sourceCode);
 
-				if (target == null) {
-					log.error(callingWorkflow + " ShowFrame: sendAsks. No Target existing in Task  for " + targetCode
-							+ " - returning");
-					return qBulkMessage;
-				}
+					if (target == null) {
+						log.error(callingWorkflow + " ShowFrame: sendAsks. No Target existing in Task  for "
+								+ targetCode + " - returning");
+						return qBulkMessage;
+					}
 
-				log.info("Target BE = " + target);
-				for (EntityAttribute ea : target.getBaseEntityAttributes()) {
-					log.info(target.getCode() + ": " + ea.getAttributeCode() + ":\t\t" + ea.getValue());
-				}
-				defBe = beUtils.getDEF(target);
-				if ("DEF_PERSON".equals(defBe.getCode())) {
-					log.error("DEF identified as DEF_PERSON! - " + targetCode);
+					log.info("Target BE = " + target);
+					for (EntityAttribute ea : target.getBaseEntityAttributes()) {
+						log.info(target.getCode() + ": " + ea.getAttributeCode() + ":\t\t" + ea.getValue());
+					}
+					defBe = beUtils.getDEF(target);
+					if ("DEF_PERSON".equals(defBe.getCode())) {
+						log.error("DEF identified as DEF_PERSON! - " + targetCode);
+						// TODO HACK: another timing hack. The target does not have everything yet.
+						try {
+							Thread.sleep(2000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					} else {
+						log.info("DEF identified as " + defBe.getCode() + " - " + targetCode);
+						waitForNonPerson = false;
+					}
 				}
 				enabledSubmit = TaskUtils.areAllMandatoryQuestionsAnswered(target, taskAsks);
 
@@ -837,8 +850,8 @@ public class ShowFrame implements WorkItemHandler {
 											if (searchLookup != null) {
 												// fetch from database
 												QDataBaseEntityMessage msg = DefUtils.getDropdownDataMessage(beUtils,
-														dropdownCode, groupCode, questionCode, searchLookup, null, null, "",
-														userToken.getToken());
+														dropdownCode, groupCode, questionCode, searchLookup, null, null,
+														"", userToken.getToken());
 												msg.setAttributeCode(dropdownCode);
 												qBulkMessage.add(msg);
 												if (!cache) {
