@@ -333,9 +333,13 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 							}
 						}
 					}
-					if (output != null) {
-						resultMap.put("output", output);
+
+					if (output == null) {
+						output = new OutputParam();
 					}
+
+					resultMap.put("output", output);
+
 					if (answersToSave != null) {
 						resultMap.put("answersToSave", answersToSave);
 					}
