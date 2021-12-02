@@ -333,14 +333,23 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 							}
 						}
 					}
-
-					resultMap.put("output", output);
-					resultMap.put("answersToSave", answersToSave);
+					if (output != null) {
+						resultMap.put("output", output);
+					}
+					if (answersToSave != null) {
+						resultMap.put("answersToSave", answersToSave);
+					}
 					payload = (QBulkMessage) newKieSession.getGlobal("payload");
 					stringSet = (Set<String>) newKieSession.getGlobal("stringSet");
-					resultMap.put("payload", payload);
-					resultMap.put("capabilityUtils", capabilityUtils);
-					resultMap.put("stringSet", stringSet);
+					if (payload != null) {
+						resultMap.put("payload", payload);
+					}
+					if (capabilityUtils != null) {
+						resultMap.put("capabilityUtils", capabilityUtils);
+					}
+					if (stringSet != null) {
+						resultMap.put("stringSet", stringSet);
+					}
 					newKieSession.retract(ruleDetailsHandle);
 					newKieSession.retract(factHandle);
 					newKieSession.retract(answersToSaveHandle);
