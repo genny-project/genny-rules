@@ -78,6 +78,8 @@ import life.genny.qwandautils.ANSIColour;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import life.genny.qwanda.message.QSearchMessage;
+
 public class TableUtils {
 
 	protected static final Logger log = org.apache.logging.log4j.LogManager
@@ -98,6 +100,12 @@ public class TableUtils {
 			final String filterCode, final String filterValue, Boolean cache, Boolean replace) {
 		QBulkMessage ret = new QBulkMessage();
 		long starttime = System.currentTimeMillis();
+
+		Boolean useFyodor = (System.getenv("USE_FYODOR") != null && "TRUE".equalsIgnoreCase(System.getenv("USE_FYODOR"))) ? true : false;
+		// Set to FALSE to use regular search
+		if (useFyodor) {
+			return performSearchNew(serviceToken, searchBE, answer, filterCode, filterValue, cache, replace);
+		}
 
 		beUtils.setServiceToken(serviceToken);
 
@@ -216,6 +224,34 @@ public class TableUtils {
 		}
 
 		return ret;
+	}
+
+	public QBulkMessage performSearchNew(GennyToken serviceToken, SearchEntity searchBE, Answer answer,
+			final String filterCode, final String filterValue, Boolean cache, Boolean replace) {
+		QBulkMessage ret = new QBulkMessage();
+		long starttime = System.currentTimeMillis();
+
+		beUtils.setServiceToken(serviceToken);
+
+		// Add any necessary extra filters
+		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+
+		if (!filters.isEmpty()) {
+			log.info("User Filters are NOT empty");
+			log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
+			for (EntityAttribute filter : filters) {
+				searchBE.getBaseEntityAttributes().add(filter);// ????
+			}
+		} else {
+			log.info("User Filters are empty");
+		}
+
+		QSearchMessage searchBeMsg = new QSearchMessage (searchBE);
+		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
+		searchBeMsg.setDestination("webcmds");
+		VertxUtils.writeMsg("search_events", searchBeMsg);
+
+		return null;
 	}
 
 	public List<EntityAttribute> getUserFilters(GennyToken serviceToken, final SearchEntity searchBE) {
@@ -1439,6 +1475,12 @@ public class TableUtils {
 	static public long searchTable(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, String filterCode,
 			String filterValue, Boolean replace) {
 
+		Boolean useFyodor = (System.getenv("USE_FYODOR") != null && "TRUE".equalsIgnoreCase(System.getenv("USE_FYODOR"))) ? true : false;
+		// Set to FALSE to use regular search
+		if (useFyodor) {
+			return searchTableNew(beUtils, searchBE, cache, filterCode, filterValue, replace);
+		}
+
 		TableUtils tableUtils = new TableUtils(beUtils);
 
 		if (searchBE.getCode().startsWith("CNS_")) {
@@ -1563,6 +1605,46 @@ public class TableUtils {
 			// System.out.println("init setup took " + (s1time - starttime) + " ms");
 			// System.out.println("search session setup took " + (s2time - s1time) + " ms");
 			System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
+			return (endtime - starttime);
+		}
+	}
+
+	static public long searchTableNew(BaseEntityUtils beUtils, SearchEntity searchBE, Boolean cache, String filterCode,
+			String filterValue, Boolean replace) {
+
+		TableUtils tableUtils = new TableUtils(beUtils);
+
+		if (searchBE.getCode().startsWith("CNS_")) {
+			// Remove CNS_ prefix
+			searchBE.setCode(searchBE.getCode().substring(4));
+			// Perform Count
+			return tableUtils.performAndSendCount(searchBE);
+		} else {
+
+			try {
+				searchBE = tableUtils.getSessionSearch(searchBE, filterCode, filterValue);
+			} catch (Exception e1) {
+				return -1L;
+			}
+
+			long starttime = System.currentTimeMillis();
+
+			if (searchBE == null) {
+				System.out.println("SearchBE is null");
+				return -1L;
+			}
+
+			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "LAST-SEARCH",
+					beUtils.getGennyToken().getSessionCode(), searchBE, beUtils.getGennyToken().getToken());
+
+			updateActIndex(searchBE);
+			updateColIndex(searchBE);
+
+            tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, filterCode, filterValue, cache, replace);
+
+			/* update(output); */
+			long endtime = System.currentTimeMillis();
+			System.out.println("update searchBE BE setup took " + (starttime - endtime) + " ms");
 			return (endtime - starttime);
 		}
 	}
