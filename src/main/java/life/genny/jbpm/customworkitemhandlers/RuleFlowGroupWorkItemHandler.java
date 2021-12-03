@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import life.genny.qwanda.message.QEventWorkflowMessage;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.kie.api.KieBase;
@@ -321,21 +322,31 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //	    		output = output2;
 //	    	}
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #14a");
-					QEventMessage msg = (QEventMessage) items.get("message");
-					if (msg != null) {
-
-						JsonObject cachedOutputJson = VertxUtils.readCachedJson(userToken.getRealm(),
-								"OUTPUT:" + msg.getData().getCode(), userToken.getToken());
-						if (cachedOutputJson.getString("status").equalsIgnoreCase("ok")) {
-							OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("value"), OutputParam.class);
-							if (o != null) {
-								output = o;
+					Object msgObject = (Object) items.get("message");
+					if ((msgObject != null) && (msgObject instanceof QEventWorkflowMessage)){
+						output = ((QEventWorkflowMessage) msgObject).getOutputParam();
+						log.info("Setting output from QEventWorkflowMessage!!!");
+					}else {
+						QEventMessage msg = (QEventMessage) items.get("message");
+						if (msg != null) {
+							JsonObject cachedOutputJson = VertxUtils.readCachedJson(userToken.getRealm(),
+									"OUTPUT:" + msg.getData().getCode(), userToken.getToken());
+							if (cachedOutputJson.getString("status").equalsIgnoreCase("ok")) {
+								OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("value"), OutputParam.class);
+								if (o != null) {
+									output = o;
+									log.info("Setting output from QEventMessage Cache!!!");
 							}
 						}
+					}}
+
+					if (output == null) {
+						output = new OutputParam();
+						log.info("Output param was NULL! Creating new output param");
 					}
-					if (output != null) {
-						resultMap.put("output", output);
-					}
+
+					resultMap.put("output", output);
+
 					if (answersToSave != null) {
 						resultMap.put("answersToSave", answersToSave);
 					}
