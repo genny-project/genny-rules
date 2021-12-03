@@ -247,7 +247,7 @@ public class TableUtils {
 		}
 
 		QSearchMessage searchBeMsg = new QSearchMessage (searchBE);
-		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
+		searchBeMsg.setToken(serviceToken.getToken());
 		searchBeMsg.setDestination("webcmds");
 		VertxUtils.writeMsg("search_events", searchBeMsg);
 
