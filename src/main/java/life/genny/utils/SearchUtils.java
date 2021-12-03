@@ -150,9 +150,18 @@ public class SearchUtils {
 		// Perform the search if specific item not found
 		if (result == null) {
 			try {
-				resultJsonStr = QwandaUtils.apiPostEntity2(
-						GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
-						JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
+
+				Boolean useFyodor = (System.getenv("USE_FYODOR") != null && "TRUE".equalsIgnoreCase(System.getenv("USE_FYODOR"))) ? true : false;
+				// Set to FALSE to use regular search
+				if (useFyodor) {
+					resultJsonStr = QwandaUtils.apiPostEntity2(
+							GennySettings.fyodorServiceUrl + "/api/search",
+							JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
+				} else {
+					resultJsonStr = QwandaUtils.apiPostEntity2(
+							GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
+							JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
+				}
 
 				endtime2 = System.currentTimeMillis();
 				log.info("NOT SINGLE - Time taken to fetch Data =" + (endtime2 - starttime) + " ms");
