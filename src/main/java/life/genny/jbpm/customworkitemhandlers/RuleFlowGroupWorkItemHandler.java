@@ -325,7 +325,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					Object msgObject = (Object) items.get("message");
 					if ((msgObject != null) && (msgObject instanceof QEventWorkflowMessage)){
 						output = ((QEventWorkflowMessage) msgObject).getOutputParam();
-						log.info("Setting output from QEventWorkflowMessage!!!x");
+						log.info("Setting output from QEventWorkflowMessage!!!");
 					}else {
 						QEventMessage msg = (QEventMessage) items.get("message");
 						if (msg != null) {
@@ -335,6 +335,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 								OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("value"), OutputParam.class);
 								if (o != null) {
 									output = o;
+									log.info("Setting output from QEventMessage Cache!!!");
 							}
 						}
 					}}
