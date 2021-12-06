@@ -153,7 +153,8 @@ public class SearchUtils {
 
 				Boolean useFyodor = (System.getenv("USE_FYODOR") != null && "TRUE".equalsIgnoreCase(System.getenv("USE_FYODOR"))) ? true : false;
 				// Set to FALSE to use regular search
-				if (false) {
+				if (useFyodor) {
+					log.info("FYODOR URL = " + GennySettings.fyodorServiceUrl);
 					resultJsonStr = QwandaUtils.apiPostEntity2(
 							GennySettings.fyodorServiceUrl + "/api/search",
 							JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
