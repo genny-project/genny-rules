@@ -45,11 +45,11 @@
 	<distributionManagement>
 		<repository>
 			<id>life.genny</id>
-			<url>https://nexus.outcome-hub.com/repository/life.genny/</url>
+			<url>https://nexus.gada.io/repository/life.genny/</url>
 		</repository>
 		<snapshotRepository>
 			<id>nexus-snapshots</id>
-			<url>https://nexus.outcome-hub.com/repository/snapshots/</url>
+			<url>https://nexus.gada.io/repository/snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
 
@@ -604,7 +604,7 @@
 				</executions>
 				<configuration>
 					<serverId>life.genny</serverId>
-					<nexusUrl>https://nexus.outcome-hub.com/</nexusUrl>
+					<nexusUrl>https://nexus.gada.io/</nexusUrl>
 					<skipStaging>true</skipStaging>
 				</configuration>
 			</plugin>
