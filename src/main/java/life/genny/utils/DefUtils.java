@@ -202,6 +202,7 @@ public class DefUtils {
 
 					Attribute att = RulesUtils.getAttribute(attributeCode, beUtils.getServiceToken());
 					String val = json.getString("value");
+					String logic = json.getString("logic");
 
 					String filterStr = null;
 					if (val.contains(":")) {
@@ -263,13 +264,18 @@ public class DefUtils {
 
 
 
-
 					} else if (dataType.getClassName().equals("java.lang.String")) {
 						SearchEntity.StringFilter stringFilter = SearchEntity.StringFilter.LIKE;
 						if (filterStr != null) {
 							stringFilter = SearchEntity.convertOperatorToStringFilter(filterStr);
 						}
-						searchBE.addFilter(attributeCode, stringFilter, val);
+						if (logic != null && logic.equals("AND")) {
+							searchBE.addAnd(attributeCode, stringFilter, val);
+						} else if (logic != null && logic.equals("OR")) {
+							searchBE.addOr(attributeCode, stringFilter, val);
+						} else {
+							searchBE.addFilter(attributeCode, stringFilter, val);
+						}
 					} else {
 						SearchEntity.Filter filter = SearchEntity.Filter.EQUALS;
 						if (filterStr != null) {

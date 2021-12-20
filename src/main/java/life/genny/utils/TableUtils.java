@@ -26,6 +26,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.Collections;
+import java.time.Instant;
+import java.time.Duration;
 
 import com.google.gson.reflect.TypeToken;
 
@@ -59,6 +61,7 @@ import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
+import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.exception.BadDataException;
 import life.genny.qwanda.message.QBulkMessage;
@@ -2191,5 +2194,186 @@ public class TableUtils {
 			return searchBE;
 		}
 		return null;
+	}
+
+	public void performQuickSearch(String dropdownValue) {
+
+		Instant start = Instant.now();
+
+		String realm = beUtils.getServiceToken().getRealm();
+		String token = beUtils.getServiceToken().getToken();
+
+		// Convert to entity list
+		log.info("dropdownValue = " + dropdownValue);
+		String cleanCode = beUtils.cleanUpAttributeValue(dropdownValue);
+		BaseEntity target = beUtils.getBaseEntityByCode(cleanCode);
+
+		List<String> bucketCodes = VertxUtils.getObject(realm, "", "BUCKET_CODES", List.class);
+
+		if (bucketCodes == null) {
+			log.error("Null BUCKET_CODES in cache!!!");
+			return;
+		}
+
+		BaseEntity project = beUtils.getBaseEntityByCode("PRJ_" + realm.toUpperCase());
+
+		if (project == null) {
+			log.error("Null project Entity!!!");
+			return;
+		}
+		
+		String jsonStr = project.getValue("PRI_BUCKET_QUICK_SEARCH_JSON", null);
+
+		if (jsonStr == null) {
+			log.error("Null Bucket Json!!!");
+			return;
+		}
+
+		// Init merge contexts
+		HashMap<String, Object> ctxMap = new HashMap<>();
+		ctxMap.put("TARGET", target);
+
+		JsonObject json = new JsonObject(jsonStr);
+		JsonArray bucketMapArray = json.getJsonArray("buckets");
+
+		for (Object bm : bucketMapArray) {
+
+			JsonObject bucketMap = (JsonObject) bm;
+
+			String bucketMapCode = bucketMap.getString("code");
+
+			SearchEntity baseSearch = VertxUtils.getObject(realm, "", bucketMapCode, SearchEntity.class, token);
+
+			// Handle Pre Search Mutations
+			JsonArray preSearchMutations = bucketMap.getJsonArray("mutations");
+
+			for (Object m : preSearchMutations) {
+
+				JsonObject mutation = (JsonObject) m;
+
+				JsonArray conditions = mutation.getJsonArray("conditions");
+
+				if (jsonConditionsMet(conditions, target)) {
+
+					String attributeCode = mutation.getString("attributeCode");
+					String operator = mutation.getString("operator");
+					String value = mutation.getString("value");
+
+					// TODO: allow for regular filters too
+					SearchEntity.StringFilter stringFilter = SearchEntity.convertOperatorToStringFilter(operator);
+					String mergedValue = MergeUtil.merge(value, ctxMap);
+					baseSearch.addFilter(attributeCode, stringFilter, mergedValue);
+				}
+			}
+
+			// Perform Search
+			List<BaseEntity> results = beUtils.getBaseEntitys(baseSearch);
+			
+			JsonArray targetedBuckets = bucketMap.getJsonArray("targetedBuckets");
+
+			// Handle Post Search Mutations
+			for (Object b : targetedBuckets) {
+
+				JsonObject bkt = (JsonObject) b;
+
+				String targetedBucketCode = bkt.getString("code");
+
+				if (bucketCodes.contains(targetedBucketCode)) {
+
+					JsonArray postSearchMutations = bkt.getJsonArray("mutations");
+
+					List<BaseEntity> finalResultList = new ArrayList<>();
+
+					for (BaseEntity item : results) {
+
+						for (Object m : postSearchMutations) {
+
+							JsonObject mutation = (JsonObject) m;
+
+							JsonArray conditions = mutation.getJsonArray("conditions");
+
+							if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
+								finalResultList.add(item);
+							}
+						}
+					}
+
+					// Fetch each search from cache
+					SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode, SearchEntity.class, token);
+
+					// Send the results
+					QDataBaseEntityMessage msg = new QDataBaseEntityMessage(finalResultList);
+					msg.setToken(token);
+					msg.setReplace(true);
+					msg.setParentCode(searchBE.getCode());
+					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+
+					// Update and send the SearchEntity
+					updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", Long.valueOf(finalResultList.size()) + ""); 
+
+					QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
+					searchMsg.setToken(token);
+					searchMsg.setReplace(true);
+					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(searchMsg));
+				}
+			}
+		}
+
+		Instant end = Instant.now();
+		log.info("Finished Quick Search: " + Duration.between(start, end).toMillis() + " millSeconds.");
+	}
+
+	/**
+	 * Evaluate whether a set of conditions are met for a specific BaseEntity.
+	 *
+	 * Used in bucket manipulation.
+	 **/
+	public static Boolean jsonConditionsMet(JsonArray conditions, BaseEntity target) {
+
+		// TODO: Add support for roles and context map
+
+		if (conditions != null) {
+
+			for (Object c : conditions) {
+
+				JsonObject condition = (JsonObject) c;
+
+				if (!jsonConditionMet(condition, target)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Evaluate whether the condition is met for a specific BaseEntity.
+	 *
+	 * Used in bucket manipulation.
+	 **/
+	public static Boolean jsonConditionMet(JsonObject condition, BaseEntity target) {
+
+		// TODO: Add support for roles and context map
+
+		if (condition == null) {
+			return false;
+		}
+
+		String attributeCode = condition.getString("attributeCode");
+		String operator = condition.getString("operator");
+		String value = condition.getString("value");
+
+		EntityAttribute ea = target.findEntityAttribute(attributeCode).orElse(null);
+
+		if (ea == null) {
+			log.error("Could not evaluate condition: Attribute " + attributeCode + " for " + target.getCode() + " returned Null!");
+			return false;
+		}
+
+		if (!ea.getValue().toString().equals(value)) {
+			return false;
+		}
+
+		return true;
 	}
 }
