@@ -2202,6 +2202,7 @@ public class TableUtils {
 
 		String realm = beUtils.getServiceToken().getRealm();
 		String token = beUtils.getServiceToken().getToken();
+		String sessionCode = beUtils.getGennyToken().getSessionCode().toUpperCase();
 
 		// Convert to entity list
 		log.info("dropdownValue = " + dropdownValue);
@@ -2324,7 +2325,7 @@ public class TableUtils {
 				}
 
 				// Fetch each search from cache
-				SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode, SearchEntity.class, token);
+				SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode+"_"+sessionCode, SearchEntity.class, token);
 
 				if (searchBE == null) {
 					log.error("Null SBE in cache for " + targetedBucketCode);
@@ -2332,6 +2333,7 @@ public class TableUtils {
 				}
 
 				// Send the results
+				log.info("Sending Results: " + finalResultList.size());
 				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(finalResultList);
 				msg.setToken(token);
 				msg.setReplace(true);
@@ -2341,6 +2343,7 @@ public class TableUtils {
 				// Update and send the SearchEntity
 				updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", Long.valueOf(finalResultList.size()) + ""); 
 
+				log.info("Sending Search Entity");
 				QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
 				searchMsg.setToken(token);
 				searchMsg.setReplace(true);
