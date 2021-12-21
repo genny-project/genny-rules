@@ -2394,9 +2394,11 @@ public class TableUtils {
 			if (ea == null) {
 				log.info("Could not evaluate condition: Attribute " + attributeCode + " for " + target.getCode() + " returned Null!");
 				return false;
+			} else {
+				log.info("Found Attribute " + attributeCode + " for " + target.getCode());
 			}
 
-			if (!ea.getValue().toString().equals(value)) {
+			if (!ea.getValue().toString().toUpperCase().equals(value.toUpperCase())) {
 				return false;
 			}
 		}
