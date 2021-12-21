@@ -2262,6 +2262,7 @@ public class TableUtils {
 					// TODO: allow for regular filters too
 					SearchEntity.StringFilter stringFilter = SearchEntity.convertOperatorToStringFilter(operator);
 					String mergedValue = MergeUtil.merge(value, ctxMap);
+					log.info("Adding filter: " + attributeCode + " " + stringFilter.toString() + " " + mergedValue);
 					baseSearch.addFilter(attributeCode, stringFilter, mergedValue);
 				}
 			}
@@ -2291,6 +2292,8 @@ public class TableUtils {
 							JsonObject mutation = (JsonObject) m;
 
 							JsonArray conditions = mutation.getJsonArray("conditions");
+
+							log.info("Testing condition: " + conditions.toString());
 
 							if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
 								finalResultList.add(item);
@@ -2366,7 +2369,7 @@ public class TableUtils {
 		EntityAttribute ea = target.findEntityAttribute(attributeCode).orElse(null);
 
 		if (ea == null) {
-			log.error("Could not evaluate condition: Attribute " + attributeCode + " for " + target.getCode() + " returned Null!");
+			log.info("Could not evaluate condition: Attribute " + attributeCode + " for " + target.getCode() + " returned Null!");
 			return false;
 		}
 
