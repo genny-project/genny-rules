@@ -2311,14 +2311,13 @@ public class TableUtils {
 							JsonArray conditions = mutation.getJsonArray("conditions");
 
 							if (conditions == null) {
-								log.info("Null conditions");
-								if (jsonConditionMet(mutation, target)) {
+								if (jsonConditionMet(mutation, item)) {
 									log.info("Post condition met");
 									finalResultList.add(item);
 								}
 							} else {
 								log.info("Testing conditions: " + conditions.toString());
-								if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
+								if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, item)) {
 									log.info("Post condition met");
 									finalResultList.add(item);
 								}
