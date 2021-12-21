@@ -2201,7 +2201,8 @@ public class TableUtils {
 		Instant start = Instant.now();
 
 		String realm = beUtils.getServiceToken().getRealm();
-		String token = beUtils.getServiceToken().getToken();
+		String sToken = beUtils.getServiceToken().getToken();
+		String gToken = beUtils.getGennyToken().getToken();
 		String sessionCode = beUtils.getGennyToken().getSessionCode().toUpperCase();
 
 		// Convert to entity list
@@ -2236,7 +2237,7 @@ public class TableUtils {
 
 			String bucketMapCode = bucketMap.getString("code");
 
-			SearchEntity baseSearch = VertxUtils.getObject(realm, "", bucketMapCode, SearchEntity.class, token);
+			SearchEntity baseSearch = VertxUtils.getObject(realm, "", bucketMapCode, SearchEntity.class, sToken);
 
 			// Handle Pre Search Mutations
 			JsonArray preSearchMutations = bucketMap.getJsonArray("mutations");
@@ -2325,7 +2326,7 @@ public class TableUtils {
 				}
 
 				// Fetch each search from cache
-				SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode+"_"+sessionCode, SearchEntity.class, token);
+				SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode+"_"+sessionCode, SearchEntity.class, sToken);
 
 				if (searchBE == null) {
 					log.error("Null SBE in cache for " + targetedBucketCode);
@@ -2335,19 +2336,23 @@ public class TableUtils {
 				// Send the results
 				log.info("Sending Results: " + finalResultList.size());
 				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(finalResultList);
-				msg.setToken(token);
+				msg.setToken(gToken);
 				msg.setReplace(true);
 				msg.setParentCode(searchBE.getCode());
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+				VertxUtils.writeMsg("webcmds", msg);
 
 				// Update and send the SearchEntity
 				updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", Long.valueOf(finalResultList.size()) + ""); 
 
-				log.info("Sending Search Entity");
+				if (searchBE != null) {
+					log.info("Sending Search Entity : " + searchBE.getCode());
+				} else {
+					log.error("SearchEntity is NULLLLL!!!!");
+				}
 				QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
-				searchMsg.setToken(token);
+				searchMsg.setToken(gToken);
 				searchMsg.setReplace(true);
-				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(searchMsg));
+				VertxUtils.writeMsg("webcmds", searchMsg);
 			}
 		}
 
