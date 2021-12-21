@@ -2255,12 +2255,15 @@ public class TableUtils {
 
 				if (jsonConditionsMet(conditions, target)) {
 
+					log.info("Conditions met for : " + conditions.toString());
+
 					String attributeCode = mutation.getString("attributeCode");
 					String operator = mutation.getString("operator");
 					String value = mutation.getString("value");
 
 					// TODO: allow for regular filters too
-					SearchEntity.StringFilter stringFilter = SearchEntity.convertOperatorToStringFilter(operator);
+					// SearchEntity.StringFilter stringFilter = SearchEntity.convertOperatorToStringFilter(operator);
+					SearchEntity.StringFilter stringFilter = SearchEntity.StringFilter.EQUAL;
 					String mergedValue = MergeUtil.merge(value, ctxMap);
 					log.info("Adding filter: " + attributeCode + " " + stringFilter.toString() + " " + mergedValue);
 					baseSearch.addFilter(attributeCode, stringFilter, mergedValue);
@@ -2268,9 +2271,15 @@ public class TableUtils {
 			}
 
 			// Perform Search
+			baseSearch.setPageSize(100000);
+			log.info("Performing search for " + baseSearch.getCode());
 			List<BaseEntity> results = beUtils.getBaseEntitys(baseSearch);
 			
 			JsonArray targetedBuckets = bucketMap.getJsonArray("targetedBuckets");
+
+			if (targetedBuckets == null) {
+				log.error("No targetedBuckets field for " + bucketMapCode);
+			}
 
 			// Handle Post Search Mutations
 			for (Object b : targetedBuckets) {
@@ -2293,7 +2302,7 @@ public class TableUtils {
 
 							JsonArray conditions = mutation.getJsonArray("conditions");
 
-							log.info("Testing condition: " + conditions.toString());
+							log.info("Testing conditions: " + conditions.toString());
 
 							if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
 								finalResultList.add(item);
