@@ -2239,6 +2239,11 @@ public class TableUtils {
 
 			SearchEntity baseSearch = VertxUtils.getObject(realm, "", bucketMapCode, SearchEntity.class, sToken);
 
+			if (baseSearch == null) {
+				log.error("SearchEntity " + bucketMapCode + " is NULL in cache!");
+				continue;
+			}
+
 			// Handle Pre Search Mutations
 			JsonArray preSearchMutations = bucketMap.getJsonArray("mutations");
 
