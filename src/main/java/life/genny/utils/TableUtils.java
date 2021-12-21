@@ -2363,7 +2363,7 @@ public class TableUtils {
 
 		if (conditions != null) {
 
-			log.info("Bulk Conditions = " + conditions.toString());
+			// log.info("Bulk Conditions = " + conditions.toString());
 
 			for (Object c : conditions) {
 
@@ -2388,7 +2388,7 @@ public class TableUtils {
 
 		if (condition != null) {
 
-			log.info("Single Condition = " + condition.toString());
+			// log.info("Single Condition = " + condition.toString());
 
 			String attributeCode = condition.getString("attributeCode");
 			String operator = condition.getString("operator");
@@ -2402,6 +2402,7 @@ public class TableUtils {
 			} else {
 				log.info("Found Attribute " + attributeCode + " for " + target.getCode());
 			}
+			log.info(ea.getValue().toString() + " = " + value);
 
 			if (!ea.getValue().toString().toUpperCase().equals(value.toUpperCase())) {
 				return false;
