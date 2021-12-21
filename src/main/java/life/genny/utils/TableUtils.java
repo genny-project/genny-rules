@@ -2296,17 +2296,23 @@ public class TableUtils {
 
 					for (BaseEntity item : results) {
 
-						for (Object m : postSearchMutations) {
+						if (postSearchMutations != null) {
 
-							JsonObject mutation = (JsonObject) m;
+							for (Object m : postSearchMutations) {
 
-							JsonArray conditions = mutation.getJsonArray("conditions");
+								JsonObject mutation = (JsonObject) m;
 
-							log.info("Testing conditions: " + conditions.toString());
+								JsonArray conditions = mutation.getJsonArray("conditions");
 
-							if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
-								finalResultList.add(item);
+								log.info("Testing conditions: " + conditions.toString());
+
+								if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
+									finalResultList.add(item);
+								}
 							}
+
+						} else {
+							finalResultList.add(item);
 						}
 					}
 
