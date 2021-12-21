@@ -2208,13 +2208,6 @@ public class TableUtils {
 		String cleanCode = beUtils.cleanUpAttributeValue(dropdownValue);
 		BaseEntity target = beUtils.getBaseEntityByCode(cleanCode);
 
-		List<String> bucketCodes = VertxUtils.getObject(realm, "", "BUCKET_CODES", List.class);
-
-		if (bucketCodes == null) {
-			log.error("Null BUCKET_CODES in cache!!!");
-			return;
-		}
-
 		BaseEntity project = beUtils.getBaseEntityByCode("PRJ_" + realm.toUpperCase());
 
 		if (project == null) {
@@ -2288,58 +2281,67 @@ public class TableUtils {
 
 				String targetedBucketCode = bkt.getString("code");
 
-				if (bucketCodes.contains(targetedBucketCode)) {
+				if (targetedBucketCode == null) {
+					log.error("No code field present in targeted bucket!");
+				} else {
+					log.info("Handling targeted bucket " + targetedBucketCode);
+				}
 
-					JsonArray postSearchMutations = bkt.getJsonArray("mutations");
+				JsonArray postSearchMutations = bkt.getJsonArray("mutations");
 
-					List<BaseEntity> finalResultList = new ArrayList<>();
+				log.info("postSearchMutations = " + postSearchMutations);
 
-					for (BaseEntity item : results) {
+				List<BaseEntity> finalResultList = new ArrayList<>();
 
-						if (postSearchMutations != null) {
+				for (BaseEntity item : results) {
 
-							for (Object m : postSearchMutations) {
+					if (postSearchMutations != null) {
 
-								JsonObject mutation = (JsonObject) m;
+						for (Object m : postSearchMutations) {
 
-								JsonArray conditions = mutation.getJsonArray("conditions");
+							JsonObject mutation = (JsonObject) m;
 
+							JsonArray conditions = mutation.getJsonArray("conditions");
+
+							if (conditions == null) {
+								log.info("Null conditions");
+							} else {
 								log.info("Testing conditions: " + conditions.toString());
-
-								if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
-									log.info("Post condition met");
-									finalResultList.add(item);
-								}
 							}
 
-						} else {
-							finalResultList.add(item);
+							if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
+								log.info("Post condition met");
+								finalResultList.add(item);
+							}
 						}
+
+					} else {
+						finalResultList.add(item);
 					}
-
-					// Fetch each search from cache
-					SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode, SearchEntity.class, token);
-
-					if (searchBE == null) {
-						log.error("Null SBE in cache for " + targetedBucketCode);
-						continue;
-					}
-
-					// Send the results
-					QDataBaseEntityMessage msg = new QDataBaseEntityMessage(finalResultList);
-					msg.setToken(token);
-					msg.setReplace(true);
-					msg.setParentCode(searchBE.getCode());
-					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
-
-					// Update and send the SearchEntity
-					updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", Long.valueOf(finalResultList.size()) + ""); 
-
-					QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
-					searchMsg.setToken(token);
-					searchMsg.setReplace(true);
-					VertxUtils.writeMsg("webcmds", JsonUtils.toJson(searchMsg));
 				}
+
+				// Fetch each search from cache
+				SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode, SearchEntity.class, token);
+
+				if (searchBE == null) {
+					log.error("Null SBE in cache for " + targetedBucketCode);
+					continue;
+				}
+
+				// Send the results
+				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(finalResultList);
+				msg.setToken(token);
+				msg.setReplace(true);
+				msg.setParentCode(searchBE.getCode());
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(msg));
+
+				// Update and send the SearchEntity
+				updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", Long.valueOf(finalResultList.size()) + ""); 
+
+				QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
+				searchMsg.setToken(token);
+				searchMsg.setReplace(true);
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(searchMsg));
 			}
 		}
 
