@@ -2255,7 +2255,7 @@ public class TableUtils {
 
 				if (jsonConditionsMet(conditions, target)) {
 
-					log.info("Conditions met for : " + conditions.toString());
+					log.info("Pre Conditions met for : " + conditions.toString());
 
 					String attributeCode = mutation.getString("attributeCode");
 					String operator = mutation.getString("operator");
@@ -2307,6 +2307,7 @@ public class TableUtils {
 								log.info("Testing conditions: " + conditions.toString());
 
 								if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
+									log.info("Post condition met");
 									finalResultList.add(item);
 								}
 							}
@@ -2318,6 +2319,11 @@ public class TableUtils {
 
 					// Fetch each search from cache
 					SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode, SearchEntity.class, token);
+
+					if (searchBE == null) {
+						log.error("Null SBE in cache for " + targetedBucketCode);
+						continue;
+					}
 
 					// Send the results
 					QDataBaseEntityMessage msg = new QDataBaseEntityMessage(finalResultList);
@@ -2352,6 +2358,8 @@ public class TableUtils {
 
 		if (conditions != null) {
 
+			log.info("Bulk Conditions = " + conditions.toString());
+
 			for (Object c : conditions) {
 
 				JsonObject condition = (JsonObject) c;
@@ -2373,23 +2381,24 @@ public class TableUtils {
 
 		// TODO: Add support for roles and context map
 
-		if (condition == null) {
-			return false;
-		}
+		if (condition != null) {
 
-		String attributeCode = condition.getString("attributeCode");
-		String operator = condition.getString("operator");
-		String value = condition.getString("value");
+			log.info("Single Condition = " + condition.toString());
 
-		EntityAttribute ea = target.findEntityAttribute(attributeCode).orElse(null);
+			String attributeCode = condition.getString("attributeCode");
+			String operator = condition.getString("operator");
+			String value = condition.getString("value");
 
-		if (ea == null) {
-			log.info("Could not evaluate condition: Attribute " + attributeCode + " for " + target.getCode() + " returned Null!");
-			return false;
-		}
+			EntityAttribute ea = target.findEntityAttribute(attributeCode).orElse(null);
 
-		if (!ea.getValue().toString().equals(value)) {
-			return false;
+			if (ea == null) {
+				log.info("Could not evaluate condition: Attribute " + attributeCode + " for " + target.getCode() + " returned Null!");
+				return false;
+			}
+
+			if (!ea.getValue().toString().equals(value)) {
+				return false;
+			}
 		}
 
 		return true;
