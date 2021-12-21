@@ -2305,13 +2305,16 @@ public class TableUtils {
 
 							if (conditions == null) {
 								log.info("Null conditions");
+								if (jsonConditionMet(mutation, target)) {
+									log.info("Post condition met");
+									finalResultList.add(item);
+								}
 							} else {
 								log.info("Testing conditions: " + conditions.toString());
-							}
-
-							if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
-								log.info("Post condition met");
-								finalResultList.add(item);
+								if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, target)) {
+									log.info("Post condition met");
+									finalResultList.add(item);
+								}
 							}
 						}
 
