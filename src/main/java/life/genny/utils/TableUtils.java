@@ -26,6 +26,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.Collections;
+import java.time.Instant;
+import java.time.Duration;
 
 import com.google.gson.reflect.TypeToken;
 
@@ -2191,5 +2193,233 @@ public class TableUtils {
 			return searchBE;
 		}
 		return null;
+	}
+
+	public void performQuickSearch(String dropdownValue) {
+
+		Instant start = Instant.now();
+
+		String realm = beUtils.getServiceToken().getRealm();
+		String sToken = beUtils.getServiceToken().getToken();
+		String gToken = beUtils.getGennyToken().getToken();
+		String sessionCode = beUtils.getGennyToken().getSessionCode().toUpperCase();
+
+		// Convert to entity list
+		log.info("dropdownValue = " + dropdownValue);
+		String cleanCode = beUtils.cleanUpAttributeValue(dropdownValue);
+		BaseEntity target = beUtils.getBaseEntityByCode(cleanCode);
+
+		BaseEntity project = beUtils.getBaseEntityByCode("PRJ_" + realm.toUpperCase());
+
+		if (project == null) {
+			log.error("Null project Entity!!!");
+			return;
+		}
+		
+		String jsonStr = project.getValue("PRI_BUCKET_QUICK_SEARCH_JSON", null);
+
+		if (jsonStr == null) {
+			log.error("Null Bucket Json!!!");
+			return;
+		}
+
+		// Init merge contexts
+		HashMap<String, Object> ctxMap = new HashMap<>();
+		ctxMap.put("TARGET", target);
+
+		JsonObject json = new JsonObject(jsonStr);
+		JsonArray bucketMapArray = json.getJsonArray("buckets");
+
+		for (Object bm : bucketMapArray) {
+
+			JsonObject bucketMap = (JsonObject) bm;
+
+			String bucketMapCode = bucketMap.getString("code");
+
+			SearchEntity baseSearch = VertxUtils.getObject(realm, "", bucketMapCode, SearchEntity.class, sToken);
+
+			if (baseSearch == null) {
+				log.error("SearchEntity " + bucketMapCode + " is NULL in cache!");
+				continue;
+			}
+
+			// Handle Pre Search Mutations
+			JsonArray preSearchMutations = bucketMap.getJsonArray("mutations");
+
+			for (Object m : preSearchMutations) {
+
+				JsonObject mutation = (JsonObject) m;
+
+				JsonArray conditions = mutation.getJsonArray("conditions");
+
+				if (jsonConditionsMet(conditions, target)) {
+
+					log.info("Pre Conditions met for : " + conditions.toString());
+
+					String attributeCode = mutation.getString("attributeCode");
+					String operator = mutation.getString("operator");
+					String value = mutation.getString("value");
+
+					// TODO: allow for regular filters too
+					// SearchEntity.StringFilter stringFilter = SearchEntity.convertOperatorToStringFilter(operator);
+					SearchEntity.StringFilter stringFilter = SearchEntity.StringFilter.EQUAL;
+					String mergedValue = MergeUtil.merge(value, ctxMap);
+					log.info("Adding filter: " + attributeCode + " " + stringFilter.toString() + " " + mergedValue);
+					baseSearch.addFilter(attributeCode, stringFilter, mergedValue);
+				}
+			}
+
+			// Perform Search
+			baseSearch.setPageSize(100000);
+			log.info("Performing search for " + baseSearch.getCode());
+			List<BaseEntity> results = beUtils.getBaseEntitys(baseSearch);
+			
+			JsonArray targetedBuckets = bucketMap.getJsonArray("targetedBuckets");
+
+			if (targetedBuckets == null) {
+				log.error("No targetedBuckets field for " + bucketMapCode);
+			}
+
+			// Handle Post Search Mutations
+			for (Object b : targetedBuckets) {
+
+				JsonObject bkt = (JsonObject) b;
+
+				String targetedBucketCode = bkt.getString("code");
+
+				if (targetedBucketCode == null) {
+					log.error("No code field present in targeted bucket!");
+				} else {
+					log.info("Handling targeted bucket " + targetedBucketCode);
+				}
+
+				JsonArray postSearchMutations = bkt.getJsonArray("mutations");
+
+				log.info("postSearchMutations = " + postSearchMutations);
+
+				List<BaseEntity> finalResultList = new ArrayList<>();
+
+				for (BaseEntity item : results) {
+
+					if (postSearchMutations != null) {
+
+						for (Object m : postSearchMutations) {
+
+							JsonObject mutation = (JsonObject) m;
+
+							JsonArray conditions = mutation.getJsonArray("conditions");
+
+							if (conditions == null) {
+								if (jsonConditionMet(mutation, item)) {
+									log.info("Post condition met");
+									finalResultList.add(item);
+								}
+							} else {
+								log.info("Testing conditions: " + conditions.toString());
+								if (jsonConditionsMet(conditions, target) && jsonConditionMet(mutation, item)) {
+									log.info("Post condition met");
+									finalResultList.add(item);
+								}
+							}
+						}
+
+					} else {
+						finalResultList.add(item);
+					}
+				}
+
+				// Fetch each search from cache
+				SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode+"_"+sessionCode, SearchEntity.class, sToken);
+
+				if (searchBE == null) {
+					log.error("Null SBE in cache for " + targetedBucketCode);
+					continue;
+				}
+
+				// Send the results
+				log.info("Sending Results: " + finalResultList.size());
+				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(finalResultList);
+				msg.setToken(gToken);
+				msg.setReplace(true);
+				msg.setParentCode(searchBE.getCode());
+				VertxUtils.writeMsg("webcmds", msg);
+
+				// Update and send the SearchEntity
+				updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", Long.valueOf(finalResultList.size()) + ""); 
+
+				if (searchBE != null) {
+					log.info("Sending Search Entity : " + searchBE.getCode());
+				} else {
+					log.error("SearchEntity is NULLLLL!!!!");
+				}
+				QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
+				searchMsg.setToken(gToken);
+				searchMsg.setReplace(true);
+				VertxUtils.writeMsg("webcmds", searchMsg);
+			}
+		}
+
+		Instant end = Instant.now();
+		log.info("Finished Quick Search: " + Duration.between(start, end).toMillis() + " millSeconds.");
+	}
+
+	/**
+	 * Evaluate whether a set of conditions are met for a specific BaseEntity.
+	 *
+	 * Used in bucket manipulation.
+	 **/
+	public static Boolean jsonConditionsMet(JsonArray conditions, BaseEntity target) {
+
+		// TODO: Add support for roles and context map
+
+		if (conditions != null) {
+
+			// log.info("Bulk Conditions = " + conditions.toString());
+
+			for (Object c : conditions) {
+
+				JsonObject condition = (JsonObject) c;
+
+				if (!jsonConditionMet(condition, target)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Evaluate whether the condition is met for a specific BaseEntity.
+	 *
+	 * Used in bucket manipulation.
+	 **/
+	public static Boolean jsonConditionMet(JsonObject condition, BaseEntity target) {
+
+		// TODO: Add support for roles and context map
+
+		if (condition != null) {
+
+			// log.info("Single Condition = " + condition.toString());
+
+			String attributeCode = condition.getString("attributeCode");
+			String operator = condition.getString("operator");
+			String value = condition.getString("value");
+
+			EntityAttribute ea = target.findEntityAttribute(attributeCode).orElse(null);
+
+			if (ea == null) {
+				log.info("Could not evaluate condition: Attribute " + attributeCode + " for " + target.getCode() + " returned Null!");
+				return false;
+			} else {
+				log.info("Found Attribute " + attributeCode + " for " + target.getCode());
+			}
+			log.info(ea.getValue().toString() + " = " + value);
+
+			if (!ea.getValue().toString().toUpperCase().equals(value.toUpperCase())) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }
