@@ -1166,8 +1166,11 @@ public class ShowFrame implements WorkItemHandler {
 			// Don't try to print askMsgs2 as it has 20K lines
 			BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
 			BaseEntity rule = beUtils.getBaseEntityByCode("RUL_" + rootFrameCode);
-			askMsgs2Str = (String) rule.getValue("PRI_ASKS").get(); // assume always
-
+			if (!rule.getValue("PRI_ASKS").isPresent()) {
+				askMsgs2Str = (String) rule.getValue("PRI_ASKS").get(); // assume always
+			} else {
+				askMsgs2Str = null;
+			}
 			if (askMsgs2Str == null) {
 				String fr = (String) rule.getValue("PRI_FRM").get(); // assume always
 				Frame3 frame3 = JsonUtils.fromJson(fr, Frame3.class);
