@@ -2205,7 +2205,7 @@ public class TableUtils {
 		String gToken = beUtils.getGennyToken().getToken();
 		String sessionCode = beUtils.getGennyToken().getSessionCode().toUpperCase();
 
-		// Convert to entity list
+		// convert to entity list
 		log.info("dropdownValue = " + dropdownValue);
 		String cleanCode = beUtils.cleanUpAttributeValue(dropdownValue);
 		BaseEntity target = beUtils.getBaseEntityByCode(cleanCode);
@@ -2224,7 +2224,7 @@ public class TableUtils {
 			return;
 		}
 
-		// Init merge contexts
+		// init merge contexts
 		HashMap<String, Object> ctxMap = new HashMap<>();
 		ctxMap.put("TARGET", target);
 
@@ -2244,7 +2244,7 @@ public class TableUtils {
 				continue;
 			}
 
-			// Handle Pre Search Mutations
+			// handle Pre Search Mutations
 			JsonArray preSearchMutations = bucketMap.getJsonArray("mutations");
 
 			for (Object m : preSearchMutations) {
@@ -2270,7 +2270,7 @@ public class TableUtils {
 				}
 			}
 
-			// Perform Search
+			// perform Search
 			baseSearch.setPageSize(100000);
 			log.info("Performing search for " + baseSearch.getCode());
 			List<BaseEntity> results = beUtils.getBaseEntitys(baseSearch);
@@ -2281,7 +2281,7 @@ public class TableUtils {
 				log.error("No targetedBuckets field for " + bucketMapCode);
 			}
 
-			// Handle Post Search Mutations
+			// handle Post Search Mutations
 			for (Object b : targetedBuckets) {
 
 				JsonObject bkt = (JsonObject) b;
@@ -2329,7 +2329,7 @@ public class TableUtils {
 					}
 				}
 
-				// Fetch each search from cache
+				// fetch each search from cache
 				SearchEntity searchBE = VertxUtils.getObject(realm, "", targetedBucketCode+"_"+sessionCode, SearchEntity.class, sToken);
 
 				if (searchBE == null) {
@@ -2337,7 +2337,27 @@ public class TableUtils {
 					continue;
 				}
 
-				// Send the results
+				// process the associated columns
+				List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
+
+				for (BaseEntity be : finalResultList) {
+
+					for (EntityAttribute calEA : cals) {
+
+						Answer ans = SearchUtils.getAssociatedColumnValue(beUtils, be, calEA.getAttributeCode(), beUtils.getServiceToken());
+
+						if (ans != null) {
+							try {
+								be.addAnswer(ans);
+							} catch (BadDataException e) {
+								e.printStackTrace();
+							}
+						}
+
+					}
+				}
+
+				// send the results
 				log.info("Sending Results: " + finalResultList.size());
 				QDataBaseEntityMessage msg = new QDataBaseEntityMessage(finalResultList);
 				msg.setToken(gToken);
@@ -2345,7 +2365,7 @@ public class TableUtils {
 				msg.setParentCode(searchBE.getCode());
 				VertxUtils.writeMsg("webcmds", msg);
 
-				// Update and send the SearchEntity
+				// update and send the SearchEntity
 				updateBaseEntity(searchBE, "PRI_TOTAL_RESULTS", Long.valueOf(finalResultList.size()) + ""); 
 
 				if (searchBE != null) {
