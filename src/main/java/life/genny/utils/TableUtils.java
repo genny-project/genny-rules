@@ -2337,6 +2337,8 @@ public class TableUtils {
 					continue;
 				}
 
+				searchBE = getSessionSearch(searchBE, null, null);
+
 				// process the associated columns
 				List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
 
