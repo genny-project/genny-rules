@@ -2337,7 +2337,18 @@ public class TableUtils {
 					continue;
 				}
 
-				searchBE = getSessionSearch(searchBE, null, null);
+				// Attach any extra filters from SearchFilters rulegroup
+				List<EntityAttribute> filters = getUserFilters(this.beUtils.getServiceToken(), searchBE);
+
+				if (!filters.isEmpty()) {
+					log.info("User Filters are NOT empty");
+					log.info("Adding User Filters to searchBe  ::  " + searchBE.getCode());
+					for (EntityAttribute filter : filters) {
+						searchBE.getBaseEntityAttributes().add(filter);
+					}
+				} else {
+					log.info("User Filters are empty");
+				}
 
 				// process the associated columns
 				List<EntityAttribute> cals = searchBE.findPrefixEntityAttributes("COL__");
