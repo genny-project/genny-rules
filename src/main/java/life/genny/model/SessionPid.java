@@ -1,15 +1,14 @@
 package life.genny.model;
 
+import com.google.gson.annotations.Expose;
 import java.io.Serializable;
 import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Index;
-import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -17,269 +16,219 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.jbpm.process.audit.event.AuditEvent;
-
-import com.google.gson.annotations.Expose;
-
-/**
-* @author Adam Crow
-* */
-
+/** @author Adam Crow */
 @XmlRootElement
 @XmlAccessorType(value = XmlAccessType.FIELD)
-
-@Table(name = "session_pid", indexes = {@Index(name = "IDX_NStat_SessionCode", columnList = "sessionCode")
-		})
-//@SequenceGenerator(name="sessionPidIdSeq", sequenceName="SESSION_PID_ID_SEQ", allocationSize=1)
-
+@Table(
+    name = "session_pid",
+    indexes = {@Index(name = "IDX_NStat_SessionCode", columnList = "sessionCode")})
+// @SequenceGenerator(name="sessionPidIdSeq", sequenceName="SESSION_PID_ID_SEQ", allocationSize=1)
 
 @Entity
-public class SessionPid implements Serializable/*, AuditEvent, org.kie.api.runtime.manager.audit.NodeInstanceLog */ {
-	
-	
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class SessionPid
+    implements Serializable /*, AuditEvent, org.kie.api.runtime.manager.audit.NodeInstanceLog */ {
 
-	@Id
-	@GeneratedValue(strategy=GenerationType.AUTO)
-	private long id;
-    
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "log_date")
-    private Date date;
-	
-    @Expose
-    @Column(name = "sessioncode")
-	private String sessionCode;
-    @Expose
- 	private String realm;
-  
-    @Expose
-    @Column(name = "pid")
-	private Long processInstanceId;
-    
-    @Expose
-    @Column(name="usercode")
-    private String usercode;
- 
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "sessionend")
-    private Date sessionend;
+  /** */
+  private static final long serialVersionUID = 1L;
 
-	private SessionPid()
-	{
-		// used by hibernate
-	}
-	
-	/**
-	 * @param userCode
-	 * @param nodeName
-	 * @param nodeId
-	 * @param realm
-	 * @param processInstanceId
-	 * @param processId
-	 */
-	
-	public SessionPid(String usercode,long id,Date date,String realm,String sessionCode,Long processInstanceId) {
-		this.usercode = usercode;
-		this.id = id;
-		this.date = date;
-		this.sessionCode = sessionCode;
-		this.processInstanceId = processInstanceId;
-		this.realm = realm;
-	}
-	
-	/**
-	 * @param userCode
-	 * @param nodeName
-	 * @param nodeId
-	 * @param realm
-	 * @param processInstanceId
-	 * @param processId
-	 */
-	
-	public SessionPid(long id,Date date,String realm,String sessionCode,Long processInstanceId) {
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private long id;
 
-		this.id = id;
-		this.date = date;
-		this.sessionCode = sessionCode;
-		this.processInstanceId = processInstanceId;
-		this.realm = realm;
-	}
-	
-	public SessionPid(String realm,String sessionCode,Long processInstanceId) {
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name = "log_date")
+  private Date date;
 
-		this.date = new Date();
-		this.sessionCode = sessionCode;
-		this.processInstanceId = processInstanceId;
-		this.realm = realm;
-	}
-	
-	public SessionPid(String usercode,String realm,String sessionCode,Long processInstanceId) {
+  @Expose
+  @Column(name = "sessioncode")
+  private String sessionCode;
 
-		this.date = new Date();
-		this.sessionCode = sessionCode;
-		this.processInstanceId = processInstanceId;
-		this.realm = realm;
-		this.usercode = usercode;
-	}
+  @Expose private String realm;
 
-	/**
-	 * @return the id
-	 */
-	public long getId() {
-		return id;
-	}
+  @Expose
+  @Column(name = "pid")
+  private Long processInstanceId;
 
-	/**
-	 * @param id the id to set
-	 */
-	public void setId(long id) {
-		this.id = id;
-	}
+  @Expose
+  @Column(name = "usercode")
+  private String usercode;
 
-	/**
-	 * @return the date
-	 */
-	public Date getDate() {
-		return date;
-	}
+  @Temporal(TemporalType.TIMESTAMP)
+  @Column(name = "sessionend")
+  private Date sessionend;
 
-	/**
-	 * @param date the date to set
-	 */
-	public void setDate(Date date) {
-		this.date = date;
-	}
+  private SessionPid() {
+    // used by hibernate
+  }
 
-	/**
-	 * @return the sessionCode
-	 */
-	public String getSessionCode() {
-		return sessionCode;
-	}
+  /**
+   * @param userCode
+   * @param nodeName
+   * @param nodeId
+   * @param realm
+   * @param processInstanceId
+   * @param processId
+   */
+  public SessionPid(
+      String usercode,
+      long id,
+      Date date,
+      String realm,
+      String sessionCode,
+      Long processInstanceId) {
+    this.usercode = usercode;
+    this.id = id;
+    this.date = date;
+    this.sessionCode = sessionCode;
+    this.processInstanceId = processInstanceId;
+    this.realm = realm;
+  }
 
-	/**
-	 * @param sessionCode the sessionCode to set
-	 */
-	public void setSessionCode(String sessionCode) {
-		this.sessionCode = sessionCode;
-	}
+  /**
+   * @param userCode
+   * @param nodeName
+   * @param nodeId
+   * @param realm
+   * @param processInstanceId
+   * @param processId
+   */
+  public SessionPid(long id, Date date, String realm, String sessionCode, Long processInstanceId) {
 
-	/**
-	 * @return the realm
-	 */
-	public String getRealm() {
-		return realm;
-	}
+    this.id = id;
+    this.date = date;
+    this.sessionCode = sessionCode;
+    this.processInstanceId = processInstanceId;
+    this.realm = realm;
+  }
 
-	/**
-	 * @param realm the realm to set
-	 */
-	public void setRealm(String realm) {
-		this.realm = realm;
-	}
+  public SessionPid(String realm, String sessionCode, Long processInstanceId) {
 
-	/**
-	 * @return the processInstanceId
-	 */
-	public Long getProcessInstanceId() {
-		return processInstanceId;
-	}
+    this.date = new Date();
+    this.sessionCode = sessionCode;
+    this.processInstanceId = processInstanceId;
+    this.realm = realm;
+  }
 
-	/**
-	 * @param processInstanceId the processInstanceId to set
-	 */
-	public void setProcessInstanceId(Long processInstanceId) {
-		this.processInstanceId = processInstanceId;
-	}
+  public SessionPid(String usercode, String realm, String sessionCode, Long processInstanceId) {
 
-	
-	
-	
-	/**
-	 * @return the sessionend
-	 */
-	public Date getSessionend() {
-		return sessionend;
-	}
+    this.date = new Date();
+    this.sessionCode = sessionCode;
+    this.processInstanceId = processInstanceId;
+    this.realm = realm;
+    this.usercode = usercode;
+  }
 
-	/**
-	 * @param sessionend the sessionend to set
-	 */
-	public void setSessionend(Date sessionend) {
-		this.sessionend = sessionend;
-	}
+  /** @return the id */
+  public long getId() {
+    return id;
+  }
 
-	/**
-	 * @return the usercode
-	 */
-	public String getUsercode() {
-		return usercode;
-	}
+  /** @param id the id to set */
+  public void setId(long id) {
+    this.id = id;
+  }
 
-	/**
-	 * @param usercode the usercode to set
-	 */
-	public void setUsercode(String usercode) {
-		this.usercode = usercode;
-	}
+  /** @return the date */
+  public Date getDate() {
+    return date;
+  }
 
-	/**
-	 * @return the serialversionuid
-	 */
-	public static long getSerialversionuid() {
-		return serialVersionUID;
-	}
+  /** @param date the date to set */
+  public void setDate(Date date) {
+    this.date = date;
+  }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((processInstanceId == null) ? 0 : processInstanceId.hashCode());
-		result = prime * result + ((realm == null) ? 0 : realm.hashCode());
-		result = prime * result + ((sessionCode == null) ? 0 : sessionCode.hashCode());
-		return result;
-	}
+  /** @return the sessionCode */
+  public String getJTI() {
+    return sessionCode;
+  }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		SessionPid other = (SessionPid) obj;
-		if (processInstanceId == null) {
-			if (other.processInstanceId != null)
-				return false;
-		} else if (!processInstanceId.equals(other.processInstanceId))
-			return false;
-		if (realm == null) {
-			if (other.realm != null)
-				return false;
-		} else if (!realm.equals(other.realm))
-			return false;
-		if (sessionCode == null) {
-			if (other.sessionCode != null)
-				return false;
-		} else if (!sessionCode.equals(other.sessionCode))
-			return false;
-		return true;
-	}
+  /** @param sessionCode the sessionCode to set */
+  public void setSessionCode(String sessionCode) {
+    this.sessionCode = sessionCode;
+  }
 
-	@Override
-	public String toString() {
-		return "SessionPid [" + (date != null ? "date=" + date + ", " : "")
-				+ (usercode != null ? "usercode=" + usercode+ ", " : "")
-				+ (sessionCode != null ? "sessionCode=" + sessionCode + ", " : "")
-				+ (realm != null ? "realm=" + realm + ", " : "")
-				+ (processInstanceId != null ? "processInstanceId=" + processInstanceId : "") + "]";
-	}
+  /** @return the realm */
+  public String getRealm() {
+    return realm;
+  }
 
+  /** @param realm the realm to set */
+  public void setRealm(String realm) {
+    this.realm = realm;
+  }
 
-	
+  /** @return the processInstanceId */
+  public Long getProcessInstanceId() {
+    return processInstanceId;
+  }
+
+  /** @param processInstanceId the processInstanceId to set */
+  public void setProcessInstanceId(Long processInstanceId) {
+    this.processInstanceId = processInstanceId;
+  }
+
+  /** @return the sessionend */
+  public Date getSessionend() {
+    return sessionend;
+  }
+
+  /** @param sessionend the sessionend to set */
+  public void setSessionend(Date sessionend) {
+    this.sessionend = sessionend;
+  }
+
+  /** @return the usercode */
+  public String getUsercode() {
+    return usercode;
+  }
+
+  /** @param usercode the usercode to set */
+  public void setUsercode(String usercode) {
+    this.usercode = usercode;
+  }
+
+  /** @return the serialversionuid */
+  public static long getSerialversionuid() {
+    return serialVersionUID;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((processInstanceId == null) ? 0 : processInstanceId.hashCode());
+    result = prime * result + ((realm == null) ? 0 : realm.hashCode());
+    result = prime * result + ((sessionCode == null) ? 0 : sessionCode.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (getClass() != obj.getClass()) return false;
+    SessionPid other = (SessionPid) obj;
+    if (processInstanceId == null) {
+      if (other.processInstanceId != null) return false;
+    } else if (!processInstanceId.equals(other.processInstanceId)) return false;
+    if (realm == null) {
+      if (other.realm != null) return false;
+    } else if (!realm.equals(other.realm)) return false;
+    if (sessionCode == null) {
+      if (other.sessionCode != null) return false;
+    } else if (!sessionCode.equals(other.sessionCode)) return false;
+    return true;
+  }
+
+  @Override
+  public String toString() {
+    return "SessionPid ["
+        + (date != null ? "date=" + date + ", " : "")
+        + (usercode != null ? "usercode=" + usercode + ", " : "")
+        + (sessionCode != null ? "sessionCode=" + sessionCode + ", " : "")
+        + (realm != null ? "realm=" + realm + ", " : "")
+        + (processInstanceId != null ? "processInstanceId=" + processInstanceId : "")
+        + "]";
+  }
 }

@@ -255,7 +255,7 @@ public class NodeStatusLog extends AbstractAuditLogger {
 				SessionFacts sessionFacts = (SessionFacts)variableScope.getVariable("sessionFacts");
 				GennyToken userToken = sessionFacts.getUserToken();
 				Long processInstanceId = processInstance.getId();
-				String sessionCode = userToken.getSessionCode();
+				String sessionCode = userToken.getJTI();
 				String realm = userToken.getRealm(); //TODO
 				SessionPid sessionPid = new SessionPid(userToken.getUserCode(),realm,sessionCode,processInstanceId);
 				persist(sessionPid,event);
