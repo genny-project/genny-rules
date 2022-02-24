@@ -116,7 +116,7 @@ public class DropdownUtils implements Serializable {
 		TableUtils tableUtils = new TableUtils(beUtils);
 		SearchUtils searchUtils = new SearchUtils(beUtils);
 		
-		List<EntityAttribute> filters = tableUtils.getUserFilters(serviceToken, searchBE);
+		List<EntityAttribute> filters = tableUtils.getUserFilters(searchBE);
 
 		if (!filters.isEmpty()) {
 			log.info("User Filters are NOT empty");

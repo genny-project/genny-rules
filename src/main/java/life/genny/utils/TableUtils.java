@@ -58,6 +58,7 @@ import life.genny.qwanda.VisualControlType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.AttributeBoolean;
 import life.genny.qwanda.attribute.EntityAttribute;
+import life.genny.qwanda.data.BridgeSwitch;
 import life.genny.qwanda.datatype.DataType;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.EntityEntity;
@@ -99,7 +100,7 @@ public class TableUtils {
 		this.beUtils = beUtils;
 	}
 
-	public QBulkMessage performSearch(GennyToken serviceToken, SearchEntity searchBE, Answer answer,
+	public QBulkMessage performSearch(SearchEntity searchBE, Answer answer,
 			final String filterCode, final String filterValue, Boolean cache, Boolean replace) {
 		QBulkMessage ret = new QBulkMessage();
 		long starttime = System.currentTimeMillis();
@@ -107,10 +108,8 @@ public class TableUtils {
 		Boolean useFyodor = (System.getenv("USE_FYODOR") != null && "TRUE".equalsIgnoreCase(System.getenv("USE_FYODOR"))) ? true : false;
 		// Set to FALSE to use regular search
 		if (useFyodor) {
-			return performSearchNew(serviceToken, searchBE, answer, filterCode, filterValue, cache, replace);
+			return performSearchNew(searchBE, answer, filterCode, filterValue, cache, replace);
 		}
-
-		beUtils.setServiceToken(serviceToken);
 
 		// Send out Search Results
 		QDataBaseEntityMessage msg = null;
@@ -123,7 +122,7 @@ public class TableUtils {
 		}
 
 		// Add any necessary extra filters
-		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+		List<EntityAttribute> filters = getUserFilters(searchBE);
 
 		if (!filters.isEmpty()) {
 			log.info("User Filters are NOT empty");
@@ -154,7 +153,7 @@ public class TableUtils {
 			}
 
 			SearchUtils searchUtils = new SearchUtils(beUtils);
-			msg = searchUtils.searchUsingSearch25(serviceToken, searchBE);
+			msg = searchUtils.searchUsingSearch25(this.beUtils.getServiceToken(), searchBE);
 		} else {
 			log.info("Old Search");
 			msg = fetchSearchResults(searchBE);
@@ -229,15 +228,13 @@ public class TableUtils {
 		return ret;
 	}
 
-	public QBulkMessage performSearchNew(GennyToken serviceToken, SearchEntity searchBE, Answer answer,
+	public QBulkMessage performSearchNew(SearchEntity searchBE, Answer answer,
 			final String filterCode, final String filterValue, Boolean cache, Boolean replace) {
 		QBulkMessage ret = new QBulkMessage();
 		long starttime = System.currentTimeMillis();
 
-		beUtils.setServiceToken(serviceToken);
-
 		// Add any necessary extra filters
-		List<EntityAttribute> filters = getUserFilters(serviceToken, searchBE);
+		List<EntityAttribute> filters = getUserFilters(searchBE);
 
 		if (!filters.isEmpty()) {
 			log.info("User Filters are NOT empty");
@@ -252,12 +249,13 @@ public class TableUtils {
 		QSearchMessage searchBeMsg = new QSearchMessage (searchBE);
 		searchBeMsg.setToken(beUtils.getGennyToken().getToken());
 		searchBeMsg.setDestination("webcmds");
+		searchBeMsg.setBridgeId(BridgeSwitch.bridges.get(this.beUtils.getGennyToken().getUniqueId()));
 		VertxUtils.writeMsg("search_events", searchBeMsg);
 
 		return null;
 	}
 
-	public List<EntityAttribute> getUserFilters(GennyToken serviceToken, final SearchEntity searchBE) {
+	public List<EntityAttribute> getUserFilters(final SearchEntity searchBE) {
 		List<EntityAttribute> filters = new ArrayList<EntityAttribute>();
 
 		Map<String, Object> facts = new ConcurrentHashMap<String, Object>();
@@ -1643,7 +1641,7 @@ public class TableUtils {
 			updateActIndex(searchBE);
 			updateColIndex(searchBE);
 
-            tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, filterCode, filterValue, cache, replace);
+            tableUtils.performSearch(searchBE, null, filterCode, filterValue, cache, replace);
 
 			/* update(output); */
 			long endtime = System.currentTimeMillis();
@@ -1711,7 +1709,7 @@ public class TableUtils {
 		long startTime = System.currentTimeMillis();
 
 		// Attach any extra filters from SearchFilters rulegroup
-		List<EntityAttribute> filters = getUserFilters(this.beUtils.getServiceToken(), searchBE);
+		List<EntityAttribute> filters = getUserFilters(searchBE);
 
 		if (!filters.isEmpty()) {
 			log.info("User Filters are NOT empty");
@@ -2338,7 +2336,7 @@ public class TableUtils {
 				}
 
 				// Attach any extra filters from SearchFilters rulegroup
-				List<EntityAttribute> filters = getUserFilters(this.beUtils.getServiceToken(), searchBE);
+				List<EntityAttribute> filters = getUserFilters(searchBE);
 
 				if (!filters.isEmpty()) {
 					log.info("User Filters are NOT empty");

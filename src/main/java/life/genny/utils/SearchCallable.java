@@ -118,7 +118,7 @@ public class SearchCallable implements Callable<QBulkMessage> {
         }
 
         if (noCachePresent) {
-            qbm1 = tableUtils.performSearch(beUtils.getServiceToken(), searchBE, null, filterCode, filterValue, cache,
+            qbm1 = tableUtils.performSearch(searchBE, null, filterCode, filterValue, cache,
                     replace);
             if ((pageStart == 0)&&usingCache) {
             	VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", templateSearchCode, qbm1,
