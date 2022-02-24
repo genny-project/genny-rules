@@ -249,6 +249,12 @@ public class TableUtils {
       log.info("User Filters are empty");
     }
 
+	EntityAttribute title = searchBE.findEntityAttribute("SCH_TITLE").orElse(null);
+
+	if (title != null) {
+		log.info("[@] Sending SearchBE with Title: " + title.getValueString());
+	}
+
     QSearchMessage searchBeMsg = new QSearchMessage(searchBE);
     searchBeMsg.setToken(beUtils.getGennyToken().getToken());
     searchBeMsg.setDestination("webcmds");
@@ -1791,6 +1797,13 @@ public class TableUtils {
       String filterCode,
       String filterValue,
       Boolean replace) {
+
+
+	EntityAttribute title = searchBE.findEntityAttribute("SCH_TITLE").orElse(null);
+
+	if (title != null) {
+		log.info("[*] Searching Table for SearchBE with Title: " + title.getValueString());
+	}
 
     Boolean useFyodor =
         (System.getenv("USE_FYODOR") != null
