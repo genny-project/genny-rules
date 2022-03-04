@@ -19,7 +19,7 @@ public class GennyRulesExceptionHandler implements ConsequenceExceptionHandler {
         //Do whatever you want
     	log.error(ANSIColour.RED+"RULES EXCEPTION (1) :match ->  "+match+ANSIColour.RESET);
     	log.error(ANSIColour.RED+"RULES EXCEPTION (2) :RuleRuntime ->  "+rr+ANSIColour.RESET);
-    	log.error(ANSIColour.RED+"RULES EXCEPTION (3) : exception ->  "+e+ANSIColour.RESET);
+    	log.error(ANSIColour.RED+"RULES EXCEPTION (3) in " + match.getRule().getName() + ": exception ->  "+e+ANSIColour.RESET);
     }
 
 }
