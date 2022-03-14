@@ -1275,7 +1275,7 @@ public class RulesLoader {
       
       int validCount = 0;
       for (AllowedSafe allow : allowables) {
-        if(allow.validAllowed)
+        if(allow.validCode)
           validCount++;
         newAlloweds.add(kieSession.insert(allow));
       }
