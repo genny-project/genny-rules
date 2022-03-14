@@ -64,6 +64,7 @@ import life.genny.models.GennyToken;
 import life.genny.qwanda.Answer;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.datatype.Allowed;
+import life.genny.qwanda.datatype.AllowedSafe;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.entity.SearchEntity;
 import life.genny.qwanda.entity.User;
@@ -88,6 +89,7 @@ import life.genny.rules.listeners.NodeStatusLog;
 import life.genny.rules.processor.RequestProcessor;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
+import life.genny.utils.CapabilityUtilsRefactored;
 import life.genny.utils.DefUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.NodeStatusQueryMapper;
@@ -1241,10 +1243,15 @@ public class RulesLoader {
     log.debug("BaseEntity created");
 
     FactHandle beUtilsHandle = kieSession.insert(beUtils);
-    FactHandle capabilityUtilsHandle = null;
-    List<FactHandle> allowables = new ArrayList<FactHandle>();
+    FactHandle oldCapabilityUtilsHandle = null;
+    FactHandle newCapabilityUtilsHandle = null;
+    
+    List<FactHandle> oldAlloweds = new ArrayList<FactHandle>();
+    CapabilityUtils oldCapabilityUtils = new CapabilityUtils(beUtils);
 
-    CapabilityUtils capabilityUtils = new CapabilityUtils(beUtils);
+    // New Capability Utils
+    List<FactHandle> newAlloweds = new ArrayList<FactHandle>();
+    CapabilityUtilsRefactored newCapabilityUtils = new CapabilityUtilsRefactored(beUtils);
 
     /*
      * log.info("CapabilityUtils created , now processing");
@@ -1255,18 +1262,45 @@ public class RulesLoader {
     String userCode = facts.getUserToken().getUserCode();
     BaseEntity user = beUtils.getBaseEntityByCode(userCode);
 
+    // ============================================================================
+    // =========================== NEW CAPABILITY UTILS ===========================
+    // ============================================================================
+    if (user != null) {
+      log.debug("User:" + user.getCode() + " fetched.");
+
+      List<AllowedSafe> allowables = CapabilityUtilsRefactored.generateAlloweds(facts.getUserToken(), user);
+      log.debug(allowables.size() + " alloweds generated");
+
+      newCapabilityUtilsHandle = kieSession.insert(newCapabilityUtils);
+      
+      int validCount = 0;
+      for (AllowedSafe allow : allowables) {
+        if(allow.validAllowed)
+          validCount++;
+        newAlloweds.add(kieSession.insert(allow));
+      }
+
+      log.debug(validCount + " alloweds loaded. Still using all alloweds");
+    } else {
+      log.error("user: " + facts.getUserToken().getUserCode() + " was null !!!");
+    }
+
+
+    // ============================================================================
+    // =========================== OLD CAPABILITY UTILS ===========================
+    // ============================================================================
     if (user != null) {
       log.debug("User:" + user.getCode() + " fetched.");
 
       List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
       log.debug(allowable.size() + " Alloweds generated ");
 
-      capabilityUtilsHandle = kieSession.insert(capabilityUtils);
+      oldCapabilityUtilsHandle = kieSession.insert(oldCapabilityUtils);
 
       log.debug("Adding Allowed to kiesession");
       // get each capability from each Role and add to allowables
       for (Allowed allow : allowable) {
-        allowables.add(kieSession.insert(allow));
+        oldAlloweds.add(kieSession.insert(allow));
       }
     } else {
       log.error("user was null !!!");
@@ -1313,13 +1347,25 @@ public class RulesLoader {
     } catch (Exception e) {
       log.warn("Session error when trying to delete the handle");
     }
-    if (capabilityUtilsHandle != null) {
-      kieSession.delete(capabilityUtilsHandle);
-      for (FactHandle allow : allowables) {
+
+    if (newCapabilityUtilsHandle != null) {
+      kieSession.delete(newCapabilityUtilsHandle);
+      for (FactHandle allow : newAlloweds) {
         try {
           kieSession.delete(allow);
         } catch (Exception e) {
-          log.warn("Session error when trying to delete the allow");
+          log.warn("Session error when trying to delete new allow");
+        }
+      }
+    }
+
+    if (oldCapabilityUtilsHandle != null) {
+      kieSession.delete(oldCapabilityUtilsHandle);
+      for (FactHandle allow : oldAlloweds) {
+        try {
+          kieSession.delete(allow);
+        } catch (Exception e) {
+          log.warn("Session error when trying to delete old allow");
         }
       }
     }
