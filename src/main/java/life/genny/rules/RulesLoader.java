@@ -1293,7 +1293,7 @@ public class RulesLoader {
       log.debug("User:" + user.getCode() + " fetched.");
 
       List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
-      log.debug(allowable.size() + " Alloweds generated ");
+      log.info("facts: " + allowable.size() + " old Alloweds generated ");
 
       oldCapabilityUtilsHandle = kieSession.insert(oldCapabilityUtils);
 
