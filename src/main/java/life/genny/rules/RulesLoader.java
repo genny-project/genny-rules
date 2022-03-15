@@ -1233,9 +1233,9 @@ public class RulesLoader {
 
   private void sendEventThroughUserSession(SessionFacts facts, KieSession kieSession)
       throws InterruptedException {
-    log.debug("Setting up Capabilities and Alloweds");
+    log.info("Setting up Capabilities and Alloweds");
     log.debug("facts   ::  " + facts);
-    log.debug("facts userCode  ::  " + facts.getUserToken().getUserCode());
+    log.info("facts userCode  ::  " + facts.getUserToken().getUserCode());
     String bridgeSourceAddress = "";
     GennyToken serviceToken = facts.getServiceToken();
 
@@ -1280,7 +1280,7 @@ public class RulesLoader {
         newAlloweds.add(kieSession.insert(allow));
       }
 
-      log.debug(validCount + " alloweds loaded. Still using all alloweds");
+      log.info(validCount + " alloweds loaded. Still using all alloweds");
     } else {
       log.error("user: " + facts.getUserToken().getUserCode() + " was null !!!");
     }
