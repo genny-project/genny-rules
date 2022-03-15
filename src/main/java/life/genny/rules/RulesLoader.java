@@ -1269,7 +1269,7 @@ public class RulesLoader {
       log.debug("facts User:" + user.getCode() + " fetched.");
 
       List<AllowedSafe> allowables = CapabilityUtilsRefactored.generateAlloweds(facts.getUserToken(), user);
-      log.debug("facts: " + allowables.size() + " alloweds generated");
+      log.info("facts: " + allowables.size() + " alloweds generated");
 
       newCapabilityUtilsHandle = kieSession.insert(newCapabilityUtils);
       
