@@ -1266,10 +1266,10 @@ public class RulesLoader {
     // =========================== NEW CAPABILITY UTILS ===========================
     // ============================================================================
     if (user != null) {
-      log.debug("User:" + user.getCode() + " fetched.");
+      log.debug("facts User:" + user.getCode() + " fetched.");
 
       List<AllowedSafe> allowables = CapabilityUtilsRefactored.generateAlloweds(facts.getUserToken(), user);
-      log.debug(allowables.size() + " alloweds generated");
+      log.debug("facts: " + allowables.size() + " alloweds generated");
 
       newCapabilityUtilsHandle = kieSession.insert(newCapabilityUtils);
       
@@ -1280,9 +1280,9 @@ public class RulesLoader {
         newAlloweds.add(kieSession.insert(allow));
       }
 
-      log.info(validCount + " alloweds loaded. Still using all alloweds");
+      log.info("facts: " + validCount + " alloweds loaded. Still using all alloweds");
     } else {
-      log.error("user: " + facts.getUserToken().getUserCode() + " was null !!!");
+      log.error("facts user: " + facts.getUserToken().getUserCode() + " was null !!!");
     }
 
 
