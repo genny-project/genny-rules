@@ -57,7 +57,6 @@ import life.genny.qwanda.message.QDataBaseEntityMessage;
 import life.genny.qwanda.message.QSearchMessage;
 import life.genny.qwanda.validation.Validation;
 import life.genny.qwanda.validation.ValidationList;
-import life.genny.qwanda.data.BridgeSwitch;
 import life.genny.qwandautils.ANSIColour;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
@@ -257,8 +256,7 @@ public class TableUtils {
 
     QSearchMessage searchBeMsg = new QSearchMessage(searchBE);
     searchBeMsg.setToken(beUtils.getGennyToken().getToken());
-    searchBeMsg.setDestination("webcmds");
-	searchBeMsg.setBridgeId(BridgeSwitch.bridges.get(beUtils.getGennyToken().getUniqueId()));
+    searchBeMsg.setDestination("webdata");
     VertxUtils.writeMsg("search_events", searchBeMsg);
 
     return null;
