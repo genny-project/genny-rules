@@ -1263,12 +1263,38 @@ public class RulesLoader {
     BaseEntity user = beUtils.getBaseEntityByCode(userCode);
 
     // ============================================================================
+    // =========================== OLD CAPABILITY UTILS ===========================
+    // ============================================================================
+
+    // So we can pipe all the old alloweds into the new system
+    List<Allowed> allowable = new ArrayList<>();
+    if (user != null) {
+      log.debug("User:" + user.getCode() + " fetched.");
+
+      allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
+      log.info("facts: " + allowable.size() + " old Alloweds generated ");
+
+      oldCapabilityUtilsHandle = kieSession.insert(oldCapabilityUtils);
+
+      log.debug("Adding Allowed to kiesession");
+      // get each capability from each Role and add to allowables
+      for (Allowed allow : allowable) {
+        oldAlloweds.add(kieSession.insert(allow));
+      }
+    } else {
+      log.error("user was null !!!");
+    }
+
+    // ============================================================================
     // =========================== NEW CAPABILITY UTILS ===========================
     // ============================================================================
     if (user != null) {
       log.debug("facts User:" + user.getCode() + " fetched.");
 
       List<AllowedSafe> allowables = CapabilityUtilsRefactored.generateAlloweds(facts.getUserToken(), user);
+      for(Allowed allowed : allowable) {
+        allowables.add(AllowedSafe.fromAllowed(allowed));
+      }
       log.info("facts: " + allowables.size() + " alloweds generated");
 
       newCapabilityUtilsHandle = kieSession.insert(newCapabilityUtils);
@@ -1286,26 +1312,6 @@ public class RulesLoader {
       log.error("facts user: " + facts.getUserToken().getUserCode() + " was null !!!");
     }
 
-
-    // ============================================================================
-    // =========================== OLD CAPABILITY UTILS ===========================
-    // ============================================================================
-    if (user != null) {
-      log.debug("User:" + user.getCode() + " fetched.");
-
-      List<Allowed> allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
-      log.info("facts: " + allowable.size() + " old Alloweds generated ");
-
-      oldCapabilityUtilsHandle = kieSession.insert(oldCapabilityUtils);
-
-      log.debug("Adding Allowed to kiesession");
-      // get each capability from each Role and add to allowables
-      for (Allowed allow : allowable) {
-        oldAlloweds.add(kieSession.insert(allow));
-      }
-    } else {
-      log.error("user was null !!!");
-    }
 
     Long processId = null;
     String session_state = facts.getUserToken().getJTI();
