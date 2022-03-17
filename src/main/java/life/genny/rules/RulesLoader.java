@@ -1249,6 +1249,7 @@ public class RulesLoader {
     List<FactHandle> oldAlloweds = new ArrayList<FactHandle>();
     CapabilityUtils oldCapabilityUtils = new CapabilityUtils(beUtils);
 
+
     // New Capability Utils
     List<FactHandle> newAlloweds = new ArrayList<FactHandle>();
     CapabilityUtilsRefactored newCapabilityUtils = new CapabilityUtilsRefactored(beUtils);
@@ -1431,11 +1432,7 @@ public class RulesLoader {
       tx.begin();
       /* If userToken is not null then send the event through user Session */
       if (facts.getUserToken() != null) {
-        try {
-          sendEventThroughUserSession(facts, kieSession);
-        } catch (Exception e) {
-          log.error("Error in userSession " + e.getLocalizedMessage());
-        }
+		  sendEventThroughUserSession(facts, kieSession);
       } else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
         /* When usertoken is null */
         /* Running init_project workflow */
