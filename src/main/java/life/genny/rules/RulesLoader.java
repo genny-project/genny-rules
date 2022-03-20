@@ -1447,6 +1447,7 @@ public class RulesLoader {
       throw e;
     } catch (final Throwable t) {
       log.error(t.getLocalizedMessage());
+	  e.printStackTrace();
     } finally {
       // commit
       if (tx.isActive()) {
