@@ -1302,13 +1302,12 @@ public class RulesLoader {
       
       int validCount = 0;
       for (AllowedSafe allow : allowables) {
-        log.info("facts New AllowedSafe: " + allow.code);
         if(allow.validCode)
           validCount++;
         newAlloweds.add(kieSession.insert(allow));
       }
 
-      log.info("facts: " + validCount + " alloweds loaded. Still using all alloweds");
+      log.info("facts: " + validCount + " valid alloweds loaded. " + newAlloweds.size() + " total alloweds loaded");
     } else {
       log.error("facts user: " + facts.getUserToken().getUserCode() + " was null !!!");
     }
