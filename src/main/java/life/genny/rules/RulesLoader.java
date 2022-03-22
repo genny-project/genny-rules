@@ -1299,7 +1299,6 @@ public class RulesLoader {
       log.info("facts: " + allowables.size() + " alloweds generated");
 
       newCapabilityUtilsHandle = kieSession.insert(newCapabilityUtils);
-      
       int validCount = 0;
       for (AllowedSafe allow : allowables) {
         if(allow.validCode)
@@ -1312,7 +1311,7 @@ public class RulesLoader {
       log.error("facts user: " + facts.getUserToken().getUserCode() + " was null !!!");
     }
 
-
+    log.info("facts CapUtilsHandle: " + kieSession.getFactHandle(oldCapabilityUtils));
     Long processId = null;
     String session_state = facts.getUserToken().getJTI();
 
