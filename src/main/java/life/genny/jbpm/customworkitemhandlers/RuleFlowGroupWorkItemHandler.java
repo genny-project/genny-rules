@@ -40,6 +40,7 @@ import life.genny.rules.RulesLoader;
 import life.genny.rules.listeners.GennyRuleTimingListener;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
+import life.genny.utils.CapabilityUtilsRefactored;
 import life.genny.utils.RulesUtils;
 import life.genny.utils.VertxUtils;
 
@@ -97,19 +98,26 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			//log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #1");
 
 			BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,userToken);
-			CapabilityUtils capabilityUtils = null;
+			CapabilityUtils oldCapabilityUtils = null;
+			CapabilityUtilsRefactored newCapabilityUtils = null;
+
+			// New capability utils stuffs
+			for(String item : items.keySet()) {
+				log.info("item:" + item + " in " + ruleFlowGroup + ":" + callingWorkflow);
+			}
+			// Old capability utils stuffs
 			if (items.containsKey("capabilityUtils")) {
-				capabilityUtils = (CapabilityUtils) items.get("capabilityUtils");
+				oldCapabilityUtils = (CapabilityUtils) items.get("capabilityUtils");
 			} else {
 				JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "CAPABILITIES", userToken.getToken());
 				if ("OK".equalsIgnoreCase(json.getString("status"))) {
 					String value = json.getString("value");
-					capabilityUtils = JsonUtils.fromJson(value, CapabilityUtils.class);
-					if (capabilityUtils == null) {
-						capabilityUtils = new CapabilityUtils(beUtils);
+					oldCapabilityUtils = JsonUtils.fromJson(value, CapabilityUtils.class);
+					if (oldCapabilityUtils == null) {
+						oldCapabilityUtils = new CapabilityUtils(beUtils);
 					}
 				} else {
-					capabilityUtils = new CapabilityUtils(beUtils);
+					oldCapabilityUtils = new CapabilityUtils(beUtils);
 				}
 
 			}
@@ -190,7 +198,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					FactHandle answersToSaveHandle = newKieSession.insert(answersToSave);
 					FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 					FactHandle beUtilsHandle = newKieSession.insert(beUtils);
-					FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
+					FactHandle capabilityUtilsHandle = newKieSession.insert(oldCapabilityUtils);
 					
 					ESessionType eSessionType = ESessionType.SESSION;
 					if (callingWorkflow != null) {
@@ -288,7 +296,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					FactHandle factHandle = newKieSession.insert(output);
 					FactHandle answersToSaveHandle = newKieSession.insert(answersToSave);
 					FactHandle beUtilsHandle = newKieSession.insert(beUtils);
-					FactHandle capabilityUtilsHandle = newKieSession.insert(capabilityUtils);
+					FactHandle capabilityUtilsHandle = newKieSession.insert(oldCapabilityUtils);
 					FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 
 					QBulkMessage payload = new QBulkMessage();
@@ -315,7 +323,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //	    	output2 = (OutputParam) newKieSession.getObject(output2Fact);
 					output = (OutputParam) newKieSession.getObject(factHandle);
 					answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
-					capabilityUtils = (CapabilityUtils) newKieSession.getObject(capabilityUtilsHandle);
+					oldCapabilityUtils = (CapabilityUtils) newKieSession.getObject(capabilityUtilsHandle);
 //				payload = (QBulkMessage) newKieSession.getObject(payloadHandle);
 //	    	// HACK
 //	    	if (!output2.getResultCode().equalsIgnoreCase("DUMMY")) {
@@ -355,8 +363,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					if (payload != null) {
 						resultMap.put("payload", payload);
 					}
-					if (capabilityUtils != null) {
-						resultMap.put("capabilityUtils", capabilityUtils);
+					if (oldCapabilityUtils != null) {
+						resultMap.put("capabilityUtils", oldCapabilityUtils);
 					}
 					if (stringSet != null) {
 						resultMap.put("stringSet", stringSet);
