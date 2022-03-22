@@ -1275,7 +1275,7 @@ public class RulesLoader {
       allowable = CapabilityUtils.generateAlloweds(facts.getUserToken(), user);
       log.info("facts: " + allowable.size() + " old Alloweds generated ");
 
-      oldCapabilityUtilsHandle = kieSession.insert(oldCapabilityUtils);
+      FactHandle handle = oldCapabilityUtilsHandle = kieSession.insert(oldCapabilityUtils);
 
       log.debug("Adding Allowed to kiesession");
       // get each capability from each Role and add to allowables
@@ -1311,7 +1311,7 @@ public class RulesLoader {
       log.error("facts user: " + facts.getUserToken().getUserCode() + " was null !!!");
     }
 
-    log.info("facts CapUtilsHandle: " + kieSession.getFactHandle(oldCapabilityUtils));
+    log.info("facts CapUtilsHandle: " + kieSession.getFactHandle(newCapabilityUtils));
     Long processId = null;
     String session_state = facts.getUserToken().getJTI();
 
