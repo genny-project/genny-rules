@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import life.genny.qwanda.message.QEventWorkflowMessage;
 import org.apache.commons.lang3.StringUtils;
@@ -29,6 +30,7 @@ import life.genny.qwanda.Answers;
 import life.genny.qwanda.ESessionType;
 import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.datatype.Allowed;
+import life.genny.qwanda.datatype.AllowedSafe;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.message.QBulkMessage;
 import life.genny.qwanda.message.QEventMessage;
@@ -99,12 +101,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 
 			BaseEntityUtils beUtils = new BaseEntityUtils(serviceToken,userToken);
 			CapabilityUtils oldCapabilityUtils = null;
-			CapabilityUtilsRefactored newCapabilityUtils = null;
+			CapabilityUtilsRefactored newCapabilityUtils = new CapabilityUtilsRefactored(beUtils);
 
-			// New capability utils stuffs
-			for(String item : items.keySet()) {
-				log.info("item:" + item + " in " + ruleFlowGroup + ":" + callingWorkflow);
-			}
 			// Old capability utils stuffs
 			if (items.containsKey("capabilityUtils")) {
 				oldCapabilityUtils = (CapabilityUtils) items.get("capabilityUtils");
@@ -140,6 +138,10 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			//log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #2");
 			user = beUtils.getBaseEntityByCode(userToken.getUserCode());
 			List<Allowed> allowable = CapabilityUtils.generateAlloweds(userToken, user);
+			List<AllowedSafe> safeAllowables = CapabilityUtilsRefactored.generateAlloweds(userToken, user);
+			
+			// Add all alloweds into the safeAllowables as AllowedSafes
+			safeAllowables.addAll(allowable.stream().map((allowed) -> AllowedSafe.fromAllowed(allowed)).collect(Collectors.toList()));
 
 			if (StringUtils.isBlank(callingWorkflow)) {
 				callingWorkflow = "";
@@ -198,7 +200,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					FactHandle answersToSaveHandle = newKieSession.insert(answersToSave);
 					FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 					FactHandle beUtilsHandle = newKieSession.insert(beUtils);
-					FactHandle capabilityUtilsHandle = newKieSession.insert(oldCapabilityUtils);
+					FactHandle oldCapabilityUtilsHandle = newKieSession.insert(oldCapabilityUtils);
+					FactHandle newCapabilityUtilsHandle = newKieSession.insert(newCapabilityUtils);
 					
 					ESessionType eSessionType = ESessionType.SESSION;
 					if (callingWorkflow != null) {
@@ -220,8 +223,13 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					/* FactHandle payloadHandle = newKieSession.insert(payload); */
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #6");
 					List<FactHandle> allowables = new ArrayList<FactHandle>();
+					List<FactHandle> safeAllowableHandles = new ArrayList<FactHandle>(); 
 					// get User capabilities
 					// first get User Roles
+
+					for (AllowedSafe allow : safeAllowables) {
+						safeAllowableHandles.add(newKieSession.insert(allow));
+					}
 
 					// get each capability from each Role and add to allowables
 					for (Allowed allow : allowable) {
@@ -255,12 +263,17 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					newKieSession.retract(factHandle);
 					newKieSession.retract(answersToSaveHandle);
 					newKieSession.retract(beUtilsHandle);
-					newKieSession.retract(capabilityUtilsHandle);
+					newKieSession.retract(oldCapabilityUtilsHandle);
+					newKieSession.retract(newCapabilityUtilsHandle);
 					newKieSession.retract(sessionType);
 					newKieSession.retract(kieSessionHandle); // don't dispose
 					/* newKieSession.retract(payloadHandle); */
 
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #8");
+
+					for (FactHandle allowHandle : safeAllowableHandles) {
+						newKieSession.retract(allowHandle);
+					}
 					for (FactHandle allow : allowables) {
 						newKieSession.retract(allow);
 					}
@@ -268,7 +281,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					newKieSession.dispose();
 
 				} else {
-
+					// TODO: This can almost definitely be abstracted into its own method and this code duplication is kinda ridiculous
 					KieBase kieBase = RulesLoader.getKieBaseCache().get(serviceToken.getRealm());
 					newKieSession = (StatefulKnowledgeSession) kieBase.newKieSession(ksconf, RulesLoader.env);
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #10a");
@@ -296,7 +309,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					FactHandle factHandle = newKieSession.insert(output);
 					FactHandle answersToSaveHandle = newKieSession.insert(answersToSave);
 					FactHandle beUtilsHandle = newKieSession.insert(beUtils);
-					FactHandle capabilityUtilsHandle = newKieSession.insert(oldCapabilityUtils);
+					FactHandle oldCapabilityUtilsHandle = newKieSession.insert(oldCapabilityUtils);
+					FactHandle newCapabilityUtilsHandle = newKieSession.insert(newCapabilityUtils);
 					FactHandle kieSessionHandle = newKieSession.insert(newKieSession);
 
 					QBulkMessage payload = new QBulkMessage();
@@ -305,7 +319,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					Set<String> stringSet = new HashSet<String>();
 					newKieSession.setGlobal("stringSet", stringSet);
 
-
+					List<FactHandle> allowedSafeHandles = new ArrayList<FactHandle>();
 //					log.info(callingWorkflow + " Running rule flow group " + ruleFlowGroup + " #12a");
 					List<FactHandle> allowables = new ArrayList<FactHandle>();
 					// get User capabilities
@@ -313,6 +327,10 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					// inject kieSession
 					for (Allowed allow : allowable) {
 						allowables.add(newKieSession.insert(allow));
+					}
+
+					for(AllowedSafe allow : safeAllowables) {
+						allowedSafeHandles.add(newKieSession.insert(allow));
 					}
 
 					/* Setting focus to rule-flow group */
@@ -323,7 +341,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 //	    	output2 = (OutputParam) newKieSession.getObject(output2Fact);
 					output = (OutputParam) newKieSession.getObject(factHandle);
 					answersToSave = (Answers) newKieSession.getObject(answersToSaveHandle);
-					oldCapabilityUtils = (CapabilityUtils) newKieSession.getObject(capabilityUtilsHandle);
+					oldCapabilityUtils = (CapabilityUtils) newKieSession.getObject(oldCapabilityUtilsHandle);
+					newCapabilityUtils = (CapabilityUtilsRefactored) newKieSession.getObject(newCapabilityUtilsHandle);
 //				payload = (QBulkMessage) newKieSession.getObject(payloadHandle);
 //	    	// HACK
 //	    	if (!output2.getResultCode().equalsIgnoreCase("DUMMY")) {
@@ -366,6 +385,9 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					if (oldCapabilityUtils != null) {
 						resultMap.put("capabilityUtils", oldCapabilityUtils);
 					}
+					if (newCapabilityUtils != null) {
+						resultMap.put("capabilityUtilsRefactored", newCapabilityUtils);
+					}
 					if (stringSet != null) {
 						resultMap.put("stringSet", stringSet);
 					}
@@ -373,11 +395,15 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 					newKieSession.retract(factHandle);
 					newKieSession.retract(answersToSaveHandle);
 					newKieSession.retract(beUtilsHandle);
-					newKieSession.retract(capabilityUtilsHandle);
+					newKieSession.retract(oldCapabilityUtilsHandle);
+					newKieSession.retract(newCapabilityUtilsHandle);
 					newKieSession.retract(kieSessionHandle);
 //				newKieSession.retract(payloadHandle);
 
 					for (FactHandle allow : allowables) {
+						newKieSession.retract(allow);
+					}
+					for (FactHandle allow : allowedSafeHandles) {
 						newKieSession.retract(allow);
 					}
 
