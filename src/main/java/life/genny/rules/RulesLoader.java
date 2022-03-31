@@ -1454,6 +1454,7 @@ public class RulesLoader {
     } finally {
       // commit
       if (tx.isActive()) {
+        log.info("Committing transaction");
         tx.commit();
         log.debug("Commit as transaction is active");
       }
