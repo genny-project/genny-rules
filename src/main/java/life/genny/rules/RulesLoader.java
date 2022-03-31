@@ -1430,7 +1430,12 @@ public class RulesLoader {
       tx.begin();
       /* If userToken is not null then send the event through user Session */
       if (facts.getUserToken() != null) {
-		  sendEventThroughUserSession(facts, kieSession);
+        try {
+		      sendEventThroughUserSession(facts, kieSession);
+        } catch(Exception e) {
+          log.error("Error in user session: " + e.getLocalizedMessage());
+          e.printStackTrace();
+        }
       } else if (((QEventMessage) facts.getMessage()).getData().getCode().equals("INIT_STARTUP")) {
         /* When usertoken is null */
         /* Running init_project workflow */
@@ -1445,7 +1450,7 @@ public class RulesLoader {
       throw e;
     } catch (final Throwable t) {
       log.error(t.getLocalizedMessage());
-	  t.printStackTrace();
+	    t.printStackTrace();
     } finally {
       // commit
       if (tx.isActive()) {
