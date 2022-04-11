@@ -831,6 +831,12 @@ public class ShowFrame implements WorkItemHandler {
             qBulkMessage.add(beMsg);
           } else {
             beMsg.setToken(userToken.getToken());
+            /**
+             * Warning this is a test
+             */
+            log.info("===============Asks:  "+ JsonUtils.toJson(beMsg));
+            VertxUtils.writeMsg('webdata', beMsg);
+            log.info("===============Asks twice:  ");
             VertxUtils.writeMsg("webdata", beMsg);
           }
         }
