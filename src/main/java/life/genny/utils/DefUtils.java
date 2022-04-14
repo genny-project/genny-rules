@@ -68,7 +68,7 @@ public class DefUtils {
 		SearchEntity searchBE = new SearchEntity("SBE_DEF", "DEF test")
 				.addSort("PRI_NAME", "Created", SearchEntity.Sort.ASC)
 				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "DEF_%")
-
+				.addColumn("PRI_CODE", "Code")
 				.addColumn("PRI_NAME", "Name");
 
 		searchBE.setRealm(realm);
@@ -82,7 +82,7 @@ public class DefUtils {
 		//if(!RulesUtils.realmAttributeMap.containsKey(serviceToken.getRealm())) {
 			RulesUtils.loadAllAttributesIntoCache(serviceToken);
 		//}
-
+		log.info("GET DEFS TOKEN: " + serviceToken.getToken());
 		List<BaseEntity> items = Collections.synchronizedList(beUtils.getBaseEntitys(searchBE));
 			log.info("Loaded "+items.size()+" DEF baseentitys");
 
