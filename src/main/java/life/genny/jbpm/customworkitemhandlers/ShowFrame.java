@@ -326,6 +326,12 @@ public class ShowFrame implements WorkItemHandler {
     }
     log.info("Sending the EndMsg Now !!!");
 
+    System.out.println("THREAD SLEEP STARTED");
+    try {
+      Thread.sleep(5000);
+    }catch (Exception ex){}
+    System.out.println("THREAD SLEEP ENDED");
+
     return qBulkMessage;
   }
 
