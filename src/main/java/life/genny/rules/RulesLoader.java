@@ -454,7 +454,7 @@ public class RulesLoader {
     List<Tuple3<String, String, String>> rules = new ArrayList<Tuple3<String, String, String>>();
 
     for (String realm : activeRealms) {
-
+    	realm = "internmatch"; //TODO: ouch
       JsonObject tokenObj =
           VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
       String sToken = tokenObj.getString("value");
@@ -487,6 +487,9 @@ public class RulesLoader {
                 GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
                 jsonSearchBE,
                 serviceToken.getToken());
+        
+        
+        
         QDataBaseEntityMessage resultMsg =
             JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
         for (BaseEntity ruleBe : resultMsg.getItems()) {
