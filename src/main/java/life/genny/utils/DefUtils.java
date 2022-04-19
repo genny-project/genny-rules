@@ -80,7 +80,9 @@ public class DefUtils {
 
 		// build map for realm during rule start up
 		//if(!RulesUtils.realmAttributeMap.containsKey(serviceToken.getRealm())) {
+			log.info("Loading attributes into cache");
 			RulesUtils.loadAllAttributesIntoCache(serviceToken);
+			log.info("Done loading attributes into cache.");
 		//}
 
 		List<BaseEntity> items = Collections.synchronizedList(beUtils.getBaseEntitys(searchBE));
