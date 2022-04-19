@@ -1017,12 +1017,12 @@ public class ShowFrame implements WorkItemHandler {
         if (!cache) {
           log.info("Sending the Asks Now !!!");
           updated.setToken(userToken.getToken());
-          try {
+       /*   try {
             System.out.println("THREAD SLEEP STARTED");
             System.out.println("JSON: "+  JsonUtils.toJson(updated));
             Thread.sleep(2000);
             System.out.println("THREAD SLEEP ENDED");
-          }catch (Exception ex){}
+          }catch (Exception ex){}*/
           VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
         }
       }
