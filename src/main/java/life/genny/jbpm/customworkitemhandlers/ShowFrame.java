@@ -326,12 +326,6 @@ public class ShowFrame implements WorkItemHandler {
     }
     log.info("Sending the EndMsg Now !!!");
 
-    System.out.println("THREAD SLEEP STARTED");
-    try {
-      Thread.sleep(5000);
-    }catch (Exception ex){}
-    System.out.println("THREAD SLEEP ENDED");
-
     return qBulkMessage;
   }
 
@@ -824,8 +818,6 @@ public class ShowFrame implements WorkItemHandler {
             qBulkMessage.add(beMsg);
           } else {
             beMsg.setToken(userToken.getToken());
-            log.info("Sending ask now...");
-            System.out.println("Sending ask now...");
             VertxUtils.writeMsg("webdata", beMsg);
           }
         }
@@ -1025,6 +1017,12 @@ public class ShowFrame implements WorkItemHandler {
         if (!cache) {
           log.info("Sending the Asks Now !!!");
           updated.setToken(userToken.getToken());
+          try {
+            System.out.println("THREAD SLEEP STARTED");
+            System.out.println("JSON: "+  JsonUtils.toJson(updated));
+            Thread.sleep(2000);
+            System.out.println("THREAD SLEEP ENDED");
+          }catch (Exception ex){}
           VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
         }
       }
