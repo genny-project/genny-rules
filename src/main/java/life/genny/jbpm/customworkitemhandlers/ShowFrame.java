@@ -1017,13 +1017,16 @@ public class ShowFrame implements WorkItemHandler {
         if (!cache) {
           log.info("Sending the Asks Now !!!");
           updated.setToken(userToken.getToken());
-       /*   try {
+          try {
+            // TODO: this is a bad code; just checking will be removing after consulting the issue with adam
             System.out.println("THREAD SLEEP STARTED");
-            System.out.println("JSON: "+  JsonUtils.toJson(updated));
-            Thread.sleep(2000);
+            Ask item = updated.getItems()[0];
+            if(item.getName().equals("Add Items") && item.getRealm().equals("mentormatch")){
+            }else{
+              VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
+            }
             System.out.println("THREAD SLEEP ENDED");
-          }catch (Exception ex){}*/
-          VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
+          }catch (Exception ex){}
         }
       }
     }
