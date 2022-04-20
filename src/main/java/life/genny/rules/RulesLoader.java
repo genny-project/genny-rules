@@ -351,7 +351,7 @@ public class RulesLoader {
 
     if (ars == null) {
       try {
-        ars = QwandaUtils.apiGet(GennySettings.qwandaServiceUrl + "/utils/realms", "NOTREQUIRED");
+        ars = QwandaUtils.apiGet(GennySettings.fyodorServiceUrl + "/utils/realms", "NOTREQUIRED");
       } catch (ClientProtocolException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
