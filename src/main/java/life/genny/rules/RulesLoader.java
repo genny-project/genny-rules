@@ -97,6 +97,8 @@ import life.genny.utils.RulesUtils;
 import life.genny.utils.SessionFacts;
 import life.genny.utils.SessionPidQueryMapper;
 import life.genny.utils.VertxUtils;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.logging.log4j.Logger;
 import org.drools.compiler.compiler.DrlParser;
