@@ -352,15 +352,21 @@ public class RulesLoader {
     if (ars == null) {
       try {
         ars = QwandaUtils.apiGet(GennySettings.fyodorServiceUrl + "/utils/realms", "NOTREQUIRED");
+        log.info("api ars="+ars);
       } catch (ClientProtocolException e) {
         // TODO Auto-generated catch block
-        e.printStackTrace();
+        //e.printStackTrace();
       } catch (IOException e) {
         // TODO Auto-generated catch block
-        e.printStackTrace();
+        //e.printStackTrace();
       }
+    } else {
+    	log.info("cached ars="+ars);
     }
-
+    
+    if (StringUtils.isBlank(ars)) {
+    	ars = "[\"internmatch\",\"mentormatch\",\"credmatch\",\"lojing\"]";
+    }
     Type listType = new TypeToken<List<String>>() {}.getType();
     ars = ars.replaceAll("\\\"", "\"");
     activeRealms = JsonUtils.fromJson(ars, listType);
