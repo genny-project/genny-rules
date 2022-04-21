@@ -348,30 +348,36 @@ public class RulesLoader {
     GraphBuilder<String, String> gb = GraphBuilder.<String, String>create();
 
     List<String> activeRealms = new ArrayList<String>();
-    JsonObject ar = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "REALMS");
-    String ars = ar.getString("value");
-
-    if (ars == null) {
-      try {
-        ars = QwandaUtils.apiGet(GennySettings.fyodorServiceUrl + "/utils/realms", "NOTREQUIRED");
-        log.info("api ars="+ars);
-      } catch (ClientProtocolException e) {
-        // TODO Auto-generated catch block
-        //e.printStackTrace();
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        //e.printStackTrace();
-      }
-    } else {
-    	log.info("cached ars="+ars);
-    }
     
-    if (StringUtils.isBlank(ars)) {
-    	ars = "[\"internmatch\",\"mentormatch\",\"credmatch\",\"lojing\"]";
-    }
-    Type listType = new TypeToken<List<String>>() {}.getType();
-    ars = ars.replaceAll("\\\"", "\"");
-    activeRealms = JsonUtils.fromJson(ars, listType);
+    activeRealms.add("internmatch");
+    activeRealms.add("mentormatch");
+    activeRealms.add("credmatch");
+    activeRealms.add("lojing");
+    
+//    JsonObject ar = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "REALMS");
+//    String ars = ar.getString("value");
+//
+//    if (ars == null) {
+//      try {
+//        ars = QwandaUtils.apiGet(GennySettings.fyodorServiceUrl + "/utils/realms", "NOTREQUIRED");
+//        log.info("api ars="+ars);
+//      } catch (ClientProtocolException e) {
+//        // TODO Auto-generated catch block
+//        //e.printStackTrace();
+//      } catch (IOException e) {
+//        // TODO Auto-generated catch block
+//        //e.printStackTrace();
+//      }
+//    } else {
+//    	log.info("cached ars="+ars);
+//    }
+//    
+//    if (StringUtils.isBlank(ars)) {
+//    	ars = "[\"internmatch\",\"mentormatch\",\"credmatch\",\"lojing\"]";
+//    }
+//    Type listType = new TypeToken<List<String>>() {}.getType();
+//    ars = ars.replaceAll("\\\"", "\"");
+//    activeRealms = JsonUtils.fromJson(ars, listType);
     if (activeRealms == null) {
       realms = new HashSet<>();
       log.error("NO ACTIVE REALMS");
@@ -384,6 +390,9 @@ public class RulesLoader {
       return false;
     }
 
+    
+   
+    
     for (String realm : activeRealms) {
       log.info("About to load in DEFs before rules for realm " + realm);
       JsonObject tokenObj =
@@ -391,7 +400,7 @@ public class RulesLoader {
       String sToken = tokenObj.getString("value");
       GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
 
-      DefUtils.loadDEFS(realm);
+      DefUtils.loadDEFS(realm,serviceToken);
     }
 
     List<Tuple3<String, String, String>> rules = null;
