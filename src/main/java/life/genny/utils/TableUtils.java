@@ -226,7 +226,6 @@ public class TableUtils {
     searchBeMsg.setToken(beUtils.getGennyToken().getToken());
     searchBeMsg.setDestination("webcmds");
 	searchBeMsg.setBridgeId(BridgeSwitch.bridges.get(beUtils.getGennyToken().getUniqueId()));
-    log.info("Search BE :: "+ JsonUtils.toJson(searchBeMsg));
     VertxUtils.writeMsg("search_events", searchBeMsg);
 
     return null;
