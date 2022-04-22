@@ -1418,9 +1418,13 @@ public class RulesLoader {
       log.error("Service Token is null! Fetching Service Token!");
       String serviceTokenStr = getServiceToken();
       serviceToken = new GennyToken(serviceTokenStr);
+      log.info("Service Token: " + serviceToken.getToken());
     }
     if (getKieBaseCache().get(serviceToken.getRealm()) == null) {
       log.error("The realm  kieBaseCache is null, not loaded " + serviceToken.getRealm());
+      for(String item : getKieBaseCache().keySet()) {
+        log.error("KieBaseCache has " + item);
+      }
       return;
     }
 
