@@ -1732,6 +1732,17 @@ public class RulesLoader {
     }
   }
 
+  //TODO: Abstract this into qwanda or something
+  private String getEnv(String env) {
+    String result = System.getenv(env);
+    if(result == null) {
+      log.error("NULL Environment Variable returned from: " + env);
+      return null;
+    }
+
+    return result;
+  }
+
   public void processMsg(final Object msg, final String token) {
 
     GennyToken userToken = new GennyToken("userToken", token);
@@ -1744,12 +1755,9 @@ public class RulesLoader {
       String keycloakUrl = System.getenv("GENNY_KEYCLOAK_URL");
       String realm = "internmatch";
       String clientId = "backend";
-      String secret = System.getenv("GENNY_BACKEND_SECRET");
-      if(secret == null) {
-        log.error("ERROR MISSING GENNY_BACKEND_SECRET IN THE ENVIRONMENT VARIABLES! CHECK THE CM");
-      }
-      String username = System.getenv("GENNY_SERVICE_USERNAME");
-      String password = System.getenv("GENNY_SERVICE_PASSWORD");
+      String secret = getEnv("GENNY_BACKEND_SECRET");
+      String username = getEnv("GENNY_SERVICE_USERNAME");
+      String password = getEnv("GENNY_SERVICE_PASSWORD");
       JsonObject jsonPayload = null;
       try {
         jsonPayload = KeycloakUtils.getToken(keycloakUrl, realm, clientId, secret, username, password);
