@@ -1774,7 +1774,8 @@ public class RulesLoader {
       } else {
         serviceTokenStr = jsonPayload.getString("access_token");
       }
-    } else {
+    } 
+    if(serviceTokenStr != null) {
       GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
 
       List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
@@ -1829,6 +1830,8 @@ public class RulesLoader {
       } catch (Exception e) {
         e.printStackTrace();
       }
+    } else {
+      log.error("Could not get service token from cache or from keycloak. What is going on?");
     }
   }
 
