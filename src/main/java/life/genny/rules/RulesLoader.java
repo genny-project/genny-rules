@@ -1752,7 +1752,7 @@ public class RulesLoader {
         VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
     if (serviceTokenStr == null) {
       log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
-      String keycloakUrl = System.getenv("GENNY_KEYCLOAK_URL");
+      String keycloakUrl = getEnv("GENNY_KEYCLOAK_URL");
       String realm = "internmatch";
       String clientId = "backend";
       String secret = getEnv("GENNY_BACKEND_SECRET");
