@@ -1414,7 +1414,11 @@ public class RulesLoader {
 
     EntityManager em = emf.createEntityManager();
     EntityTransaction tx = em.getTransaction();
-
+    if(serviceToken == null) {
+      log.error("Service Token is null! Fetching Service Token!");
+      String serviceTokenStr = getServiceToken();
+      serviceToken = new GennyToken(serviceTokenStr);
+    }
     if (getKieBaseCache().get(serviceToken.getRealm()) == null) {
       log.error("The realm  kieBaseCache is null, not loaded " + serviceToken.getRealm());
       return;
@@ -1743,6 +1747,36 @@ public class RulesLoader {
     return result;
   }
 
+  private String getServiceToken() {
+    String keycloakUrl = getEnv("GENNY_KEYCLOAK_URL");
+    String realm = "internmatch";
+    String clientId = "backend";
+    String secret = getEnv("GENNY_BACKEND_SECRET");
+    String username = getEnv("GENNY_SERVICE_USERNAME");
+    String password = getEnv("GENNY_SERVICE_PASSWORD");
+
+    JsonObject jsonPayload = null;
+    try {
+      jsonPayload = KeycloakUtils.getToken(keycloakUrl, realm, clientId, secret, username, password);
+    } catch (IOException e) {
+      log.error("Error fetching service token!");
+      log.error("Check the CM for rulesservice! Needs GENNY_KEYCLOAK_URL, GENNY_BACKEND_SECRET, GENNY_SERVICE_USERNAME, GENNY_SERVICE_PASSWORD");
+      e.printStackTrace();
+      return null;
+    }
+
+    
+    String serviceTokenStr = null;
+    if(jsonPayload.getString("access_token") == null) {
+      log.error("Service token returned from KeycloakUtils is null");
+      log.error("Payload: " + jsonPayload.toString());
+    } else {
+      serviceTokenStr = jsonPayload.getString("access_token");
+    }
+
+    return serviceTokenStr;
+  }
+
   public void processMsg(final Object msg, final String token) {
 
     GennyToken userToken = new GennyToken("userToken", token);
@@ -1752,28 +1786,8 @@ public class RulesLoader {
         VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
     if (serviceTokenStr == null) {
       log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
-      String keycloakUrl = getEnv("GENNY_KEYCLOAK_URL");
-      String realm = "internmatch";
-      String clientId = "backend";
-      String secret = getEnv("GENNY_BACKEND_SECRET");
-      String username = getEnv("GENNY_SERVICE_USERNAME");
-      String password = getEnv("GENNY_SERVICE_PASSWORD");
-      JsonObject jsonPayload = null;
-      try {
-        jsonPayload = KeycloakUtils.getToken(keycloakUrl, realm, clientId, secret, username, password);
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        log.error("Error fetching service token!");
-        log.error("Check the CM for rulesservice! Needs GENNY_KEYCLOAK_URL, GENNY_BACKEND_SECRET, GENNY_SERVICE_USERNAME, GENNY_SERVICE_PASSWORD");
-        e.printStackTrace();
-      }
-
-      if(jsonPayload.getString("access_token") == null) {
-        log.error("Service token returned from KeycloakUtils is null");
-        log.error("Payload: " + jsonPayload.toString());
-      } else {
-        serviceTokenStr = jsonPayload.getString("access_token");
-      }
+      log.error("FETCHING FROM KEYCLOAK");
+      serviceTokenStr = getServiceToken();
     } 
     if(serviceTokenStr != null) {
       GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
