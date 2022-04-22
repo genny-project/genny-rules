@@ -81,6 +81,7 @@ import life.genny.qwanda.message.QEventMessage;
 import life.genny.qwanda.utils.OutputParam;
 import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
+import life.genny.qwandautils.KeycloakUtils;
 import life.genny.qwandautils.QwandaUtils;
 import life.genny.rules.listeners.GennyAgendaEventListener;
 import life.genny.rules.listeners.GennyRuleTimingListener;
@@ -1765,10 +1766,34 @@ public class RulesLoader {
 
     // Service Token
     String serviceTokenStr =
-        VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
+    VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
     if (serviceTokenStr == null) {
       log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
-    } else {
+      String keycloakUrl = getEnv("GENNY_KEYCLOAK_URL");
+      String realm = "internmatch";
+      String clientId = "backend";
+      String secret = getEnv("GENNY_BACKEND_SECRET");
+      String username = getEnv("GENNY_SERVICE_USERNAME");
+      String password = getEnv("GENNY_SERVICE_PASSWORD");
+      JsonObject jsonPayload = null;
+      try {
+        jsonPayload = KeycloakUtils.getToken(keycloakUrl, realm, clientId, secret, username, password);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        log.error("Error fetching service token!");
+        log.error("Check the CM for rulesservice! Needs GENNY_KEYCLOAK_URL, GENNY_BACKEND_SECRET, GENNY_SERVICE_USERNAME, GENNY_SERVICE_PASSWORD");
+        e.printStackTrace();
+      }
+
+      if(jsonPayload.getString("access_token") == null) {
+        log.error("Service token returned from KeycloakUtils is null");
+        log.error("Payload: " + jsonPayload.toString());
+      } else {
+        serviceTokenStr = jsonPayload.getString("access_token");
+      }
+    }
+    
+    if(serviceTokenStr != null) {
       GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
 
       List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
@@ -1823,9 +1848,20 @@ public class RulesLoader {
       } catch (Exception e) {
         e.printStackTrace();
       }
+    } else {
+      log.error("Could not get service token from cache or from keycloak. What is going on?");
     }
   }
 
+  private String getEnv(String env) {
+    String result = System.getenv(env);
+    if(result == null) {
+      log.error("Could not get Environment Variable: " + env);
+    }
+
+    return result;
+  }
+  
   public static Map<File, ResourceType> getKieResources() {
     return new HashMap<File, ResourceType>(); // TODO
   }
