@@ -1754,8 +1754,8 @@ public class RulesLoader {
   private String getServiceToken() {
     String keycloakUrl = getEnv("GENNY_KEYCLOAK_URL");
     String realm = "internmatch";
-    String clientId = "backend";
-    String secret = getEnv("GENNY_BACKEND_SECRET");
+    String clientId = getEnv("GENNY_CLIENT_ID");
+    String secret = "nosecret";
     String username = getEnv("GENNY_SERVICE_USERNAME");
     String password = getEnv("GENNY_SERVICE_PASSWORD");
 
