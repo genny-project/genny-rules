@@ -391,16 +391,17 @@ public class RulesLoader {
       return false;
     }
 
-    
+    GennyToken serviceToken = new GennyToken(getServiceToken());
    
     
     for (String realm : activeRealms) {
       log.info("About to load in DEFs before rules for realm " + realm);
-      JsonObject tokenObj =
-          VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-      String sToken = tokenObj.getString("value");
-      GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
-
+      VertxUtils.writeCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase(),serviceToken.getToken(),serviceToken.getToken());
+//      JsonObject tokenObj =
+//          VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+//      String sToken = tokenObj.getString("value");
+//      GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+//
       DefUtils.loadDEFS(realm,serviceToken);
     }
 
@@ -448,6 +449,37 @@ public class RulesLoader {
 
     return rulesChanged;
   }
+  
+  private static String getServiceToken() {
+	    String keycloakUrl = getEnv("GENNY_KEYCLOAK_URL");
+	    String realm = "internmatch";
+	    String clientId = getEnv("GENNY_CLIENT_ID");
+	    String secret = getEnv("GENNY_CLIENT_SECRET");
+	    String username = getEnv("GENNY_SERVICE_USERNAME");
+	    String password = getEnv("GENNY_SERVICE_PASSWORD");
+
+	    JsonObject jsonPayload = null;
+	    try {
+	      jsonPayload = KeycloakUtils.getToken(keycloakUrl, realm, clientId, secret, username, password);
+	    } catch (IOException e) {
+	      log.error("Error fetching service token!");
+	      log.error("Check the CM for rulesservice! Needs GENNY_KEYCLOAK_URL, GENNY_BACKEND_SECRET, GENNY_SERVICE_USERNAME, GENNY_SERVICE_PASSWORD");
+	      e.printStackTrace();
+	      return null;
+	    }
+
+	    
+	    String serviceTokenStr = null;
+	    if(jsonPayload.getString("access_token") == null) {
+	      log.error("Service token returned from KeycloakUtils is null");
+	      log.error("Payload: " + jsonPayload.toString());
+	    } else {
+	      serviceTokenStr = jsonPayload.getString("access_token");
+	    }
+
+	    return serviceTokenStr;
+	  }
+
 
   /**
    * @param rulesDir
@@ -1853,7 +1885,7 @@ public class RulesLoader {
     }
   }
 
-  private String getEnv(String env) {
+  private static String getEnv(String env) {
     String result = System.getenv(env);
     if(result == null) {
       log.error("Could not get Environment Variable: " + env);
