@@ -51,19 +51,21 @@ public class DefUtils {
 		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
 		String sToken = tokenObj.getString("value");
 		GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+		serviceToken.setProjectCode(realm);
 
 		if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
 			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
 			return;
 		}
 
-		loadDEFS(realm,serviceToken);
+		loadDEFS(serviceToken);
 	}
 	/**
 	 * @param realm
 	 */
-	public static void loadDEFS(String realm,GennyToken serviceToken) {
-		log.info("Loading in DEFS for realm "+realm);
+	public static void loadDEFS(GennyToken serviceToken) {
+
+		log.info("Loading in DEFS for realm "+serviceToken.getRealm());
 
 		SearchEntity searchBE = new SearchEntity("SBE_DEF", "DEF test")
 				.addSort("PRI_NAME", "Created", SearchEntity.Sort.ASC)
@@ -71,7 +73,7 @@ public class DefUtils {
 
 				.addColumn("PRI_NAME", "Name");
 
-		searchBE.setRealm(realm);
+		searchBE.setRealm(serviceToken.getRealm());
 		searchBE.setPageStart(0);
 		searchBE.setPageSize(10000);
 
@@ -82,11 +84,11 @@ public class DefUtils {
 		//if(!RulesUtils.realmAttributeMap.containsKey(serviceToken.getRealm())) {
 			log.info("Loading attributes into cache");
 			RulesUtils.loadAllAttributesIntoCache(serviceToken);
-			log.info("Done loading attributes into cache.");
+			log.info("Done loading attributes into cache for realm "+serviceToken.getRealm());
 		//}
 
 		List<BaseEntity> items = Collections.synchronizedList(beUtils.getBaseEntitys(searchBE));
-			log.info("Loaded "+items.size()+" DEF baseentitys");
+			log.info("Loaded "+items.size()+" DEF baseentitys for realm "+serviceToken.getRealm());
 
 			Map<String,BaseEntity> newDefs = new ConcurrentHashMap<String,BaseEntity>()	;
 			Set<Attribute> newDefAttributes = new HashSet<>()	;
@@ -136,7 +138,7 @@ public class DefUtils {
 
 				} else if (defEa.getAttributeCode().startsWith("ATT_")) {
 					String normalAttributeCode = defEa.getAttributeCode().substring("ATT_".length());
-					Attribute normalAttribute = RulesUtils.realmAttributeMap.get(realm).get(normalAttributeCode);
+					Attribute normalAttribute = RulesUtils.realmAttributeMap.get(serviceToken.getRealm()).get(normalAttributeCode);
 					newDefAttributes.add(normalAttribute);
 				}
 			}
@@ -146,15 +148,15 @@ public class DefUtils {
 
 			newDefs.put(item.getCode(),item);
 
-			log.info("Saving ("+realm+") DEF "+item.getCode());
+			log.info("Saving ("+serviceToken.getRealm()+") DEF "+item.getCode());
 		}
 
 		// Now switch in the defs
-			RulesUtils.defs.put(realm, newDefs);
+			RulesUtils.defs.put(serviceToken.getRealm(), newDefs);
 
 		// Now switch in the QDataAttributesMessage
 			 QDataAttributeMessage defAttributesMsg = new QDataAttributeMessage(newDefAttributes.toArray(new Attribute[0]));
-			 RulesUtils.defAttributesMap.put(realm, defAttributesMsg);
+			 RulesUtils.defAttributesMap.put(serviceToken.getRealm(), defAttributesMsg);
 
 		log.info("Saved "+items.size()+" yummy DEFs!");
 	}

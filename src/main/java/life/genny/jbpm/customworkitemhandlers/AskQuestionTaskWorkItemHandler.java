@@ -326,7 +326,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
     } else {
       // add the attribute with default value
       Attribute newAttribute =
-          RulesUtils.getAttribute(taskAsk.getAsk().getAttributeCode(), userToken.getToken());
+          RulesUtils.getAttribute(taskAsk.getAsk().getAttributeCode(), userToken);
       if (newAttribute.dataType.getClassName().contains("Integer")) {
         if (newAttribute.getDefaultValue() == null) {
           newAttribute.setDefaultValue("0");

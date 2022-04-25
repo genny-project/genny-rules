@@ -1194,7 +1194,7 @@ public class TableUtils {
   }
 
   public Attribute attribute(final String attributeCode, GennyToken gToken) {
-    Attribute attribute = RulesUtils.getAttribute(attributeCode, gToken.getToken());
+    Attribute attribute = RulesUtils.getAttribute(attributeCode, gToken);
     return attribute;
   }
 
@@ -1620,7 +1620,7 @@ public class TableUtils {
       Boolean cache) {
     QDataAskMessage ret = null;
     // Set the table title
-    Attribute nameAttribute = RulesUtils.getAttribute(attributeCode, userToken.getToken());
+    Attribute nameAttribute = RulesUtils.getAttribute(attributeCode, userToken);
     Question titleQuestion =
         new Question(titleQuestionCode, titleQuestionCode, nameAttribute, true);
 
@@ -1643,7 +1643,7 @@ public class TableUtils {
 
   public void updateBaseEntity(BaseEntity be, String attributeCode, String value) {
     Attribute attribute =
-        RulesUtils.getAttribute(attributeCode, beUtils.getGennyToken().getToken());
+        RulesUtils.getAttribute(attributeCode, beUtils.getGennyToken());
     try {
       be.addAnswer(new Answer(be, be, attribute, value));
       VertxUtils.putObject(
@@ -2247,7 +2247,7 @@ public class TableUtils {
           // Default to the attribute name instead
           System.out.println("correlatedFlc is null");
           Attribute attr =
-              RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken().getToken());
+              RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken());
           flcName = attr.getName();
         }
         // String replacement
@@ -2288,7 +2288,7 @@ public class TableUtils {
         filterColumn.setIndex(filt.getWeight().intValue());
         // Add PRI_NAME to the BE
         Attribute nameAttr =
-            RulesUtils.getAttribute("PRI_NAME", beUtils.getGennyToken().getToken());
+            RulesUtils.getAttribute("PRI_NAME", beUtils.getGennyToken());
         try {
           filterColumn.addAttribute(nameAttr, 1.0, filt.getAttributeName());
         } catch (Exception e) {

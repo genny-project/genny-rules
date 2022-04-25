@@ -1275,7 +1275,7 @@ public class BucketUtils {
 	/* generates the bucket-content ask */
 	public Ask getBucketContentAsk(Map<String, ContextList> contextListMap, GennyToken serviceToken) {
 
-		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken.getToken());
+		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken);
 		Question bucketContentQuestion = new Question("QUE_BUCKET_CONTENT_GRP", "", questionAttribute, true);
 		Ask bucketContentAsk = new Ask(bucketContentQuestion, beUtils.getGennyToken().getUserCode(), "SBE_DUMMY");
 		return bucketContentAsk;
@@ -1370,17 +1370,17 @@ public class BucketUtils {
 		searchValidationList.setValidationList(validations);
 
 		/* get the attributes */
-		Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken.getToken());
-		Attribute countAttribute2 = RulesUtils.getAttribute("SCH_TOTAL", serviceToken.getToken());
-		Attribute sortAttribute = RulesUtils.getAttribute("PRI_SORT", serviceToken.getToken());
-		Attribute nameAttribute = RulesUtils.getAttribute("PRI_NAME", serviceToken.getToken());
+		Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken);
+		Attribute countAttribute2 = RulesUtils.getAttribute("SCH_TOTAL", serviceToken);
+		Attribute sortAttribute = RulesUtils.getAttribute("PRI_SORT", serviceToken);
+		Attribute nameAttribute = RulesUtils.getAttribute("PRI_NAME", serviceToken);
 		
 		Attribute searchAttribute = new Attribute("PRI_NAME", "Search",
 				new DataType("Text", searchValidationList, "Text"));
 
-		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken.getToken());
+		Attribute questionAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP", serviceToken);
 		Attribute tableCellAttribute = RulesUtils.getAttribute("QQQ_QUESTION_GROUP_TABLE_CELL",
-				serviceToken.getToken());
+				serviceToken);
 
 		/* Initialize Bucket Header Ask group */
 		Question bucketHeaderQuestion = new Question("QUE_BUCKET_HEADER_GRP", "Bucket Header", questionAttribute, true);
@@ -1585,7 +1585,7 @@ public class BucketUtils {
 				// beUtils.addAnswer(totalAnswer);
 				// beUtils.updateBaseEntity(searchBe, totalAnswer);
 
-				Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken.getToken());
+				Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken);
 				EntityAttribute eAttribute = new EntityAttribute(searchBe, countAttribute,1.0);
 				eAttribute.setValueInteger(Integer.parseInt(totalResults+""));
 
@@ -1774,7 +1774,7 @@ public class BucketUtils {
 				// beUtils.addAnswer(totalAnswer);
 				// beUtils.updateBaseEntity(searchBe, totalAnswer);
 
-				Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken.getToken());
+				Attribute countAttribute = RulesUtils.getAttribute("PRI_TOTAL_RESULTS", serviceToken);
 				EntityAttribute eAttribute = new EntityAttribute(searchBe, countAttribute,1.0);
 				eAttribute.setValueInteger(Integer.parseInt(totalResults+""));
 
