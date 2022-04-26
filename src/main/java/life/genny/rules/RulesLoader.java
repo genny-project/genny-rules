@@ -1812,6 +1812,7 @@ public class RulesLoader {
     
     if(serviceTokenStr != null) {
       GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
+      serviceToken.setProjectCode(userToken.getRealm());
 
       List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
 
