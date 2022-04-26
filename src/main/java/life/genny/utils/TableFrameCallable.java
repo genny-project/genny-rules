@@ -35,9 +35,9 @@ public class TableFrameCallable implements Callable<QBulkMessage> {
 			qbm2 = ShowFrame.display(beUtils, "FRM_TABLE_VIEW", "FRM_TAB_CONTENT", "Test", cache);
 
 			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", "FRM_QUE_TAB_VIEW-FRM_CONTENT", qbm1,
-					beUtils.getGennyToken().getToken());
+					beUtils.getGennyToken());
 			VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", "FRM_TABLE_VIEW-FRM_TAB_CONTENT",
-					qbm2, beUtils.getGennyToken().getToken());
+					qbm2, beUtils.getGennyToken());
 		} else {
 			log.info("Fetching Table Frames from Cache");
 		}

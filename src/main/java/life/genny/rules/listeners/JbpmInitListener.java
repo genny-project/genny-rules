@@ -180,7 +180,7 @@ public class JbpmInitListener /* extends WorkingMemoryLogger */ implements Proce
                           gennyToken.getRealm(),
                           gennyToken.getJTI(),
                           process.getId() + "",
-                          gennyToken.getToken());
+                          gennyToken);
                       // log.info("JbpmListener: userToken "+gennyToken.getUserCode()+"
                       // processId="+process.getProcessId()+" -> session_state:
                       // "+gennyToken.getJTI()+" written to Cache");

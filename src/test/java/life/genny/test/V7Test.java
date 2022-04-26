@@ -12,6 +12,7 @@ import java.util.Set;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
+import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
 
@@ -642,9 +643,11 @@ public class V7Test {
 	private <T extends QMessage> void sendTestMsg(T msg) {
 
 		try {
-			String token = KeycloakUtils.getAccessToken("http://keycloak.genny.life", "genny", "genny",
+			String tokenStr = KeycloakUtils.getAccessToken("http://keycloak.genny.life", "genny", "genny",
 					"056b73c1-7078-411d-80ec-87d41c55c3b4", "user1", "password1");
-			msg.setToken(token);
+			msg.setToken(tokenStr);
+
+			GennyToken token = new GennyToken(tokenStr);
 
 			log.info("cmd message ::" + msg);
 
@@ -664,8 +667,10 @@ public class V7Test {
 		String resultJson;
 		try {
 
-			String serviceToken = KeycloakUtils.getAccessToken("http://keycloak.genny.life:8180", "genny", "genny",
+			String serviceTokenStr = KeycloakUtils.getAccessToken("http://keycloak.genny.life:8180", "genny", "genny",
 					"056b73c1-7078-411d-80ec-87d41c55c3b4", "service", "Wubba!Lubba!Dub!Dub!");
+
+			GennyToken serviceToken = new GennyToken(serviceTokenStr);
 
 			SearchEntity hostCompanies = new SearchEntity("SBE_HOSTCOMPANIES_7fa24b4b-a19a-4938-b363-a40fe9aa5b28", "List of All Host Companies")
 			        .addColumn("PRI_NAME", "Name")

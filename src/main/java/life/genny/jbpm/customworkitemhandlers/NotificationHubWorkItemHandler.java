@@ -15,12 +15,9 @@ import org.kie.api.runtime.process.WorkItem;
 import org.kie.api.runtime.process.WorkItemHandler;
 import org.kie.api.runtime.process.WorkItemManager;
 
-import life.genny.models.GennyToken;
 import life.genny.notifications.EmailHelper;
 import life.genny.notifications.SmsHelper;
 import life.genny.qwanda.message.QBaseMSGMessageType;
-import life.genny.utils.BaseEntityUtils;
-
 /*
  * This workitem is for sending messages for JBPM Workflows.
  * message type supports email, SMS and other message services

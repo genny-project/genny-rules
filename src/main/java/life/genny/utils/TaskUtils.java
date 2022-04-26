@@ -627,7 +627,7 @@ public class TaskUtils {
       if (validAnswer) {
         try {
           Attribute attribute =
-              RulesUtils.getAttribute(answer.getAttributeCode(), userToken.getToken());
+              RulesUtils.getAttribute(answer.getAttributeCode(), userToken);
           if (attribute != null) {
             answer.setAttribute(attribute);
             if (answer.getInferred()) {

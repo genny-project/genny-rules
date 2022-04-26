@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.Context;
 
@@ -264,10 +265,12 @@ public class V7FormQuestionTest {
 					"056b73c1-7078-411d-80ec-87d41c55c3b4", "user1", "password1");
 			msg.setToken(token);
 
+			GennyToken gennyToken = new GennyToken(token);
+
 			/* get the bridge url to publish the message to webcmd channel */
 			String bridgetUrl = ENV_GENNY_BRIDGE_URL + "/api/service?channel=webdata";
 
-			QwandaUtils.apiPostEntity(bridgetUrl, JsonUtils.toJson(msg), token);
+			QwandaUtils.apiPostEntity(bridgetUrl, JsonUtils.toJson(msg), gennyToken);
 
 		} catch (IOException e1) {
 			e1.printStackTrace();

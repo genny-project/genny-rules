@@ -136,7 +136,7 @@ public class GennyUsersCallback implements UserGroupCallback  {
 
 	}
 	
-	private String getUserToken(String realm,String userCode, String serviceToken)
+	private String getUserToken(String realm,String userCode, GennyToken serviceToken)
 	{
 		userCode = userCode.toUpperCase();
 		JsonObject tokenObj = VertxUtils.readCachedJson(realm,

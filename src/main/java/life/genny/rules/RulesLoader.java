@@ -381,7 +381,7 @@ public class RulesLoader {
     	GennyToken serviceToken = new GennyToken(getServiceToken());
     	serviceToken.setProjectCode(realm);
       log.info("About to load in DEFs before rules for realm " + realm);
-      VertxUtils.writeCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase(),serviceToken.getToken(),serviceToken.getToken());
+      VertxUtils.writeCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase(),serviceToken.getToken(),serviceToken);
 //      JsonObject tokenObj =
 //          VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
 //      String sToken = tokenObj.getString("value");
@@ -521,7 +521,7 @@ public class RulesLoader {
             QwandaUtils.apiPostEntity(
                 GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
                 jsonSearchBE,
-                serviceToken.getToken());
+                serviceToken);
         
         
         
@@ -1129,7 +1129,7 @@ public class RulesLoader {
         facts.getUserToken().getRealm(),
         facts.getUserToken().getJTI(),
         bridgeSourceAddress,
-        facts.getUserToken().getToken());
+        facts.getUserToken());
 
     log.info(
         "incoming EVENT"
@@ -1213,7 +1213,7 @@ public class RulesLoader {
         facts.getUserToken().getRealm(),
         facts.getUserToken().getJTI(),
         bridgeSourceAddress,
-        facts.getUserToken().getToken());
+        facts.getUserToken());
     log.info(
         "incoming DATA"
             + " message from "
@@ -2215,14 +2215,15 @@ public class RulesLoader {
     }
     // Determine what rules have changed via their hash .... and if so then clear
     // their cache and db entries
-    Map<String, String> realmTokenMap = new HashMap<String, String>();
+    Map<String, GennyToken> realmTokenMap = new HashMap<>();
     Map<String, BaseEntityUtils> realmBeUtilsMap = new HashMap<String, BaseEntityUtils>();
     Integer hashcode = ruleText.hashCode();
     if (realmTokenMap.get(realm) == null) {
       JsonObject tokenObj =
           VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
       String token = tokenObj.getString("value");
-      realmTokenMap.put(realm, token);
+      GennyToken gToken = new GennyToken(token);
+      realmTokenMap.put(realm, gToken);
     }
     // get kie type
     String ext = filename.substring(filename.lastIndexOf(".") + 1);
@@ -2241,7 +2242,7 @@ public class RulesLoader {
 
     BaseEntityUtils beUtils = null;
     if (realmBeUtilsMap.get(realm) == null) {
-      beUtils = new BaseEntityUtils(new GennyToken(realmTokenMap.get(realm)));
+      beUtils = new BaseEntityUtils(realmTokenMap.get(realm));
       realmBeUtilsMap.put(realm, beUtils);
     } else {
       beUtils = realmBeUtilsMap.get(realm);
@@ -2334,7 +2335,7 @@ public class RulesLoader {
 
   private static Boolean processJbpm(String realm, Tuple3<String, String, String> ruleTuple) {
     Boolean ret = false;
-    Map<String, String> realmTokenMap = new HashMap<String, String>();
+    Map<String, GennyToken> realmTokenMap = new HashMap<>();
     Map<String, BaseEntityUtils> realmBeUtilsMap = new HashMap<String, BaseEntityUtils>();
     String name = ruleTuple._2.replaceAll("\\.[^.]*$", "");
     String filename = ruleTuple._2;
@@ -2344,7 +2345,8 @@ public class RulesLoader {
       JsonObject tokenObj =
           VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
       String token = tokenObj.getString("value");
-      realmTokenMap.put(realm, token);
+      GennyToken gToken = new GennyToken(token);
+      realmTokenMap.put(realm, gToken);
     }
 
     if ("init_project.bpmn".equals(filename)) {
@@ -2370,7 +2372,7 @@ public class RulesLoader {
 
     BaseEntityUtils beUtils = null;
     if (realmBeUtilsMap.get(realm) == null) {
-      beUtils = new BaseEntityUtils(new GennyToken(realmTokenMap.get(realm)));
+      beUtils = new BaseEntityUtils(realmTokenMap.get(realm));
       realmBeUtilsMap.put(realm, beUtils);
     } else {
       beUtils = realmBeUtilsMap.get(realm);
@@ -2489,7 +2491,7 @@ public class RulesLoader {
           QwandaUtils.apiPostEntity(
               GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
               jsonSearchBE,
-              serviceToken.getToken());
+              serviceToken);
       QDataBaseEntityMessage resultMsg =
           JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
 
@@ -2539,7 +2541,7 @@ public class RulesLoader {
           QwandaUtils.apiPostEntity(
               GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
               jsonSearchBE,
-              serviceToken.getToken());
+              serviceToken);
       QDataBaseEntityMessage resultMsg =
           JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
 

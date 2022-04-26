@@ -387,7 +387,7 @@ public class TableUtils {
                   + searchBE.getPageStart(0)
                   + "/"
                   + searchBE.getPageSize(GennySettings.defaultPageSize),
-              serviceToken.getToken(),
+              serviceToken,
               120);
 
       endtime2 = System.currentTimeMillis();
@@ -491,7 +491,7 @@ public class TableUtils {
             "",
             searchCode,
             SearchEntity.class,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
 
     return getSessionSearch(searchBE, filterCode, filterValue);
   }
@@ -537,14 +537,14 @@ public class TableUtils {
         "",
         searchBE.getCode(),
         searchBE,
-        beUtils.getGennyToken().getToken());
+        beUtils.getGennyToken());
     SearchEntity searchEntity =
         VertxUtils.getObject(
             beUtils.getGennyToken().getRealm(),
             "",
             searchBE.getCode(),
             SearchEntity.class,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
 
     return searchEntity;
   }
@@ -578,7 +578,7 @@ public class TableUtils {
             "",
             beUtils.getGennyToken().getUserCode(),
             BaseEntity.class,
-            beUtils.getServiceToken().getToken());
+            beUtils.getServiceToken());
 
     log.info("search code coming from searchBE getCode  :: " + searchBE.getCode());
 
@@ -630,14 +630,14 @@ public class TableUtils {
         "",
         searchBE.getCode(),
         searchBE,
-        beUtils.getGennyToken().getToken());
+        beUtils.getGennyToken());
     searchBE =
         VertxUtils.getObject(
             beUtils.getGennyToken().getRealm(),
             "",
             searchBE.getCode(),
             SearchEntity.class,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
 
     return searchBE;
   }
@@ -1054,7 +1054,7 @@ public class TableUtils {
           QwandaUtils.apiPostEntity(
               GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
               jsonSearchBE,
-              beUtils.getServiceToken().getToken());
+              beUtils.getServiceToken());
       final BaseEntity[] items = new BaseEntity[0];
       final String parentCode = "GRP_ROOT";
       final String linkCode = "LINK";
@@ -1404,7 +1404,7 @@ public class TableUtils {
 
       frame =
           VertxUtils.getObject(
-              serviceToken.getRealm(), "", frameCode, Frame3.class, serviceToken.getToken());
+              serviceToken.getRealm(), "", frameCode, Frame3.class, serviceToken);
 
       // Validation tableRowValidation = new Validation("VLD_ANYTHING", "Anything",
       // ".*");
@@ -1651,7 +1651,7 @@ public class TableUtils {
           "",
           be.getCode(),
           be,
-          beUtils.getGennyToken().getToken());
+          beUtils.getGennyToken());
 
     } catch (BadDataException e) {
       // TODO Auto-generated catch block
@@ -1764,7 +1764,7 @@ public class TableUtils {
             "",
             searchBeCode,
             SearchEntity.class,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
 
     if (searchBE != null) {
 
@@ -1857,7 +1857,7 @@ public class TableUtils {
           "LAST-SEARCH",
           beUtils.getGennyToken().getJTI(),
           searchBE,
-          beUtils.getGennyToken().getToken());
+          beUtils.getGennyToken());
 
       updateActIndex(searchBE);
       updateColIndex(searchBE);
@@ -1980,7 +1980,7 @@ public class TableUtils {
           "LAST-SEARCH",
           beUtils.getGennyToken().getJTI(),
           searchBE,
-          beUtils.getGennyToken().getToken());
+          beUtils.getGennyToken());
 
       updateActIndex(searchBE);
       updateColIndex(searchBE);
@@ -2011,7 +2011,7 @@ public class TableUtils {
             "",
             searchCode,
             SearchEntity.class,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
 
     return performAndSendCount(searchBE);
   }
@@ -2053,7 +2053,7 @@ public class TableUtils {
             "",
             searchCode,
             SearchEntity.class,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
 
     return performCount(searchBE);
   }
@@ -2090,7 +2090,7 @@ public class TableUtils {
         String resultJsonStr =
             QwandaUtils.apiGet(
                 GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count24/" + hql2,
-                this.beUtils.getServiceToken().getToken(),
+                this.beUtils.getServiceToken(),
                 120);
 
         System.out.println("Count = " + resultJsonStr);
@@ -2107,7 +2107,7 @@ public class TableUtils {
             QwandaUtils.apiPostEntity2(
                 GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/count25/",
                 JsonUtils.toJson(searchBE),
-                this.beUtils.getServiceToken().getToken(),
+                this.beUtils.getServiceToken(),
                 null);
 
         System.out.println("Count = " + resultJsonStr);
@@ -2155,7 +2155,7 @@ public class TableUtils {
             "",
             code,
             SearchEntity.class,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
     sendFilterQuestions(beUtils, searchBE);
   }
 
@@ -2178,7 +2178,7 @@ public class TableUtils {
             "",
             baseSearchCode,
             SearchEntity.class,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
 
     /* Find the highest weight of filters in base SBE */
     Double baseMaxWeight = baseSearchBE.getMaximumFilterWeight();
@@ -2201,8 +2201,8 @@ public class TableUtils {
     // NOTE: have to pass PER_SOURCE and PER_TARGET or valid BE codes, otherwise we get a null
     // pointer
     QDataAskMessage askMessage =
-        QuestionUtils.getAsks(
-            "PER_SOURCE", "PER_TARGET", "QUE_ADD_FILTER_GRP", beUtils.getGennyToken().getToken());
+        QuestionUtils.getAsks(beUtils.getGennyToken().getRealm(),
+            "PER_SOURCE", "PER_TARGET", "QUE_ADD_FILTER_GRP", beUtils.getGennyToken());
 
     if (askMessage == null) {
       log.error("AskMessage is null for QUE_ADD_FILTER_GRP");
@@ -2351,7 +2351,7 @@ public class TableUtils {
         "",
         filterGrpAsk.getQuestionCode(),
         filterGrpAsk,
-        beUtils.getGennyToken().getToken());
+        beUtils.getGennyToken());
 
     // Init our value array used in collecting filter data
     VertxUtils.putObject(
@@ -2359,7 +2359,7 @@ public class TableUtils {
         "",
         "FLT_" + targetCode,
         new String[3],
-        beUtils.getGennyToken().getToken());
+        beUtils.getGennyToken());
 
     // Send Asks to FE
     QDataAskMessage askMsg = new QDataAskMessage(filterGrpAsk);
@@ -2384,7 +2384,7 @@ public class TableUtils {
 
     GennyToken serviceToken = beUtils.getServiceToken();
     GennyToken userToken = beUtils.getGennyToken();
-    String token = serviceToken.getToken();
+    GennyToken token = serviceToken;
     String realm = serviceToken.getRealm();
 
     String filterAttributeCode =
@@ -2564,7 +2564,7 @@ public class TableUtils {
 
       /* Send Asks to FE */
       QDataAskMessage askMsg = new QDataAskMessage(filterGrpAsk);
-      askMsg.setToken(token);
+      askMsg.setToken(token.getToken());
       askMsg.setReplace(true);
       VertxUtils.writeMsg("webcmds", askMsg);
       System.out.println("Asks sent to FE");
@@ -2598,7 +2598,7 @@ public class TableUtils {
             "",
             oldSearchCode,
             SearchEntity.class,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
     if (searchBE != null) {
       searchBE.setCode(newSearchCode);
       for (EntityAttribute ea : searchBE.getBaseEntityAttributes()) {
@@ -2617,8 +2617,8 @@ public class TableUtils {
     Instant start = Instant.now();
 
     String realm = beUtils.getServiceToken().getRealm();
-    String sToken = beUtils.getServiceToken().getToken();
-    String gToken = beUtils.getGennyToken().getToken();
+    GennyToken serviceToken = beUtils.getServiceToken();
+    GennyToken gennyToken = beUtils.getGennyToken();
     String sessionCode = beUtils.getGennyToken().getJTI().toUpperCase();
 
     // convert to entity list
@@ -2654,7 +2654,7 @@ public class TableUtils {
       String bucketMapCode = bucketMap.getString("code");
 
       SearchEntity baseSearch =
-          VertxUtils.getObject(realm, "", bucketMapCode, SearchEntity.class, sToken);
+          VertxUtils.getObject(realm, "", bucketMapCode, SearchEntity.class, serviceToken);
 
       if (baseSearch == null) {
         log.error("SearchEntity " + bucketMapCode + " is NULL in cache!");
@@ -2756,7 +2756,7 @@ public class TableUtils {
         // fetch each search from cache
         SearchEntity searchBE =
             VertxUtils.getObject(
-                realm, "", targetedBucketCode + "_" + sessionCode, SearchEntity.class, sToken);
+                realm, "", targetedBucketCode + "_" + sessionCode, SearchEntity.class, serviceToken);
 
         if (searchBE == null) {
           log.error("Null SBE in cache for " + targetedBucketCode);
@@ -2800,7 +2800,7 @@ public class TableUtils {
         // send the results
         log.info("Sending Results: " + finalResultList.size());
         QDataBaseEntityMessage msg = new QDataBaseEntityMessage(finalResultList);
-        msg.setToken(gToken);
+        msg.setToken(gennyToken.getToken());
         msg.setReplace(true);
         msg.setParentCode(searchBE.getCode());
         VertxUtils.writeMsg("webcmds", msg);
@@ -2814,7 +2814,7 @@ public class TableUtils {
           log.error("SearchEntity is NULLLLL!!!!");
         }
         QDataBaseEntityMessage searchMsg = new QDataBaseEntityMessage(searchBE);
-        searchMsg.setToken(gToken);
+        searchMsg.setToken(gennyToken.getToken());
         searchMsg.setReplace(true);
         VertxUtils.writeMsg("webcmds", searchMsg);
       }

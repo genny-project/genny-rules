@@ -129,7 +129,7 @@ public class DropdownUtils implements Serializable {
 		// Check if present in cache
 		// TODO THESE CACHES NEED TO BE CLEARED UPON ANY ADDITIONS
 		QDataBaseEntityMessage DROPDOWN_MSG = VertxUtils.getObject(serviceToken.getRealm(), "", searchBE.getCode() + "_MSG",
-				QDataBaseEntityMessage.class, serviceToken.getToken());
+				QDataBaseEntityMessage.class, serviceToken);
 
 		if (DROPDOWN_MSG == null || true) { // TODO, update search caches upon item add/delete
 
@@ -144,7 +144,7 @@ public class DropdownUtils implements Serializable {
 				System.out.println("Using standard search for dropdown");
 				String jsonSearchBE = JsonUtils.toJson(searchBE);
 				String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-						jsonSearchBE, serviceToken.getToken());
+						jsonSearchBE, serviceToken);
 
 				msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
 			}
@@ -161,7 +161,7 @@ public class DropdownUtils implements Serializable {
 				QDataBaseEntityMessage beMessage = setDynamicLinksToParentBe(msg, parentCode, linkCode, linkValue, userToken,
 						sortByWeight);
 				VertxUtils.putObject(serviceToken.getRealm(), "", searchBE.getCode() + "_MSG", beMessage,
-						serviceToken.getToken());
+						serviceToken);
 				return beMessage;
 
 			} else {

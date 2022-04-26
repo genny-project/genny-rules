@@ -79,7 +79,7 @@ public class SearchUtils {
 		String resultJson;
 		try {
 			resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
-					jsonSearchBE, beUtils.getServiceToken().getToken());
+					jsonSearchBE, beUtils.getServiceToken());
 			final BaseEntity[] items = new BaseEntity[0];
 			final String parentCode = "GRP_ROOT";
 			final String linkCode = "LINK";
@@ -157,11 +157,11 @@ public class SearchUtils {
 					log.info("FYODOR URL = " + GennySettings.fyodorServiceUrl);
 					resultJsonStr = QwandaUtils.apiPostEntity2(
 							GennySettings.fyodorServiceUrl + "/api/search",
-							JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
+							JsonUtils.toJson(searchBE), serviceToken, null);
 				} else {
 					resultJsonStr = QwandaUtils.apiPostEntity2(
 							GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search25/",
-							JsonUtils.toJson(searchBE), serviceToken.getToken(), null);
+							JsonUtils.toJson(searchBE), serviceToken, null);
 				}
 
 				endtime2 = System.currentTimeMillis();
@@ -724,7 +724,7 @@ public class SearchUtils {
 		}
 		log.info("Handling search asks for " + questionCode + " with " + targets.length + " items!");
 
-		String token = beUtils.getGennyToken().getToken();
+		GennyToken token = beUtils.getGennyToken();
 
 		String sourceCode = "PER_SOURCE";
 		String targetCode = "PER_SOURCE";
@@ -735,7 +735,7 @@ public class SearchUtils {
 		}
 
 		// Fetch the asks using the SBE's questionCode
-		QDataAskMessage askMsg = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, token);
+		QDataAskMessage askMsg = QuestionUtils.getAsks(token.getRealm(), sourceCode, targetCode, questionCode, token);
 
 		if (askMsg == null || askMsg.getItems().length == 0) {
 			log.error("NULL in DB for " + questionCode);
@@ -761,7 +761,7 @@ public class SearchUtils {
 
 		QBulkMessage askEntityData = new QBulkMessage(askMsg);
 
-		askMsg.setToken(token);
+		askMsg.setToken(token.getToken());
 		askMsg.setReplace(true);
 		VertxUtils.writeMsg("webcmds", JsonUtils.toJson(askMsg));
 
@@ -945,7 +945,7 @@ public class SearchUtils {
 				ask.getQuestion().setHtml("");
 			}
 		}
-        VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(), qbm1,beUtils.getGennyToken().getToken());
+        VertxUtils.putObject(beUtils.getGennyToken().getRealm(), "SPEEDUP", searchBE.getCode(), qbm1,beUtils.getGennyToken());
 
         totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
 

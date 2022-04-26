@@ -163,7 +163,7 @@ public class SearchCallable implements Callable<QBulkMessage> {
             "SPEEDUP",
             templateSearchCode,
             qbm1,
-            beUtils.getGennyToken().getToken());
+            beUtils.getGennyToken());
       }
     }
     ret.add(qbm1);

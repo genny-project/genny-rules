@@ -12,6 +12,7 @@ import org.kie.api.runtime.process.WorkItemManager;
 
 import com.google.gson.reflect.TypeToken;
 
+import life.genny.models.GennyToken;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.ContextType;
 import life.genny.qwanda.entity.BaseEntity;
@@ -40,7 +41,7 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 
 		String apiUrl = GennySettings.qwandaServiceUrl + ":8280/service/forms";
 		log.info("Fetching setup info from " + apiUrl);
-		String userToken = rules.getToken();
+		GennyToken userToken = rules.getToken();
 		try {
 
 			/* create a test baseentity */

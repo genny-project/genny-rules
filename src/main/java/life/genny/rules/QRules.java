@@ -155,7 +155,7 @@ public class QRules implements Serializable {
 
 	final static String DEFAULT_STATE = "NEW";
 
-	private String token;
+	private GennyToken token;
 	private EventBusInterface eventBus;
 	private Boolean started = false;
 	private Map<String, Object> decodedTokenMap;
@@ -165,19 +165,19 @@ public class QRules implements Serializable {
 
 	KnowledgeHelper drools;
 
-	String serviceToken;
+	GennyToken serviceToken;
 
 	/**
 	 * @return the serviceToken
 	 */
-	public String getServiceToken() {
+	public GennyToken getServiceToken() {
 		return serviceToken;
 	}
 
 	/**
 	 * @param serviceToken the serviceToken to set
 	 */
-	public void setServiceToken(String serviceToken) {
+	public void setServiceToken(GennyToken serviceToken) {
 		this.serviceToken = serviceToken;
 	}
 
@@ -198,13 +198,13 @@ public class QRules implements Serializable {
 	public QRules(final GennyToken serviceToken, final GennyToken userToken) {
 		super();
 		this.eventBus = null;
-		this.token = userToken.getToken();
+		this.token = userToken;
 		this.decodedTokenMap = userToken.getAdecodedTokenMap(); 
 		this.set("realm", userToken.getRealm());
 		this.stateMap = new ConcurrentHashMap<String, Boolean>();
 		stateMap.put(DEFAULT_STATE, true);
 		setStarted(false);
-		this.setServiceToken(serviceToken.getToken());
+		this.setServiceToken(serviceToken);
 		this.initUtils();	}
 	
 	public QRules(final EventBusInterface eventBus, final String token) {
@@ -216,7 +216,7 @@ public class QRules implements Serializable {
 		super();
 		GennyToken gennyToken = new GennyToken(token);
 		this.eventBus = eventBus;
-		this.token = token;
+		this.token = gennyToken;
 		this.decodedTokenMap = gennyToken.getAdecodedTokenMap(); 
 		this.set("realm", gennyToken.getRealm());
 		this.stateMap = new ConcurrentHashMap<String, Boolean>();
@@ -248,14 +248,14 @@ public class QRules implements Serializable {
 	/**
 	 * @return the token
 	 */
-	public String getToken() {
+	public GennyToken getToken() {
 		return token;
 	}
 
 	/**
 	 * @param token the token to set
 	 */
-	public void setToken(String token) {
+	public void setToken(GennyToken token) {
 		this.token = token;
 	}
 
@@ -796,22 +796,22 @@ public class QRules implements Serializable {
 	}
 
 	public <T extends QMessage> void publishCmd(T msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("cmds", JsonUtils.toJson(msg));
 	}
 
 	public <T extends QMessage> void publishCmd(T msg, final String[] recipientCodes) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("cmds", JsonUtils.toJson(msg));
 	}
 
 	public <T extends QMessage> void publishData(T msg, final String[] recipientCodes) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("webdata", JsonUtils.toJson(msg));
 	}
 
 	public <T extends QMessage> void publish(final String busChannel, T msg, final String[] recipientCodes) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish(busChannel, JsonUtils.toJson(msg));
 	}
 
@@ -830,7 +830,7 @@ public class QRules implements Serializable {
 				GennySettings.qwandaServiceUrl, getDecodedTokenMap(), getToken(), parentCode, linkCode, pageStart,
 				pageSize);
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(beArray, parentCode, linkCode);
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 
 		publish("cmds", msg);
 
@@ -1029,7 +1029,7 @@ public class QRules implements Serializable {
 			lastname = StringUtils.capitalize(lastname);
 			name = StringUtils.capitalize(name);
 
-			String token = RulesUtils.generateServiceToken(realm(), getToken());
+			GennyToken token = RulesUtils.generateServiceToken(realm(), getToken());
 
 			String realm = realm();
 			if (GennySettings.devMode || GennySettings.defaultLocalIP.equals(GennySettings.hostIP)) {
@@ -1220,7 +1220,7 @@ public class QRules implements Serializable {
 
 			QDataJsonMessage msg = new QDataJsonMessage("LINK_CHANGE", latestLinks);
 
-			msg.setToken(getToken());
+			msg.setToken(getToken().getToken());
 			final JsonObject json = RulesUtils.toJsonObject(msg);
 			json.put("items", latestLinks);
 			publishData(json);
@@ -1264,7 +1264,7 @@ public class QRules implements Serializable {
 	public void publishCmd(final BaseEntity be, final String aliasCode, final String[] recipientsCode) {
 	//	final BaseEntity filteredBe = EventBusInterface.privacyFilter(getUser(), be);  // Quick and Dirty security 
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be, aliasCode);
-		msg.setToken(getToken());		
+		msg.setToken(getToken().getToken());		
 		if (recipientsCode != null) {
 			msg.setRecipientCodeArray(recipientsCode);
 		}
@@ -1275,7 +1275,7 @@ public class QRules implements Serializable {
 	public void publishData(final BaseEntity be, final String aliasCode, final String[] recipientsCode) {
 
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be, aliasCode);
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		if (recipientsCode != null) {
 			msg.setRecipientCodeArray(recipientsCode);
 		} 
@@ -1289,7 +1289,7 @@ public class QRules implements Serializable {
 	public QDataBaseEntityMessage publishData(final BaseEntity be, final String[] recipientsCode) {
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be, null);
 		msg.setRecipientCodeArray(recipientsCode);
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("webdata", msg);
 		return msg;
 	}
@@ -1297,7 +1297,7 @@ public class QRules implements Serializable {
 	public QMessage publishData(final Answer answer, final String[] recipientsCode) {
 		QDataAnswerMessage msg = new QDataAnswerMessage(answer);
 		msg.setRecipientCodeArray(recipientsCode);
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("webdata", RulesUtils.toJsonObject(msg));
 		return msg;
 	}
@@ -1305,7 +1305,7 @@ public class QRules implements Serializable {
 	public QMessage publishCmdToRecipients(final BaseEntity be, final String[] recipientsCode) {
 		QDataBaseEntityMessage msg = new QDataBaseEntityMessage(be, null);
 		msg.setRecipientCodeArray(recipientsCode);
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("cmds", msg);
 		return msg;
 	}
@@ -1327,27 +1327,27 @@ public class QRules implements Serializable {
 	}
 
 	public QMessage publishCmd(final QDataMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		String json = JsonUtils.toJson(msg);
 		publish("cmds", json);
 		return msg;
 	}
 
 	public QMessage publishCmd(final QCmdMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		String json = JsonUtils.toJson(msg);
 		publish("cmds", json);
 		return msg;
 	}
 
 	public QMessage publishCmd(final QDataAskMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		String json = JsonUtils.toJson(msg);
 		publish("cmds", json);
 		return msg;
 	}
 	public QMessage publishCmd(final QDataAskMessage msg, final String targetStr, final String replaceStr) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		String json = JsonUtils.toJson(msg);
     	String jsonStr = json.replaceAll(targetStr, replaceStr); // set the user
 
@@ -1356,7 +1356,7 @@ public class QRules implements Serializable {
 	}
 	
 	public QMessage publishCmd(final QDataAskMessage msg, final List<Tuple2<String,String>> sourceTargetCodes) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		String json = JsonUtils.toJson(msg);
 		String jsonStr = json;
 		for (Tuple2<String,String> sourceTarget : sourceTargetCodes) {
@@ -1368,26 +1368,26 @@ public class QRules implements Serializable {
 	}
 
 	public void publishCmd(final QBulkMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("cmds", msg);
 	}
 
 	public QMessage publishCmd(final QDataSubLayoutMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		String json = JsonUtils.toJson(msg);
 		publish("cmds", json);
 		return msg;
 	}
 
 	public QMessage publishData(final QDataMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("webdata", JsonUtils.toJson(msg));
 		return msg;
 	}
 
 	public void logout() {
 		QCmdMessage msg = new QCmdMessage("CMD_LOGOUT", "LOGOUT");
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		String[] recipientCodes = new String[1];
 		recipientCodes[0] = getUser().getCode();
 		String json = JsonUtils.toJson(msg);
@@ -1415,41 +1415,41 @@ public class QRules implements Serializable {
 	}
 
 	public void publishEventBusData(final QDataAnswerMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("data", JsonUtils.toJson(msg));
 	}
 
 	public void publishData(final QDataAnswerMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("webdata", JsonUtils.toJson(msg));
 	}
 
 	public void publishData(final Answer answer) {
 		QDataAnswerMessage msg = new QDataAnswerMessage(answer);
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("webdata", JsonUtils.toJson(msg));
 	}
 
 	public void publishData(final List<Answer> answerList) {
 		Answer[] answerArray = answerList.toArray(new Answer[answerList.size()]);
 		QDataAnswerMessage msg = new QDataAnswerMessage(answerArray);
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("webdata", JsonUtils.toJson(msg));
 	}
 
 	public void publishCmd(final Answer answer) {
 		QDataAnswerMessage msg = new QDataAnswerMessage(answer);
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("cmds", JsonUtils.toJson(msg));
 	}
 
 	public void publishData(final QDataAskMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("webdata", RulesUtils.toJsonObject(msg));
 	}
 
 	public void publishData(final QDataAttributeMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("webdata", JsonUtils.toJson(msg));
 	}
 
@@ -1464,7 +1464,7 @@ public class QRules implements Serializable {
 		msg.setParentCode(parentCode);
 		msg.setLinkCode(linkCode);
 
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		if (recipientCodes != null) {
 			msg.setRecipientCodeArray(recipientCodes);
 		}
@@ -1492,8 +1492,8 @@ public class QRules implements Serializable {
 		msg.setLinkCode(linkCode);
 		QBulkMessage bigMsg = new QBulkMessage(msg);
 
-		msg.setToken(getToken());
-		bigMsg.setToken(getToken());
+		msg.setToken(getToken().getToken());
+		bigMsg.setToken(getToken().getToken());
 
 		if (recipientCodes != null) {
 			msg.setRecipientCodeArray(recipientCodes);
@@ -1504,13 +1504,13 @@ public class QRules implements Serializable {
 	}
 
 	// public void publishCmd(final QCmdMessage cmdMsg) {
-	// cmdMsg.setToken(getToken());
+	// cmdmsg.setToken(getToken().getToken());
 	// publish("cmds", RulesUtils.toJsonObject(cmdMsg));
 	// }
 
 	public void publishCmd(final QEventLinkChangeMessage cmdMsg, final String[] recipientsCode) {
 
-		cmdMsg.setToken(getToken());
+		cmdMsg.setToken(getToken().getToken());
 		String jsonString = JsonUtils.toJson(cmdMsg);
 		JsonObject json = new JsonObject(jsonString);
 
@@ -1535,7 +1535,7 @@ public class QRules implements Serializable {
 			}
 		}
 
-		cmdMsg.setToken(getToken());
+		cmdMsg.setToken(getToken().getToken());
 		JsonObject json = new JsonObject(JsonUtils.toJson(cmdMsg));
 		json.put("recipientCodeArray", recipients);
 
@@ -1544,23 +1544,23 @@ public class QRules implements Serializable {
 
 	public void publishMsg(final QMSGMessage msg) {
 
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish("messages", RulesUtils.toJsonObject(msg));
 	}
 
 	public void publish(String channel, final QBulkMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		VertxUtils.publish(getUser(), channel, msg);
 	}
 
 	public void publish(String channel, final QDataAnswerMessage msg) {
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		VertxUtils.publish(getUser(), channel, JsonUtils.toJson(msg));
 	}
 
 	public void publish(String channel, final QDataAskMessage msg) {
 
-		msg.setToken(getToken());
+		msg.setToken(getToken().getToken());
 		publish(channel, JsonUtils.toJson(msg));
 	}
 
@@ -1692,7 +1692,7 @@ public class QRules implements Serializable {
 		if (selBE != null) {
 			Long bitMaskValue = selBE.getValue("PRI_BITMASK_VALUE", null);
 			// String realm = realm();
-			String serviceToken = this.getServiceToken();
+			GennyToken serviceToken = this.getServiceToken();
 			QDataBaseEntityMessage msg = null;
 			List<BaseEntity> beList = new CopyOnWriteArrayList<BaseEntity>();
 			if (bitMaskValue != null) {
@@ -1729,7 +1729,8 @@ public class QRules implements Serializable {
 	}
 
 	public Boolean doesQuestionGroupExist(String questionGroupCode) {
-		return QuestionUtils.doesQuestionGroupExist(this.getUser().getCode(), this.getUser().getCode(),
+		// TODO: REALLY UNSURE ABOUT USING this.token.getRealm() here!
+		return QuestionUtils.doesQuestionGroupExist(this.token.getRealm(), this.getUser().getCode(), this.getUser().getCode(),
 				questionGroupCode, this.token);
 	}
 
@@ -1751,17 +1752,16 @@ public class QRules implements Serializable {
 			Boolean pushSelection) {
 
 		/* we grab the service token */
-		String serviceToken = this.getServiceToken();
+		GennyToken serviceToken = this.getServiceToken();
 		return this.sendQuestions(sourceCode, targetCode, questionGroupCode, stakeholderCode, pushSelection, token);
 	}
 
 	public Boolean sendQuestions(String sourceCode, String targetCode, String questionGroupCode, String stakeholderCode,
-			Boolean pushSelection, String token) {
+			Boolean pushSelection, GennyToken token) {
 
 		this.println("======================== ASK MESSAGE ======================");
 
-		/* we get the questions */
-		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, token,
+		QwandaMessage questions = QuestionUtils.askQuestions(this.token.getRealm(),sourceCode, targetCode, questionGroupCode, token,
 				stakeholderCode, pushSelection);
 
 		if (questions != null) {
@@ -1771,12 +1771,12 @@ public class QRules implements Serializable {
 				
 				QBulkMessage askData = questions.askData;
 				if (askData.getMessages().length > 0) {
-					askData.setToken(token);
+					askData.setToken(token.getToken());
 					this.publish("webcmds",askData);
 				}
 				
 				QDataAskMessage asks = questions.asks;
-				asks.setToken(token);
+				asks.setToken(token.getToken());
 				this.publish("webcmds",asks);
 				
 			} catch (Exception e) {
@@ -1792,10 +1792,10 @@ public class QRules implements Serializable {
 	public Ask getQuestion(String sourceCode, String targetCode, String questionCode) {
 
 		/* we grab the service token */
-		String serviceToken = getServiceToken();
+		GennyToken serviceToken = getServiceToken();
 
 		/* Get the ask Message */
-		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, serviceToken);
+		QDataAskMessage askMessage = QuestionUtils.getAsks(serviceToken.getRealm(), sourceCode, targetCode, questionCode, serviceToken);
 		if (askMessage != null && askMessage.getItems().length > 0) {
 			return askMessage.getItems()[0];
 		}
@@ -1811,9 +1811,9 @@ public class QRules implements Serializable {
 			String stakeholderCode) {
 
 		/* we grab the service token */
-		String serviceToken = getServiceToken();
+		GennyToken serviceToken = getServiceToken();
 
-		return QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, serviceToken, stakeholderCode,
+		return QuestionUtils.askQuestions(serviceToken.getRealm(), sourceCode, targetCode, questionGroupCode, serviceToken, stakeholderCode,
 				true);
 	}
 
@@ -1842,7 +1842,7 @@ public class QRules implements Serializable {
 			LayoutPosition position, Map<String, List<Context>> themesForQuestions) {
 		/* we grab the service token */
 
-		QwandaMessage questions = QuestionUtils.askQuestions(sourceCode, targetCode, questionGroupCode, this.getToken(),
+		QwandaMessage questions = QuestionUtils.askQuestions(this.getToken().getRealm(), sourceCode, targetCode, questionGroupCode, this.getToken(),
 				sourceCode, true);
 		
 		if (questions != null) {
@@ -2450,7 +2450,7 @@ public class QRules implements Serializable {
 	public void sendNotification(final String text, final String[] recipientCodes, final String style) {
 
 		Layout notificationLayout = new Layout(text, style, null, null, null);
-		QDataSubLayoutMessage data = new QDataSubLayoutMessage(notificationLayout, getToken());
+		QDataSubLayoutMessage data = new QDataSubLayoutMessage(notificationLayout, getToken().getToken());
 		data.setRecipientCodeArray(recipientCodes);
 		publishCmd(data);
 	}
@@ -2498,7 +2498,7 @@ public class QRules implements Serializable {
 					}
 
 					/* send sublayout to FE */
-					QDataSubLayoutMessage msg = new QDataSubLayoutMessage(layoutArray, getToken());
+					QDataSubLayoutMessage msg = new QDataSubLayoutMessage(layoutArray, getToken().getToken());
 					publishCmd(msg);
 				}
 			}
@@ -3508,12 +3508,12 @@ public class QRules implements Serializable {
 
 		try {
 
-			String serviceToken = getServiceToken();
+			GennyToken serviceToken = getServiceToken();
 			String jsonSearchBE = JsonUtils.toJson(searchBE);
 			String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 					jsonSearchBE, serviceToken);
 			QDataBaseEntityMessage msg = JsonUtils.fromJson(resultJson, QDataBaseEntityMessage.class);
-			msg.setToken(getToken());
+			msg.setToken(getToken().getToken());
 			publish("cmds", msg);
 		} catch (Exception e) {
 
@@ -3563,7 +3563,7 @@ public class QRules implements Serializable {
 	public void sendSearchResults(SearchEntity searchBE, String parentCode, String linkCode, String linkValue,
 			Boolean replace, Object shouldDeleteLinkedBaseEntities) throws IOException {
 
-		String serviceToken = getServiceToken();
+		GennyToken serviceToken = getServiceToken();
 		String jsonSearchBE = JsonUtils.toJson(searchBE);
 		String resultJson = QwandaUtils.apiPostEntity(GennySettings.qwandaServiceUrl + "/qwanda/baseentitys/search",
 				jsonSearchBE, serviceToken);
@@ -3572,7 +3572,7 @@ public class QRules implements Serializable {
 
 		if (msg != null) {
 			msg.setParentCode(parentCode);
-			msg.setToken(getToken());
+			msg.setToken(getToken().getToken());
 			msg.setLinkCode(linkCode);
 			msg.setLinkValue(linkValue);
 			msg.setReplace(replace);
@@ -3591,7 +3591,7 @@ public class QRules implements Serializable {
 	 * Get search Results returns QDataBaseEntityMessage
 	 */
 	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE) throws IOException {
-		String serviceToken = getServiceToken();
+		GennyToken serviceToken = getServiceToken();
 		QDataBaseEntityMessage results = getSearchResults(searchBE, serviceToken);
 		if (results == null) {
 			results = new QDataBaseEntityMessage(new CopyOnWriteArrayList<BaseEntity>());
@@ -3603,7 +3603,7 @@ public class QRules implements Serializable {
 	/*
 	 * Get search Results returns List<BaseEntity>
 	 */
-	public List<BaseEntity> getSearchResultsAsList(SearchEntity searchBE, String token) throws IOException {
+	public List<BaseEntity> getSearchResultsAsList(SearchEntity searchBE, GennyToken token) throws IOException {
 
 		QDataBaseEntityMessage msg = getSearchResults(searchBE, token);
 		if (msg != null) {
@@ -3627,7 +3627,7 @@ public class QRules implements Serializable {
 	 */
 	public List<BaseEntity> getSearchResultsAsList(SearchEntity searchBE, Boolean useServiceToken) throws IOException {
 
-		String token = null;
+		GennyToken token = null;
 		if (useServiceToken) {
 			token = getServiceToken();
 		} else {
@@ -3641,7 +3641,7 @@ public class QRules implements Serializable {
 	 */
 	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, boolean useServiceToken) throws IOException {
 
-		String token = null;
+		GennyToken token = null;
 		if (useServiceToken) {
 			token = getServiceToken();
 		} else {
@@ -3653,7 +3653,7 @@ public class QRules implements Serializable {
 	/*
 	 * Get search Results returns QDataBaseEntityMessage
 	 */
-	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, final String token) throws IOException {
+	public QDataBaseEntityMessage getSearchResults(SearchEntity searchBE, final GennyToken token) throws IOException {
 		if (token == null) {
 			log.error("TOKEN IS NULL!!! in getSearchResults");
 			return new QDataBaseEntityMessage(new CopyOnWriteArrayList<BaseEntity>());
@@ -3805,9 +3805,9 @@ public class QRules implements Serializable {
 
 	}
 
-	private void setNewTokenAndDecodedTokenMap(String token) {
+	private void setNewTokenAndDecodedTokenMap(GennyToken token) {
 
-		Map<String, Object> serviceDecodedTokenMap = KeycloakUtils.getJsonMap(token);
+		Map<String, Object> serviceDecodedTokenMap = token.getAdecodedTokenMap();
 		this.setDecodedTokenMap(serviceDecodedTokenMap);
 		this.println(serviceDecodedTokenMap);
 		this.setToken(token);
@@ -3988,7 +3988,7 @@ public class QRules implements Serializable {
 	public void startupEvent(String caller) {
 
 		// Save the existing token
-		String token = this.token;
+		GennyToken token = this.token;
 		Map<String, Object> decodedToken = this.decodedTokenMap;
 
 		println("Startup Event called from " + caller);
@@ -4052,7 +4052,7 @@ public class QRules implements Serializable {
 		String realm = realm();
 		String name = "Service User";
 		String email = "adamcrow63@gmail.com";
-		String token = getServiceToken();
+		GennyToken token = getServiceToken();
 		String keycloakId = null;
 		try {
 			keycloakId = (String) KeycloakUtils.getDecodedToken(token).get("sub");
@@ -4415,7 +4415,7 @@ public class QRules implements Serializable {
 		/* create toast */
 		/* priority can be "info" or "error or "warning" */
 		QDataToastMessage toast = new QDataToastMessage(priority, toastMsg);
-		toast.setToken(getToken());
+		toast.setToken(getToken().getToken());
 		toast.setRecipientCodeArray(recipientArr);
 
 		String toastJson = JsonUtils.toJson(toast);
@@ -4817,7 +4817,7 @@ public class QRules implements Serializable {
 	 */
 	public void publishViewCmdMessage(final String viewType, final String rootCode) {
 		QCmdMessage cmdViewMessage = new QCmdMessage("CMD_VIEW", viewType);
-		cmdViewMessage.setToken(getToken());
+		cmdViewMessage.setToken(getToken().getToken());
 		JsonObject cmdViewMessageJson = new JsonObject().mapFrom(cmdViewMessage);
 		cmdViewMessageJson.put("root", rootCode);
 		publish("cmds", cmdViewMessageJson);
@@ -5168,7 +5168,7 @@ public class QRules implements Serializable {
 	public void processAddresses(String realm) {
 		// load in all the people in the db
 		QDataBaseEntityMessage qMsg = null;
-		String token = RulesUtils.generateServiceToken(realm, getToken());
+		GennyToken token = RulesUtils.generateServiceToken(realm, getToken());
 		SearchEntity allPeople = new SearchEntity("SBE_ALL_PEOPLE", "All People")
 				.addFilter("PRI_CODE", SearchEntity.StringFilter.LIKE, "PER_%").setPageStart(0).setPageSize(100000);
 		try {
@@ -5249,7 +5249,7 @@ public class QRules implements Serializable {
 		List<Attribute> capabilityManifest = new CopyOnWriteArrayList<Attribute>();
 
 		String proj_realm = GennySettings.mainrealm;
-		String token = RulesUtils.generateServiceToken(proj_realm, getToken());
+		GennyToken token = RulesUtils.generateServiceToken(proj_realm, getToken());
 
 		addCapability(capabilityManifest, "ADD_QUOTE", "Allowed to post a quote", token);
 		addCapability(capabilityManifest, "READ_QUOTE", "Allowed to read a quote", token);
@@ -5324,7 +5324,7 @@ public class QRules implements Serializable {
 	}
 
 	public Attribute addCapability(List<Attribute> capabilityManifest, final String capabilityCode, final String name,
-			final String token) {
+			final GennyToken token) {
 		String fullCapabilityCode = "CAP_" + capabilityCode.toUpperCase();
 		println("Setting Capability : " + fullCapabilityCode + " : " + name);
 		Attribute attribute = RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).get(fullCapabilityCode);
@@ -5637,7 +5637,7 @@ public class QRules implements Serializable {
 
 	public JsonObject writeCachedJson(final String key, final String value) {
 		final String fRealm = realm();
-		final String fToken = getToken();
+		final GennyToken fToken = getToken();
 		return VertxUtils.writeCachedJson(fRealm, key, value, fToken);
 	}
 
@@ -6359,7 +6359,7 @@ public class QRules implements Serializable {
 		BaseEntity contentBe = this.baseEntity.getBaseEntityByCode("FRM_CONTENT");
 
 		/* Get the ask Message for the question group code */
-		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionGroupCode, serviceToken);
+		QDataAskMessage askMessage = QuestionUtils.getAsks(serviceToken.getRealm(), sourceCode, targetCode, questionGroupCode, serviceToken);
 		Ask[] askArr = askMessage.getItems();
 
 		/* get all visual baseentities and themes */

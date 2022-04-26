@@ -107,7 +107,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			if (items.containsKey("capabilityUtils")) {
 				oldCapabilityUtils = (CapabilityUtils) items.get("capabilityUtils");
 			} else {
-				JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "CAPABILITIES", userToken.getToken());
+				JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "CAPABILITIES", userToken);
 				if ("OK".equalsIgnoreCase(json.getString("status"))) {
 					String value = json.getString("value");
 					oldCapabilityUtils = JsonUtils.fromJson(value, CapabilityUtils.class);
@@ -123,7 +123,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			BaseEntity user = null;
 			if ((VertxUtils.cachedEnabled) && ("PER_SERVICE".equals(userToken.getUserCode()))) {
 				// need to create the server user in cache if not there
-				user = VertxUtils.readFromDDT(userToken.getRealm(), userToken.getUserCode(), userToken.getToken());
+				user = VertxUtils.readFromDDT(userToken.getRealm(), userToken.getUserCode(), userToken);
 				if (user == null) {
 					beUtils.setServiceToken(serviceToken);
 					BaseEntity defBE = beUtils.getDEFByCode("DEF_USER");
@@ -357,7 +357,7 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 						QEventMessage msg = (QEventMessage) items.get("message");
 						if (msg != null) {
 							JsonObject cachedOutputJson = VertxUtils.readCachedJson(userToken.getRealm(),
-									"OUTPUT:" + msg.getData().getCode(), userToken.getToken());
+									"OUTPUT:" + msg.getData().getCode(), userToken);
 							if (cachedOutputJson.getString("status").equalsIgnoreCase("ok")) {
 								OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("value"), OutputParam.class);
 								if (o != null) {

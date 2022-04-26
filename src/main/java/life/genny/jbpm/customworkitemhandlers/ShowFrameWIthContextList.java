@@ -57,7 +57,7 @@ public class ShowFrameWIthContextList implements WorkItemHandler {
     		log.info(": root Frame Code = "+rootFrameCode);
     		
     		QDataBaseEntityMessage FRM_MSG = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"_MSG",
-    				QDataBaseEntityMessage.class, userToken.getToken());	
+    				QDataBaseEntityMessage.class, userToken);	
     		FRM_MSG.setToken(userToken.getToken());
     		String frmStr = JsonUtils.toJson(FRM_MSG);
     		frmStr = frmStr.replaceAll(rootFrameCode, "FRM_ROOT");
@@ -67,7 +67,7 @@ public class ShowFrameWIthContextList implements WorkItemHandler {
     		}.getType();
 
     		String askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode+"_ASKS", String.class,
-    				userToken.getToken());
+    				userToken);
 
     		Set<QDataAskMessage> askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 
