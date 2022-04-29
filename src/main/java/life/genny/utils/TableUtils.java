@@ -2201,8 +2201,7 @@ public class TableUtils {
     // NOTE: have to pass PER_SOURCE and PER_TARGET or valid BE codes, otherwise we get a null
     // pointer
     QDataAskMessage askMessage =
-        QuestionUtils.getAsks(beUtils.getGennyToken().getRealm(),
-            "PER_SOURCE", "PER_TARGET", "QUE_ADD_FILTER_GRP", beUtils.getGennyToken());
+        QuestionUtils.getAsks("PER_SOURCE", "PER_TARGET", "QUE_ADD_FILTER_GRP", beUtils.getGennyToken());
 
     if (askMessage == null) {
       log.error("AskMessage is null for QUE_ADD_FILTER_GRP");

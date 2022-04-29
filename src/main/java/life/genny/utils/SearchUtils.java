@@ -735,7 +735,7 @@ public class SearchUtils {
 		}
 
 		// Fetch the asks using the SBE's questionCode
-		QDataAskMessage askMsg = QuestionUtils.getAsks(token.getRealm(), sourceCode, targetCode, questionCode, token);
+		QDataAskMessage askMsg = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, token);
 
 		if (askMsg == null || askMsg.getItems().length == 0) {
 			log.error("NULL in DB for " + questionCode);

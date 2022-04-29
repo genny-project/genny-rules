@@ -1730,7 +1730,7 @@ public class QRules implements Serializable {
 
 	public Boolean doesQuestionGroupExist(String questionGroupCode) {
 		// TODO: REALLY UNSURE ABOUT USING this.token.getRealm() here!
-		return QuestionUtils.doesQuestionGroupExist(this.token.getRealm(), this.getUser().getCode(), this.getUser().getCode(),
+		return QuestionUtils.doesQuestionGroupExist(this.getUser().getCode(), this.getUser().getCode(),
 				questionGroupCode, this.token);
 	}
 
@@ -1795,7 +1795,7 @@ public class QRules implements Serializable {
 		GennyToken serviceToken = getServiceToken();
 
 		/* Get the ask Message */
-		QDataAskMessage askMessage = QuestionUtils.getAsks(serviceToken.getRealm(), sourceCode, targetCode, questionCode, serviceToken);
+		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionCode, serviceToken);
 		if (askMessage != null && askMessage.getItems().length > 0) {
 			return askMessage.getItems()[0];
 		}
@@ -6359,7 +6359,7 @@ public class QRules implements Serializable {
 		BaseEntity contentBe = this.baseEntity.getBaseEntityByCode("FRM_CONTENT");
 
 		/* Get the ask Message for the question group code */
-		QDataAskMessage askMessage = QuestionUtils.getAsks(serviceToken.getRealm(), sourceCode, targetCode, questionGroupCode, serviceToken);
+		QDataAskMessage askMessage = QuestionUtils.getAsks(sourceCode, targetCode, questionGroupCode, serviceToken);
 		Ask[] askArr = askMessage.getItems();
 
 		/* get all visual baseentities and themes */
