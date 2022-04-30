@@ -2211,7 +2211,7 @@ public class RulesLoader {
     //																									// fires
     //		}
 
-    if (!persistRules) {
+    if (!persistRules || true) {
       return false;
     }
     // Determine what rules have changed via their hash .... and if so then clear
