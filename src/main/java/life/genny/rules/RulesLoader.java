@@ -1300,6 +1300,11 @@ public class RulesLoader {
     //	String userUUID = facts.getUserToken().getUserUUID();
     String userCode = facts.getUserToken().getUserCode();
     BaseEntity user = beUtils.getBaseEntityByCode(userCode);
+    
+    if (user.getCode()== null) {
+    	log.error("This user code does not exist in the database "+userCode);
+    	return;
+    }
 
     // ============================================================================
     // =========================== OLD CAPABILITY UTILS ===========================
