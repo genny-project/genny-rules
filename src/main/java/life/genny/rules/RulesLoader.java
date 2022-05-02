@@ -91,6 +91,7 @@ import life.genny.rules.processor.RequestProcessor;
 import life.genny.utils.BaseEntityUtils;
 import life.genny.utils.CapabilityUtils;
 import life.genny.utils.CapabilityUtilsRefactored;
+import life.genny.utils.CommonUtils;
 import life.genny.utils.DefUtils;
 import life.genny.utils.FrameUtils2;
 import life.genny.utils.NodeStatusQueryMapper;
@@ -2195,8 +2196,26 @@ public class RulesLoader {
     if (realmTokenMap.get(realm) == null) {
       JsonObject tokenObj =
           VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-      String token = tokenObj.getString("value");
-      realmTokenMap.put(realm, token);
+      String tokenStr = tokenObj.getString("value");
+      if(tokenStr == null) {
+        String keycloakUrl = CommonUtils.getSystemEnv("GENNY_KEYCLOAK_URL");
+        String clientId = CommonUtils.getSystemEnv("GENNY_CLIENT_ID");
+        String clientSecret = CommonUtils.getSystemEnv("GENNY_CLIENT_SECRET", false);
+        String serviceUsername = CommonUtils.getSystemEnv("GENNY_SERVICE_USERNAME");
+        String servicePassword = CommonUtils.getSystemEnv("GENNY_SERVICE_PASSWORD");
+        try {
+          if(clientSecret == null) {
+            clientSecret = "";
+          }
+          tokenStr = KeycloakUtils.getAccessToken(keycloakUrl, "internmatch", clientId, clientSecret, serviceUsername, servicePassword);
+        } catch (IOException e) {
+          log.error("FAILED TO GET TOKEN FROM URL: " + keycloakUrl);
+          log.error("Client Settings: [" + clientId + "] : [" + clientSecret + "]");
+          log.error("Using service username / password from GENNY_SERVICE_USERNAME / GENNY_SERVICE_PASSWORD envs");
+          e.printStackTrace();
+        }
+      }
+      realmTokenMap.put(realm, tokenStr);
     }
     // get kie type
     String ext = filename.substring(filename.lastIndexOf(".") + 1);
