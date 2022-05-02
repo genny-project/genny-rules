@@ -351,10 +351,12 @@ public class RulesLoader {
   
     Set<String> activeRealms = new HashSet<>();
     String projectRealm = System.getenv("PROJECT_REALM");
-    if (StringUtils.isBlank(projectRealm)) {
+    log.info("PROJECT_REALM="+projectRealm);
+    if ((!StringUtils.isBlank(projectRealm)) && (!"dev1".equals(projectRealm))) {
     	activeRealms.add(projectRealm);
     }
     String projectRealms = System.getenv("PROJECT_REALMS");
+    log.info("PROJECT_REALMS="+projectRealms);
     if (!StringUtils.isBlank(projectRealms)) {
     	String[] projectCodes = projectRealms.split(":");
     	for (String projectCode : projectCodes) {
