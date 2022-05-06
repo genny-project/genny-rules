@@ -413,21 +413,21 @@ public class RulesLoader {
       log.info("Rules Count for " + realm + " = " + rulesCount);
       // check if rules need to be initialised
       // Check if rules have been initialised
-      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm);
-      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm);
-
-      if (realmUninitialisedThemes == null) {
-        rulesChanged = true;
-      } else if (!realmUninitialisedThemes.isEmpty()) {
-        rulesChanged = true;
-        realmUninitialisedThemes.addAll(realmUninitialisedThemes);
-      }
-      if (realmUninitialisedFrames == null) {
-        rulesChanged = true;
-      } else if (!realmUninitialisedFrames.isEmpty()) {
-        rulesChanged = true;
-        realmUninitialisedFrames.addAll(realmUninitialisedFrames);
-      }
+//      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm);
+//      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm);
+//
+//      if (realmUninitialisedThemes == null) {
+//        rulesChanged = true;
+//      } else if (!realmUninitialisedThemes.isEmpty()) {
+//        rulesChanged = true;
+//        realmUninitialisedThemes.addAll(realmUninitialisedThemes);
+//      }
+//      if (realmUninitialisedFrames == null) {
+//        rulesChanged = true;
+//      } else if (!realmUninitialisedFrames.isEmpty()) {
+//        rulesChanged = true;
+//        realmUninitialisedFrames.addAll(realmUninitialisedFrames);
+//      }
     }
 
     // set up kie conf
