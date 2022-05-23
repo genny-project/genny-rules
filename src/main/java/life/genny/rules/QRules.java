@@ -5296,6 +5296,7 @@ public class QRules implements Serializable {
 		for (Attribute toBeRemovedCapability : existingCapability) {
 			try {
 				RulesUtils.realmAttributeMap.get(this.baseEntity.getGennyToken().getRealm()).remove(toBeRemovedCapability.getCode()); // remove from cache
+				log.info("calling API delete??? ");	
 				QwandaUtils.apiDelete(
 						getQwandaServiceUrl() + "/qwanda/baseentitys/attributes/" + toBeRemovedCapability.getCode(),
 						token);

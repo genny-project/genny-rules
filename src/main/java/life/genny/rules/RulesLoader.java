@@ -380,10 +380,12 @@ public class RulesLoader {
    
     
     for (String realm : realms) {
+    	log.info("*************** LOADING RULES FOR "+realm+" ********************");
     	GennyToken serviceToken = new GennyToken(getServiceToken());
     	serviceToken.setProjectCode(realm);
       log.info("About to load in DEFs before rules for realm " + realm);
       VertxUtils.writeCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase(),serviceToken.getToken(),serviceToken);
+      VertxUtils.writeCachedJson(realm, "TOKEN" + realm.toUpperCase(),serviceToken.getToken(),serviceToken);
 //      JsonObject tokenObj =
 //          VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
 //      String sToken = tokenObj.getString("value");
@@ -413,21 +415,21 @@ public class RulesLoader {
       log.info("Rules Count for " + realm + " = " + rulesCount);
       // check if rules need to be initialised
       // Check if rules have been initialised
-//      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm);
-//      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm);
-//
-//      if (realmUninitialisedThemes == null) {
-//        rulesChanged = true;
-//      } else if (!realmUninitialisedThemes.isEmpty()) {
-//        rulesChanged = true;
-//        realmUninitialisedThemes.addAll(realmUninitialisedThemes);
-//      }
-//      if (realmUninitialisedFrames == null) {
-//        rulesChanged = true;
-//      } else if (!realmUninitialisedFrames.isEmpty()) {
-//        rulesChanged = true;
-//        realmUninitialisedFrames.addAll(realmUninitialisedFrames);
-//      }
+      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm);
+      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm);
+
+      if (realmUninitialisedThemes == null) {
+        rulesChanged = true;
+      } else if (!realmUninitialisedThemes.isEmpty()) {
+        rulesChanged = true;
+        realmUninitialisedThemes.addAll(realmUninitialisedThemes);
+      }
+      if (realmUninitialisedFrames == null) {
+        rulesChanged = true;
+      } else if (!realmUninitialisedFrames.isEmpty()) {
+        rulesChanged = true;
+        realmUninitialisedFrames.addAll(realmUninitialisedFrames);
+      }
     }
 
     // set up kie conf
