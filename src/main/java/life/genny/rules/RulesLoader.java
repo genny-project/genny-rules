@@ -355,7 +355,7 @@ public class RulesLoader {
     if ((!StringUtils.isBlank(projectRealm)) && (!"dev1".equals(projectRealm))) {
     	activeRealms.add(projectRealm);
     }
-    String projectRealms = System.getenv("PROJECT_REALMS");
+    String projectRealms = System.getenv("PRODUCT_CODES");
     log.info("PROJECT_REALMS="+projectRealms);
     if (!StringUtils.isBlank(projectRealms)) {
     	String[] projectCodes = projectRealms.split(":");
