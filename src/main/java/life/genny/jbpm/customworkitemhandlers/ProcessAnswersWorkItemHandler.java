@@ -334,7 +334,7 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
           Optional<EntityAttribute> optEa = originalTarget.findEntityAttribute(attributeCode);
           if (optEa.isPresent()) {
             EntityAttribute ea = optEa.get();
-            if (StringUtils.isBlank(ea.getAsString())) {
+            if (StringUtils.isBlank(ea.getAsString()) || "[]".equals(ea.getAsString())) {
               mandatoryDoneMap.put(taskSummary.getId(), false);
             } else {
               ask.setAnswered(true);
