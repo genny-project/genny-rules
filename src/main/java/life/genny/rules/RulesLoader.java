@@ -2474,7 +2474,7 @@ public class RulesLoader {
     List<String> uninitialisedThemes = new ArrayList<String>();
     JsonObject tokenObj =
         VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-    String sToken = tokenObj.getString("value");
+    String sToken = tokenObj.getJsonObject("value").toString();
     GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
 
     if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
