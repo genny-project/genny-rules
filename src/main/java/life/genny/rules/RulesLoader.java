@@ -2474,8 +2474,16 @@ public class RulesLoader {
     List<String> uninitialisedThemes = new ArrayList<String>();
     JsonObject tokenObj =
         VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+    
     String sToken = tokenObj.getJsonObject("value").toString();
-    GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+    log.info("sToken=["+sToken+"]");   
+    GennyToken serviceToken;
+	try {
+		serviceToken = new GennyToken("PER_SERVICE", sToken);
+	} catch (Exception e1) {
+		log.error("Token not right");
+		return null;
+	}
 
     if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
       log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
@@ -2522,7 +2530,7 @@ public class RulesLoader {
     List<String> uninitialisedFrames = new ArrayList<String>();
     JsonObject tokenObj =
         VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-    String sToken = tokenObj.getString("value");
+    String sToken = tokenObj.getJsonObject("value").toString();
     GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
 
     if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
