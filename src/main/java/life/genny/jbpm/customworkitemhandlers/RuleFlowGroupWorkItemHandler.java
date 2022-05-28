@@ -109,7 +109,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			} else {
 				JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "CAPABILITIES", userToken);
 				if ("OK".equalsIgnoreCase(json.getString("status"))) {
-					String value = json.getString("value");
+					JsonObject valueJson = json.getJsonObject("value");
+					String value = valueJson.toString();
 					oldCapabilityUtils = JsonUtils.fromJson(value, CapabilityUtils.class);
 					if (oldCapabilityUtils == null) {
 						oldCapabilityUtils = new CapabilityUtils(beUtils);

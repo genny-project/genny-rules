@@ -1816,6 +1816,9 @@ public class RulesLoader {
         log.error("Payload: " + jsonPayload.toString());
       } else {
         serviceTokenStr = jsonPayload.getString("access_token");
+        GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
+        serviceToken.setProjectCode(userToken.getRealm());
+        VertxUtils.writeCachedJson(userToken.getRealm(), "CACHE:SERVICE_TOKEN",serviceTokenStr,serviceToken);
       }
     }
     
