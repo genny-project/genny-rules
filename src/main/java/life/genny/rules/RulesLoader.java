@@ -415,8 +415,8 @@ public class RulesLoader {
       log.info("Rules Count for " + realm + " = " + rulesCount);
       // check if rules need to be initialised
       // Check if rules have been initialised
-      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm,serviceToken);
-      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm,serviceToken);
+      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm,new GennyToken(getServiceToken()));
+      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm,new GennyToken(getServiceToken()));
 
       if (realmUninitialisedThemes == null) {
         rulesChanged = true;
@@ -2531,17 +2531,17 @@ public class RulesLoader {
     return uninitialisedThemes;
   }
 
-  public static List<String> returnUninitialisedFrames(String realm) {
+  public static List<String> returnUninitialisedFrames(String realm, GennyToken serviceToken) {
     List<String> uninitialisedFrames = new ArrayList<String>();
-    JsonObject tokenObj =
-        VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-    String sToken = tokenObj.getJsonObject("value").toString();
-    GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
-
-    if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
-      log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
-      return null; // TODO throw exception
-    }
+//    JsonObject tokenObj =
+//        VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+//    String sToken = tokenObj.getJsonObject("value").toString();
+//    GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+//
+//    if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+//      log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+//      return null; // TODO throw exception
+//    }
 
     // Fetch all the uninitilised theme rules from the api
     SearchEntity searchBE =
