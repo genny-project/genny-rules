@@ -376,13 +376,13 @@ public class RulesLoader {
       return false;
     }
 
-    
-   
+    Map<String, GennyToken> realmTokenMap = new HashMap<>();
     
     for (String realm : realms) {
     	log.info("*************** LOADING RULES FOR "+realm+" ********************");
     	GennyToken serviceToken = new GennyToken(getServiceToken());
     	serviceToken.setProjectCode(realm);
+      realmTokenMap.put(realm, serviceToken);
       log.info("About to load in DEFs before rules for realm " + realm);
       VertxUtils.writeCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase(),serviceToken.getToken(),serviceToken);
       VertxUtils.writeCachedJson(realm, "TOKEN" + realm.toUpperCase(),serviceToken.getToken(),serviceToken);
@@ -415,6 +415,7 @@ public class RulesLoader {
       log.info("Rules Count for " + realm + " = " + rulesCount);
       // check if rules need to be initialised
       // Check if rules have been initialised
+      GennyToken serviceToken = realmTokenMap.get(realm);
       List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm,serviceToken);
       List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm,serviceToken);
 
@@ -2531,12 +2532,12 @@ public class RulesLoader {
     return uninitialisedThemes;
   }
 
-  public static List<String> returnUninitialisedFrames(String realm) {
-    List<String> uninitialisedFrames = new ArrayList<String>();
-    JsonObject tokenObj =
-        VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-    String sToken = tokenObj.getJsonObject("value").toString();
-    GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+  public static List<String> returnUninitialisedFrames(String realm, GennyToken serviceToken) {
+    List<String> uninitialisedFrames = new ArrayList<>();
+    // JsonObject tokenObj =
+    //     VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+    // String sToken = tokenObj.getJsonObject("value").toString();
+    // GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
 
     if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
       log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
