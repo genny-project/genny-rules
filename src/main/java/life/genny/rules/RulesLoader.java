@@ -1930,17 +1930,19 @@ public class RulesLoader {
       final String realm, final String rulesDir, final Boolean loadDefs) {
 
     rulesChanged = false;
-
+    String serviceTokenStr = RulesLoader.getServiceToken();
+    GennyToken serviceToken = new GennyToken(serviceTokenStr);
+    serviceToken.setProjectCode(realm);
     if (loadDefs) {
       log.info("Load DEFs");
-      DefUtils.loadDEFS(realm);
+      DefUtils.loadDEFS(serviceToken);
     }
     log.info("Loading Rules and workflows!!! for realm " + realm);
     List<String> reloadRealms = new ArrayList<String>();
     reloadRealms.add(realm);
     realms = new HashSet<>(reloadRealms);
 
-    DefUtils.loadDEFS(realm);
+    DefUtils.loadDEFS(serviceToken);
 
     List<Tuple3<String, String, String>> rules = null;
     if (GennySettings.useApiRules) {
