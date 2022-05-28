@@ -2480,6 +2480,7 @@ public class RulesLoader {
 		sToken = tokenObj.getJsonObject("value").toString();
 	} catch (Exception e2) {
 		sToken = tokenObj.getString("value");
+	}
     log.info("sToken=["+sToken+"]");   
     GennyToken serviceToken;
 	try {
