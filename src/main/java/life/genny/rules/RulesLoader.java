@@ -2475,7 +2475,11 @@ public class RulesLoader {
     JsonObject tokenObj =
         VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
     
-    String sToken = tokenObj.getJsonObject("value").toString();
+    String sToken = null;
+    try {
+		sToken = tokenObj.getJsonObject("value").toString();
+	} catch (Exception e2) {
+		sToken = tokenObj.getString("value");
     log.info("sToken=["+sToken+"]");   
     GennyToken serviceToken;
 	try {
