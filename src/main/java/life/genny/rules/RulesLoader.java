@@ -415,8 +415,8 @@ public class RulesLoader {
       log.info("Rules Count for " + realm + " = " + rulesCount);
       // check if rules need to be initialised
       // Check if rules have been initialised
-      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm);
-      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm);
+      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm,serviceToken);
+      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm,serviceToken);
 
       if (realmUninitialisedThemes == null) {
         rulesChanged = true;
@@ -2470,30 +2470,30 @@ public class RulesLoader {
     return output;
   }
 
-  public static List<String> returnUninitialisedThemes(String realm) {
+  public static List<String> returnUninitialisedThemes(String realm,GennyToken serviceToken) {
     List<String> uninitialisedThemes = new ArrayList<String>();
-    JsonObject tokenObj =
-        VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-    
-    String sToken = null;
-    try {
-		sToken = tokenObj.getJsonObject("value").toString();
-	} catch (Exception e2) {
-		sToken = tokenObj.getString("value");
-	}
-    log.info("sToken=["+sToken+"]");   
-    GennyToken serviceToken;
-	try {
-		serviceToken = new GennyToken("PER_SERVICE", sToken);
-	} catch (Exception e1) {
-		log.error("Token not right");
-		return null;
-	}
-
-    if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
-      log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
-      return null; // TODO throw exception
-    }
+//    JsonObject tokenObj =
+//        VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase(),serviceToken);
+//    
+//    String sToken = null;
+//    try {
+//		sToken = tokenObj.getJsonObject("value").toString();
+//	} catch (Exception e2) {
+//		sToken = tokenObj.getString("value");
+//	}
+//    log.info("sToken=["+sToken+"]");   
+//   // GennyToken serviceToken;
+//	try {
+//		RulesLoader.serviceToken = serverToken; //new GennyToken("PER_SERVICE", sToken);
+//	} catch (Exception e1) {
+//		log.error("Token not right");
+//		return null;
+//	}
+//
+//    if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+//      log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+//      return null; // TODO throw exception
+//    }
 
     // Fetch all the uninitilised theme rules from the api
     SearchEntity searchBE =
