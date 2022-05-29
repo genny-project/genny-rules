@@ -39,7 +39,7 @@ public class ShowAllFormsHandler implements WorkItemHandler {
 
 	//	log.info("QRules = " + rules);
 
-		String apiUrl = GennySettings.qwandaServiceUrl + ":8280/service/forms";
+		String apiUrl = GennySettings.qwandaServiceUrl + ":4242/service/forms";
 		log.info("Fetching setup info from " + apiUrl);
 		GennyToken userToken = rules.getToken();
 		try {
