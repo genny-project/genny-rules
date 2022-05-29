@@ -1386,12 +1386,13 @@ public class RulesLoader {
         processQDataMessageEvent(facts, processId, kieSession);
       }
     } else {
+    	String mCode = ((QEventMessage)facts.getMessage()).getData().getCode();
       if (facts.getMessage() instanceof QEventMessage
-          && ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
+          && ("AUTH_INIT".equals(mCode))) {
         /* If the message is QeventMessage and the Event Message is AuthInit */
         processAuthInitEvent(facts, kieSession);
       } else {
-        log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
+        log.error("NO EXISTING SESSION AND NOT AUTH_INIT ["+mCode+"]");
       }
     }
     // Cleanup facts
