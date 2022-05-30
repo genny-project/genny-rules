@@ -415,9 +415,8 @@ public class RulesLoader {
       log.info("Rules Count for " + realm + " = " + rulesCount);
       // check if rules need to be initialised
       // Check if rules have been initialised
-      GennyToken serviceToken = realmTokenMap.get(realm);
-      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm,serviceToken);
-      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm,serviceToken);
+      List<String> realmUninitialisedThemes = returnUninitialisedThemes(realm,new GennyToken(getServiceToken()));
+      List<String> realmUninitialisedFrames = returnUninitialisedFrames(realm,new GennyToken(getServiceToken()));
 
       if (realmUninitialisedThemes == null) {
         rulesChanged = true;
@@ -1387,12 +1386,13 @@ public class RulesLoader {
         processQDataMessageEvent(facts, processId, kieSession);
       }
     } else {
+    	String mCode = ((QEventMessage)facts.getMessage()).getData().getCode();
       if (facts.getMessage() instanceof QEventMessage
-          && ((QEventMessage) facts.getMessage()).getData().getCode().equals("AUTH_INIT")) {
+          && ("AUTH_INIT".equals(mCode))) {
         /* If the message is QeventMessage and the Event Message is AuthInit */
         processAuthInitEvent(facts, kieSession);
       } else {
-        log.error("NO EXISTING SESSION AND NOT AUTH_INIT");
+        log.error("NO EXISTING SESSION AND NOT AUTH_INIT ["+mCode+"]");
       }
     }
     // Cleanup facts
@@ -1790,11 +1790,11 @@ public class RulesLoader {
   public void processMsg(final Object msg, final String token) {
 
     GennyToken userToken = new GennyToken("userToken", token);
-
+    GennyToken serviceToken = null;
     // Service Token
-    String serviceTokenStr =
-    VertxUtils.getObject(userToken.getRealm(), "CACHE", "SERVICE_TOKEN", String.class);
-    if (serviceTokenStr == null) {
+   JsonObject serviceTokenJson =
+    VertxUtils.readCachedJson(userToken.getRealm(), "CACHE:SERVICE_TOKEN",userToken);
+    if (!serviceTokenJson.getString("status").equals("ok")) {
       log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
       String keycloakUrl = getEnv("GENNY_KEYCLOAK_URL");
       String realm = "internmatch";
@@ -1816,12 +1816,17 @@ public class RulesLoader {
         log.error("Service token returned from KeycloakUtils is null");
         log.error("Payload: " + jsonPayload.toString());
       } else {
-        serviceTokenStr = jsonPayload.getString("access_token");
+        String serviceTokenStr = jsonPayload.getString("access_token");
+        serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
+        serviceToken.setProjectCode(userToken.getRealm());
+        VertxUtils.writeCachedJson(userToken.getRealm(), "CACHE:SERVICE_TOKEN",serviceTokenStr,serviceToken);
       }
     }
-    
-    if(serviceTokenStr != null) {
-      GennyToken serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr);
+    if (serviceToken == null) {
+    	String token2 = serviceTokenJson.getString("value");
+    	 serviceToken = new GennyToken("PER_SERVICE", token2);
+        
+    }
       serviceToken.setProjectCode(userToken.getRealm());
 
       List<Tuple2<String, Object>> globals = new ArrayList<Tuple2<String, Object>>();
@@ -1876,9 +1881,7 @@ public class RulesLoader {
       } catch (Exception e) {
         e.printStackTrace();
       }
-    } else {
-      log.error("Could not get service token from cache or from keycloak. What is going on?");
-    }
+   
   }
 
   private static String getEnv(String env) {
@@ -1931,17 +1934,19 @@ public class RulesLoader {
       final String realm, final String rulesDir, final Boolean loadDefs) {
 
     rulesChanged = false;
-
+    String serviceTokenStr = RulesLoader.getServiceToken();
+    GennyToken serviceToken = new GennyToken(serviceTokenStr);
+    serviceToken.setProjectCode(realm);
     if (loadDefs) {
       log.info("Load DEFs");
-      DefUtils.loadDEFS(realm);
+      DefUtils.loadDEFS(serviceToken);
     }
     log.info("Loading Rules and workflows!!! for realm " + realm);
     List<String> reloadRealms = new ArrayList<String>();
     reloadRealms.add(realm);
     realms = new HashSet<>(reloadRealms);
 
-    DefUtils.loadDEFS(realm);
+    DefUtils.loadDEFS(serviceToken);
 
     List<Tuple3<String, String, String>> rules = null;
     if (GennySettings.useApiRules) {
@@ -2533,16 +2538,16 @@ public class RulesLoader {
   }
 
   public static List<String> returnUninitialisedFrames(String realm, GennyToken serviceToken) {
-    List<String> uninitialisedFrames = new ArrayList<>();
-    // JsonObject tokenObj =
-    //     VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-    // String sToken = tokenObj.getJsonObject("value").toString();
-    // GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
-
-    if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
-      log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
-      return null; // TODO throw exception
-    }
+    List<String> uninitialisedFrames = new ArrayList<String>();
+//    JsonObject tokenObj =
+//        VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+//    String sToken = tokenObj.getJsonObject("value").toString();
+//    GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+//
+//    if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+//      log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+//      return null; // TODO throw exception
+//    }
 
     // Fetch all the uninitilised theme rules from the api
     SearchEntity searchBE =

@@ -41,25 +41,25 @@ public class DefUtils {
 			.getLogger(MethodHandles.lookup().lookupClass().getCanonicalName());
 
 
-	/**
-	 * @param realm
-	 */
-	public static void loadDEFS(String realm) {
-		log.info("Loading in DEFS for realm "+realm);
-
-
-		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-		String sToken = tokenObj.getString("value");
-		GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
-		serviceToken.setProjectCode(realm);
-
-		if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
-			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
-			return;
-		}
-
-		loadDEFS(serviceToken);
-	}
+//	/**
+//	 * @param realm
+//	 */
+//	public static void loadDEFS(String realm) {
+//		log.info("Loading in DEFS for realm "+realm);
+//
+//
+//		JsonObject tokenObj = VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
+//		String sToken = tokenObj.getString("value");
+//		GennyToken serviceToken = new GennyToken("PER_SERVICE", sToken);
+//		serviceToken.setProjectCode(realm);
+//
+//		if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken.getToken()))) {
+//			log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
+//			return;
+//		}
+//
+//		loadDEFS(serviceToken);
+//	}
 	/**
 	 * @param realm
 	 */

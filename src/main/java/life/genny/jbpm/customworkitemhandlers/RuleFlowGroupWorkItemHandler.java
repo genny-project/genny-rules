@@ -109,7 +109,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 			} else {
 				JsonObject json = VertxUtils.readCachedJson(userToken.getRealm(), "CAPABILITIES", userToken);
 				if ("OK".equalsIgnoreCase(json.getString("status"))) {
-					String value = json.getString("value");
+					JsonObject valueJson = json.getJsonObject("value");
+					String value = valueJson.toString();
 					oldCapabilityUtils = JsonUtils.fromJson(value, CapabilityUtils.class);
 					if (oldCapabilityUtils == null) {
 						oldCapabilityUtils = new CapabilityUtils(beUtils);
@@ -359,7 +360,8 @@ public class RuleFlowGroupWorkItemHandler implements WorkItemHandler {
 							JsonObject cachedOutputJson = VertxUtils.readCachedJson(userToken.getRealm(),
 									"OUTPUT:" + msg.getData().getCode(), userToken);
 							if (cachedOutputJson.getString("status").equalsIgnoreCase("ok")) {
-								OutputParam o = JsonUtils.fromJson(cachedOutputJson.getString("value"), OutputParam.class);
+								JsonObject valueJson = cachedOutputJson.getJsonObject("value");
+								OutputParam o = JsonUtils.fromJson(valueJson.toString(), OutputParam.class);
 								if (o != null) {
 									output = o;
 									log.info("Setting output from QEventMessage Cache!!!");

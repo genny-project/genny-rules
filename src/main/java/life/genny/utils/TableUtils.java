@@ -524,7 +524,7 @@ public class TableUtils {
      * saved to workflow
      */
     if (filterCode != null && filterValue != null) {
-      System.out.println("Adding filterCode and filterValue to searchBE");
+      log.info("Adding filterCode and filterValue to searchBE");
       searchBE.addFilter(filterCode, SearchEntity.StringFilter.EQUAL, filterValue);
     }
 
@@ -1756,7 +1756,7 @@ public class TableUtils {
     } else if (!searchBeCode.startsWith("SBE_")) {
       searchBeCode = "SBE_" + searchBeCode;
     }
-    System.out.println("SBE CODE   ::   " + searchBeCode);
+    log.info("SBE CODE   ::   " + searchBeCode);
 
     SearchEntity searchBE =
         VertxUtils.getObject(
@@ -1774,7 +1774,7 @@ public class TableUtils {
 
       return searchTable(beUtils, searchBE, cache, filterCode, filterValue, replace);
     } else {
-      System.out.println("Could not fetch " + searchBeCode + " from cache!!!");
+      log.info("Could not fetch " + searchBeCode + " from cache!!!");
       return -1L;
     }
   }
@@ -1831,7 +1831,7 @@ public class TableUtils {
       long starttime = System.currentTimeMillis();
 
       if (searchBE == null) {
-        System.out.println("SearchBE is null");
+        log.info("SearchBE is null");
         return -1L;
       }
 
@@ -1880,7 +1880,7 @@ public class TableUtils {
       long totalProcessingTime;
 
       if (GennySettings.useConcurrencyMsgs) {
-        System.out.println("useConcurrencyMsgs is enabled");
+        log.info("useConcurrencyMsgs is enabled");
 
         for (Callable<QBulkMessage> callable : callables) {
           service.submit(callable);
@@ -1896,12 +1896,12 @@ public class TableUtils {
            * "fast thread".equals(firstThreadResponse.getData_type()));
            * assertTrue(totalProcessingTime >= 100 && totalProcessingTime < 1000);
            */
-          System.out.println("Thread finished after: " + totalProcessingTime + " milliseconds");
+          log.info("Thread finished after: " + totalProcessingTime + " milliseconds");
 
           future = service.take();
           QBulkMessage secondThreadResponse = future.get();
           aggregatedMessages.add(secondThreadResponse);
-          System.out.println("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
+          log.info("2nd Thread finished after: " + totalProcessingTime + " milliseconds");
         } catch (InterruptedException | ExecutionException e) {
           e.printStackTrace();
         }
@@ -1920,7 +1920,7 @@ public class TableUtils {
         aggregatedMessages.add(sc.call());
       }
       totalProcessingTime = System.currentTimeMillis() - startProcessingTime;
-      System.out.println("All threads finished after: " + totalProcessingTime + " milliseconds");
+      log.info("All threads finished after: " + totalProcessingTime + " milliseconds");
       aggregatedMessages.setToken(beUtils.getGennyToken().getToken());
 
       if (cache) {
@@ -1938,9 +1938,9 @@ public class TableUtils {
 
       /* update(output); */
       long endtime = System.currentTimeMillis();
-      // System.out.println("init setup took " + (s1time - starttime) + " ms");
-      // System.out.println("search session setup took " + (s2time - s1time) + " ms");
-      System.out.println("update searchBE BE setup took " + (s3time - s2time) + " ms");
+      // log.info("init setup took " + (s1time - starttime) + " ms");
+      // log.info("search session setup took " + (s2time - s1time) + " ms");
+      log.info("update searchBE BE setup took " + (s3time - s2time) + " ms");
       return (endtime - starttime);
     }
   }
@@ -1971,7 +1971,7 @@ public class TableUtils {
       long starttime = System.currentTimeMillis();
 
       if (searchBE == null) {
-        System.out.println("SearchBE is null");
+        log.info("SearchBE is null");
         return -1L;
       }
 
@@ -1990,7 +1990,7 @@ public class TableUtils {
 
       /* update(output); */
       long endtime = System.currentTimeMillis();
-      System.out.println("update searchBE BE setup took " + (starttime - endtime) + " ms");
+      log.info("update searchBE BE setup took " + (starttime - endtime) + " ms");
       return (endtime - starttime);
     }
   }
@@ -2018,7 +2018,7 @@ public class TableUtils {
 
   public long performAndSendCount(SearchEntity searchBE) {
 
-    System.out.println("SBE CODE   ::   " + searchBE.getCode());
+    log.info("SBE CODE   ::   " + searchBE.getCode());
     long startTime = System.currentTimeMillis();
     // Add the sessionCode to the SBE code
     searchBE = this.getSessionSearch(searchBE, null, null);
@@ -2039,7 +2039,7 @@ public class TableUtils {
 
     long endTime = System.currentTimeMillis();
     long totalTime = (endTime - startTime);
-    System.out.println("duration was " + totalTime + "ms");
+    log.info("duration was " + totalTime + "ms");
     return totalTime;
   }
 
@@ -2060,7 +2060,7 @@ public class TableUtils {
 
   public Long performCount(SearchEntity searchBE) {
 
-    System.out.println("SBE CODE   ::   " + searchBE.getCode());
+    log.info("SBE CODE   ::   " + searchBE.getCode());
     long startTime = System.currentTimeMillis();
 
     // Attach any extra filters from SearchFilters rulegroup
@@ -2093,11 +2093,11 @@ public class TableUtils {
                 this.beUtils.getServiceToken(),
                 120);
 
-        System.out.println("Count = " + resultJsonStr);
+        log.info("Count = " + resultJsonStr);
         total = Long.parseLong(resultJsonStr);
 
       } catch (Exception e) {
-        System.out.println("EXCEPTION RUNNING COUNT WITH HQL: " + e.toString());
+        log.info("EXCEPTION RUNNING COUNT WITH HQL: " + e.toString());
       }
     } else {
       // Now using updated search
@@ -2110,11 +2110,11 @@ public class TableUtils {
                 this.beUtils.getServiceToken(),
                 null);
 
-        System.out.println("Count = " + resultJsonStr);
+        log.info("Count = " + resultJsonStr);
         total = Long.parseLong(resultJsonStr);
 
       } catch (Exception e) {
-        System.out.println("EXCEPTION RUNNING COUNT: " + e.toString());
+        log.info("EXCEPTION RUNNING COUNT: " + e.toString());
       }
     }
 
@@ -2160,7 +2160,7 @@ public class TableUtils {
   }
 
   public static void sendFilterQuestions(BaseEntityUtils beUtils, SearchEntity searchBE) {
-    System.out.println("[*] Sending filter questions for " + searchBE.getCode());
+    log.info("[*] Sending filter questions for " + searchBE.getCode());
     // Check for Session Code
     String baseSearchCode = searchBE.getCode();
     if (baseSearchCode.contains(beUtils.getGennyToken().getJTI().toUpperCase())) {
@@ -2170,7 +2170,7 @@ public class TableUtils {
               0, baseSearchCode.length() - beUtils.getGennyToken().getJTI().length() - 1);
     }
     /* Retrieve the base SBE */
-    System.out.println("baseSearchCode = " + baseSearchCode);
+    log.info("baseSearchCode = " + baseSearchCode);
 
     SearchEntity baseSearchBE =
         VertxUtils.getObject(
@@ -2182,7 +2182,7 @@ public class TableUtils {
 
     /* Find the highest weight of filters in base SBE */
     Double baseMaxWeight = baseSearchBE.getMaximumFilterWeight();
-    System.out.println("baseMaxWeight = " + baseMaxWeight);
+    log.info("baseMaxWeight = " + baseMaxWeight);
 
     String sourceCode = beUtils.getGennyToken().getUserCode();
     String targetCode = searchBE.getCode();
@@ -2234,7 +2234,7 @@ public class TableUtils {
       String rawAttributeCode = beUtils.removePrefixFromCode(filt.getAttributeCode(), "AND");
       if (filt.getWeight() > baseMaxWeight
           && (rawAttributeCode.startsWith("PRI_") || rawAttributeCode.startsWith("LNK_"))) {
-        System.out.println("Found additional filter for attribute " + rawAttributeCode);
+        log.info("Found additional filter for attribute " + rawAttributeCode);
         // Find the correlated sort entity attribute
         EntityAttribute correlatedFlc =
             searchBE.findEntityAttribute("FLC_" + rawAttributeCode).orElse(null);
@@ -2244,7 +2244,7 @@ public class TableUtils {
           flcName = correlatedFlc.getAttributeName();
         } else {
           // Default to the attribute name instead
-          System.out.println("correlatedFlc is null");
+          log.info("correlatedFlc is null");
           Attribute attr =
               RulesUtils.getAttribute(rawAttributeCode, beUtils.getGennyToken());
           flcName = attr.getName();
@@ -2291,7 +2291,7 @@ public class TableUtils {
         try {
           filterColumn.addAttribute(nameAttr, 1.0, filt.getAttributeName());
         } catch (Exception e) {
-          System.out.println(e.getLocalizedMessage());
+          log.info(e.getLocalizedMessage());
         }
         // Create a link between GRP and BE
         EntityEntity ee = new EntityEntity(columnGrp, filterColumn, attributeLink, index);
@@ -2311,7 +2311,7 @@ public class TableUtils {
                 || ea.getAttributeCode().startsWith("LNK_")) {
               if (ea.getAttributeCode().contains("COUNTRY")
                   && ea.getValue().toString().equals("Australia")) {
-                System.out.println("Country = Australia, adding state filter entity");
+                log.info("Country = Australia, adding state filter entity");
                 columnFilterArray.add(filterColumn);
                 break;
               }
@@ -2365,7 +2365,7 @@ public class TableUtils {
     askMsg.setToken(beUtils.getGennyToken().getToken());
     askMsg.setReplace(true);
     VertxUtils.writeMsg("webcmds", askMsg);
-    System.out.println("Asks sent to FE");
+    log.info("Asks sent to FE");
 
     // Send column dropdown items
     QDataBaseEntityMessage columnItems = new QDataBaseEntityMessage(columnFilterArray);
@@ -2376,7 +2376,7 @@ public class TableUtils {
     columnItems.setToken(beUtils.getGennyToken().getToken());
     columnItems.setReplace(true);
     VertxUtils.writeMsg("webcmds", columnItems);
-    System.out.println("Dropdown items sent to FE");
+    log.info("Dropdown items sent to FE");
   }
 
   public static void sendFilterOptions(BaseEntityUtils beUtils, SearchEntity searchBE) {
@@ -2463,7 +2463,7 @@ public class TableUtils {
 
         /* Check the datatype */
         String dtt = attr.getDataType().getClassName();
-        System.out.println("dtt = " + dtt);
+        log.info("dtt = " + dtt);
         if (dtt != null) {
 
           List<BaseEntity> filterOptionsArray = new ArrayList<>();
@@ -2557,7 +2557,7 @@ public class TableUtils {
           filterOptionsMsg.setToken(beUtils.getGennyToken().getToken());
           filterOptionsMsg.setReplace(true);
           VertxUtils.writeMsg("webcmds", filterOptionsMsg);
-          System.out.println("Filter Options sent to FE");
+          log.info("Filter Options sent to FE");
         }
       }
 
@@ -2566,13 +2566,13 @@ public class TableUtils {
       askMsg.setToken(token.getToken());
       askMsg.setReplace(true);
       VertxUtils.writeMsg("webcmds", askMsg);
-      System.out.println("Asks sent to FE");
+      log.info("Asks sent to FE");
 
       /* Cache changes to filter grp */
       VertxUtils.putObject(realm, "", filterGrpAsk.getQuestionCode(), filterGrpAsk, token);
 
     } else {
-      System.out.println("attr is NULL");
+      log.info("attr is NULL");
     }
   }
 
@@ -2581,7 +2581,7 @@ public class TableUtils {
 
       if (childAsk.getQuestionCode().contains("QUE_FILTER_VALUE")) {
         if (childAsk.getQuestionCode().equals(code)) {
-          System.out.println("Unhiding " + code);
+          log.info("Unhiding " + code);
           childAsk.setHidden(false);
         } else {
           childAsk.setHidden(true);
