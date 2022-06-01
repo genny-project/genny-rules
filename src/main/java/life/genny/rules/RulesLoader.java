@@ -1124,7 +1124,7 @@ public class RulesLoader {
     String bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
     // Save an associated Bridge IP to the session
-    log.debug(
+    log.info(
         "saving bridge ip ("
             + bridgeSourceAddress
             + ") to cache associated with session "
@@ -1133,7 +1133,7 @@ public class RulesLoader {
         facts.getUserToken().getRealm(),
         facts.getUserToken().getJTI(),
         bridgeSourceAddress,
-        facts.getUserToken());
+        facts.getServiceToken());
 
     log.info(
         "incoming EVENT"
