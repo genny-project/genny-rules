@@ -1414,7 +1414,12 @@ public class RulesLoader {
     }
 
     if (oldCapabilityUtilsHandle != null) {
-      kieSession.delete(oldCapabilityUtilsHandle);
+      try {
+		kieSession.delete(oldCapabilityUtilsHandle);
+	} catch (Exception e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
       for (FactHandle allow : oldAlloweds) {
         try {
           kieSession.delete(allow);
