@@ -376,13 +376,13 @@ public class RulesLoader {
       return false;
     }
 
-    
-   
+    Map<String, GennyToken> realmTokenMap = new HashMap<>();
     
     for (String realm : realms) {
     	log.info("*************** LOADING RULES FOR "+realm+" ********************");
     	GennyToken serviceToken = new GennyToken(getServiceToken());
     	serviceToken.setProjectCode(realm);
+      realmTokenMap.put(realm, serviceToken);
       log.info("About to load in DEFs before rules for realm " + realm);
       VertxUtils.writeCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase(),serviceToken.getToken(),serviceToken);
       VertxUtils.writeCachedJson(realm, "TOKEN" + realm.toUpperCase(),serviceToken.getToken(),serviceToken);
@@ -1124,7 +1124,7 @@ public class RulesLoader {
     String bridgeSourceAddress = ((QEventMessage) facts.getMessage()).getSourceAddress();
 
     // Save an associated Bridge IP to the session
-    log.debug(
+    log.info(
         "saving bridge ip ("
             + bridgeSourceAddress
             + ") to cache associated with session "
@@ -1133,7 +1133,7 @@ public class RulesLoader {
         facts.getUserToken().getRealm(),
         facts.getUserToken().getJTI(),
         bridgeSourceAddress,
-        facts.getUserToken());
+        facts.getServiceToken());
 
     log.info(
         "incoming EVENT"
@@ -1414,7 +1414,12 @@ public class RulesLoader {
     }
 
     if (oldCapabilityUtilsHandle != null) {
-      kieSession.delete(oldCapabilityUtilsHandle);
+      try {
+		kieSession.delete(oldCapabilityUtilsHandle);
+	} catch (Exception e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
       for (FactHandle allow : oldAlloweds) {
         try {
           kieSession.delete(allow);

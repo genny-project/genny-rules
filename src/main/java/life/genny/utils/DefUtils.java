@@ -352,9 +352,9 @@ public class DefUtils {
 
 			for (BaseEntity item : msg.getItems()) {
 				if ( item.getValueAsString(jsonName) == null ) {
-					log.warn("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString(jsonName));
+					log.debug("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString(jsonName));
 				} else {
-					log.info("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString(jsonName));
+					log.debug("DROPDOWN : item: " + item.getCode() + " ===== " + item.getValueAsString(jsonName));
 				}
 			}
 		} else {
