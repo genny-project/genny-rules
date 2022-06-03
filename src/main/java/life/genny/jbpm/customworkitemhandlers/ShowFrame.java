@@ -1227,7 +1227,9 @@ public class ShowFrame implements WorkItemHandler {
           VertxUtils.readCachedJson(
               userToken.getRealm(), rootFrameCode + "_ASKS", userToken);
       if ("OK".equalsIgnoreCase(askMsgJson.getString("status"))) {
-        askMsgs2Str = askMsgJson.getJsonObject("value").toString();
+		log.info("ASKMSG STR = " + askMsgJson.toString());
+        // askMsgs2Str = askMsgJson.getJsonObject("value").toString();
+        askMsgs2Str = askMsgJson.getString("value");
         if (askMsgs2Str.contains("\"items\": [],")) {
           askMsgs2Str = null;
         }
@@ -1267,7 +1269,7 @@ public class ShowFrame implements WorkItemHandler {
         }
         Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
         if (rootFrame != null) {
-          if (rootFrame.getCode().startsWith("FRM_QUE_")) {
+          if (rootFrame.getCode() != null && rootFrame.getCode().startsWith("FRM_QUE_")) {
 
             FrameUtils2.toMessage2(rootFrame, userToken, "PER_SOURCE", "PER_TARGET");
           } else {
