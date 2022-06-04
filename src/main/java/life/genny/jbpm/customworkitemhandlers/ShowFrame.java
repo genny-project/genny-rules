@@ -1229,7 +1229,11 @@ public class ShowFrame implements WorkItemHandler {
       if ("OK".equalsIgnoreCase(askMsgJson.getString("status"))) {
 		log.info("ASKMSG STR = " + askMsgJson.toString());
         // askMsgs2Str = askMsgJson.getJsonObject("value").toString();
-        askMsgs2Str = askMsgJson.getString("value");
+        try {
+			askMsgs2Str = askMsgJson.getJsonObject("value").toString();
+		} catch (Exception e) {
+			askMsgs2Str = askMsgJson.getString("value");
+		}
         if (askMsgs2Str.contains("\"items\": [],")) {
           askMsgs2Str = null;
         }
