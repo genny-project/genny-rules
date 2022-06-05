@@ -177,6 +177,10 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
     // Fetch the questions and set in the task for us to tick off as they get done
 	log.info("About to grab asks " + task.getFormName());
     Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
+    if (formSet == null) {
+    	log.error("No form Set ");
+    	return;
+    }
     Map<String, Object> taskAsksMap = new ConcurrentHashMap<String, Object>();
     List<Answer> newFields = new CopyOnWriteArrayList<Answer>();
     for (QDataAskMessage dataMsg : formSet) {
