@@ -175,6 +175,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
     }
 
     // Fetch the questions and set in the task for us to tick off as they get done
+	log.info("About to grab asks " + task.getFormName());
     Set<QDataAskMessage> formSet = ShowFrame.fetchAskMessages(task.getFormName(), userToken);
     Map<String, Object> taskAsksMap = new ConcurrentHashMap<String, Object>();
     List<Answer> newFields = new CopyOnWriteArrayList<Answer>();
@@ -191,6 +192,7 @@ public class AskQuestionTaskWorkItemHandler extends NonManagedLocalHTWorkItemHan
             createOnTrigger,
             newFields);
       }
+
     }
     if (!newFields.isEmpty()) {
       List<Answer> saveFields = new CopyOnWriteArrayList<Answer>();

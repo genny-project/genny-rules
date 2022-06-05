@@ -87,9 +87,9 @@ public class ShowFrame implements WorkItemHandler {
     callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
     Boolean cache = false;
-    QBulkMessage qBulkMessage =
-        display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
-
+    // QBulkMessage qBulkMessage =
+    //     display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
+	
     if (cache) {
       qBulkMessage.setToken(userToken.getToken());
       VertxUtils.writeMsg("webcmds", JsonUtils.toJson(qBulkMessage));
@@ -1135,206 +1135,133 @@ public class ShowFrame implements WorkItemHandler {
   public static Set<QDataAskMessage> fetchAskMessages(String rootFrameCode, GennyToken userToken) {
     Type setType = new TypeToken<Set<QDataAskMessage>>() {}.getType();
 
-    String askMsgs2Str = null;
     Set<QDataAskMessage> askMsgs2 = Collections.emptySet();
-    if (GennySettings.forceCacheApi) { // if in junit then use the bridge to fetch
-      // cache data
-      log.info("Forcing ASKS to be read from api call to cache");
-      //						askMsgs2Str = VertxUtils.getObject(userToken.getRealm(), "", rootFrameCode + "_ASKS",
-      //						String.class, userToken.getToken());
-      //			try {
-      //				askMsgs2Str = QwandaUtils.apiGet(
-      //						GennySettings.ddtUrl + "/read/" + userToken.getRealm() + "/" + rootFrameCode +
-      // "_ASKS",
-      //						userToken.getToken());
-      //				JsonObject json = new JsonObject(askMsgs2Str);
-      //				askMsgs2Str = json.getString("value"); // TODO - assumes always works.....not always
-      // case
-      //			} catch (ClientProtocolException e) {
-      //				// TODO Auto-generated catch block
-      //				e.printStackTrace();
-      //			} catch (IOException e) {
-      //				// TODO Auto-generated catch block
-      //				e.printStackTrace();
-      //			}
 
-      askMsgs2Str =
-          (String)
-              VertxUtils.cacheInterface.readCache(
-                  userToken.getRealm(), rootFrameCode + "_ASKS", userToken);
+	log.info("Grabbing asks " + rootFrameCode);
 
-      if (askMsgs2Str == null) {
-        log.error(
-            "No Asks: " + rootFrameCode + "_ASKS in cache, search cache for " + rootFrameCode);
-        String frameStr =
-            (String)
-                VertxUtils.cacheInterface.readCache(
-                    userToken.getRealm(), rootFrameCode, userToken);
-        if (StringUtils.isBlank(frameStr)) {
-          String questionCode = rootFrameCode.substring("FRM_".length());
-          String realm = userToken.getRealm();
-          Frame3 frame2 =
-              Frame3.builder("FRM_CONTENT_" + questionCode).question(questionCode).end().build();
+	JsonObject askMsgJson = VertxUtils.readCachedJson(
+			userToken.getRealm(), rootFrameCode + "_ASKS", userToken);
 
-          frame2.setRealm(realm);
+	String askMsgs2Str = askMsgJson.getString("value");
 
-          Frame3 frame =
-              Frame3.builder("FRM_" + questionCode)
-                  .addFrame(frame2, FramePosition.CENTRE)
-                  .end()
-                  .build();
+	askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
+	askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
+	askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
+	askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
+	askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
 
-          frame.setRealm(realm);
-          log.info(frame.getCode());
-          FrameUtils2.toMessage(frame, userToken);
-          frameStr =
-              (String)
-                  VertxUtils.cacheInterface.readCache(
-                      userToken.getRealm(), rootFrameCode, userToken);
-        }
-        Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
-        if (rootFrame != null) {
-          if (rootFrame.getCode().startsWith("FRM_QUE_")) {
+	askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
 
-            FrameUtils2.toMessage2(rootFrame, userToken, "PER_SOURCE", "PER_TARGET");
-          } else {
-            Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
-            FrameUtils2.toMessage(
-                rootFrame, userToken, contextListMap, "PER_SERVICE", "PER_SERVICE", true);
-
-            // FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
-          }
-          askMsgs2Str =
-              (String)
-                  VertxUtils.cacheInterface.readCache(
-                      userToken.getRealm(), rootFrameCode + "_ASKS", userToken);
-          if (askMsgs2Str == null) {
-            log.error("Frame ASKS for " + rootFrameCode + " is just not happening...");
-            return new HashSet<QDataAskMessage>();
-          }
-        } else {
-          log.error(rootFrameCode + " is not in cache");
-          return askMsgs2;
-        }
-      }
-    } else {
-
-      //			askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(),
-      // rootFrameCode + "_ASKS",
-      //					userToken.getToken());
-
-      JsonObject askMsgJson =
-          VertxUtils.readCachedJson(
-              userToken.getRealm(), rootFrameCode + "_ASKS", userToken);
-      if ("OK".equalsIgnoreCase(askMsgJson.getString("status"))) {
-		log.info("ASKMSG STR = " + askMsgJson.toString());
-        // askMsgs2Str = askMsgJson.getJsonObject("value").toString();
-        askMsgs2Str = askMsgJson.getString("value");
-        if (askMsgs2Str.contains("\"items\": [],")) {
-          askMsgs2Str = null;
-        }
-      } else {
-        askMsgs2Str = null;
-      }
-
-      // askMsgs2Str = null; //TODO FORCE HACK
-      if (askMsgs2Str == null) {
-        log.error(
-            "No Asks: " + rootFrameCode + "_ASKS in cache, search cache for " + rootFrameCode);
-        String frameStr =
-            (String)
-                VertxUtils.cacheInterface.readCache(
-                    userToken.getRealm(), rootFrameCode, userToken);
-        if (StringUtils.isBlank(frameStr)) {
-          String questionCode = rootFrameCode.substring("FRM_".length());
-          String realm = userToken.getRealm();
-          Frame3 frame2 =
-              Frame3.builder("FRM_CONTENT_" + questionCode).question(questionCode).end().build();
-
-          frame2.setRealm(realm);
-
-          Frame3 frame =
-              Frame3.builder("FRM_" + questionCode)
-                  .addFrame(frame2, FramePosition.CENTRE)
-                  .end()
-                  .build();
-
-          frame.setRealm(realm);
-          log.info(frame.getCode());
-          FrameUtils2.toMessage(frame, userToken);
-          frameStr =
-              (String)
-                  VertxUtils.cacheInterface.readCache(
-                      userToken.getRealm(), rootFrameCode, userToken);
-        }
-        Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
-        if (rootFrame != null) {
-          if (rootFrame.getCode() != null && rootFrame.getCode().startsWith("FRM_QUE_")) {
-
-            FrameUtils2.toMessage2(rootFrame, userToken, "PER_SOURCE", "PER_TARGET");
-          } else {
-            Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
-            FrameUtils2.toMessage(
-                rootFrame, userToken, contextListMap, "PER_SERVICE", "PER_SERVICE", true);
-
-            // FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
-          }
-          askMsgs2Str =
-              (String)
-                  VertxUtils.cacheInterface.readCache(
-                      userToken.getRealm(), rootFrameCode + "_ASKS", userToken);
-          if (askMsgs2Str == null) {
-            log.error("Frame ASKS for " + rootFrameCode + " is just not happening...");
-            return new HashSet<QDataAskMessage>();
-          }
-        } else {
-          log.error(rootFrameCode + " is not in cache");
-          return askMsgs2;
-        }
-      }
-    }
-
-    log.debug("About to do deserialization!");
-    // try first time, don't print log if failed
-    askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType, true);
-
-    if (askMsgs2 == null) {
-      askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
-      askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
-      askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
-      askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
-      askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
-      // try again , print error log
-      askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
-    }
-
-    if (askMsgs2 == null) {
-      // NOTE: Can't convert JSON string to target type, may casued by incorrect
-      // replacement
-      // Don't try to print askMsgs2 as it has 20K lines
-      BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
-      BaseEntity rule = beUtils.getBaseEntityByCode("RUL_" + rootFrameCode);
-      if (rule.getValue("PRI_ASKS").isPresent()) {
-        askMsgs2Str = (String) rule.getValue("PRI_ASKS").get(); // assume always
-      } else {
-        askMsgs2Str = null;
-      }
-      if (askMsgs2Str == null) {
-        String fr = (String) rule.getValue("PRI_FRM").get(); // assume always
-        Frame3 frame3 = JsonUtils.fromJson(fr, Frame3.class);
-        FrameUtils2.toMessage2(frame3, userToken);
-        askMsgs2Str =
-            (String)
-                VertxUtils.cacheInterface.readCache(
-                    userToken.getRealm(), rootFrameCode + "_ASKS", userToken);
-      }
-
-      VertxUtils.cacheInterface.writeCache(
-          userToken.getRealm(), rootFrameCode + "_ASKS", askMsgs2Str, userToken, 0);
-      log.info("About to do deserialization2!");
-      askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
-    }
     return askMsgs2;
+
+	// BaseEntityUtils beUtils = new BaseEntityUtils(userToken);
+	// BaseEntity rule = beUtils.getBaseEntityByCode("RUL_" + rootFrameCode);
+
+	// if (rule != null) {
+	// 	log.info("Found RULE entity");
+
+	// 	if (rule.getValue("PRI_ASKS").isPresent()) {
+	// 		log.info("Found Asks Attribute");
+	// 		askMsgs2Str = (String) rule.getValue("PRI_ASKS").get();
+	// 	} else {
+	// 		log.info("Trying to get frame from rule entity");
+	// 		String fr = (String) rule.getValue("PRI_FRM").get();
+	// 		Frame3 frame3 = JsonUtils.fromJson(fr, Frame3.class);
+	// 		FrameUtils2.toMessage2(frame3, userToken);
+	// 		askMsgs2Str = (String) VertxUtils.cacheInterface.readCache(
+	// 				userToken.getRealm(), rootFrameCode + "_ASKS", userToken);
+	// 	}
+	// } else {
+	// 	log.info("No rule entity found!!!");
+	// }
+
+
+	// if ("OK".equalsIgnoreCase(askMsgJson.getString("status"))) {
+	// 	log.info("ASKMSG STR = " + askMsgJson.toString());
+	// 	// askMsgs2Str = askMsgJson.getJsonObject("value").toString();
+	// 	askMsgs2Str = askMsgJson.getString("value");
+	// 	if (askMsgs2Str.contains("\"items\": [],")) {
+	// 		askMsgs2Str = null;
+	// 	}
+	// } else {
+	// 	log.error("No Asks: " + rootFrameCode + "_ASKS in cache, search cache for " + rootFrameCode);
+
+	// 	String frameStr = (String) VertxUtils.cacheInterface.readCache(userToken.getRealm(), rootFrameCode, userToken);
+
+	// 	if (StringUtils.isBlank(frameStr)) {
+	// 		String questionCode = rootFrameCode.substring("FRM_".length());
+	// 		String realm = userToken.getRealm();
+	// 		Frame3 frame2 =
+	// 			Frame3.builder("FRM_CONTENT_" + questionCode).question(questionCode).end().build();
+
+	// 		frame2.setRealm(realm);
+
+	// 		Frame3 frame =
+	// 			Frame3.builder("FRM_" + questionCode)
+	// 			.addFrame(frame2, FramePosition.CENTRE)
+	// 			.end()
+	// 			.build();
+
+	// 		frame.setRealm(realm);
+	// 		log.info(frame.getCode());
+	// 		FrameUtils2.toMessage(frame, userToken);
+	// 		frameStr =
+	// 			(String)
+	// 			VertxUtils.cacheInterface.readCache(
+	// 					userToken.getRealm(), rootFrameCode, userToken);
+	// 	}
+	// 	Frame3 rootFrame = JsonUtils.fromJson(frameStr, Frame3.class);
+	// 	if (rootFrame != null) {
+	// 		if (rootFrame.getCode() != null && rootFrame.getCode().startsWith("FRM_QUE_")) {
+
+	// 			FrameUtils2.toMessage2(rootFrame, userToken, "PER_SOURCE", "PER_TARGET");
+	// 		} else {
+	// 			Map<String, ContextList> contextListMap = new HashMap<String, ContextList>();
+	// 			FrameUtils2.toMessage(
+	// 					rootFrame, userToken, contextListMap, "PER_SERVICE", "PER_SERVICE", true);
+
+	// 			// FrameUtils2.toMessage(rootFrame, userToken,"PER_SERVICE","PER_SERVICE",true);
+	// 		}
+	// 		askMsgs2Str =
+	// 			(String)
+	// 			VertxUtils.cacheInterface.readCache(
+	// 					userToken.getRealm(), rootFrameCode + "_ASKS", userToken);
+	// 	} else {
+	// 		log.error(rootFrameCode + " is not in cache");
+	// 		return askMsgs2;
+	// 	}
+	// }
+
+	// if (askMsgs2Str == null) {
+	// 	log.error("Frame ASKS for " + rootFrameCode + " is just not happening...");
+	// 	return new HashSet<QDataAskMessage>();
+	// }
+    // log.debug("About to do deserialization!");
+    // // try first time, don't print log if failed
+    // askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType, true);
+
+    // if (askMsgs2 == null) {
+      // askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), Matcher.quoteReplacement("\n"));
+      // askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\\""), Matcher.quoteReplacement("\""));
+      // askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\"["), Matcher.quoteReplacement("["));
+      // askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("]\""), Matcher.quoteReplacement("]"));
+      // askMsgs2Str = askMsgs2Str.replaceAll(Pattern.quote("\\n"), "");
+      // // try again , print error log
+      // askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+    // }
+
+    // if (askMsgs2 == null) {
+      // // NOTE: Can't convert JSON string to target type, may casued by incorrect
+      // // replacement
+      // // Don't try to print askMsgs2 as it has 20K lines
+
+      // VertxUtils.cacheInterface.writeCache(
+          // userToken.getRealm(), rootFrameCode + "_ASKS", askMsgs2Str, userToken, 0);
+      // log.info("About to do deserialization2!");
+      // askMsgs2 = JsonUtils.fromJson(askMsgs2Str, setType);
+    // }
+
+
   }
 
   public void abortWorkItem(WorkItem workItem, WorkItemManager manager) {
