@@ -87,8 +87,8 @@ public class ShowFrame implements WorkItemHandler {
     callingWorkflow += ":" + workItem.getProcessInstanceId() + ": ";
 
     Boolean cache = false;
-    // QBulkMessage qBulkMessage =
-    //     display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
+    QBulkMessage qBulkMessage =
+        display(beUtils, rootFrameCode, targetFrameCode, callingWorkflow, output, cache);
 	
     if (cache) {
       qBulkMessage.setToken(userToken.getToken());
