@@ -784,27 +784,30 @@ public class ShowFrame implements WorkItemHandler {
     // log.info("Sending Asks");
     if ((askMsgs2 != null) && (!askMsgs2.isEmpty())) {
       for (QDataAskMessage askMsg : askMsgs2) { // TODO, not needed
-        for (Ask aask : askMsg.getItems()) {
-          log.info(callingWorkflow + ": aask: " + aask);
-
-          /* recursively check validations */
-          checkAskValidation(aask, callingWorkflow);
-          TaskUtils.enableAttribute("PRI_SUBMIT", aask, callingWorkflow, enabledSubmit);
-          aask.setId(output.getTaskId());
-        }
+												//
         askMsg.setToken(userToken.getToken());
 
-        /* call the ask filters */
-        log.info(callingWorkflow + ": Calling getAskFilters");
-        // HACK, because setting source and target first isnt working for some reason
-        Ask itemZero = askMsg.getItems()[0];
-        itemZero.setTargetCode(targetCode);
-        Ask filteredAsk = getAskFilters(beUtils, itemZero);
-        if (filteredAsk != null) {
-          log.info(callingWorkflow + ": filteredAsk is not null. Using filteredAsk");
-          Ask[] filteredAskArr = {filteredAsk};
-          askMsg.setItems(filteredAskArr);
-        }
+		  if (askMsg.getItems() != null) {
+			  for (Ask aask : askMsg.getItems()) {
+				  log.info(callingWorkflow + ": aask: " + aask);
+
+				  /* recursively check validations */
+				  checkAskValidation(aask, callingWorkflow);
+				  TaskUtils.enableAttribute("PRI_SUBMIT", aask, callingWorkflow, enabledSubmit);
+				  aask.setId(output.getTaskId());
+			  }
+			  /* call the ask filters */
+			  log.info(callingWorkflow + ": Calling getAskFilters");
+			  // HACK, because setting source and target first isnt working for some reason
+			  Ask itemZero = askMsg.getItems()[0];
+			  itemZero.setTargetCode(targetCode);
+			  Ask filteredAsk = getAskFilters(beUtils, itemZero);
+			  if (filteredAsk != null) {
+				  log.info(callingWorkflow + ": filteredAsk is not null. Using filteredAsk");
+				  Ask[] filteredAskArr = {filteredAsk};
+				  askMsg.setItems(filteredAskArr);
+			  }
+		  }
 
         String jsonStr = updateSourceAndTarget(askMsg, sourceCode, targetCode, output, userToken);
         QDataAskMessage updated = JsonUtils.fromJson(jsonStr, QDataAskMessage.class);
@@ -1027,11 +1030,14 @@ public class ShowFrame implements WorkItemHandler {
         }
 
         qBulkMessage.add(updated);
-        if (!cache) {
-          log.info("Sending the Asks Now !!!");
-          updated.setToken(userToken.getToken());
-          VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
-        }
+		if (updated != null) {
+
+			if (!cache) {
+				log.info("Sending the Asks Now !!!");
+				updated.setToken(userToken.getToken());
+				VertxUtils.writeMsg("webcmds", JsonUtils.toJson(updated)); // QDataAskMessage
+			}
+		}
       }
     }
     return qBulkMessage;
