@@ -27,6 +27,7 @@ import life.genny.qwanda.Answer;
 import life.genny.qwanda.Answers;
 import life.genny.qwanda.Ask;
 import life.genny.qwanda.TaskAsk;
+import life.genny.qwanda.attribute.Attribute;
 import life.genny.qwanda.attribute.EntityAttribute;
 import life.genny.qwanda.entity.BaseEntity;
 import life.genny.qwanda.exception.BadDataException;
@@ -36,6 +37,7 @@ import life.genny.qwandautils.GennySettings;
 import life.genny.qwandautils.JsonUtils;
 import life.genny.rules.RulesLoader;
 import life.genny.utils.BaseEntityUtils;
+import life.genny.utils.RulesUtils;
 import life.genny.utils.TaskUtils;
 import life.genny.utils.VertxUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -269,6 +271,10 @@ public class ProcessAnswersWorkItemHandler implements WorkItemHandler {
             ask.setAnswered(true);
           }
           taskAsksProcessed.add(ask); // save for later updating
+          if (answer.getAttribute()==null) {
+        	  Attribute freshAttribute = RulesUtils.getAttribute(answer.getAttributeCode(), serviceToken);
+        	  answer.setAttribute(freshAttribute);
+          }
           validAnswers.add(answer);
 
           BaseEntity answerTarget = beUtils.getBaseEntityByCode(answer.getTargetCode());
