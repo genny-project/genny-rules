@@ -1437,7 +1437,7 @@ public class RulesLoader {
     GennyToken serviceToken = facts.getServiceToken();
     if (serviceToken == null) {
     	log.error("ServiceToken in facts is null");
-    	
+    	serviceToken = getServiceTokenFromKeycloak(facts.getUserToken().getProjectCode());
     }
 
     EntityManager em = emf.createEntityManager();
