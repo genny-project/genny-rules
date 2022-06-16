@@ -1768,22 +1768,46 @@ public class RulesLoader {
 
   public void initMsg(final String msgType, String realm, final Object msg) {
 
-    log.info("INIT MSG with Stateful");
+    log.info("INIT MSG with Stateful for "+realm+" msgType "+msgType);
     // Service Token
     JsonObject tokenObj =
-        VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "TOKEN" + realm.toUpperCase());
-    String serviceToken = tokenObj.getString("value");
+        VertxUtils.readCachedJson(GennySettings.GENNY_REALM, "CACHE:SERVICE_TOKEN");
+    String serviceTokenStr = tokenObj.getString("value");
+    GennyToken serviceToken = null;
 
-    if ((serviceToken == null) || ("DUMMY".equalsIgnoreCase(serviceToken))) {
-      log.error("NO SERVICE TOKEN FOR " + realm + " IN CACHE");
-      return;
+    if ((serviceTokenStr == null) || ("DUMMY".equalsIgnoreCase(serviceTokenStr))) {
+    	  String keycloakUrl = getEnv("GENNY_KEYCLOAK_URL");
+          String servicerealm = "internmatch";
+          String clientId = "backend";
+          String secret = getEnv("GENNY_BACKEND_SECRET");
+          String username = getEnv("GENNY_SERVICE_USERNAME");
+          String password = getEnv("GENNY_SERVICE_PASSWORD");
+          JsonObject jsonPayload = null;
+          try {
+            jsonPayload = KeycloakUtils.getToken(keycloakUrl, servicerealm, clientId, secret, username, password);
+          } catch (IOException e) {
+            // TODO Auto-generated catch block
+            log.error("Error fetching service token!");
+            log.error("Check the CM for rulesservice! Needs GENNY_KEYCLOAK_URL, GENNY_BACKEND_SECRET, GENNY_SERVICE_USERNAME, GENNY_SERVICE_PASSWORD");
+            e.printStackTrace();
+          }
+
+          if(jsonPayload.getString("access_token") == null) {
+            log.error("Service token returned from KeycloakUtils is null");
+            log.error("Payload: " + jsonPayload.toString());
+          } else {
+            String serviceTokenStr2 = jsonPayload.getString("access_token");
+            serviceToken = new GennyToken("PER_SERVICE", serviceTokenStr2);
+            serviceToken.setProjectCode(realm);
+            VertxUtils.writeCachedJson(GennySettings.GENNY_REALM, "CACHE:SERVICE_TOKEN",serviceTokenStr,serviceToken);
+          }
+      
     }
 
-    GennyToken gennyServiceToken = new GennyToken("PER_SERVICE", serviceToken);
 
     List<Tuple2<String, Object>> globals = RulesLoader.getStandardGlobals();
 
-    SessionFacts facts = new SessionFacts(gennyServiceToken, null, msg);
+    SessionFacts facts = new SessionFacts(serviceToken, null, msg);
 
     try {
       executeStatefulForIintEvent(globals, facts);
