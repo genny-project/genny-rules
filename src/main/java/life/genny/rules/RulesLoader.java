@@ -1446,7 +1446,7 @@ public class RulesLoader {
     	if (userToken == null) {
     		userToken = serviceToken;
     	}
-    	
+    	facts.setServiceToken(serviceToken);
     }
 
     EntityManager em = emf.createEntityManager();
