@@ -1822,7 +1822,7 @@ public class RulesLoader {
     GennyToken serviceToken = null;
     // Service Token
    JsonObject serviceTokenJson =
-    VertxUtils.readCachedJson(userToken.getRealm(), "TOKEN"+userToken.getProjectCode().toUpperCase(),userToken);
+    VertxUtils.readCachedJson(userToken.getRealm(), "CACHE:SERVICE_TOKEN",userToken);
    //VertxUtils.readCachedJson(userToken.getRealm(), "CACHE:SERVICE_TOKEN",userToken);
     if (!serviceTokenJson.getString("status").equals("ok")) {
       log.error("SERVICE TOKEN FETCHED FROM CACHE IS NULL");
