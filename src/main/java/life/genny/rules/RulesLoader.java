@@ -1432,7 +1432,7 @@ public class RulesLoader {
   }
 
   public void executeStatefulForIintEvent(
-      final List<Tuple2<String, Object>> globals, SessionFacts facts) {
+      final List<Tuple2<String, Object>> globals, SessionFacts facts, String realm) {
     int rulesFired = 0;
     GennyToken serviceToken = facts.getServiceToken();
     if (serviceToken == null) {
@@ -1441,11 +1441,12 @@ public class RulesLoader {
     		log.error("Facts is NULL!");
     		return;
     	}
+    	serviceToken = getServiceTokenFromKeycloak(realm);
     	GennyToken userToken = facts.getUserToken();
     	if (userToken == null) {
     		userToken = serviceToken;
     	}
-    	serviceToken = getServiceTokenFromKeycloak(userToken.getProjectCode());
+    	
     }
 
     EntityManager em = emf.createEntityManager();
@@ -1798,7 +1799,7 @@ public class RulesLoader {
     SessionFacts facts = new SessionFacts(serviceToken, null, msg);
 
     try {
-      executeStatefulForIintEvent(globals, facts);
+      executeStatefulForIintEvent(globals, facts, realm);
     } catch (Exception e) {
       e.printStackTrace();
     }
