@@ -58,7 +58,7 @@ public class TaskUtils {
           MethodHandles.lookup().lookupClass().getCanonicalName());
 
   public static List<TaskSummary> getUserTaskSummarys(GennyToken userToken) {
-    List<Status> statuses = new ArrayList<Status>();
+    final List<Status> statuses = new ArrayList<Status>();
     statuses.add(Status.Ready);
     // statuses.add(Status.Completed);
     // statuses.add(Status.Created);
@@ -69,9 +69,9 @@ public class TaskUtils {
     statuses.add(Status.Reserved);
     // statuses.add(Status.Suspended);
 
-    String realm = userToken.getRealm();
-    String userCode = userToken.getUserCode();
-    TaskService ts = RulesLoader.taskServiceMap.get(userToken.getJTI());
+    final String realm = userToken.getRealm();
+    final String userCode = userToken.getUserCode();
+    final TaskService ts = RulesLoader.taskServiceMap.get(userToken.getJTI());
     List<TaskSummary>  tasks = null;
     if (ts != null) {
     	TaskUtils tUtils = new TaskUtils();	 
@@ -85,7 +85,8 @@ public class TaskUtils {
   }
   
   public synchronized List<TaskSummary> getTasksOwnedByStatus(TaskService ts,String realm,String userCode,List<Status> statuses) {
-	  List<TaskSummary>  tasks2 = ts.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
+	  log.info("Starting getTasks in sync "+userCode);
+	  final List<TaskSummary>  tasks2 = ts.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
 		log.info("Tasks=" + tasks2.size() + " for user " + userCode);
 		return tasks2;
   }
