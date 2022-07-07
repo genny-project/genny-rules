@@ -75,10 +75,10 @@ public class TaskUtils {
     List<TaskSummary>  tasks = null;
     if (ts != null) {
     	TaskUtils tUtils = new TaskUtils();	
-    	synchronized (tUtils) {
+    //	synchronized (tUtils) {
     	tasks = tUtils.getTasksOwnedByStatus(ts,realm,userCode, statuses);
     		log.info("Tasks=" + tasks.size() + " for user " + userToken.getUsername());
-    	}
+    //	}
     } else {
       log.error("No Task exists for the userToken sessionCode = " + userToken.getJTI());
     }
