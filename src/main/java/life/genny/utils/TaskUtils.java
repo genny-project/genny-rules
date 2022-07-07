@@ -74,17 +74,18 @@ public class TaskUtils {
     final TaskService ts = RulesLoader.taskServiceMap.get(userToken.getJTI());
     List<TaskSummary>  tasks = null;
     if (ts != null) {
-    	TaskUtils tUtils = new TaskUtils();	 
+    	TaskUtils tUtils = new TaskUtils();	
+    	synchronized (tUtils) {
     	tasks = tUtils.getTasksOwnedByStatus(ts,realm,userCode, statuses);
     		log.info("Tasks=" + tasks.size() + " for user " + userToken.getUsername());
-    	
+    	}
     } else {
       log.error("No Task exists for the userToken sessionCode = " + userToken.getJTI());
     }
     return tasks;
   }
   
-  public synchronized List<TaskSummary> getTasksOwnedByStatus(TaskService ts,String realm,String userCode,List<Status> statuses) {
+  public /*synchronized*/ List<TaskSummary> getTasksOwnedByStatus(TaskService ts,String realm,String userCode,List<Status> statuses) {
 	  log.info("Starting getTasks in sync "+userCode);
 	  final List<TaskSummary>  tasks2 = ts.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
 		log.info("Tasks=" + tasks2.size() + " for user " + userCode);
