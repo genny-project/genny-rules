@@ -72,10 +72,14 @@ public class TaskUtils {
     String realm = userToken.getRealm();
     String userCode = userToken.getUserCode();
     TaskService ts = RulesLoader.taskServiceMap.get(userToken.getJTI());
-    List<TaskSummary> tasks = new ArrayList<>();
+    List<TaskSummary>  tasks = null;
     if (ts != null) {
-      tasks = ts.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
-      log.info("Tasks=" + tasks.size() + " for user " + userToken.getUsername());
+    	synchronized (ts) { // TaskService is not threadsafe
+    		final List<TaskSummary>  tasks2 = ts.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
+    		log.info("Tasks=" + tasks2.size() + " for user " + userToken.getUsername());
+    		tasks = tasks2;
+    	}
+    	
     } else {
       log.error("No Task exists for the userToken sessionCode = " + userToken.getJTI());
     }
