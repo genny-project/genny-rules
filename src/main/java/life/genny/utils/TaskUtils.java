@@ -74,16 +74,20 @@ public class TaskUtils {
     TaskService ts = RulesLoader.taskServiceMap.get(userToken.getJTI());
     List<TaskSummary>  tasks = null;
     if (ts != null) {
-    	synchronized (ts) { // TaskService is not threadsafe
-    		final List<TaskSummary>  tasks2 = ts.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
-    		log.info("Tasks=" + tasks2.size() + " for user " + userToken.getUsername());
-    		tasks = tasks2;
-    	}
+    	TaskUtils tUtils = new TaskUtils();	 
+    	tasks = tUtils.getTasksOwnedByStatus(ts,realm,userCode, statuses);
+    		log.info("Tasks=" + tasks.size() + " for user " + userToken.getUsername());
     	
     } else {
       log.error("No Task exists for the userToken sessionCode = " + userToken.getJTI());
     }
     return tasks;
+  }
+  
+  public synchronized List<TaskSummary> getTasksOwnedByStatus(TaskService ts,String realm,String userCode,List<Status> statuses) {
+	  List<TaskSummary>  tasks2 = ts.getTasksOwnedByStatus(realm + "+" + userCode, statuses, null);
+		log.info("Tasks=" + tasks2.size() + " for user " + userCode);
+		return tasks2;
   }
 
   public static void sendTaskMenuItems(GennyToken userToken) {
