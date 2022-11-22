@@ -258,7 +258,6 @@ public class TableUtils {
     QSearchMessage searchBeMsg = new QSearchMessage(searchBE);
     searchBeMsg.setToken(beUtils.getGennyToken().getToken());
     searchBeMsg.setDestination("webcmds");
-    searchBeMsg.setReplace(replace);
 	searchBeMsg.setBridgeId(BridgeSwitch.bridges.get(beUtils.getGennyToken().getUniqueId()));
     VertxUtils.writeMsg("search_events", searchBeMsg);
 
