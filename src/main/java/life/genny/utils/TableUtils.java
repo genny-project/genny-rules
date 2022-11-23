@@ -248,6 +248,9 @@ public class TableUtils {
     } else {
       log.info("User Filters are empty");
     }
+    if(replace == null){
+      replace = true;
+    }
 
 	EntityAttribute title = searchBE.findEntityAttribute("SCH_TITLE").orElse(null);
 
@@ -258,7 +261,8 @@ public class TableUtils {
     QSearchMessage searchBeMsg = new QSearchMessage(searchBE);
     searchBeMsg.setToken(beUtils.getGennyToken().getToken());
     searchBeMsg.setDestination("webcmds");
-	searchBeMsg.setBridgeId(BridgeSwitch.bridges.get(beUtils.getGennyToken().getUniqueId()));
+    searchBeMsg.setReplace(replace);
+	  searchBeMsg.setBridgeId(BridgeSwitch.bridges.get(beUtils.getGennyToken().getUniqueId()));
     VertxUtils.writeMsg("search_events", searchBeMsg);
 
     return null;
