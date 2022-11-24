@@ -1817,6 +1817,7 @@ public class TableUtils {
             : false;
     // Set to FALSE to use regular search
     if (useFyodor) {
+      log.info("searchTableNew started :: " + replace);
       return searchTableNew(beUtils, searchBE, cache, filterCode, filterValue, replace);
     }
 
