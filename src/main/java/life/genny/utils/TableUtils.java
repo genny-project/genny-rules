@@ -249,9 +249,10 @@ public class TableUtils {
       log.info("User Filters are empty");
     }
     if(replace == null){
+      log.info("SBE has null replace. Setting it as true");
       replace = true;
     }
-
+    log.info("SBE replace value :: "+ replace);
 	EntityAttribute title = searchBE.findEntityAttribute("SCH_TITLE").orElse(null);
 
 	if (title != null) {
