@@ -248,7 +248,11 @@ public class TableUtils {
     } else {
       log.info("User Filters are empty");
     }
-
+    if(replace == null){
+      log.info("SBE has null replace. Setting it as true");
+      replace = true;
+    }
+    log.info("SBE replace value :: "+ replace);
 	EntityAttribute title = searchBE.findEntityAttribute("SCH_TITLE").orElse(null);
 
 	if (title != null) {
@@ -258,7 +262,8 @@ public class TableUtils {
     QSearchMessage searchBeMsg = new QSearchMessage(searchBE);
     searchBeMsg.setToken(beUtils.getGennyToken().getToken());
     searchBeMsg.setDestination("webcmds");
-	searchBeMsg.setBridgeId(BridgeSwitch.bridges.get(beUtils.getGennyToken().getUniqueId()));
+    searchBeMsg.setReplace(replace);
+	  searchBeMsg.setBridgeId(BridgeSwitch.bridges.get(beUtils.getGennyToken().getUniqueId()));
     VertxUtils.writeMsg("search_events", searchBeMsg);
 
     return null;
@@ -1812,6 +1817,7 @@ public class TableUtils {
             : false;
     // Set to FALSE to use regular search
     if (useFyodor) {
+      log.info("searchTableNew started :: " + replace);
       return searchTableNew(beUtils, searchBE, cache, filterCode, filterValue, replace);
     }
 
