@@ -18,7 +18,7 @@
 		<genny-verticle.version>${project.version}</genny-verticle.version>
 		<kie.version>7.34.0.Final</kie.version>
 		<vertx.version>3.9.4</vertx.version>
-		<hazelcast.version>3.8.2</hazelcast.version>
+		<hazelcast.version>3.12.13</hazelcast.version>
 		<javax-cache.version>1.1.0</javax-cache.version>
 		<log4j-core-version>2.17.1</log4j-core-version>
 		<weld-vertx.version>1.2.0.Final</weld-vertx.version>
