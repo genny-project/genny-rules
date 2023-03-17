@@ -1903,7 +1903,8 @@ public class RulesLoader {
 
       return instances.stream().map(d -> d.getProcessInstanceId()).findFirst();
     } catch (Exception e) {
-      log.warn("No pid found for sessionCode=" + sessionId);
+      log.warn("No pid found for sessionCode=" + sessionId + ", exception:" + e.getMessage());
+      e.printStackTrace();
     }
     return Optional.empty();
   }
